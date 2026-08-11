@@ -10,6 +10,98 @@ file is for characterization measurements, which are not ledger cells.
 
 ---
 
+## F7. 5,152 ReLU holds one condition and not four -- isolated with the S_clear control
+
+**Status: open. Width sweep running.**
+
+Both students distilled at the identical architecture required by `STUDY.md`
+(84x28, channels (8,16,16), fc 32, 5,152 ReLU), from their respective DAgger teachers,
+neither having had student-DAgger yet.
+
+| student | KD val RMSE | closed loop on CLEAR (2 reps x 2 directions) |
+|---|---|---|
+| `S_clear` | 0.0191 | **0/4 failed -> PASS** |
+| `S_mixed` | 0.0338 | **4/4 failed -> FAIL** |
+
+**The control is what makes this diagnostic.** A freshly distilled student failing closed
+loop has two candidate causes -- insufficient capacity, or the missing student-DAgger
+stage -- and `S_mixed` alone cannot separate them. `S_clear` passing under exactly the
+same architecture and procedure eliminates the DAgger explanation.
+
+Sweeping width at 2x, 3x, 4x. Per the design rule in `STUDY.md`, whichever width
+`S_mixed` needs, `S_clear` is rebuilt at the same one. A capacity difference between the
+arms is the exact confound that left the previous generation's headline anomaly
+unresolved; a clear-only model carrying surplus capacity is harmless.
+
+**Note for the verification stage:** width is the cheap lever for the *policy* and an
+expensive one for the *verifier* -- more ReLU neurons means more relaxations and looser
+bounds. If `S_mixed` needs 4x width, expect its UNKNOWN rate at M6 to rise accordingly,
+and note that resolution is now an alternative lever in a way it was not before (see
+`docs/CONSTRAINTS.md` item 8).
+
+## F6. Night's closed-loop failure was sensor clipping, not headlight geometry
+
+**Status: settled. The condition-dependent exposure (F5) is validated.**
+
+The mixed teacher failed night in all 6 DAgger rounds at the single global exposure, with
+`max|CTE|` up to 44 ft clustered at the east-end curve. Two explanations were live:
+headlight geometry (on a curve the beams point straight while the road turns away, so the
+lane is unlit where steering matters most -- a genuine ODD finding) or sensor clipping (a
+rig artefact).
+
+Nothing was changed but the camera's exposure. Result, `teacher_mixed_dagger_r04`,
+converged at round 5, all eight legs 0% over budget against a 1.75 ft gate:
+
+| condition | eastbound | westbound |
+|---|---|---|
+| clear | 0.51 ft | 0.92 ft |
+| fog | 0.54 ft | 0.63 ft |
+| **night** | **0.76 ft** | **0.57 ft** |
+| shadows | 0.62 ft | 0.47 ft |
+
+**It was the clipping.** Corroborated independently offline, without touching CARLA: the
+mixed BC teacher's val RMSE improved 0.0044 -> 0.0042 on the recollected night data,
+matching the clear-only teacher exactly.
+
+**The near miss worth recording:** accepting the first result would have published a
+false ODD boundary -- "the policy cannot drive at night" -- that was a property of the
+camera configuration, not the policy. This is the third time in this project's history
+that a rig artefact nearly became a finding (headlights off, auto-exposure, this).
+
+## F5. No single exposure spans the illuminance axis; exposure becomes condition-dependent
+
+**Status: decided by Zach, implemented, validated by F6.**
+
+`scripts/exposure_dynamic_range.py`, 12 poses:
+
+| shutter | clear mu | night mu | night clipped to 0 |
+|---|---|---|---|
+| 800 | 0.291 (in target) | 0.043 | **50.6%** |
+| 200 | 0.601 | 0.201 | 12.5% |
+| 25 | 0.938 (washed out) | 0.614 | 0.5% |
+
+Clearing the clipping bound needs shutter 25, which puts the clear road at mu = 0.938 --
+back in the washed-out regime that made the fog airlight unidentifiable. The two
+requirements are incompatible, so exposure is now a **declared function of condition**:
+daylight conditions at shutter 800, night at 200 (a 4.0x ratio).
+
+Measured at the declared settings: clear mu 0.290 / sigma 0.0858 / 3.4% clipped; night
+mu 0.200 / sigma 0.1520 / 12.6% clipped, no blown highlights. Night stays DARKER than
+clear, so it remains a dimming disturbance rather than an auto-exposure-style
+normalization.
+
+**What it costs, and the paper must say it:** the certificate reads "certified at X lux
+**with the camera exposing as declared**". The night disturbance's gain carries the
+exposure ratio as a known factor alongside the illuminance ratio. Both are known because
+we set them, so identifiability -- the entire reason for pinning exposure -- survives. A
+declared function is not auto-exposure; an auto-exposure loop is opaque and destroys the
+mapping.
+
+Implementation note: exposure is a CARLA blueprint attribute and cannot be changed on a
+live sensor, so `env.set_condition()` respawns the camera. Using `set_weather` alone would
+capture each new condition through the PREVIOUS condition's exposure -- silent, and a
+close cousin of trap 2.
+
 ## F4. Fixed exposure across conditions is required by the method and is unrealistic as a camera
 
 **Status: design note, with the tension stated rather than resolved. Watch item for M2/M3.**
