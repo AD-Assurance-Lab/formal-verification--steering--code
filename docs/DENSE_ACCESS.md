@@ -78,13 +78,58 @@ for the DENSE family including PADB.
 
 ---
 
+## Availability is uncertain -- status 2026-08-11
+
+Zach submitted the form and got the on-screen German confirmation ("you will receive a
+confirmation email about receipt of the data"), so the submission registered. **No email
+arrived.**
+
+What is actually broken, checked rather than assumed:
+
+| | |
+|---|---|
+| README link in `gruberto/PixelAccurateDepthBenchmark` (`uni-ulm.de/en/in/driveu/projects/dense-datasets`) | **404, dead** |
+| the registration form page above | live, accepts submissions |
+| `gruberto/PixelAccurateDepthBenchmark` issue #1, "Unable to download dataset" | opened May 2020, closed with no visible resolution |
+
+Nothing proves the data is gone. But the DENSE project has formally ended, the maintainers
+are split between Ulm and Daimler, the repo's own download link has rotted, and the one
+public access issue went unanswered. **Treat delivery as uncertain rather than delayed.**
+
+Next steps: check spam (a German-language mail from `uni-ulm.de` is a likely filter
+casualty), then email `werner.r.ritter@daimler.com`, `tobias.gruber@daimler.com`,
+`mario.bijelic@daimler.com` directly, naming the Pixel Accurate Depth Benchmark and its
+fog-chamber subset specifically and mentioning the dead README link. Give it about a week.
+
+### Fallback: Cerema PAVIN, and it may be the better instrument
+
+The **PAVIN Fog and Rain platform** (Cerema, Clermont-Ferrand) is a 30 m full-scale
+chamber that records **continuous fog dissipation from 10 m to 100 m visibility with a
+reference visibility meter measuring throughout** -- a continuous MOR sweep rather than 17
+discrete steps, reaching denser fog than PADB. Scene elements including road markings can
+be placed in the chamber.
+
+- **REHEARSE dataset** (ROADVIEW project, published January 2025) includes PAVIN chamber
+  data and is recent enough to be actively maintained, which DENSE is not.
+- **Cerema Foggy-Twin Pedestrian (CFTP)** database: real data in clear weather and
+  artificial fog.
+
+**Shared limitation, and it belongs in the paper either way:** PADB covers 20-100 m and
+PAVIN 10-100 m, against our declared fog axis of 2000-60 m. Only the severe end can ever
+be externally validated. No chamber produces 2 km visibility -- this is inherent, not a
+consequence of which dataset is chosen.
+
 ## ⚠ The commercial-use restriction is a real constraint on the demo
 
 "Commercial use prohibited" and "own research and teaching" are narrow. The academic paper
 is unambiguously fine. **An investor-facing demo built on this data is not obviously
 covered**, and this project has an explicit commercial goal.
 
-Two clean options, and this should be decided before the data is used, not after:
+**RESOLVED 2026-08-11 (Zach): paper only.** DENSE/PADB data stays inside the academic
+work; the funding demo is built entirely on CARLA results, which carry no such
+restriction. Recorded here so the boundary is not blurred later.
+
+The original options, kept for the record:
 
 1. **Keep DENSE strictly inside the academic work** -- external-validity evidence in the
    paper -- and build the funding demo entirely on CARLA results, which carry no such
