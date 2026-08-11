@@ -63,6 +63,18 @@ realistic case and the one worth demonstrating.
 bounds and may return UNKNOWN where a smaller `S_clear` is decisive. That is a real
 property of the delivered model. Report it.
 
+**Deferred, not decided (2026-08-11).** Matching the two sizes *would* remove looseness as
+a variable in the cross-model reading of the ledger, which is a real benefit. But it is
+not free either: looseness pushes verdicts toward UNKNOWN in BOTH directions, since a bound
+too wide to fit inside the corridor is usually also too wide to sit entirely outside it. So
+padding `S_clear` with capacity it does not need makes it less decisive precisely where a
+crisp FALSIFIED is wanted.
+
+Neither choice has to be made now. **Primary run: size each student to its own task.** If
+the cross-model reading then looks confounded by size, distil a matched-size `S_clear` as a
+controlled follow-up and report both -- one extra distillation, no new data, no CARLA,
+about 15 minutes. Do not block the end-to-end pipeline on this.
+
 **snow is out of scope.** CARLA renders no snow. Say so in the paper.
 
 **rain is contingent** — see `docs/DISTURBANCE_MATH.md`. Its appearance model is
