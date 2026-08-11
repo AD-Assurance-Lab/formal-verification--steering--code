@@ -36,23 +36,32 @@ Pre-registered. Filled in as results arrive. `python -m study.ledger` checks it.
 **Rows 1-4 are the spine.** The verification column must agree with the closed-loop column
 in every cell. Any disagreement is a bug until dispositioned.
 
-### `S_clear` and `S_mixed` must have IDENTICAL architecture
+### Each student is sized to its own task -- architectures may differ
 
-Same input resolution, same channel widths, same FC width, same ReLU count. Only the
-training data differs.
+**Revised 2026-08-11 (Zach).** An earlier rule here forced identical architecture across
+both arms. That was over-constrained, and the reasoning behind it did not survive contact
+with what the study actually claims.
 
-This is not tidiness. The previous generation's headline anomaly -- a disturbance-trained
-student certifying *worse* than the clear-only student -- has two candidate causes that
-were never separated, and one of them is that the disturbance-trained student was **2x
-width**: 10,304 ReLU against 5,152, with an UNKNOWN (bound-looseness) rate of 11.5%
-against 1.5%. Its bounds may simply have been looser. With the architectures held equal
-that explanation is eliminated by construction, and any certified-rate difference is
-attributable to training data alone -- which is the only thing the study is trying to
-measure.
+**The central claim is WITHIN-model:** for each policy, verification's verdict matches
+closed loop's verdict. Each model is judged against its own closed-loop behaviour, so its
+size is irrelevant to that comparison.
 
-**If `S_mixed` needs more capacity to hold four conditions, `S_clear` gets the same
-increase.** A clear-only model with surplus capacity is not a problem; a capacity
-difference between the two arms is.
+**Size confounds a DIFFERENT claim** -- "disturbance training improves certified
+robustness" -- which is model-vs-model on certified rate. That is precisely what the
+previous generation stumbled into: its wider student certified 20% on fog against the
+narrow one's 72%, and its own methodology notes part of that gap was width rather than
+robustness. The fix is not identical architecture. The fix is **not making that
+comparison**, and reporting ReLU count and UNKNOWN rate alongside every certified rate so
+bound-looseness is visible rather than hidden.
+
+**And the deployment case settles it.** A policy arrives as a binary. Model size is not an
+indicator of whether it drives in fog, and a tool that only works when two models happen
+to share an architecture is not a tool. Size each model to its own task; that is the
+realistic case and the one worth demonstrating.
+
+**Consequence to keep visible, not engineer away:** a larger `S_mixed` will have looser
+bounds and may return UNKNOWN where a smaller `S_clear` is decisive. That is a real
+property of the delivered model. Report it.
 
 **snow is out of scope.** CARLA renders no snow. Say so in the paper.
 

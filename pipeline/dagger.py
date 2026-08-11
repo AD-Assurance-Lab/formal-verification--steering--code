@@ -220,8 +220,38 @@ def main():
                                for m in prior_rounds)
         print(f"resuming: found {len(prior_rounds)} prior DAgger round(s) in "
               f"{args.dagger_dir}, continuing at round {round_offset}")
-    model = load_model(args.init, device)
-    current = args.init
+    # RESUME MUST ADVANCE THE POLICY, NOT JUST THE ROUND COUNTER.
+    #
+    # This loaded `args.init` unconditionally, so resuming a run re-evaluated the ORIGINAL
+    # policy at the resumed round number while aggregating all the prior rounds' data.
+    # Measured: a resume at round 4 evaluated teacher_mixed_bc and scored 42.19 ft, having
+    # already reached 3.15 ft at round 3 -- four rounds of policy improvement silently
+    # discarded, and a full 8-lap round spent re-measuring a policy already known to fail.
+    # It also drops the warm start that multi-condition DAgger needs (trap 14).
+    # Derive the policy from THIS run's completed rounds, never from "whatever checkpoint
+    # sorts last". Checkpoints from an earlier, superseded run can still be on disk --
+    # r04 and r05 from a pre-recollection run were sitting there while this run had only
+    # reached r03 -- and picking the highest-numbered file would silently resume from a
+    # policy trained on retired data. That is trap 18 wearing a different hat.
+    start_from = args.init
+    if prior_rounds:
+        # Walk DOWN from the most recent round to the highest checkpoint that actually
+        # exists. A round can leave data on disk without a trained checkpoint -- an
+        # interrupted round writes its per-lap manifest but never reaches the retrain --
+        # so requiring an exact match drops all the way back to the initial policy and
+        # silently discards every round of improvement.
+        for r in range(round_offset - 1, -1, -1):
+            cand = f"{args.out_prefix}_r{r:02d}"
+            if os.path.isfile(os.path.join(C.CHECKPOINT_DIR, f"{cand}.pth")):
+                start_from = cand
+                print(f"resuming from '{start_from}', the newest policy this run "
+                      f"actually trained (round {r}); not '{args.init}'")
+                break
+        else:
+            print(f"WARNING: no {args.out_prefix}_r*.pth from this run; falling back to "
+                  f"'{args.init}', discarding {round_offset} rounds of improvement")
+    model = load_model(start_from, device)
+    current = start_from
 
     client = env.connect()
     world = env.load_town04(client)
