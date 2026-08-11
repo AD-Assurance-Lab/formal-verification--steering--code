@@ -61,13 +61,22 @@ Exit criteria are **measurements that pass**, not "code written".
 | | milestone | exit criterion |
 |---|---|---|
 | **M0** | repo, conformance suite, ledger, axes declared | conformance green; `study.ledger` prints all-PENDING |
-| **M1** | camera exposure fixed + clear teacher | clear road ROI at real-camera levels (see D1); teacher <= 0.668 m CTE both directions over N reps |
-| **M2** | mixed-condition collection + mixed teacher | both experts drive every condition within CTE budget |
-| **M3** | distill + DAgger -> `S_clear`, `S_mixed` | both students <= CTE budget on clear; ReLU-only asserted; `S_clear` demonstrably fails >= 1 unseen condition |
+| **M1** | camera exposure fixed + clear teacher | clear road ROI at real-camera levels (see D1); pure-pursuit expert <= CTE budget both directions; BC teacher converges |
+| **M1.5** | teacher DAgger | clear teacher <= 0.668 m CTE both directions over N reps |
+| **M2** | mixed-condition collection + mixed teacher | mixed teacher drives every condition within CTE budget |
+| **M3** | distill -> `S_clear`, `S_mixed` + student DAgger | both students <= CTE budget on clear; ReLU-only asserted; `S_clear` demonstrably fails >= 1 unseen condition |
 | **M4** | closed-loop table | left half of the ledger filled, failure rates over >= 10 reps with Wilson intervals |
 | **M5** | disturbance characterization | linearity probe run on all four conditions; >= 2 pass the fidelity gate (D3) |
 | **M6** | verification, blind | right half filled, verdicts committed *before* their closed-loop counterparts |
 | M7 | *optional* — interpolation gap | trained at extremes, does the model fail in the middle? Nice if yes, not required |
+
+**On M1 vs M1.5, corrected 2026-08-11 after hitting it.** M1 was originally written with the
+exit criterion "teacher <= 0.668 m CTE". That is not achievable with M1's file set:
+behaviour cloning alone never drives a full lap, because errors compound off the expert's
+state distribution. Measured here — the BC teacher reached val RMSE 0.0042, well inside the
+closed-loop tolerance, and still departed the lane at step 1233 of ~1700. DAgger is the fix
+and it is a separate file. Splitting the milestone rather than pretending the criterion was
+met.
 
 **M5 is the research risk, and it is front-loadable.** The linearity probe needs captured
 frames and no GPU. Run it on all four conditions at the start of M5, before committing to
