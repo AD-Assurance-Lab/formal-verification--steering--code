@@ -10,9 +10,56 @@ file is for characterization measurements, which are not ledger cells.
 
 ---
 
-## F7. 5,152 ReLU holds one condition and not four -- isolated with the S_clear control
+## F7. S_mixed's closed-loop failure is the missing student-DAgger stage, not capacity
 
-**Status: open. Width sweep running.**
+**Status: student-DAgger running. Two earlier hypotheses tested and both refuted.**
+
+**Refuted 1 -- capacity.** Width sweep at 84x28 over 83,567 frames:
+
+| width | ReLU | params | KD val RMSE |
+|---|---|---|---|
+| 1x | 5,152 | ~10k | 0.0338 |
+| 2x | 10,304 | 39,809 | 0.0372 |
+| 3x | 15,456 | 88,513 | 0.0327 |
+| 4x | 20,608 | 156,417 | 0.0314 |
+
+Quadrupling the neurons buys 7%, non-monotone through 2x. A capacity-starved model
+improves steadily as capacity is added; this plateaus.
+
+**Refuted 2 -- optimization / warm start.** Warm-started from `S_clear_84x28` at lr 5e-4,
+1x width: KD val RMSE **0.0427**, worse than cold start's 0.0338. `distill_student` has
+always had an `init_from` parameter documented as stabilizing multi-condition re-distill,
+but it was never wired to the CLI, so the documented fix was unreachable from the command
+line. Now exposed (with `--lr` and `--patience`) -- and it does not help.
+
+**KD RMSE is a poor proxy, which is the methodological lesson here.** Closed loop on
+CLEAR disagrees with it:
+
+| student | KD RMSE | closed loop on clear (2 reps x 2 directions) |
+|---|---|---|
+| 1x width | 0.0338 | 4/4 failed (11.76, 3.63, 2.65, 3.21 ft) |
+| 4x width | 0.0314 | 2/4 failed — westbound 1.42 / 1.40 ft **PASS**, eastbound 10.67 ft FAIL |
+
+Width materially improves closed loop while barely moving KD RMSE. Two runs of the same
+configuration in opposite directions give opposite verdicts, which is the usual reminder
+that these are rates, not verdicts.
+
+**The actual gap.** Neither student has had **student-DAgger**, the final stage of the
+documented recipe: BC -> teacher-DAgger -> distillation -> student-DAgger. The teachers
+needed it badly -- the clear teacher went 23.99 ft to 0.71 ft through DAgger alone. A
+distilled student drifts into states its teacher's data never covered, and closing that
+gap is precisely what student-DAgger is for.
+
+**Process note, recorded because it is the more useful lesson than the result.** A width
+sweep and a warm-start test were run before the next step that was already written in the
+recipe. The `S_clear` control passing without student-DAgger was a real measurement, but
+the inference drawn from it was wrong: clear is an easier task, which is not evidence that
+`S_mixed` should also clear the bar without the stage. The control eliminated one
+explanation and was treated as though it had confirmed another.
+
+### superseded reading (kept so the correction is visible)
+
+*5,152 ReLU holds one condition and not four -- isolated with the S_clear control*
 
 Both students distilled at the identical architecture required by `STUDY.md`
 (84x28, channels (8,16,16), fc 32, 5,152 ReLU), from their respective DAgger teachers,
