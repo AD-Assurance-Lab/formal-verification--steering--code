@@ -66,6 +66,11 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps):
 
     ctes, left, stalled, offroad, departed = [], False, 0, 0, False
     for _ in range(max_steps):
+        # Keep the chase camera on the car. Omitting this leaves the spectator wherever
+        # warmup left it while the vehicle drives off into the distance -- the view is
+        # cosmetic, but a run you cannot watch is a run you cannot sanity-check by eye,
+        # and eyeballing the render is what caught the fog-in-night preset bug.
+        env.update_spectator(world, vehicle)
         frame = world.tick()
         image = env.grab_frame(cam_queue, frame)
         tf = vehicle.get_transform()
