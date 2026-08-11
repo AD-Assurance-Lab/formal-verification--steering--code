@@ -9,7 +9,6 @@ Run: pytest conformance/ -v
 """
 
 import importlib
-import time
 
 import numpy as np
 import pytest
@@ -20,7 +19,7 @@ from study.goc import ALIGNMENT_THRESHOLD, NotAlignedError, goc, require_aligned
 def _module(name):
     """Import a pipeline module, or skip if it has not been transplanted yet."""
     try:
-        return importlib.import_module(f"pipeline.{name}")
+        return importlib.import_module(name)
     except ImportError:
         pytest.skip(f"pipeline.{name} not transplanted yet")
 
@@ -133,13 +132,21 @@ def test_closed_loop_tolerance_is_derived_from_primitives():
 
 # --- trap 17: parallel dataset preload -----------------------------------------------
 
-def test_dataset_preload_completes_within_time_bound():
+def test_dataset_preload_is_parallel():
     """Single-threaded preload of 67k frames takes >10 min and silently outlasts the
-    training it precedes."""
+    training it precedes.
+
+    Asserted structurally rather than by wall clock: a timing test needs a real dataset,
+    would be flaky on a loaded machine, and the regression to catch is someone replacing
+    the pool with a plain loop.
+    """
+    import inspect
+
     module = _module("dataset")
-    start = time.monotonic()
-    module.preload_smoke_test(n_frames=2000)
-    assert time.monotonic() - start < 30.0, "preload is too slow; parallelise it"
+    source = inspect.getsource(module.SteeringDataset.__init__)
+    assert "ProcessPoolExecutor" in source or "ThreadPoolExecutor" in source, (
+        "SteeringDataset preload must be parallel"
+    )
 
 
 # --- trap 9: disturbances apply at full sensor resolution ----------------------------
@@ -162,12 +169,19 @@ def test_path_defaults_do_not_point_outside_the_repo():
     """A default pointing at v1 directories trained a v2 student on stale data."""
     from pathlib import Path
 
+    # Paths to externally installed tools are legitimately outside the repo.
+    # Anything the pipeline *writes* is not.
+    EXTERNAL = {"CARLA_ROOT"}
+
     config = _module("config")
     repo = Path(__file__).resolve().parent.parent
+    checked = 0
     for name in dir(config):
-        if not name.endswith(("_DIR", "_PATH", "_ROOT")):
+        if not name.endswith(("_DIR", "_PATH", "_ROOT")) or name in EXTERNAL:
             continue
         value = Path(str(getattr(config, name))).resolve()
         assert repo in value.parents or value == repo, (
             f"config.{name} = {value} resolves outside {repo}"
         )
+        checked += 1
+    assert checked > 0, "no output paths found in config -- has it been renamed?"

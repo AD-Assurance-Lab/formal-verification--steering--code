@@ -81,9 +81,18 @@ ran `sensor.camera.rgb` with only `image_size` and `fov` set, leaving CARLA's de
 **per-frame histogram auto-exposure** active — the same defect that disqualified the ACDC
 dataset for photometry. Set `exposure_mode='manual'` with fixed `shutter_speed`/`iso`/
 `fstop`, tuned so the clear road ROI lands at real-camera levels (target mu in [0.28, 0.34],
-sigma within 1.3x of a real clear road). Keep `ClearNoon` and the noon sun angle — this
-avoids the shadow preset that broke the policy (0.43 -> 33.54 ft CTE) and turns shadows
-into a deliberately studied condition instead of a confound. Fallback if manual exposure
+sigma within 1.3x of a real clear road).
+
+**Keep the existing clear preset**, which is *not* `ClearNoon`: it is a custom flat,
+shadowless preset (`cloudiness = 80`, `sun_altitude_angle = 90`) in
+`carla_env.set_clear_weather`. Swapping it for `ClearNoon` (sun at 45 deg, so shadows)
+made the clear teacher depart the lane at 33.54 ft CTE where it otherwise held 0.43 ft.
+Keeping it avoids that and turns shadows into a deliberately studied condition instead of
+a confound.
+
+This *strengthens* the auto-exposure diagnosis: a flat overhead sun at cloudiness 80 is
+diffuse light with no strong highlights, and it should not put a road surface at mu = 0.81.
+A per-frame histogram tonemapper should. Fallback if manual exposure
 cannot hit the target: a fixed monotone response curve in `imaging.py`, shared by the live
 loop and the offline dataset so they cannot drift.
 

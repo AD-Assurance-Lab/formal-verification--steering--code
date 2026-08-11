@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+"""
+Milestone-1, step 3: collect behavior-cloning data by driving the full Town04
+loop (both directions) with the pure-pursuit EXPERT and recording, per frame,
+the raw camera image paired with the expert steering label.
+
+Image[t] is paired with pose[t]/label[t] by ticking FIRST, then reading pose and
+computing the label from the same frame — exact image/label alignment.
+
+Saves raw 640x480 RGB PNGs (preprocessing deferred to train time) plus a single
+manifest CSV. Usage:
+    python collect_data.py --dataset clear --laps 2 --direction both
+"""
+import os
+import sys
+import csv
+import argparse
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+import cv2  # noqa: E402
+import carla  # noqa: E402
+
+import config as C  # noqa: E402
+import carla_env as env  # noqa: E402
+from route import load_route, signed_cte_route, pure_pursuit_route  # noqa: E402
+
+SPAWNS = {"eastbound": C.SPAWN_EASTBOUND, "westbound": C.SPAWN_WESTBOUND}
+FIELDS = ["image", "weather", "direction", "lap", "step", "steer", "steer_rad",
+          "cte_m", "speed_mph", "x", "y", "yaw"]
+
+
+def collect_lap(world, world_map, vehicle, img_queue, weather, direction, lap, out_dir, max_steps):
+    spawn = SPAWNS[direction]
+    route = load_route(direction)
+    hint = None
+    speed_ctrl = env.SpeedController()
+    env.teleport(vehicle, spawn)
+    env.warmup_to_speed(
+        world, vehicle, img_queue, speed_ctrl,
+        steer_fn=lambda veh: pure_pursuit_route(route, veh.get_transform())[0],
+    )
+
+    seg = f"{weather}_{direction}_lap{lap:02d}"
+    frames_dir = os.path.join(out_dir, seg, "frames")
+    os.makedirs(frames_dir, exist_ok=True)
+    start = carla.Location(x=spawn["x"], y=spawn["y"], z=spawn["z"])
+    print(f"  [{weather}/{direction} lap{lap:02d}] start speed={env.speed_mph(vehicle):.1f} mph")
+
+    rows, left_start = [], False
+    for step in range(max_steps):
+        env.update_spectator(world, vehicle)
+        world.tick()                              # advance -> frame t
+        try:
+            image = img_queue.get(timeout=2.0)    # image[t]
+        except Exception:
+            continue
+        tf = vehicle.get_transform()              # pose[t]
+        loc = tf.location
+        cte, hint = signed_cte_route(route, loc.x, loc.y, hint)
+        steer, steer_rad, _ = pure_pursuit_route(route, tf, hint)  # label[t]
+
+        rel = os.path.join(seg, "frames", f"{step:05d}.png")
+        cv2.imwrite(os.path.join(out_dir, rel), env.raw_to_bgr(image))
+        rows.append(dict(
+            image=rel, weather=weather, direction=direction, lap=lap, step=step,
+            steer=steer, steer_rad=steer_rad, cte_m=cte,
+            speed_mph=env.speed_mph(vehicle), x=loc.x, y=loc.y, yaw=tf.rotation.yaw,
+        ))
+
+        vehicle.apply_control(carla.VehicleControl(*_ctrl(speed_ctrl, vehicle, steer)))
+
+        d0 = loc.distance(start)
+        if d0 > 50.0:
+            left_start = True
+        if left_start and d0 < 12.0:
+            print(f"    loop closed at step {step} ({len(rows)} frames)")
+            break
+    return rows
+
+
+def _ctrl(speed_ctrl, vehicle, steer):
+    thr, brk = speed_ctrl.control(vehicle)
+    return thr, steer, brk  # VehicleControl(throttle, steer, brake)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--dataset", default="clear")
+    ap.add_argument("--weathers", default="clear",
+                    help="comma-separated weather presets to collect (clear,fog,rain,night)")
+    ap.add_argument("--laps", type=int, default=2)
+    ap.add_argument("--direction", default="both", choices=["eastbound", "westbound", "both"])
+    ap.add_argument("--max-steps", type=int, default=2500)
+    args = ap.parse_args()
+
+    out_dir = os.path.join(C.DATASET_DIR, args.dataset)
+    os.makedirs(out_dir, exist_ok=True)
+    weathers = args.weathers.split(",")
+
+    client = env.connect()
+    world = env.load_town04(client)
+    original = env.enable_sync_mode(world)
+    world_map = world.get_map()
+
+    vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
+    camera, img_queue = env.spawn_camera(world, vehicle)
+
+    dirs = ["eastbound", "westbound"] if args.direction == "both" else [args.direction]
+    all_rows = []
+    try:
+        for weather in weathers:
+            env.set_weather(world, weather, vehicle)
+            for lap in range(args.laps):
+                for d in dirs:
+                    all_rows += collect_lap(world, world_map, vehicle, img_queue,
+                                            weather, d, lap, out_dir, args.max_steps)
+    finally:
+        env.cleanup([camera, vehicle], world, original)
+
+    # APPEND if the dataset already has a manifest, so a collection can be run one
+    # weather at a time and still produce a single coherent dataset. Frame paths are
+    # namespaced by weather/direction/lap (see `seg`), so there are no collisions.
+    manifest = os.path.join(out_dir, "manifest.csv")
+    prior = []
+    if os.path.exists(manifest):
+        with open(manifest, newline="") as f:
+            prior = [r for r in csv.DictReader(f) if r.get("weather") not in weathers]
+        print(f"  appending to existing manifest ({len(prior)} rows kept from other weathers)")
+    with open(manifest, "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=FIELDS)
+        w.writeheader()
+        w.writerows(prior + all_rows)
+    all_rows = prior + all_rows
+
+    steers = [float(r["steer"]) for r in all_rows]   # CSV rows read back are strings
+    n_straight = sum(1 for s in steers if abs(s) <= 0.01)
+    print(f"\nCollected {len(all_rows)} frames -> {manifest}")
+    print(f"  straight (|steer|<=0.01): {n_straight} ({100*n_straight/len(all_rows):.0f}%) | "
+          f"left: {sum(1 for s in steers if s>0.01)} | right: {sum(1 for s in steers if s<-0.01)}")
+    print(f"  steer range: [{min(steers):.3f}, {max(steers):.3f}]")
+
+
+if __name__ == "__main__":
+    main()

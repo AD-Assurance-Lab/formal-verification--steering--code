@@ -28,9 +28,21 @@ Violating one silently reproduces a bug that has already cost time.
 7. **Verify pixel alignment before any paired photometric fit**, including on simulator
    output.
 
-8. **The verifiable student stays ReLU-only, no BatchNorm/Dropout.** **Width, not
-   resolution, is the capacity lever** — width adds parameters at a fixed input-perturbation
-   dimension; resolution enlarges the box the verifier must bound.
+8. **The verifiable student stays ReLU-only, no BatchNorm/Dropout.** Width is the primary
+   capacity lever.
+
+   **Refinement (v3, reasoned — not yet measured).** The previous study retired resolution
+   sweeps because "resolution enlarges the box the verifier must bound." That held for
+   pixel-space L-inf verification. It does **not** hold under the physical
+   parameterization: the verifier's input is `u` of dimension 1-2, and the disturbance
+   layer maps `u` to the image exactly, so resolution no longer inflates the perturbation
+   dimension at all. Resolution still costs — more pixels means more ReLU neurons and
+   looseness accumulates through their relaxations — but it is now an ordinary
+   network-size cost rather than the dominant penalty.
+
+   **Practical consequence:** if width alone cannot carry a condition (shadows and rain are
+   the likely cases), resolution is back on the table. Confirm against the measured bound
+   tightness at M5 before relying on it.
 
 9. **Keep a known-bad negative control in every experiment.** `S_clear` must fail the
    conditions it never saw. That control is what caught the corridor-centring bug.
