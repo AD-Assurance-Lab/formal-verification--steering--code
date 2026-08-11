@@ -86,7 +86,59 @@ Exit criteria are **measurements that pass**, not "code written".
 | **M4** | closed-loop table | left half of the ledger filled, failure rates over >= 10 reps with Wilson intervals |
 | **M5** | disturbance characterization | linearity probe run on all four conditions; >= 2 pass the fidelity gate (D3) |
 | **M6** | verification, blind | right half filled, verdicts committed *before* their closed-loop counterparts |
-| M7 | *optional* — interpolation gap | trained at extremes, does the model fail in the middle? Nice if yes, not required |
+| M7 | *optional* — stretch goals | see below. Nice if they land, none required for the paper |
+
+## M7 — stretch goals
+
+**Gated on M5 and M6 landing first.** These are genuinely interesting and none of them is
+needed for the claim. The study has an established habit of expanding; do not start these
+while the single-axis result is incomplete.
+
+### S1. Interpolation gap (night vs dusk)
+
+Trained at the extremes of an axis, does the model fail in the middle? Verify over the
+continuum, predict a failing sub-interval, confirm inside and outside at >= 10 reps.
+Weakness: "it fails at dusk" is a prediction a reviewer may call obvious.
+
+### S2. Combined disturbances (Zach, 2026-08-11)
+
+fog+night, rain+fog, rain+fog+night. Shadows are largely exclusive with the others --
+they need direct sun, which heavy precipitation's cloud removes -- though **thin fog with
+sun is physically real** and fog washing out shadow contrast is a genuine interaction
+worth one experiment.
+
+**Why this may be the better probe.** Train on single conditions only, verify over the
+JOINT parameter box, and ask where the combination fails. Nobody's intuition is reliable
+about fog-at-night, so a correct prediction there is a real prediction in a way "it fails
+at dusk" is not. A joint certificate is also exactly the form an ODD is written in --
+"visibility > X AND illuminance > Y" -- which is a better product statement than any
+single axis.
+
+**It stress-tests the paper's central technical claim.** The tractability argument is that
+`theta` is low-dimensional so BaB costs `k^d` rather than `2^thousands`. At d = 1 that
+claim is never actually tested. Combinations are the first honest test of it, and the
+sampling-cost comparison gets far more favourable as d grows.
+
+**Two things that are NOT free, and must be handled explicitly:**
+
+1. **Composition is bilinear, not affine.** Fog then night gives
+   `x'' = (g*t)*x0 + (g*A*(1-t) + c*H)`. The gain is a PRODUCT of the two conditions'
+   parameters, so the composed map loses the exactly-affine property each has alone. BaB
+   absorbs it -- on a cell where `t` is pinned narrow, `g*t` is affine in `g` with a
+   residual shrinking quadratically -- but the cell count goes `k -> k^d`. Measure the
+   growth; it is a result either way.
+
+2. **The easy composition is physically wrong.** Naive fog-then-dim holds the airlight `A`
+   fixed, but at night the airlight is not skylight -- it is HEADLIGHT BACKSCATTER,
+   spatially concentrated in the near field. Real fog at night is a bright wall in front of
+   the car, not dimmed daytime fog. So fog+night needs `A(lux)`, a modelling extension
+   rather than a composition. Likewise rain+fog: streak brightness should itself be
+   attenuated by the fog at the depth each drop sits at, so the order is not arbitrary.
+
+**What makes it cheap to attempt:** the D3 fidelity gate applies unchanged, and it answers
+the interesting question directly -- does CARLA render the combination physically, or does
+it just stack effects naively? Either answer is publishable, and the second is a concrete
+statement about simulator fidelity that the single-axis results cannot make.
 
 **On M1 vs M1.5, corrected 2026-08-11 after hitting it.** M1 was originally written with the
 exit criterion "teacher <= 0.668 m CTE". That is not achievable with M1's file set:
