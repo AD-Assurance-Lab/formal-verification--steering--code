@@ -23,11 +23,36 @@ set -uo pipefail
 PY=/home/za/ad-assurance--workspace/sdp-crown--automated-driving--code/venv_sdp/bin/python
 cd "$(dirname "$0")/.."
 
+# RESUMABLE. Something on this machine reaps background jobs -- twice today every
+# background process died at once with no OOM entry in our own logs, and the likely cause
+# is another CARLA session loading a very large map and exhausting memory, after which the
+# OOM killer takes the biggest processes it can find. Long unattended runs must therefore
+# be cheap to lose, not merely restartable.
+#
+# A config is skipped only when its DONE marker exists. Keying on the .pth alone would be
+# wrong: distil saves a checkpoint on every improvement, so a killed run leaves a valid but
+# undertrained file that would be mistaken for a finished one.
+MARKERS=pipeline/checkpoints/.batch_done
+mkdir -p "$MARKERS"
+
+run_distill() {   # name, then distill args
+    local name="$1"; shift
+    if [ -f "$MARKERS/$name" ]; then
+        echo "############ $name -- already complete, skipping ############"
+        return 0
+    fi
+    if $PY -u pipeline/distill.py "$@"; then
+        touch "$MARKERS/$name"
+    else
+        echo "!!!! $name FAILED or was killed; leaving unmarked so it reruns"
+    fi
+}
+
 CLEAR_TEACHER=teacher_clear_dagger_r03
 MIXED_TEACHER=teacher_mixed_dagger_r07
 
 echo "############ S_clear -- baseline width, clear frames only ############"
-$PY -u pipeline/distill.py --in-w 84 --in-h 28 --out S_clear_84x28 \
+run_distill S_clear_84x28 --in-w 84 --in-h 28 --out S_clear_84x28 \
     --teacher "$CLEAR_TEACHER" --base conditions --dagger-dirs dagger_clear \
     --weathers clear --channels 8,16,16 --fc 32 --epochs 120
 
@@ -35,7 +60,7 @@ $PY -u pipeline/distill.py --in-w 84 --in-h 28 --out S_clear_84x28 \
 for cfg in "8,16,16 32 w1" "16,32,32 64 w2" "24,48,48 96 w3" "32,64,64 128 w4"; do
     set -- $cfg
     echo "############ S_mixed 84x28 channels=$1 fc=$2 ($3) ############"
-    $PY -u pipeline/distill.py --in-w 84 --in-h 28 --out "S_mixed_84x28_$3" \
+    run_distill "S_mixed_84x28_$3" --in-w 84 --in-h 28 --out "S_mixed_84x28_$3" \
         --teacher "$MIXED_TEACHER" --base conditions --dagger-dirs dagger_mixed \
         --channels "$1" --fc "$2" --epochs 120
 done
@@ -45,7 +70,7 @@ done
 for cfg in "112 38 r112" "140 47 r140"; do
     set -- $cfg
     echo "############ S_mixed ${1}x${2} channels=16,32,32 fc=64 ($3) ############"
-    $PY -u pipeline/distill.py --in-w "$1" --in-h "$2" --out "S_mixed_$3_w2" \
+    run_distill "S_mixed_$3_w2" --in-w "$1" --in-h "$2" --out "S_mixed_$3_w2" \
         --teacher "$MIXED_TEACHER" --base conditions --dagger-dirs dagger_mixed \
         --channels 16,32,32 --fc 64 --epochs 120
 done
