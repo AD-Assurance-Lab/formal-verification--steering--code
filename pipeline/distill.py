@@ -181,12 +181,21 @@ def main():
                     help="conv channel widths (capacity lever at fixed resolution)")
     ap.add_argument("--fc", type=int, default=32, help="FC hidden width")
     ap.add_argument("--epochs", type=int, default=120)
+    # These existed as function parameters but were never reachable from the CLI, so the
+    # documented fix for multi-condition instability could not actually be applied.
+    ap.add_argument("--init-from", default=None,
+                    help="warm-start from a prior student checkpoint of the SAME "
+                         "architecture; stabilizes multi-condition re-distill")
+    ap.add_argument("--lr", type=float, default=1e-3,
+                    help="use a reduced lr (5e-4) when warm-starting")
+    ap.add_argument("--patience", type=int, default=20)
     args = ap.parse_args()
     distill_student(args.in_w, args.in_h, args.out, teacher_name=args.teacher,
                     base=args.base, dagger_dirs=tuple(args.dagger_dirs.split(",")),
                     weathers=(args.weathers.split(",") if args.weathers else None),
                     channels=tuple(int(x) for x in args.channels.split(",")), fc=args.fc,
-                    epochs=args.epochs)
+                    epochs=args.epochs, init_from=args.init_from, lr=args.lr,
+                    patience=args.patience)
 
 
 if __name__ == "__main__":
