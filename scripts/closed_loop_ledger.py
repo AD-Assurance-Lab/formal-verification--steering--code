@@ -66,11 +66,8 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps):
 
     ctes, left, stalled, offroad, departed = [], False, 0, 0, False
     for _ in range(max_steps):
-        world.tick()
-        try:
-            image = cam_queue.get(timeout=2.0)
-        except Exception:
-            continue
+        frame = world.tick()
+        image = env.grab_frame(cam_queue, frame)
         tf = vehicle.get_transform()
         loc = tf.location
 

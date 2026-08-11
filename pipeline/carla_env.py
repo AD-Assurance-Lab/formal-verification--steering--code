@@ -349,6 +349,54 @@ def _drain(img_queue):
         pass
 
 
+def drain_frame(img_queue):
+    """Discard one frame. For loops that tick but do not USE the image (the pure-pursuit
+    oracle), where there is no pose/image pairing to get wrong. Anything that consumes
+    the image must use grab_frame instead."""
+    _drain(img_queue)
+
+
+class FrameDesync(RuntimeError):
+    pass
+
+
+def grab_frame(img_queue, expected_frame, timeout=5.0):
+    """Pop the image belonging to the tick that produced `expected_frame`.
+
+    Trap 2, closed properly. The bare pattern
+
+        world.tick()
+        try:    image = img_queue.get(timeout=2.0)
+        except: continue
+
+    is correct while it works and silently wrong the moment it does not. A single
+    timeout leaves that tick's frame in the queue, the loop ticks again, and from then on
+    every `get()` returns the PREVIOUS frame -- pairing image[t-1] with pose[t] for the
+    rest of the lap. Nothing errors, the frames look plausible, and the entire dataset is
+    mislabelled by one step (1.79 m at 20 mph).
+
+    Matching on the frame id `world.tick()` returns makes desync impossible to enter and
+    impossible to miss: an older frame is discarded, a newer one raises.
+    """
+    while True:
+        try:
+            image = img_queue.get(timeout=timeout)
+        except queue.Empty:
+            raise FrameDesync(
+                f"no sensor frame for tick {expected_frame} within {timeout}s. "
+                "Do not swallow this and continue -- the queue would desync by one and "
+                "every subsequent frame would be paired with the wrong pose."
+            )
+        if image.frame == expected_frame:
+            return image
+        if image.frame > expected_frame:
+            raise FrameDesync(
+                f"tick {expected_frame} requested but queue is already at {image.frame}; "
+                "a frame was dropped and pose/image pairing is no longer trustworthy."
+            )
+        # older than requested: a stale frame from before the loop, discard and keep going
+
+
 # ── Spectator / images / cleanup ─────────────────────────────────────────────
 
 def update_spectator(world, vehicle):

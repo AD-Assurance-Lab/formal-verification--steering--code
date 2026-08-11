@@ -52,6 +52,24 @@ comparison in step 4 is meaningless.
 | `docs/CONSTRAINTS.md` | measured results that constrain the design; violating one reproduces a known bug |
 | `conformance/` | the traps, as runnable tests. Must be green before pipeline code is trusted |
 
+## The CARLA rule that has bitten four times
+
+> **A read or a placement issued next to a write does not see that write.**
+> `world.set_weather()`, spectator `set_transform()`, and sensor delivery are all applied
+> by the simulator on the NEXT TICK. Nothing errors when you get this wrong.
+
+Four instances so far, all silent:
+
+| | what happened |
+|---|---|
+| sensor queue | one image per tick returns the PREVIOUS frame (trap 2) |
+| weather presets | read-modify-write reinstated fog; night ran at fog_density 70 |
+| spectator | camera placed from the pre-tick pose, 1.79 m behind every frame |
+| queue desync | one swallowed timeout pairs image[t-1] with pose[t] for the rest of the lap |
+
+**So:** never read back state you just wrote. Construct it. Match sensor frames on the
+id `world.tick()` returns (`env.grab_frame`), and never swallow a missing frame.
+
 ## Standing rules
 
 - **No pipeline code until the ledger prints.** The design is the first artifact.

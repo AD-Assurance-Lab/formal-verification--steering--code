@@ -82,11 +82,8 @@ def drive_collect(world, vehicle, img_queue, model, device, weather, direction,
     rows, left, stalled, offroad, n_recover = [], False, 0, 0, 0
     for step in range(max_steps):
         env.update_spectator(world, vehicle)
-        world.tick()
-        try:
-            image = img_queue.get(timeout=2.0)
-        except Exception:
-            continue
+        frame = world.tick()
+        image = env.grab_frame(img_queue, frame)
         tf = vehicle.get_transform()
         loc = tf.location
 

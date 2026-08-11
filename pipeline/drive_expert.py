@@ -81,10 +81,8 @@ def drive_one(world, world_map, vehicle, img_queue, direction, max_steps):
             break
 
         world.tick()
-        try:
-            img_queue.get(timeout=2.0)
-        except Exception:
-            pass
+        # the oracle never looks at the image; drain so the queue cannot grow
+        env.drain_frame(img_queue)
 
     return records
 

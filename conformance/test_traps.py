@@ -242,6 +242,41 @@ def test_condition_switches_use_set_condition_not_set_weather():
     )
 
 
+# --- trap 2: capture must match on frame id ------------------------------------------
+
+def test_no_bare_queue_get_outside_carla_env():
+    """A drive loop must consume frames via grab_frame, never a bare queue.get().
+
+    The bare pattern is correct while it works and silently wrong the moment it does not:
+
+        world.tick()
+        try:    image = img_queue.get(timeout=2.0)
+        except: continue          # <- one timeout desyncs the queue permanently
+
+    After a single timeout the loop ticks again with that frame still queued, and every
+    subsequent get() returns the PREVIOUS frame -- pairing image[t-1] with pose[t] for
+    the rest of the lap, at 1.79 m of error, with nothing logged and every frame looking
+    plausible.
+    """
+    import re
+    from pathlib import Path
+
+    repo = Path(__file__).resolve().parent.parent
+    offenders = []
+    for path in sorted(list((repo / "pipeline").glob("*.py"))
+                       + list((repo / "scripts").glob("*.py"))):
+        if path.name == "carla_env.py":     # defines grab_frame and drain_frame
+            continue
+        for i, line in enumerate(path.read_text().splitlines(), 1):
+            code = line.split("#")[0]
+            if re.search(r"_queue\.get\s*\(", code):
+                offenders.append(f"{path.name}:{i}")
+    assert not offenders, (
+        "use env.grab_frame() (or env.drain_frame() if the image is discarded) at: "
+        + ", ".join(offenders)
+    )
+
+
 # --- trap 17b: the OTHER preload path ------------------------------------------------
 
 def test_kd_dataset_preload_is_parallel():

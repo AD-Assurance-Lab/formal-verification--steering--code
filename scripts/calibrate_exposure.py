@@ -56,20 +56,13 @@ def road_stats(bgr):
 
 
 def grab(world, cam_queue, expected_frame, timeout=5.0):
-    """Pop the image whose frame id matches the tick that requested it.
+    """Thin alias for carla_env.grab_frame, kept so existing callers keep working.
 
-    Trap 2. CARLA's sensor queue runs a frame behind, so taking one image per
-    `world.tick()` silently returns the PREVIOUS condition's frame -- mislabelling an
-    entire dataset while looking completely plausible.
+    This WAS a second implementation of frame-id matching. Two copies of the same logic
+    is how trap 13 happened -- a fix landed in one and missed the other -- so there is
+    now one implementation, in carla_env.
     """
-    while True:
-        img = cam_queue.get(timeout=timeout)
-        if img.frame == expected_frame:
-            return img
-        if img.frame > expected_frame:
-            raise RuntimeError(
-                f"frame {expected_frame} never arrived (saw {img.frame}); queue desynced"
-            )
+    return env.grab_frame(cam_queue, expected_frame, timeout=timeout)
 
 
 def lane_poses(world, n, step_m=12.0):

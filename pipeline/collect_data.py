@@ -50,11 +50,8 @@ def collect_lap(world, world_map, vehicle, img_queue, weather, direction, lap, o
     rows, left_start = [], False
     for step in range(max_steps):
         env.update_spectator(world, vehicle)
-        world.tick()                              # advance -> frame t
-        try:
-            image = img_queue.get(timeout=2.0)    # image[t]
-        except Exception:
-            continue
+        frame = world.tick()                      # advance -> frame t
+        image = env.grab_frame(img_queue, frame)   # image[t], matched on frame id
         tf = vehicle.get_transform()              # pose[t]
         loc = tf.location
         cte, hint = signed_cte_route(route, loc.x, loc.y, hint)
