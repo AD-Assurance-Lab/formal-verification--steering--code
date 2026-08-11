@@ -10,6 +10,41 @@ file is for characterization measurements, which are not ledger cells.
 
 ---
 
+## F4. Fixed exposure across conditions is required by the method and is unrealistic as a camera
+
+**Status: design note, with the tension stated rather than resolved. Watch item for M2/M3.**
+
+A real automotive camera auto-exposes; it does not hold one exposure across a 10^4:1
+illuminance range. We pin exposure anyway, and must, because the night disturbance model
+is `x' = g*x0 + c*H` where `g` is the illuminance ratio. Under auto-exposure `g` is
+absorbed by the exposure loop and becomes unmeasurable -- which is precisely the ACDC
+failure (F1) and precisely why the previous night model came out inverted.
+
+**So the choice is forced:** a certificate indexed by a physical illuminance requires that
+illuminance to survive into the image, and auto-exposure destroys it.
+
+Measured consequence at the chosen exposure (20 poses):
+
+| condition | road mu | road sigma |
+|---|---|---|
+| clear | 0.290 | 0.0854 |
+| night | 0.042 | 0.0580 |
+
+Night sits at ~11/255. `sigma > mu` there, so structure survives -- the headlight-lit
+region carries real signal -- but it is a marginal operating point for an 8-bit sensor and
+is the most likely place for the mixed policy to struggle.
+
+**What to state in the paper**, since a reviewer will raise it: the fixed exposure is a
+*modelling commitment*, not an oversight. It makes the disturbance identifiable at the cost
+of realism in the sensor's auto-exposure behaviour, and it bounds the claim to "a camera
+with known, fixed response". Modelling auto-exposure as part of the disturbance is possible
+in principle -- it is another parameter in `phi` -- and is out of scope here.
+
+**If night training fails at M2/M3**, the options in order are: raise ISO for a
+night-specific fixed exposure (still fixed, still identifiable, but then the exposure is
+condition-dependent and must be declared), or accept the failure as a genuine ODD boundary.
+Do not reach for auto-exposure.
+
 ## F3. CARLA's fog is not a constant-airlight veil at the pooled-ROI level
 
 **Status: partial early answer to E8. Not conclusive — needs the depth-resolved fit (D4).**
