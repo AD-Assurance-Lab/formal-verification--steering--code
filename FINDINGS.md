@@ -10,6 +10,62 @@ file is for characterization measurements, which are not ledger cells.
 
 ---
 
+## F8. The 6-band transmission discretization was the binding constraint on certifiability
+
+**Status: measured, no CARLA needed. Changes M5's design.**
+
+Fog reaches the verifier as a set of per-pixel transmissions driven by ONE scalar (beta,
+hence MOR). The inherited machinery instead hands it a **box over six per-band
+transmissions**, where `banded_transmission_box` takes `min`/`max` over the ROWS INSIDE
+each band.
+
+**That conflates two different things**: variation from the MOR interval, which is what we
+want to bound, and variation from depth within the band, which is *fixed per pixel and not
+a free parameter at all*. The consequence is that the perturbation does not shrink as the
+MOR interval shrinks. Measured: at a **1-metre-wide** interval [60, 61] the banded model
+still has `|W|max = 0.242`, essentially unchanged from the full [60, 2000] range.
+
+That produced a hard floor. Bound width against the closed-loop tolerance 0.0120:
+
+| MOR interval | banded box (6 dims) | banded rank-1 (1 dim) | **per-row rank-1 (1 dim)** |
+|---|---|---|---|
+| [60, 2000] | 9.488 | 1.218 | **0.198** |
+| [60, 150] | — | 0.628 | **0.0507** |
+| [60, 80] | — | 0.276 | **0.0370** |
+| [60, 61] | — | 0.191 (floor) | **0.00129 -> CERTIFIED** |
+
+Removing the banding removes the floor entirely: `|W|max` falls 0.301 -> 0.0024 as the
+interval narrows, and **the bound converges to the concrete range** (0.0507 vs a concrete
+0.0506 at [60,150]; 0.0370 vs 0.0370 at [60,80]). alpha-CROWN is essentially exact on this
+family once the parameterization is right.
+
+**So branch-and-bound does work here**, and the earlier reading that "splitting does not
+help" was an artifact of the discretization, not a property of the problem.
+
+**Two corrections to my own earlier claims, recorded rather than quietly fixed:**
+
+1. `scripts/linearity_probe.py` reported all conditions "EXACT" at ~1e-6 residual. That
+   result is close to tautological -- each model is parameterized *by construction* in a
+   quantity it is linear in, so of course the residual is at float noise. The probe
+   measured the wrong thing. Conservatism, not linearity, is what decides certifiability.
+2. My first box-vs-rank1 run showed a floor at 0.19 and I nearly reported it as a limit of
+   the approach. It was my own harness inheriting the banding.
+
+**Consequence for M5:** do not band. Use per-pixel transmission from the measured depth map
+(D4), with one scalar driving all of it. The band count is not a tuning parameter to
+optimize -- banding is the error.
+
+**Caveat:** this used flat-road row-based depth (`dm.transmission` with `CARLA_GEOM`), not
+measured per-pixel depth. D4 replaces that. The finding is about per-pixel-vs-banded, and
+holds either way.
+
+**Open, and it is the real question now:** at [60, 2000] the *concrete* output range is
+0.0494, already 4.1x the tolerance. No verifier can certify that interval, because the
+network genuinely varies that much across it. Certification therefore has to come from
+BaB over sub-intervals, and the certified result will be a set of MOR sub-ranges rather
+than a single verdict -- which is exactly the "bounded region of the ODD" the study claims
+to deliver. How many cells that takes is the next measurement.
+
 ## F7. S_mixed's closed-loop failure is the missing student-DAgger stage, not capacity
 
 **Status: student-DAgger running. Two earlier hypotheses tested and both refuted.**

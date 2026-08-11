@@ -61,6 +61,22 @@ Do not omit it. Without it, bright additive layers look linear when they are not
 **Step 4 is where a condition lives or dies.** If `eps_lin` is large, the bounds go vacuous
 and the condition cannot be certified regardless of how good the physics is. Probe it early.
 
+## Do not discretize depth into bands
+
+**MEASURED 2026-08-11, and it is the difference between certifiable and not.** The
+inherited machinery grouped rows into 6 depth bands and gave the verifier a box over the
+six band transmissions, taking `min`/`max` over the rows *inside* each band.
+
+That mixes variation from the parameter (which we are bounding) with variation from depth
+(which is fixed per pixel and not free at all). The perturbation then never shrinks as the
+interval shrinks: at a 1-metre-wide MOR interval the banded model still had
+`|W|max = 0.242`, against 0.0024 for the per-row form. Bound width at [60, 61] m: banded
+0.191, per-row **0.00129**, against a tolerance of 0.0120.
+
+Keep transmission **per pixel**, `t_i = exp(-beta * d_i)` from the measured depth map, and
+let a single scalar drive all of it. The band count is not a hyperparameter to tune;
+banding is the error. See FINDINGS F8.
+
 ## The mistake to not make
 
 Once you have per-pixel bounds it is tempting to hand the verifier a box over all pixels.
