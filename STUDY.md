@@ -36,6 +36,24 @@ Pre-registered. Filled in as results arrive. `python -m study.ledger` checks it.
 **Rows 1-4 are the spine.** The verification column must agree with the closed-loop column
 in every cell. Any disagreement is a bug until dispositioned.
 
+### `S_clear` and `S_mixed` must have IDENTICAL architecture
+
+Same input resolution, same channel widths, same FC width, same ReLU count. Only the
+training data differs.
+
+This is not tidiness. The previous generation's headline anomaly -- a disturbance-trained
+student certifying *worse* than the clear-only student -- has two candidate causes that
+were never separated, and one of them is that the disturbance-trained student was **2x
+width**: 10,304 ReLU against 5,152, with an UNKNOWN (bound-looseness) rate of 11.5%
+against 1.5%. Its bounds may simply have been looser. With the architectures held equal
+that explanation is eliminated by construction, and any certified-rate difference is
+attributable to training data alone -- which is the only thing the study is trying to
+measure.
+
+**If `S_mixed` needs more capacity to hold four conditions, `S_clear` gets the same
+increase.** A clear-only model with surplus capacity is not a problem; a capacity
+difference between the two arms is.
+
 **snow is out of scope.** CARLA renders no snow. Say so in the paper.
 
 **rain is contingent** — see `docs/DISTURBANCE_MATH.md`. Its appearance model is
