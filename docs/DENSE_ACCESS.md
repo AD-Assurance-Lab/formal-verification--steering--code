@@ -142,9 +142,33 @@ Established by range-fetching the first 400 MB and listing the tar, not by assum
 400 MB of streaming never left the first rain condition, so the fog branch cannot be
 inspected without pulling many GB.
 
-**Send one email to <info@accelopment.com> or via <https://roadview-project.eu/contact/>
-asking (a) whether `camera_sv` contains raw image data and (b) whether measured MOR is
-recorded for the CEREMA fog sequences.** Minutes, against 43 GB and a protobuf integration.
+#### What the archive actually contains -- INSPECTED 2026-08-11, from 25 MB not 43 GB
+
+Extracted the leading complete files from a range request and decoded them:
+
+| file | size | content |
+|---|---|---|
+| `FLIR/camera_sv_*.osi` | 9.65 MB | **298 embedded JPEGs**, first decodes at **640x512 GRAYSCALE** -- the thermal camera |
+| `MEMS_LIDAR/lidar_sd_*.osi` | 32.0 MB | lidar sensor data |
+| `CAMERA_TARGET/obj_sv_*.osi` | **88 bytes** | object detections only -- no pixels |
+| `LIDAR_TARGET/obj_sv_*.osi` | 88 bytes | object detections only |
+
+So **OSI here carries real pixels**, as JPEG frame sequences -- the format is not an
+obstacle and needs no protobuf schema to read (scan for `FFD8FF`, cut at `FFD9`, hand to
+cv2).
+
+**But in the leaf sampled, the only imagery is THERMAL.** The camera folder yields 88-byte
+detections. The rig spec does say the sensor roster includes "cameras (RGB and Thermal)",
+so visible imagery may exist in other branches of the archive -- this was one condition at
+one target distance.
+
+**This matters more than the format question: a thermal-only release is useless for this
+study.** Our disturbance models are visible-band photometry, and the whole point is
+comparing modelled against measured RGB at known MOR.
+
+**Still worth asking <info@accelopment.com> or <https://roadview-project.eu/contact/>:
+is raw RGB imagery included, or only camera-derived detections? And is measured MOR
+recorded for the CEREMA fog sequences?**
 
 #### Not suitable: Cerema AWP
 
