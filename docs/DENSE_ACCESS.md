@@ -101,23 +101,67 @@ casualty), then email `werner.r.ritter@daimler.com`, `tobias.gruber@daimler.com`
 `mario.bijelic@daimler.com` directly, naming the Pixel Accurate Depth Benchmark and its
 fog-chamber subset specifically and mentioning the dead README link. Give it about a week.
 
-### Fallback: Cerema PAVIN, and it may be the better instrument
+### Fallback: REHEARSE (Cerema PAVIN chamber) -- downloadable NOW, verify first
 
-The **PAVIN Fog and Rain platform** (Cerema, Clermont-Ferrand) is a 30 m full-scale
-chamber that records **continuous fog dissipation from 10 m to 100 m visibility with a
-reference visibility meter measuring throughout** -- a continuous MOR sweep rather than 17
-discrete steps, reaching denser fog than PADB. Scene elements including road markings can
-be placed in the chamber.
+**Verified 2026-08-11.** No registration, direct S3, **CC BY 4.0** -- so unlike DENSE it
+permits commercial use, and would also be usable for the funding demo.
 
-- **REHEARSE dataset** (ROADVIEW project, published January 2025) includes PAVIN chamber
-  data and is recent enough to be actively maintained, which DENSE is not.
-- **Cerema Foggy-Twin Pedestrian (CFTP)** database: real data in clear weather and
-  artificial fog.
+Landing page:
+<https://s3.ice.ri.se/roadview-WP3-Warwick/T3.2%20-%20Create%20Dataset/rehearse/index.html>
 
-**Shared limitation, and it belongs in the paper either way:** PADB covers 20-100 m and
-PAVIN 10-100 m, against our declared fog axis of 2000-60 m. Only the severe end can ever
-be externally validated. No chamber produces 2 km visibility -- this is inherent, not a
-consequence of which dataset is chosen.
+CEREMA = the PAVIN chamber. Confirmed live by HTTP HEAD, sizes from `content-length`:
+
+| file | size |
+|---|---|
+| `CE_dataset/targets.tar.gz` | **43.0 GB** -- calibrated reflectance targets, the one we want |
+| `CE_dataset/car.tar.gz` | 42.7 GB |
+| `CE_dataset/ped_bike.tar.gz` | 44 GB |
+
+Base URL:
+`https://s3.ice.ri.se/roadview-WP3-Warwick/T3.2%20-%20Create%20Dataset/database/`
+
+**PAVIN's fog range is 10 m to 1000 m MOR** -- wider than PADB's 20-100 m, covering most
+of our declared 2000-60 m axis. The chamber also runs "reference tests with calibrated
+targets in reflectance", the property that makes `(beta, A)` measurable rather than fitted.
+
+#### Two things must be true, and NEITHER is documented
+
+Established by range-fetching the first 400 MB and listing the tar, not by assuming:
+
+1. **Format is OSI protobuf, not images.** Leaf files are `camera_sv_350_300.osi`,
+   `obj_sv_350_300.osi`, `lidar_sd_350_300.osi`. Open Simulation Interface *can* carry
+   image data in a SensorView, but `obj_sv` suggests object-level content. **If the camera
+   stream is detections rather than pixels, the dataset cannot support photometric work**
+   and downloading it does not help.
+2. **Fog MOR logging is unconfirmed.** Condition IS encoded in the path --
+   `01_night/01_rain/01_14mm/01_lights_on/10m/` gives weather, intensity, lights, target
+   distance -- so fog folders very likely carry a MOR label. But that is a *setpoint*, not
+   necessarily the measured value, and the dataset's own `adverse_weather.html` documents
+   only rain validation and still reads **"CEREMA TO PUT DATA"**.
+
+400 MB of streaming never left the first rain condition, so the fog branch cannot be
+inspected without pulling many GB.
+
+**Send one email to <info@accelopment.com> or via <https://roadview-project.eu/contact/>
+asking (a) whether `camera_sv` contains raw image data and (b) whether measured MOR is
+recorded for the CEREMA fog sequences.** Minutes, against 43 GB and a protobuf integration.
+
+#### Not suitable: Cerema AWP
+
+<https://ceremadlcfmds.wixsite.com/cerema-databases> has only **two fog intensities**. Too
+coarse for a MOR sweep; fine as a qualitative plausibility check.
+
+#### Ranking for this study
+
+| | fit | availability |
+|---|---|---|
+| **PADB** | best -- 17 MOR levels, calibrated targets, survey depth, 12-bit RGB | uncertain; email sent |
+| **REHEARSE / PAVIN** | good range 10-1000 m, calibrated targets, CC BY 4.0 | downloadable now; format risk |
+| Cerema AWP | 2 fog levels only | available |
+
+**Shared limitation, for the paper either way:** no chamber produces 2 km visibility, so
+the light-fog end of a 2000-60 m axis is never externally validated. Inherent, not a
+consequence of dataset choice.
 
 ## ⚠ The commercial-use restriction is a real constraint on the demo
 
