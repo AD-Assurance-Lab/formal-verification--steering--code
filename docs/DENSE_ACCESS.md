@@ -124,7 +124,55 @@ Base URL:
 of our declared 2000-60 m axis. The chamber also runs "reference tests with calibrated
 targets in reflectance", the property that makes `(beta, A)` measurable rather than fitted.
 
-#### Two things must be true, and NEITHER is documented
+#### DOWNLOADED AND VERIFIED 2026-08-11 -- both questions answered
+
+`CE_dataset/targets.tar.gz`, 46,199,783,830 bytes, byte-exact against content-length.
+`tar tzf` completes with exit 0 and **zero bytes on stderr**: the archive is intact.
+
+*(A first attempt reached 47.6 GB and failed `gzip -t` with "invalid compressed data".
+Cause was two concurrent wget processes writing one file -- see the download note below.
+The clean single-writer redownload is the one verified here.)*
+
+**Nine sensor folders per leaf**, so the earlier "thermal only" reading was wrong -- it came
+from sampling one leaf of a 43 GB archive and is retracted:
+
+    RGB_CAMERA   RCCB_CAMERA   FLIR   CAMERA_TARGET
+    ROT_LIDAR    MEMS_LIDAR    LIDAR_TARGET
+    RADAR4D      RADAR_TARGET
+
+69 `RGB_CAMERA/*.osi` entries. **Visible RGB is present.**
+
+**Fog is present with MOR in the path:**
+
+    04_targets/01_night/03_fog/01_10m/01_lights_on/10m/RGB_CAMERA/camera_sv_*.osi
+                        └fog  └MOR      └lights    └target distance
+
+Levels present: **10 m, 20 m, 30 m, 50 m**.
+
+`FLIR/camera_sv_*.osi` was confirmed to hold **298 embedded JPEGs**, first decoding at
+640x512 grayscale, so OSI here really does carry pixels and needs no protobuf schema to
+read -- scan for `FFD8FF`, cut at `FFD9`, hand to cv2. The RGB stream is expected to work
+the same way; confirm before relying on it.
+
+#### The limitation that matters: four levels, and none inside our axis
+
+Four fog levels beats Seeing Through Fog's three, but it is far short of PADB's 17 at 5 m
+steps, and **all four sit below our declared range**. Our fog axis runs 2000 m down to
+60 m; the sparsest fog here is 50 m. Adjacent, not overlapping.
+
+So this anchors the disturbance model just *outside* the certified range rather than
+within it. It cannot support "our certificate at 85 m MOR matches reality at 85 m MOR",
+which is the sentence worth having. PADB's 20-100 m sweep could.
+
+**Keep chasing DENSE/PADB. REHEARSE is a useful anchor, not a substitute.**
+
+#### Still unconfirmed
+
+The MOR in a directory name is a **setpoint**, not necessarily the reference instrument's
+*measured* visibility. Koschmieder fitting needs the measured value. That remains the
+question to put to ROADVIEW.
+
+#### Superseded concerns, kept for the record
 
 Established by range-fetching the first 400 MB and listing the tar, not by assuming:
 
