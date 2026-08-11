@@ -41,7 +41,20 @@ def load_student(name, w, h, device, channels=(8, 16, 16), fc=32):
     return m
 
 
-def drive_collect(world, vehicle, img_queue, model, device, w, h, weather, direction, round_dir, max_steps):
+def drive_collect(world, vehicle, img_queue, model, device, w, h, weather, direction,
+                  round_dir, max_steps, beta=0.0, collect=True, abort_on_departure=True):
+    """Drive one lap, optionally recording frames.
+
+    Ported from dagger.py, which had beta-mixing and recovery resets while this file did
+    not. Trap 15: without them a weak policy departs immediately and the round collects
+    almost nothing. MEASURED here at student-DAgger round 0 -- night aborted at step 32
+    and step 30, so four rounds would have contributed ~120 night frames against 83,000,
+    and student-DAgger could not have fixed night no matter how many rounds it ran.
+
+    Evaluation and collection have incompatible requirements and must not share a pass
+    when the policy is weak: evaluation needs pure policy control (beta=0) and an honest
+    abort, collection needs the vehicle kept in a useful state distribution.
+    """
     route = load_route(direction)
     hint = None
     sc = env.SpeedController()
@@ -53,7 +66,7 @@ def drive_collect(world, vehicle, img_queue, model, device, w, h, weather, direc
     os.makedirs(frames_dir, exist_ok=True)
     start = carla.Location(x=SPAWNS[direction]["x"], y=SPAWNS[direction]["y"], z=SPAWNS[direction]["z"])
 
-    rows, left, stalled, offroad = [], False, 0, 0
+    rows, left, stalled, offroad, n_recover = [], False, 0, 0, 0
     for step in range(max_steps):
         env.update_spectator(world, vehicle)
         world.tick()
@@ -71,13 +84,18 @@ def drive_collect(world, vehicle, img_queue, model, device, w, h, weather, direc
         exp_steer, exp_rad, _ = pure_pursuit_route(route, tf, hint)  # reference (label = teacher at distill)
 
         rel = os.path.join(seg, "frames", f"{step:05d}.png")
-        cv2.imwrite(os.path.join(round_dir, rel), bgr)
+        if collect:
+            cv2.imwrite(os.path.join(round_dir, rel), bgr)
         rows.append(dict(image=rel, weather=weather, direction=direction, step=step, steer=exp_steer,
                          steer_rad=exp_rad, nn_steer=nn_steer, cte_m=cte,
                          speed_mph=env.speed_mph(vehicle), x=loc.x, y=loc.y, yaw=tf.rotation.yaw))
 
+        # DAgger mixing: the expert assists with weight beta so the vehicle keeps
+        # generating useful states. The recorded LABEL is unaffected.
+        applied = (1.0 - beta) * nn_steer + beta * exp_steer
         thr, brk = sc.control(vehicle)
-        vehicle.apply_control(carla.VehicleControl(throttle=thr, brake=brk, steer=nn_steer))
+        vehicle.apply_control(carla.VehicleControl(throttle=thr, brake=brk,
+                                                   steer=float(applied)))
 
         d0 = loc.distance(start)
         if d0 > 50:
@@ -87,8 +105,28 @@ def drive_collect(world, vehicle, img_queue, model, device, w, h, weather, direc
         stalled = stalled + 1 if env.speed_mph(vehicle) < 1 else 0
         offroad = offroad + 1 if abs(cte) > 6 else 0
         if stalled >= 20 or offroad >= 15:
-            print(f"    {direction}: aborted at step {step}")
-            break
+            if abort_on_departure:
+                print(f"    {direction}: aborted at step {step}")
+                break
+            # collection pass: recover onto the route and keep gathering rather than
+            # sitting off-road accumulating nothing
+            n_recover += 1
+            wp = world.get_map().get_waypoint(loc, project_to_road=True,
+                                              lane_type=carla.LaneType.Driving)
+            tfw = wp.transform
+            tfw.location.z += 0.3
+            vehicle.set_target_velocity(carla.Vector3D(0, 0, 0))
+            vehicle.set_transform(tfw)
+            for _ in range(6):
+                world.tick()
+            sc = env.SpeedController()
+            env.warmup_to_speed(world, vehicle, img_queue, sc,
+                                steer_fn=lambda v: pure_pursuit_route(route,
+                                                                      v.get_transform())[0])
+            stalled = offroad = 0
+            hint = None
+    if n_recover:
+        print(f"    {direction}: {n_recover} recovery reset(s) during collection")
     return rows, summarize_cte([r["cte_m"] for r in rows])
 
 
@@ -121,6 +159,12 @@ def main():
                     help="DAgger subdirs folded into re-distill (teacher rounds + this student dir)")
     ap.add_argument("--channels", default="8,16,16", help="conv widths (capacity lever; must match --student)")
     ap.add_argument("--fc", type=int, default=32, help="FC width (must match --student)")
+    ap.add_argument("--beta0", type=float, default=0.0,
+                    help="DAgger expert-mixing weight at round 0 (Ross et al. 2011). Raise "
+                         "it when a policy departs so early that a round collects too few "
+                         "frames -- measured here, night aborted at step 30 with beta=0")
+    ap.add_argument("--beta-decay", type=float, default=0.5,
+                    help="per-round multiplicative decay of the mixing weight")
     args = ap.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -152,11 +196,30 @@ def main():
             round_dir = os.path.join(dagger_student_dir, f"round{r:02d}")
             print(f"\n{'#'*64}\n# student DAgger round {r} — policy '{current}'\n{'#'*64}", flush=True)
             rows, passed = [], True
+            beta = max(0.0, args.beta0 * (args.beta_decay ** r))
             for weather in weathers:
-                env.set_weather(world, weather, vehicle)   # headlights follow weather
+                # set_condition, NOT set_weather: exposure is declared per condition and
+                # is a blueprint attribute, so the camera must be respawned. Using
+                # set_weather captured every condition through the PREVIOUS condition's
+                # exposure -- night through the daylight setting, silently.
+                camera, img_queue = env.set_condition(world, vehicle, weather, camera)
                 for d in ["eastbound", "westbound"]:
-                    drows, st = drive_collect(world, vehicle, img_queue, model, device,
-                                              args.w, args.h, weather, d, round_dir, args.max_steps)
+                    if beta <= 0.0:
+                        drows, st = drive_collect(world, vehicle, img_queue, model, device,
+                                                  args.w, args.h, weather, d, round_dir,
+                                                  args.max_steps, beta=0.0, collect=True,
+                                                  abort_on_departure=True)
+                    else:
+                        # evaluate honestly under pure policy control, then collect with
+                        # expert assistance so a weak policy still yields a full lap
+                        _, st = drive_collect(world, vehicle, img_queue, model, device,
+                                              args.w, args.h, weather, d, round_dir,
+                                              args.max_steps, beta=0.0, collect=False,
+                                              abort_on_departure=True)
+                        drows, _ = drive_collect(world, vehicle, img_queue, model, device,
+                                                 args.w, args.h, weather, d, round_dir,
+                                                 args.max_steps, beta=beta, collect=True,
+                                                 abort_on_departure=False)
                     rows += drows
                     ob = st.get("frac_over_budget", 1) * 100
                     mx = st.get("max_abs_cte_m", 0) * C.M_TO_FT

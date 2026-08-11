@@ -163,6 +163,53 @@ def test_disturbance_applies_before_crop_and_downsample():
     )
 
 
+# --- condition switching must carry the declared exposure ----------------------------
+
+def test_condition_switches_use_set_condition_not_set_weather():
+    """Exposure is declared per condition (F5) and is a CARLA blueprint attribute, so the
+    camera must be respawned on a condition change. `env.set_weather` alone leaves the
+    previous condition's exposure in place -- silently, since the frames look plausible.
+
+    This happened: collect_data, dagger and evaluate were converted and dagger_student was
+    missed, so student-DAgger captured night through the DAYLIGHT exposure. That is trap
+    13's lesson (grep every call site when fixing a bug like this) applied to a different
+    bug, which is why it is asserted rather than remembered.
+    """
+    import re
+    from pathlib import Path
+
+    pipeline = Path(__file__).resolve().parent.parent / "pipeline"
+    # carla_env defines both, and set_condition legitimately calls set_weather.
+    offenders = []
+    for path in sorted(pipeline.glob("*.py")):
+        if path.name == "carla_env.py":
+            continue
+        for i, line in enumerate(path.read_text().splitlines(), 1):
+            code = line.split("#")[0]
+            if re.search(r"\benv\.set_weather\s*\(", code):
+                offenders.append(f"{path.name}:{i}")
+    assert not offenders, (
+        "call env.set_condition() instead of env.set_weather() at: " + ", ".join(offenders)
+    )
+
+
+# --- trap 17b: the OTHER preload path ------------------------------------------------
+
+def test_kd_dataset_preload_is_parallel():
+    """`dataset.SteeringDataset` was parallelised and `distill.KDDataset` was not, so the
+    original trap-17 test passed while the actual bottleneck sat uncovered in a second
+    class -- the same two-implementations problem as trap 13. KDDataset preloads 83,567
+    frames single-threaded on every distill run.
+    """
+    import inspect
+
+    module = _module("distill")
+    source = inspect.getsource(module.KDDataset.__init__)
+    assert "ProcessPoolExecutor" in source or "ThreadPoolExecutor" in source, (
+        "KDDataset preload must be parallel"
+    )
+
+
 # --- trap 18: path defaults resolve inside this repo ---------------------------------
 
 def test_path_defaults_do_not_point_outside_the_repo():

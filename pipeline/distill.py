@@ -12,6 +12,7 @@ the resolution sweep then reuses them for each student input size.
 import os
 import sys
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -77,14 +78,25 @@ def teacher_targets(rows, teacher_name, device):
     return d
 
 
+def _kd_decode(args):
+    path, in_w, in_h = args
+    return student_preprocess(cv2.imread(path), in_w, in_h)
+
+
 class KDDataset(Dataset):
     def __init__(self, rows, indices, targets, in_w, in_h, preload=True):
         self.rows, self.indices, self.targets = rows, indices, targets
         self.in_w, self.in_h = in_w, in_h
         self.cache = None
         if preload:
-            self.cache = [student_preprocess(cv2.imread(rows[i]["image"]), in_w, in_h)
-                          for i in indices]
+            # Trap 17, second instance. dataset.SteeringDataset was parallelised and this
+            # was not, so the trap-17 conformance test passed while the real bottleneck
+            # sat here: a single-threaded decode of 83,567 frames on EVERY distill run,
+            # silently outlasting the training it precedes.
+            nproc = max(1, (os.cpu_count() or 4) - 2)
+            work = [(rows[i]["image"], in_w, in_h) for i in indices]
+            with ProcessPoolExecutor(max_workers=nproc) as ex:
+                self.cache = list(ex.map(_kd_decode, work, chunksize=256))
 
     def __len__(self):
         return len(self.indices)
