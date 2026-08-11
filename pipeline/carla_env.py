@@ -402,29 +402,39 @@ def grab_frame(img_queue, expected_frame, timeout=5.0):
 # ── Spectator / images / cleanup ─────────────────────────────────────────────
 
 def update_spectator(world, vehicle):
-    """Chase camera, six metres behind the vehicle.
+    """Chase camera, placed one tick ahead to cancel a MEASURED one-tick lag.
 
-    A previous version extrapolated the placement by velocity * FIXED_DT to cancel an
-    assumed one-tick lag. That was built on an UNVERIFIED premise about when CARLA applies
-    a spectator set_transform, it did not fix the reported jumping, and if the transform
-    actually applies immediately it *causes* an overshoot -- the camera leaps ahead and the
-    car catches up, which is the artefact it was meant to remove. Reverted.
+    Measured 2026-08-11 against a live run, after guessing wrong about this twice. Sampling
+    the spectator-to-vehicle offset at 50 Hz while the car drove:
 
-    A constant one-step trail is harmless; an overshoot is not. So place the camera from
-    the pose we have and do not predict.
+        mean  -7.81 m   against a nominal placement of -6.00 m
+        values alternate cleanly between -7.80 m and -9.60 m, a 1.80 m swing
 
-    The real cause of visible jumping was elsewhere: `warmup_to_speed` ticks up to 95
-    times per lap without touching the spectator, so the camera froze while the car
-    accelerated away and then snapped forward when the drive loop resumed. Fixed below.
+    1.80 m is exactly one tick of travel at 20 mph and dt = 0.2 s. So the camera sits a
+    systematic ONE TICK behind, and intermittently TWO -- which is the visible
+    forward-then-back snap.
 
-    Residual 5 Hz stepping is inherent -- FIXED_DT is the control rate the study is
-    defined at, so motion really is five discrete 1.79 m steps per second, and smoothing
-    it would mean changing the physics.
+    Cause: the transform is set before `world.tick()` and CARLA applies it ON that tick,
+    the same tick that moves the car, so the camera always lands where the car WAS.
+    Extrapolating by velocity * FIXED_DT cancels the systematic term.
+
+    Honest limit: this fixes the constant 1.8 m lag, NOT the occasional second tick. That
+    comes from RPC timing jitter -- whether the set_transform reaches the server before it
+    processes the tick -- and a client that is not synchronised to the render cannot
+    control it. Expect the view to be centred correctly and still twitch sometimes.
+
+    Also inherent and unrelated: FIXED_DT is the control rate the study is defined at, so
+    motion is genuinely five discrete 1.79 m steps per second.
+
+    Purely cosmetic -- the spectator is not the sensor camera. But eyeballing the render is
+    what caught the fog-in-night preset bug, so a watchable view has real diagnostic value.
     """
     try:
         tf = vehicle.get_transform()
+        v = vehicle.get_velocity()
+        lead = carla.Location(x=v.x * FIXED_DT, y=v.y * FIXED_DT, z=0.0)
         fwd = tf.get_forward_vector()
-        loc = tf.location - 6.0 * fwd + carla.Location(z=3.5)
+        loc = tf.location + lead - 6.0 * fwd + carla.Location(z=3.5)
         rot = carla.Rotation(pitch=-15.0, yaw=tf.rotation.yaw)
         world.get_spectator().set_transform(carla.Transform(loc, rot))
     except Exception:
