@@ -156,11 +156,16 @@ def test_disturbance_applies_before_crop_and_downsample():
     network-specific and averages ~57 source pixels into each student pixel."""
     models = _module("disturbance_models")
     config = _module("config")
-    full = np.zeros((config.CAM_HEIGHT, config.CAM_WIDTH, 3), dtype=np.float32)
-    out = models.apply(full, condition="fog", theta=400.0)
-    assert out.shape[:2] == (config.CAM_HEIGHT, config.CAM_WIDTH), (
-        "disturbance must be applied at full sensor resolution, before crop/downsample"
-    )
+    full = np.full((config.CAM_HEIGHT, config.CAM_WIDTH, 3), 0.4, dtype=np.float32)
+    for name in ("apply_fog", "apply_rain", "apply_night"):
+        fn = getattr(models, name, None)
+        assert fn is not None, f"disturbance_models must expose {name}"
+        out = fn(full)
+        assert out.shape[:2] == (config.CAM_HEIGHT, config.CAM_WIDTH), (
+            f"{name} must apply at full sensor resolution "
+            f"({config.CAM_HEIGHT}x{config.CAM_WIDTH}), before crop/downsample; "
+            f"got {out.shape[:2]}"
+        )
 
 
 # --- presets must be order-independent and single-axis --------------------------------

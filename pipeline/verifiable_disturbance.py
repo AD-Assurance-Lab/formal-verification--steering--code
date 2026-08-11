@@ -57,6 +57,13 @@ import disturbance_models as dm
 # approximation is stated rather than hidden.
 BANDS = 6
 
+# Trap 12: the finite-difference probe DIVIDES by this step, so a step near uint8
+# quantisation (1/255 = 0.0039) amplifies rounding into apparent nonlinearity -- a step of
+# 0.01 amplifies it 100x, which is what once made an exactly-linear map measure as
+# nonlinear at 1.6e-1. Declared as a constant so the conformance suite can assert on it
+# rather than trusting a default argument.
+PROBE_DELTA = 0.1
+
 
 def banded_transmission_box(mor_lo, mor_hi, h_full=480, bands=BANDS,
                             geom=None):
@@ -209,7 +216,8 @@ class LinearDisturbance(nn.Module):
 
 
 # ---------------------------------------------------------------- per-condition linear maps
-def linear_map_for(cond, x0_full_bgr, ranges, w=84, h=28, probe=0.1, seed=0, n_check=6):
+def linear_map_for(cond, x0_full_bgr, ranges, w=84, h=28, probe=PROBE_DELTA,
+                   seed=0, n_check=6):
     """Build (W, b, lo, hi) for a condition, and CHECK linearity before returning.
 
     Each condition is parameterized by quantities the model is genuinely linear in:

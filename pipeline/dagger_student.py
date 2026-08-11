@@ -115,6 +115,7 @@ def drive_collect(world, vehicle, img_queue, model, device, w, h, weather, direc
             vehicle.set_target_velocity(carla.Vector3D(0, 0, 0))
             vehicle.set_transform(tfw)
             for _ in range(6):
+                env.update_spectator(world, vehicle)   # keep the view on the car
                 world.tick()
             sc = env.SpeedController()
             env.warmup_to_speed(world, vehicle, img_queue, sc,

@@ -330,12 +330,14 @@ def warmup_to_speed(world, vehicle, img_queue, speed_ctrl, steer_fn=None,
     speed_ctrl.reset()
     for _ in range(settle_ticks):
         vehicle.apply_control(carla.VehicleControl(throttle=0.0, brake=1.0, steer=0.0))
+        update_spectator(world, vehicle)   # else the view freezes for the whole warmup
         world.tick()
         _drain(img_queue)
     for _ in range(max_accel_ticks):
         steer = steer_fn(vehicle) if steer_fn else 0.0
         thr, brk = speed_ctrl.control(vehicle)
         vehicle.apply_control(carla.VehicleControl(throttle=thr, brake=brk, steer=steer))
+        update_spectator(world, vehicle)
         world.tick()
         _drain(img_queue)
         if speed_ms(vehicle) >= 0.98 * TARGET_SPEED_MS:
@@ -400,28 +402,29 @@ def grab_frame(img_queue, expected_frame, timeout=5.0):
 # ── Spectator / images / cleanup ─────────────────────────────────────────────
 
 def update_spectator(world, vehicle):
-    """Chase camera, placed one tick AHEAD of the vehicle's current pose.
+    """Chase camera, six metres behind the vehicle.
 
-    Every drive loop calls this immediately before `world.tick()`, and CARLA applies a
-    `set_transform` on that same tick -- the same next-tick semantics as `set_weather`.
-    So placing the camera from the pre-tick pose leaves it a full step behind the car it
-    is following: 1.8 m at 20 mph and dt=0.2 s, with a stale yaw on top, which reads as
-    the view lurching and swinging rather than trailing smoothly.
+    A previous version extrapolated the placement by velocity * FIXED_DT to cancel an
+    assumed one-tick lag. That was built on an UNVERIFIED premise about when CARLA applies
+    a spectator set_transform, it did not fix the reported jumping, and if the transform
+    actually applies immediately it *causes* an overshoot -- the camera leaps ahead and the
+    car catches up, which is the artefact it was meant to remove. Reverted.
 
-    Extrapolating by velocity * FIXED_DT cancels that: the camera is placed where the
-    vehicle WILL be when the tick lands, so both arrive together.
+    A constant one-step trail is harmless; an overshoot is not. So place the camera from
+    the pose we have and do not predict.
 
-    Purely cosmetic. The spectator is not the sensor camera -- nothing captured,
-    controlled or measured depends on it. The residual 5 Hz stepping is inherent:
-    FIXED_DT is the control rate the study is defined at, so the motion is genuinely
-    five discrete steps per second and cannot be smoothed without changing the physics.
+    The real cause of visible jumping was elsewhere: `warmup_to_speed` ticks up to 95
+    times per lap without touching the spectator, so the camera froze while the car
+    accelerated away and then snapped forward when the drive loop resumed. Fixed below.
+
+    Residual 5 Hz stepping is inherent -- FIXED_DT is the control rate the study is
+    defined at, so motion really is five discrete 1.79 m steps per second, and smoothing
+    it would mean changing the physics.
     """
     try:
         tf = vehicle.get_transform()
-        v = vehicle.get_velocity()
-        lead = carla.Location(x=v.x * FIXED_DT, y=v.y * FIXED_DT, z=0.0)
         fwd = tf.get_forward_vector()
-        loc = tf.location + lead - 6.0 * fwd + carla.Location(z=3.5)
+        loc = tf.location - 6.0 * fwd + carla.Location(z=3.5)
         rot = carla.Rotation(pitch=-15.0, yaw=tf.rotation.yaw)
         world.get_spectator().set_transform(carla.Transform(loc, rot))
     except Exception:
