@@ -10,6 +10,42 @@ file is for characterization measurements, which are not ledger cells.
 
 ---
 
+## F10. My branch-and-bound search order was wrong; the d=2 result is retracted
+
+**Status: bug found and fixed. The k^d claim is still untested.**
+
+I reported that night at d = 2 was "dramatically worse" than fog and called it the k^d cost
+appearing for the first time. **That was my bug, not the method's.**
+
+The BaB loop used `stack.pop()` -- LIFO, so it always popped the box it had just pushed,
+i.e. the SMALLEST one. It burrowed into an ever-shrinking corner resolving negligible
+volume while large undecided siblings sat untouched.
+
+**The data said so and I nearly filed it as a finding instead of a bug.** Raising the
+budget from 48 to 400 cells changed the resolved volume by *nothing* -- 33.2%, 81.6%, 4.2%
+UNKNOWN, identical to three significant figures. Eight times the work for zero progress is
+not a cost curve, it is a broken search. `bound_box` was verified sound in isolation first
+(bound width 0.153 -> 0.087 -> 0.041 -> 0.0073 -> 0.0014 as the box shrinks), which
+localized the fault to the search order.
+
+Fixed to **largest-volume-first** via a heap, which maximises volume resolved per bound.
+Same frames:
+
+| frame (by clear steer) | LIFO @ 400 cells | largest-first @ **120** cells |
+|---|---|---|
+| +0.0040 | 33.2% UNKNOWN | **13.3%** |
+| -0.0241 | 81.6% UNKNOWN | **46.9%** |
+| +0.0062 | 4.2% UNKNOWN | **0.0%, fully certified** |
+
+Less than a third of the budget, UNKNOWN roughly halved, and it is now converging.
+
+**What can honestly be said:** d = 2 does cost more than d = 1 -- fog resolves with a median
+of 15 bounds at 0.78% UNKNOWN, while night at 120 bounds still sits at 13.3% median. Whether
+that ratio matches `k^d` needs night run to convergence and the bounds counted. Running.
+
+**The withdrawn claim, kept visible:** "night at d=2 is dramatically worse, this is the k^d
+cost showing up." Withdrawn 2026-08-11.
+
 ## F9. Verification is DECISIVE on this family: UNKNOWN rate under 2.5%
 
 **Status: provisional inputs, but the tightness result is the point and survives them.**

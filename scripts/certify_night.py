@@ -78,9 +78,21 @@ def certify(img, student, device, w, h, tol, max_cells):
             .reshape(1, 3, h, w).astype(np.float32)).to(device)).item())
     corridor = (clear - tol, clear + tol)
 
-    cells, stack, n = [], [(np.array(lo0, float), np.array(hi0, float))], 0
-    while stack and n < max_cells:
-        lo, hi = stack.pop()
+    # LARGEST-VOLUME-FIRST, not LIFO.
+    #
+    # This was `stack.pop()`, which is depth-first on the most recently pushed box -- i.e.
+    # always the SMALLEST one. It descended into an ever-tinier corner, resolving
+    # negligible volume while large undecided siblings sat untouched. Measured symptom:
+    # raising the budget from 48 to 400 cells changed the resolved volume by nothing at
+    # all, identical to three significant figures. Popping the largest box maximises
+    # volume resolved per bound computed, which is the whole point of the budget.
+    import heapq
+    heap, n, cells = [], 0, []
+    ctr = 0
+    lo0a, hi0a = np.array(lo0, float), np.array(hi0, float)
+    heapq.heappush(heap, (-float(np.prod(hi0a - lo0a)), ctr, lo0a, hi0a))
+    while heap and n < max_cells:
+        _, _, lo, hi = heapq.heappop(heap)
         l, u = bound_box(net, lo, hi, device)
         n += 1
         vol = float(np.prod(hi - lo))
@@ -93,8 +105,11 @@ def certify(img, student, device, w, h, tol, max_cells):
             mid = 0.5 * (lo[d] + hi[d])
             a_hi = hi.copy(); a_hi[d] = mid
             b_lo = lo.copy(); b_lo[d] = mid
-            stack += [(lo, a_hi), (b_lo, hi)]
-    for lo, hi in stack:                          # budget exhausted
+            for sub_lo, sub_hi in ((lo, a_hi), (b_lo, hi)):
+                ctr += 1
+                heapq.heappush(heap, (-float(np.prod(sub_hi - sub_lo)), ctr,
+                                      sub_lo, sub_hi))
+    for _, _, lo, hi in heap:                     # budget exhausted
         cells.append(("UNKNOWN", float(np.prod(hi - lo))))
 
     total = float(np.prod(np.array(hi0, float) - np.array(lo0, float)))

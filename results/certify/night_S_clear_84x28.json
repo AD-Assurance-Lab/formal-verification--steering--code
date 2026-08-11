@@ -14,61 +14,31 @@
       "frame": 0,
       "clear": 0.003970590885728598,
       "linearity_residual": 9.689482147745565e-07,
-      "certified": 0.0,
-      "falsified": 0.6677236258983612,
-      "unknown": 0.3322763741016388,
-      "bounds": 48,
-      "cells": 28
+      "certified": 0.11328125000000001,
+      "falsified": 0.7539062499999998,
+      "unknown": 0.13281249999999978,
+      "bounds": 120,
+      "cells": 94
     },
     {
       "frame": 1,
-      "clear": 0.008082609623670578,
-      "linearity_residual": 1.103352613995856e-06,
-      "certified": 0.0,
-      "falsified": 0.1455118656886043,
-      "unknown": 0.8544881343113956,
-      "bounds": 48,
-      "cells": 39
+      "clear": -0.024109667167067528,
+      "linearity_residual": 1.0118005601134072e-06,
+      "certified": 0.1484375,
+      "falsified": 0.38281249999999983,
+      "unknown": 0.4687499999999992,
+      "bounds": 120,
+      "cells": 97
     },
     {
       "frame": 2,
-      "clear": -0.024109667167067528,
-      "linearity_residual": 1.0118005601134072e-06,
-      "certified": 0.0,
-      "falsified": 0.18357346393167973,
-      "unknown": 0.8164265360683203,
-      "bounds": 48,
-      "cells": 30
-    },
-    {
-      "frame": 3,
-      "clear": 0.016201816499233246,
-      "linearity_residual": 1.1546890770208762e-06,
-      "certified": 0.0,
-      "falsified": 0.29679858684539795,
-      "unknown": 0.7032014131546019,
-      "bounds": 48,
-      "cells": 29
-    },
-    {
-      "frame": 4,
       "clear": 0.00624174065887928,
       "linearity_residual": 9.330007366692428e-07,
-      "certified": 0.9580700398073531,
-      "falsified": 0.0,
-      "unknown": 0.041929960192646824,
-      "bounds": 48,
-      "cells": 38
-    },
-    {
-      "frame": 5,
-      "clear": -0.022681649774312973,
-      "linearity_residual": 1.2116523832594872e-06,
-      "certified": 0.0,
-      "falsified": 0.8747396320104598,
-      "unknown": 0.1252603679895401,
-      "bounds": 48,
-      "cells": 27
+      "certified": 0.9998302459716797,
+      "falsified": 0.0001125335693359374,
+      "unknown": 5.722045898437497e-05,
+      "bounds": 120,
+      "cells": 82
     }
   ]
 }
