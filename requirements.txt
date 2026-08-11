@@ -1,13 +1,39 @@
 # Python 3.10, CUDA 12.1, RTX-class GPU.
-# The CARLA 0.9.16 client wheel and CUDA PyTorch are installed separately.
 #
-# auto_LiRPA comes from UPSTREAM, not the SDP-CROWN fork, and is NOT vendored.
-# The fork's only addition is the SDP-CROWN ReLU relaxation, which requires an L2 ball
-# and is vacuous on our low-rank sets. We touch only the public API:
-# BoundedModule, BoundedTensor, PerturbationLpNorm.
-auto_LiRPA==0.5.0
+# torch / torchvision are installed from the PyTorch CUDA index, NOT plain PyPI:
+#
+#   pip install torch==2.5.1 torchvision==0.20.1 \
+#       --index-url https://download.pytorch.org/whl/cu121
+#
+# The CARLA 0.9.16 client wheel installs separately and PINS THE PYTHON VERSION to 3.10.
+#
+# ---------------------------------------------------------------------------
+# auto_LiRPA -- install from UPSTREAM GIT, never from PyPI.
+#
+#   pip install --no-deps --ignore-requires-python \
+#       git+https://github.com/Verified-Intelligence/auto_LiRPA.git
+#
+# Three traps, all hit for real:
+#
+#  1. PyPI `auto_LiRPA` is stuck at 0.3 and is years stale. Installing it DOWNGRADES
+#     torch to 1.12.1, silently breaking CUDA in the environment, and then fails to
+#     import anyway (it references numpy.lib.arraysetops, removed in modern numpy).
+#  2. `--no-deps` is mandatory for the same reason: without it pip rewrites torch.
+#  3. Upstream declares `requires-python ~=3.11`, but the CARLA client wheel pins us to
+#     3.10. The constraint is conservative rather than a real code dependency --
+#     verified by `scripts/verify_smoke.py`, which computes real bounds on a real
+#     StudentNet and passes all three cross-checks on 3.10. Re-run it after any
+#     reinstall rather than trusting that it still works.
+#
+# Do NOT vendor auto_LiRPA, and do NOT use the SDP-CROWN fork. The fork's only addition
+# is the SDP-CROWN ReLU relaxation, which requires an L2 ball and is vacuous on our
+# low-rank sets. We touch only the public API: BoundedModule, BoundedTensor,
+# PerturbationLpNorm. `verify_smoke.py` asserts the installed package carries no
+# SDP-CROWN markers.
+# ---------------------------------------------------------------------------
 
 numpy>=1.24,<2.0
 opencv-python>=4.8
 scipy>=1.11
+matplotlib>=3.7
 pytest>=7.4
