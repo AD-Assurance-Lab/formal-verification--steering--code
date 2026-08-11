@@ -152,7 +152,8 @@ def main():
     world_map = world.get_map()
     vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
     camera, img_queue = env.spawn_camera(world, vehicle)
-    env.set_weather(world, args.weather, vehicle)   # after spawn: lights need the vehicle
+    # after spawn: lights need the vehicle, and exposure is declared per condition
+    camera, img_queue = env.set_condition(world, vehicle, args.weather, camera)
 
     dirs = ["eastbound", "westbound"] if args.direction == "both" else [args.direction]
     results = {}

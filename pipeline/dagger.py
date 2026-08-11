@@ -243,7 +243,7 @@ def main():
             beta = max(0.0, args.beta0 * (args.beta_decay ** r))
             rows, passed = [], True
             for weather in weathers:
-                env.set_weather(world, weather, vehicle)
+                camera, img_queue = env.set_condition(world, vehicle, weather, camera)
                 for d in ["eastbound", "westbound"]:
                     if beta <= 0.0:
                         # v1 behaviour, which demonstrably converged with these presets:

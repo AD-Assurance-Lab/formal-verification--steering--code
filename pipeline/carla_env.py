@@ -142,6 +142,22 @@ def set_weather(world, name, vehicle=None):
         vehicle.set_light_state(_lights(name == "night"))
 
 
+def set_condition(world, vehicle, name, camera=None):
+    """Apply a condition AND the camera exposure it declares. Returns (camera, queue).
+
+    Exposure is a blueprint attribute, so it cannot be changed on a live sensor -- the
+    camera must be respawned when the condition's declared exposure differs. Callers
+    that switch conditions mid-run must use this rather than `set_weather`, or they will
+    capture the new condition through the previous condition's exposure.
+
+    Pass the existing `camera` to have it destroyed and replaced.
+    """
+    set_weather(world, name, vehicle)
+    if camera is not None:
+        camera.destroy()
+    return spawn_camera(world, vehicle, condition=name)
+
+
 # ── Spawning ─────────────────────────────────────────────────────────────────
 
 def make_transform(spawn):
@@ -190,8 +206,15 @@ def _apply_exposure(bp, shutter=None, iso=None, fstop=None, gamma=None, mode=Non
     bp.set_attribute("gamma", str(gamma if gamma is not None else C.EXPOSURE_GAMMA))
 
 
-def spawn_camera(world, vehicle, exposure=None):
-    """Spawn the RGB camera. `exposure` overrides the config defaults, for sweeps."""
+def spawn_camera(world, vehicle, exposure=None, condition=None):
+    """Spawn the RGB camera.
+
+    `exposure` overrides everything (used by the calibration sweeps). Otherwise
+    `condition` selects the declared per-condition exposure; omitting both gives the
+    daylight setting.
+    """
+    if exposure is None and condition is not None:
+        exposure = C.exposure_for(condition)
     bp = world.get_blueprint_library().find("sensor.camera.rgb")
     bp.set_attribute("image_size_x", str(CAM_WIDTH))
     bp.set_attribute("image_size_y", str(CAM_HEIGHT))

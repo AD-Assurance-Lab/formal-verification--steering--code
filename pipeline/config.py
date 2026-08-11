@@ -66,6 +66,58 @@ EXPOSURE_GAMMA = 2.2
 TARGET_ROAD_MU = (0.28, 0.34)
 TARGET_ROAD_SIGMA_RATIO = 1.3    # measured sigma within this factor of a real road's
 
+# ── Condition-dependent exposure ─────────────────────────────────────────────
+# [DECIDED 2026-08-11 by Zach] Exposure is a DECLARED FUNCTION OF CONDITION, not a
+# single global constant.
+#
+# Why it is forced: no single exposure serves both ends of the illuminance axis.
+# scripts/exposure_dynamic_range.py, 12 poses --
+#
+#   shutter 800 -> clear mu 0.291 (in target), night 50.6% of the road ROI clipped to 0
+#   shutter  25 -> night clipping 0.5%,        clear mu 0.938 (washed out, and a washed
+#                                              out road is what made the fog airlight
+#                                              unidentifiable in the previous generation)
+#
+# Night at shutter 800 threw away half its signal, and the mixed teacher then failed
+# night in all 6 DAgger rounds while passing fog and shadows. Concluding "the policy
+# cannot drive at night" from that camera would have been an artefact of the rig, in
+# exactly the way the headlights-off bug was.
+#
+# What this costs, and it must be stated in the paper: the certificate now reads
+# "certified at X lux WITH THE CAMERA EXPOSING AS DECLARED". The night disturbance's
+# gain g therefore carries the exposure ratio as a known factor alongside the
+# illuminance ratio. Both are known because we set them, so identifiability -- the
+# whole reason for pinning exposure in the first place -- is preserved. This is a
+# modelling commitment, not auto-exposure: an auto-exposure loop is opaque and
+# destroys the mapping, while a declared function does not.
+_DAYLIGHT_EXPOSURE = dict(shutter=EXPOSURE_SHUTTER_SPEED, iso=EXPOSURE_ISO,
+                          fstop=EXPOSURE_FSTOP, gamma=EXPOSURE_GAMMA)
+
+CONDITION_EXPOSURE = {
+    "clear":   _DAYLIGHT_EXPOSURE,
+    "fog":     _DAYLIGHT_EXPOSURE,
+    "shadows": _DAYLIGHT_EXPOSURE,
+    "rain":    _DAYLIGHT_EXPOSURE,
+    # 4x the daylight exposure. Chosen so night stays DARKER than clear (mu 0.201 vs
+    # 0.290), which keeps night a dimming disturbance rather than an auto-exposure-style
+    # normalization, while recovering contrast: sigma 0.059 -> 0.152. Residual clipping
+    # ~12% is largely the genuinely unlit far field beyond the headlight throw, which a
+    # real night camera also sees and which no exposure can recover.
+    "night":   dict(shutter=200.0, iso=EXPOSURE_ISO, fstop=EXPOSURE_FSTOP,
+                    gamma=EXPOSURE_GAMMA),
+}
+
+
+def exposure_for(condition):
+    """Exposure settings for a condition. Unknown conditions get the daylight setting."""
+    return dict(CONDITION_EXPOSURE.get(condition, _DAYLIGHT_EXPOSURE))
+
+
+def exposure_ratio(condition):
+    """Exposure gain relative to daylight -- the known factor the disturbance model's
+    gain must carry when the condition changes the camera setting."""
+    return _DAYLIGHT_EXPOSURE["shutter"] / exposure_for(condition)["shutter"]
+
 # ── Speed (fixed longitudinal, to remove velocity as a variable) ─────────────
 TARGET_SPEED_MPH = 20.0
 TARGET_SPEED_MS = 8.9408

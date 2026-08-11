@@ -110,7 +110,9 @@ def main():
     all_rows = []
     try:
         for weather in weathers:
-            env.set_weather(world, weather, vehicle)
+            # Respawn the camera: exposure is declared per condition and is a
+            # blueprint attribute, so it cannot be changed on a live sensor.
+            camera, img_queue = env.set_condition(world, vehicle, weather, camera)
             for lap in range(args.laps):
                 for d in dirs:
                     all_rows += collect_lap(world, world_map, vehicle, img_queue,
