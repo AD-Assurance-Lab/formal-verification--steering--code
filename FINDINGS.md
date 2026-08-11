@@ -10,6 +10,43 @@ file is for characterization measurements, which are not ledger cells.
 
 ---
 
+## F11. Width is the capacity lever; resolution loses on BOTH axes
+
+**Status: measured. Settles a question I had reopened, and confirms the frozen repo's
+conclusion for a different reason than it recorded.**
+
+Distilled from `teacher_mixed_dagger_r07` over 102,938 frames, all four conditions:
+
+| config | ReLU | KD val RMSE |
+|---|---|---|
+| 1x width, 84x28 | 5,152 | 0.0263 |
+| 2x width, 84x28 | 10,304 | 0.0227 |
+| **3x width, 84x28** | **15,456** | **0.0201** |
+| 4x width, 84x28 | 20,608 | 0.0215 |
+| 2x width, **112x38** | **21,504** | **0.0319** |
+
+**Two results.**
+
+1. **Width has a knee at 3x.** 4x costs 33% more neurons and is *worse* on the offline
+   metric, so there is no case for paying that bound-looseness at M6.
+2. **Resolution loses on both axes at once.** 112x38 needs more neurons than ANY width
+   config -- 21,504 against 3x width's 15,456 -- for the worst KD RMSE in the sweep. It
+   costs more of exactly what verification pays for and delivers less.
+
+**I had reopened the resolution question and was wrong to.** `docs/CONSTRAINTS.md` item 8
+argued resolution was viable again because the verifier's input is the physical parameter
+rather than the image, so resolution no longer inflates the *perturbation* dimension. That
+reasoning is correct and still stands. It is simply not the binding cost: resolution scales
+ReLU count as `k^2` while width scales it as `k`, and ReLU count is what drives bound
+looseness. Same conclusion as the frozen repo, arrived at for a different reason.
+
+The 140x47 config was dropped rather than run -- strictly further along the same losing
+trend at roughly 33,000 ReLU, and unattended time is scarce with the machine reaping
+background jobs.
+
+**KD RMSE remains a screen, not a decision.** Closed loop picks the config; this only
+bounds the search to 1x-3x width at 84x28.
+
 ## F10. My branch-and-bound search order was wrong; the d=2 result is retracted
 
 **Status: bug found and fixed. The k^d claim is still untested.**
