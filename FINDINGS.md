@@ -10,6 +10,43 @@ file is for characterization measurements, which are not ledger cells.
 
 ---
 
+## F9. Verification is DECISIVE on this family: UNKNOWN rate under 2.5%
+
+**Status: provisional inputs, but the tightness result is the point and survives them.**
+
+`scripts/certify_fog.py`, 20 clear frames, adaptive bisection over MOR 2000-60 m to depth
+7, corridor centred on clear-weather steering, per-row transmission (F8).
+
+| | |
+|---|---|
+| certified fraction of the axis | median **98.0%**, mean 84.6%, range 5.5-100% |
+| **UNKNOWN (bound looseness)** | median **0.78%**, max **2.34%** |
+| bounds per frame | median 15, max 33; 322 total |
+| frames fully certified 60-2000 m | 6/20 |
+| frames < 50% certified | 3/20 |
+
+**The UNKNOWN rate is the result.** The previous generation reported 11.5% UNKNOWN for its
+disturbance-trained student -- the verifier frequently could not decide. Under 2.5%
+worst-case here means the physical parameterization plus alpha-CROWN plus input-space
+bisection returns a *decisive* verdict nearly everywhere. That is the core feasibility
+claim of the approach, and unlike the certified fractions it does not depend on the
+calibration constants being right.
+
+**Non-monotone certificates, flagged not explained.** Frame 3 certifies
+`[75,121] U [393,2000]`; frame 5 certifies `[60,105] U [1348,2000]`. Certified in dense fog
+AND near-clear, falsified in between. There is a plausible physical story -- as MOR -> 0 the
+image saturates toward uniform airlight and the network output may drift back toward its
+clear value -- but it is equally consistent with the uncalibrated `A = 0.78` producing an
+artifact. **Recheck once the airlight is measured (D4).**
+
+**Do not oversell the efficiency argument from this.** Verification returns a per-frame
+certified interval in ~16 bounds; closed loop returns pass/fail per lap. Different
+granularities, so "322 bounds vs N laps" is not a like-for-like comparison. The efficiency
+claim needs the M6 blind protocol to make it properly.
+
+**Provisional inputs, unchanged from F8:** student distilled from pre-fix data, airlight
+uncalibrated, flat-road row depth rather than the measured depth map.
+
 ## F8. The 6-band transmission discretization was the binding constraint on certifiability
 
 **Status: measured, no CARLA needed. Changes M5's design.**
