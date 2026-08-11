@@ -166,7 +166,10 @@ def write_manifest(round_dir, rows):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--base", default="clear", help="base BC dataset name")
+    ap.add_argument("--base", default="clear",
+                    help="base BC dataset name(s), COMMA-SEPARATED. A mixed-condition "
+                         "run needs every base set it was collected into, e.g. "
+                         "--base clear,mixed")
     ap.add_argument("--init", default="steering_bc_baseline", help="initial policy checkpoint")
     ap.add_argument("--rounds", type=int, default=6, help="max DAgger retrains")
     ap.add_argument("--epochs", type=int, default=120)
@@ -200,7 +203,17 @@ def main():
     # from EARLIER INVOCATIONS are discovered here, so a long run can be executed in
     # batches without silently discarding what it already collected (which would quietly
     # turn DAgger back into repeated behaviour cloning).
-    manifests = [os.path.join(C.DATASET_DIR, args.base, "manifest.csv")]
+    # `--base` takes a COMMA-SEPARATED list. It was a single name, which silently
+    # dropped every base dataset but one: a mixed-condition run started from
+    # `--base clear` would retrain on the clear base plus DAgger rounds and discard the
+    # 20,348 fog/night/shadows frames, producing something called a mixed teacher that
+    # had barely seen the conditions. Same shape as trap 18.
+    base_names = [b.strip() for b in args.base.split(",") if b.strip()]
+    manifests = [os.path.join(C.DATASET_DIR, b, "manifest.csv") for b in base_names]
+    missing = [m for m in manifests if not os.path.exists(m)]
+    if missing:
+        raise SystemExit("missing base manifest(s): " + ", ".join(missing))
+    print(f"base datasets: {base_names}")
     prior_rounds = sorted(glob.glob(os.path.join(dagger_dir, "round*", "manifest.csv")))
     manifests += prior_rounds
     round_offset = 0
