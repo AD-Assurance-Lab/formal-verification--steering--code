@@ -249,9 +249,13 @@ Falsified if **any** of:
    changes how the simulation is run — manual vs auto exposure being the clearest case. The
    two instruments share a parameterization by design; they are independent in *mechanism*
    (bound propagation vs rollout), not in *setup*.
-3. **Transfer to a real camera is unproven.** The route to closing it is a controlled
-   facility: DENSE (Bijelic et al. 2020) has 17 measured fog-chamber visibility levels with
-   12-bit RGB and lidar depth. Registration-gated, not technically blocked.
+3. **Transfer to a real camera is unproven.** The route to closing it is the DENSE
+   family's **Pixel Accurate Depth Benchmark** -- 17 measured fog-chamber visibility
+   levels (20-100 m in 5 m steps), 12-bit RGB, and survey-scanner depth, with calibrated
+   reflectance targets at known distances that make `(beta, A)` measurable rather than
+   fitted. NOT *Seeing Through Fog*, which has ~3 visibility levels; the inherited notes
+   conflated them. See `docs/DENSE_ACCESS.md`. Registration-gated, not technically
+   blocked.
 4. **Verification covers the parameterized family only.** It replaces exhaustive sampling
    *within* a disturbance family. It does not replace scenario sampling.
 5. **The policy is small and the ODD is narrow** — one route, one speed, one vehicle.

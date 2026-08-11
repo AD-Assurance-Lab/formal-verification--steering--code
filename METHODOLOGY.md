@@ -231,9 +231,11 @@ conditions is the gating measurement and has not yet run.
    design; they are independent in *mechanism* (bound propagation vs rollout), not setup.
 3. **Fixed per-condition exposure is a modelling commitment.** It bounds the claim to a
    camera with known, declared response.
-4. **Transfer to a real camera is unproven.** The route to closing it is a controlled
-   facility -- DENSE has 17 measured fog-chamber visibility levels with 12-bit RGB and
-   lidar depth.
+4. **Transfer to a real camera is unproven.** The route to closing it is the DENSE
+   family's Pixel Accurate Depth Benchmark: 17 measured fog-chamber visibility levels
+   (20-100 m), 12-bit RGB, survey-scanner depth, and calibrated reflectance targets at
+   known distances. Its chamber covers 20-100 m, so only the severe end of our declared
+   2000-60 m fog range can be externally validated. See `docs/DENSE_ACCESS.md`.
 5. **Verification covers the parameterized family only.** It replaces exhaustive sampling
    *within* a disturbance family, not scenario sampling across routes and manoeuvres.
 6. **The ODD is narrow**: one route, one speed, one vehicle.
