@@ -1,0 +1,13 @@
+# Python 3.10, CUDA 12.1, RTX-class GPU.
+# The CARLA 0.9.16 client wheel and CUDA PyTorch are installed separately.
+#
+# auto_LiRPA comes from UPSTREAM, not the SDP-CROWN fork, and is NOT vendored.
+# The fork's only addition is the SDP-CROWN ReLU relaxation, which requires an L2 ball
+# and is vacuous on our low-rank sets. We touch only the public API:
+# BoundedModule, BoundedTensor, PerturbationLpNorm.
+auto_LiRPA==0.5.0
+
+numpy>=1.24,<2.0
+opencv-python>=4.8
+scipy>=1.11
+pytest>=7.4

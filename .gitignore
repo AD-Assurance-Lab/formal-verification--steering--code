@@ -1,0 +1,20 @@
+# Data, weights, and simulator output stay out of git
+data/
+datasets/
+checkpoints/
+runs/
+results/**/*.png
+results/**/*.npy
+results/**/*.pt
+!results/ledger/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv*/
+.pytest_cache/
+*.egg-info/
+
+# Local notes
+scratch/
