@@ -352,10 +352,28 @@ def _drain(img_queue):
 # ── Spectator / images / cleanup ─────────────────────────────────────────────
 
 def update_spectator(world, vehicle):
+    """Chase camera, placed one tick AHEAD of the vehicle's current pose.
+
+    Every drive loop calls this immediately before `world.tick()`, and CARLA applies a
+    `set_transform` on that same tick -- the same next-tick semantics as `set_weather`.
+    So placing the camera from the pre-tick pose leaves it a full step behind the car it
+    is following: 1.8 m at 20 mph and dt=0.2 s, with a stale yaw on top, which reads as
+    the view lurching and swinging rather than trailing smoothly.
+
+    Extrapolating by velocity * FIXED_DT cancels that: the camera is placed where the
+    vehicle WILL be when the tick lands, so both arrive together.
+
+    Purely cosmetic. The spectator is not the sensor camera -- nothing captured,
+    controlled or measured depends on it. The residual 5 Hz stepping is inherent:
+    FIXED_DT is the control rate the study is defined at, so the motion is genuinely
+    five discrete steps per second and cannot be smoothed without changing the physics.
+    """
     try:
         tf = vehicle.get_transform()
+        v = vehicle.get_velocity()
+        lead = carla.Location(x=v.x * FIXED_DT, y=v.y * FIXED_DT, z=0.0)
         fwd = tf.get_forward_vector()
-        loc = tf.location - 6.0 * fwd + carla.Location(z=3.5)
+        loc = tf.location + lead - 6.0 * fwd + carla.Location(z=3.5)
         rot = carla.Rotation(pitch=-15.0, yaw=tf.rotation.yaw)
         world.get_spectator().set_transform(carla.Transform(loc, rot))
     except Exception:
