@@ -61,26 +61,71 @@ def enable_sync_mode(world):
     return original
 
 
-def set_clear_weather(world):
-    """Flat, shadowless clear: cloudiness 80 with the sun overhead.
+# ── Conditions ───────────────────────────────────────────────────────────────
+#
+# A preset is built by CONSTRUCTING a fresh WeatherParameters and setting every field
+# explicitly. It is NOT built by reading the live weather and editing it.
+#
+# That distinction is the whole bug this replaced. `world.set_weather()` is applied by
+# the simulator on the NEXT TICK, so a `world.get_weather()` issued immediately after
+# returns the PREVIOUS condition's values. The old code cleared fog, read back the stale
+# (still-foggy) parameters, set the sun angle on that object and pushed it -- which
+# reinstated fog. Night therefore ran at fog_density 70, verified live:
+# sun_altitude_angle -25 with fog_density 70. Caught by Zach watching the render.
+#
+# Same shape as trap 2, where CARLA's sensor queue runs a frame behind: a read issued
+# straight after a write returns the old value, and nothing errors.
+#
+# Building from a constructed object makes presets genuinely order-independent, which is
+# what the design rule in CLAUDE.md requires -- one axis per condition, and nothing
+# inherited from whatever ran before.
 
-    This is a DELIBERATE scope choice, not an oversight. The study is about formally
-    verifying a small ReLU-only policy, and verifiability is bought with capacity that
-    scene complexity would otherwise consume. Measured: swapping this for CARLA's
-    shipped ClearNoon (sun at 45 degrees, so shadows) makes the v1 clear teacher depart
-    the lane at step 435 with 33.54 ft CTE, where under this preset it holds 0.43 ft.
-    Shadows alone break it. Keep the preset flat and spend the capacity on the weather
-    disturbances, which are what the paper is about.
+CLEAR_BASELINE = dict(
+    cloudiness=80.0,              # flat, shadowless overcast
+    sun_azimuth_angle=0.0,
+    sun_altitude_angle=90.0,      # sun overhead: no cast shadows
+    precipitation=0.0,
+    precipitation_deposits=0.0,
+    wetness=0.0,
+    wind_intensity=0.0,
+    fog_density=0.0,
+    fog_distance=0.0,
+    fog_falloff=0.0,
+    scattering_intensity=0.0,
+    mie_scattering_scale=0.0,
+    dust_storm=0.0,
+)
+
+# Each condition moves exactly ONE physical axis off the clear baseline.
+CONDITION_DELTAS = {
+    "clear":   {},
+    "fog":     dict(fog_density=70.0, fog_distance=10.0, fog_falloff=0.2),
+    "rain":    dict(precipitation=85.0, precipitation_deposits=70.0, wetness=80.0),
+    "night":   dict(sun_altitude_angle=-25.0),
+    "shadows": dict(sun_altitude_angle=15.0),
+}
+
+
+def weather_params(name):
+    """Fully-specified WeatherParameters for a condition. No live state is read."""
+    if name not in CONDITION_DELTAS:
+        raise ValueError(f"unknown condition {name!r}; "
+                         f"expected one of {sorted(CONDITION_DELTAS)}")
+    w = carla.WeatherParameters()
+    for field, value in {**CLEAR_BASELINE, **CONDITION_DELTAS[name]}.items():
+        setattr(w, field, value)
+    return w
+
+
+def set_clear_weather(world):
+    """The clear baseline.
+
+    DELIBERATE scope choice: flat and shadowless. Swapping it for CARLA's shipped
+    ClearNoon (sun at 45 degrees, so cast shadows) made the v1 clear teacher depart the
+    lane at 33.54 ft CTE where it otherwise held 0.43 ft. Shadows are a studied condition
+    here, not a property of the baseline.
     """
-    w = world.get_weather()
-    w.cloudiness = 80.0
-    w.precipitation = 0.0
-    w.precipitation_deposits = 0.0
-    w.sun_azimuth_angle = 0.0
-    w.sun_altitude_angle = 90.0
-    w.fog_density = 0.0
-    w.wetness = 0.0
-    world.set_weather(w)
+    world.set_weather(weather_params("clear"))
 
 
 # Headlights: low beam + position lights, what a real vehicle runs at night. v1 drove
@@ -100,44 +145,13 @@ def _lights(on):
 def set_weather(world, name, vehicle=None):
     """Apply a condition preset and, if a vehicle is given, the matching lights.
 
-    **Every preset is the clear baseline with exactly ONE axis moved.** This is the
-    design rule from CLAUDE.md -- train, closed-loop test and verify over one axis per
-    condition -- and the inherited presets violated it:
+    Presets are fully specified and order-independent -- see the note above
+    CLEAR_BASELINE for why they are constructed rather than read-modify-written.
 
-        fog:  cloudiness 80->90, sun_altitude 90->45, fog_density 0->70
-        rain: cloudiness 80->90, sun_altitude 90->40, precipitation 0->85
-
-    So a clear-vs-fog measurement taken from them conflated fog scattering with a lower
-    sun and heavier cloud. [MEASURED 2026-08-10, scripts/fog_isolation.py] at 20 poses:
-    the old preset moved the road ROI mean by -0.060, while fog_density=70 with the
-    clear illumination HELD FIXED moves it by only -0.024. More than half of the
-    apparent darkening was the sun angle, not the fog.
-
-    Presets remain order-independent because each one restores the full clear baseline
-    before moving its own axis -- otherwise night applied after rain would silently
-    inherit rain's puddles and wet-road sheen.
-
-    Headlights follow the condition (the ego drove at night with them off in v1, which
-    is physically impossible and made any night result an artefact of the setup).
+    Headlights follow the condition. v1 drove at night with them off, which is
+    physically impossible for a real vehicle and made any night result an artefact.
     """
-    if name == "clear":
-        set_clear_weather(world)
-    else:
-        # Start from the clear baseline every time, then move ONE axis. See the
-        # note above on why the inherited presets could not be used as-is.
-        set_clear_weather(world)
-        w = world.get_weather()
-        if name == "fog":
-            w.fog_density, w.fog_distance, w.fog_falloff = 70.0, 10.0, 0.2
-        elif name == "rain":
-            w.precipitation, w.precipitation_deposits, w.wetness = 85.0, 70.0, 80.0
-        elif name == "night":
-            w.sun_altitude_angle = -25.0
-        elif name == "shadows":
-            w.sun_altitude_angle = 15.0
-        else:
-            raise ValueError(name)
-        world.set_weather(w)
+    world.set_weather(weather_params(name))
     if vehicle is not None:
         vehicle.set_light_state(_lights(name == "night"))
 

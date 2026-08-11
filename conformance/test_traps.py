@@ -163,6 +163,55 @@ def test_disturbance_applies_before_crop_and_downsample():
     )
 
 
+# --- presets must be order-independent and single-axis --------------------------------
+
+def test_each_condition_moves_exactly_one_axis():
+    """One axis per condition, and nothing inherited from whatever ran before.
+
+    This failed in the worst possible way: presets were built by reading the live weather
+    and editing it, but `world.set_weather()` applies on the NEXT TICK, so the read-back
+    returned the PREVIOUS condition's values. Clearing fog then setting the sun angle
+    reinstated fog, and night ran at fog_density 70 -- verified live as
+    sun_altitude_angle -25 with fog_density 70. Nothing errored; it was caught by eye,
+    watching the render.
+    """
+    env = _module("carla_env")
+
+    signatures = {
+        "fog": ("fog_density", lambda v: v > 0),
+        "rain": ("precipitation", lambda v: v > 0),
+        "night": ("sun_altitude_angle", lambda v: v < 0),
+        "shadows": ("sun_altitude_angle", lambda v: 0 < v < 45),
+    }
+    for name in ("clear", "fog", "rain", "night", "shadows"):
+        w = env.weather_params(name)
+        for other, (field, is_active) in signatures.items():
+            active = is_active(getattr(w, field))
+            if other == name:
+                assert active, f"{name} must set its own axis ({field})"
+            else:
+                assert not active, (
+                    f"condition '{name}' has {other}'s axis active: {field}="
+                    f"{getattr(w, field)}"
+                )
+
+
+def test_presets_are_independent_of_call_order():
+    """weather_params must read no live state, so any order gives identical results."""
+    env = _module("carla_env")
+    fields = ("fog_density", "fog_distance", "fog_falloff", "precipitation",
+              "precipitation_deposits", "wetness", "sun_altitude_angle", "cloudiness")
+
+    def snapshot(name):
+        w = env.weather_params(name)
+        return tuple(round(float(getattr(w, f)), 6) for f in fields)
+
+    direct = snapshot("night")
+    for prior in ("fog", "rain", "shadows", "clear"):
+        snapshot(prior)
+        assert snapshot("night") == direct, f"night differs after building {prior}"
+
+
 # --- condition switching must carry the declared exposure ----------------------------
 
 def test_condition_switches_use_set_condition_not_set_weather():
