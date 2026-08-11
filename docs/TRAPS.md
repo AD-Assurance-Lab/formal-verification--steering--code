@@ -18,6 +18,19 @@ GPU and become live tests at their milestone.
    an RGB *and* a depth camera, both must be matched. *[needs CARLA]*
 3. **CARLA leaks GPU memory** — ~10.5 GiB over 11 h, degrading results long before it
    crashes. Relaunch the server before every measurement run. *[needs CARLA]*
+
+3b. **A client killed in synchronous mode leaves the server HUNG, not crashed.** In sync
+   mode CARLA blocks waiting for the next `world.tick()`. If the ticking client dies, that
+   tick never comes and the server waits forever: the process is alive, holds its VRAM,
+   and every subsequent client — including other people's — times out on connect. Scripts
+   restore async settings in a `finally` block, but **SIGKILL bypasses `finally`**, so any
+   hard-killed client wedges the server.
+
+   Observed 2026-08-11: background jobs were killed by something external; CARLA then sat
+   at 46 min uptime holding 3.3 GB with RPC timing out at 30 s, blocking a second user's
+   session as well. Diagnosis is one command — connect and read `get_settings()`; a healthy
+   idle server reports `synchronous_mode = False`. There is no client-side fix, because
+   connecting is itself what times out. **Kill and relaunch the server.** *[needs CARLA]*
 4. **Closed-loop is stochastic near the stability cliff.** The same configuration gives
    different pass/fail outcomes about 1 in 8 times. Every closed-loop number is a failure
    RATE over >= 10 repetitions. *[needs CARLA]*
