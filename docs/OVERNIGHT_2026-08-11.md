@@ -55,27 +55,19 @@ Every `S_clear` cell is properly blind.
 
 ## What needs your decision
 
-**1. D-01 — does a 1-in-20 marginal excursion fail a cell?** Two clean instances, in
-different cells:
+**1. D-01 is RESOLVED — no decision needed.** I ran the diagnostic I had recommended (20
+extra repetitions, 40 runs) and it answered the question:
 
-| cell | failing run | max CTE | budget | departed |
-|---|---|---|---|---|
-| fog / S_mixed | rep 0 westbound | 2.61 ft | 2.19 | no |
-| clear / S_clear | rep 9 westbound | 2.19 ft | 2.19 | no |
+    3/40 failures, all westbound, ALL AT THE SAME PLACE
+      step 1683  x -365.8  y 11.6
+      step 1684  x -365.8  y 11.7
+      step 1683  x -365.9  y 11.9
 
-Both are westbound, both just over budget, neither departs. Either the verdict rule (any
-failure in 20 → FAIL) is too strict for a stochastic simulator, or there is a specific
-westbound corner where the controller is marginal. Cells now record the (step, x, y) of the
-worst excursion so the next run can tell those apart — that was an instrumentation gap.
-
-I earlier reported two *further* instances and argued the pattern had spread to `S_mixed`'s
-training condition. That was wrong: those came from a cell I had already flagged as
-contaminated by my own concurrent CARLA client, and rerunning it clean gives **PASS 0/20**
-with a worst westbound run of 0.82 ft. Withdrawn as D-06. The evidence is two instances,
-not four, and correspondingly weaker.
-
-Options and costs are in D-01. My recommendation is unchanged: add repetitions first, since
-it is cheap and discriminates, then decide.
+Within 0.3 m of each other, near the westbound finish. That is one specific corner, not
+stability-cliff non-determinism, which would scatter along the route. **The verdict rule
+was reporting something real and should not be loosened** — relaxing it after the first
+1-in-20 would have hidden this. `S_mixed` drives fog competently except at that one spot,
+where it clips the 2.19 ft budget without departing. Follow-ups are in D-01.
 
 **2. `verify_verdict` and `VERIFY_FRAMES` need replacing.** This is the fix for F17 and it
 is a pre-registration change, so it is yours to make. The statistic should be a COVERAGE
