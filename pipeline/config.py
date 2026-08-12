@@ -11,7 +11,10 @@ import os
 
 # ── CARLA connection ─────────────────────────────────────────────────────────
 HOST = "127.0.0.1"
-PORT = 2000
+# Overridable so this session can run on its own RPC port and never collide with
+# another CARLA on the machine. Today several hours were lost to exactly that: two
+# servers on port 2000, and kill-by-name taking down someone else's simulator.
+PORT = int(os.environ.get("CARLA_PORT", "2000"))
 CLIENT_TIMEOUT_S = 120.0
 TRAFFIC_MANAGER_PORT = 8005
 CARLA_ROOT = "/home/za/carla"

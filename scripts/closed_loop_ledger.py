@@ -153,12 +153,21 @@ def main():
                       f"over={frac * 100:5.1f}%  {'PASS' if ok else 'FAIL'}"
                       f"{'  (departed)' if departed else ''}")
     finally:
-        if camera is not None:
-            camera.destroy()
-        if vehicle is not None:
-            vehicle.destroy()
-        world.apply_settings(original)
+        # Cleanup must NEVER destroy results. CARLA died mid-cell once and
+        # world.apply_settings() then raised out of this finally block, killing the
+        # process before the JSON was written -- discarding ten repetitions that had
+        # already been driven. Best-effort teardown, always.
+        for label, fn in (("camera", lambda: camera and camera.destroy()),
+                          ("vehicle", lambda: vehicle and vehicle.destroy()),
+                          ("settings", lambda: world.apply_settings(original))):
+            try:
+                fn()
+            except Exception as exc:
+                print(f"  cleanup: {label} failed ({type(exc).__name__}); continuing")
 
+    if not runs:
+        print("no runs completed -- nothing to record")
+        return 1
     n = len(runs)
     fails = sum(1 for r in runs if not r["passed"])
     rate = fails / n if n else 1.0
