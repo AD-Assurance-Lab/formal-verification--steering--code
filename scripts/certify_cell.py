@@ -45,6 +45,8 @@ from auto_LiRPA import BoundedModule, BoundedTensor, PerturbationLpNorm  # noqa:
 
 LEDGER = REPO / "results" / "ledger"
 SHADOW_MASK = REPO / "results" / "calibration" / "shadow_mask.npy"
+FOG_CAL = REPO / "results" / "calibration" / "fog_density_sweep.json"
+FOG_CAL_FALLBACK = REPO / "results" / "calibration" / "operating_point_fog.json"
 
 # Declared axes, in the LINEARIZED parameterization each condition is affine in.
 NIGHT_AMBIENT = (0.02, 0.50)
@@ -125,6 +127,63 @@ def fog_map(xf, w, h, airlight):
              - b).reshape(-1, 1)
         return W, b, np.array([-1.0]), np.array([1.0])
 
+    return build, np.array([FOG_MOR[0]]), np.array([FOG_MOR[1]])
+
+
+def fog_map_illum(xf, w, h, airlight, d_sun):
+    """Koschmieder WITH surface-illumination attenuation, rank-1 per MOR sub-interval.
+
+        x'(MOR) = A*(1 - t(MOR)) + t(MOR) * k(MOR) * x0
+        k(MOR)  = exp(-ln(20) * d_sun / MOR)
+
+    Plain Koschmieder (`fog_map`) is retained only as a diagnostic: measured against
+    pose-paired CARLA frames it fails D3(a), brightening the road ROI by +0.015 where CARLA
+    darkens it by -0.031, at ROI R^2 -0.03. Certifying our students against it would
+    reproduce the train/verify family mismatch CLAUDE.md blames for the previous study.
+
+    `k` is the attenuation of the sunlight reaching the road, given the same Koschmieder
+    form over an effective sun path `d_sun`, so it is a function of MOR alone and the map
+    stays d = 1 rather than needing a second bounded dimension.
+    """
+    H = xf.shape[0]
+    A = np.asarray(airlight, np.float32).reshape(1, 1, 3)
+    ln20 = np.log(20.0)
+
+    def render(mor):
+        t = dm.transmission(H, mor, dm.CARLA_GEOM).astype(np.float32).reshape(-1, 1, 1)
+        k = float(np.exp(-ln20 * d_sun / max(mor, 1e-6)))
+        return vd._project((A * (1.0 - t) + t * k * xf).astype(np.float32),
+                           w, h).reshape(-1).astype(np.float32)
+
+    def build(lo, hi):
+        y_hi = render(float(hi[0]))     # larger MOR = milder
+        y_lo = render(float(lo[0]))
+        b = 0.5 * (y_lo + y_hi)
+        W = (0.5 * (y_hi - y_lo)).reshape(-1, 1)
+        return W, b, np.array([-1.0]), np.array([1.0])
+
+    def deviation(lo, hi, n=5):
+        """Max distance from the true x'(MOR) curve to the rank-1 SEGMENT, in pixel units.
+
+        The rank-1 trick interpolates between the sub-interval endpoints, but the true
+        curve bows away from that chord, so the bound is only as sound as this deviation is
+        small. `DISTURBANCE_MATH.md` says it shrinks quadratically as the interval narrows
+        and that it is 'bounded analytically' -- but nothing in the code ever measured it,
+        so the claim rode on an assertion. This measures it per cell so the assumption is
+        visible instead of implicit.
+        """
+        W, b, _, _ = build(lo, hi)
+        wv = W.reshape(-1)
+        denom = float(wv @ wv)
+        worst = 0.0
+        for m in np.linspace(float(lo[0]), float(hi[0]), n):
+            y = render(float(m))
+            s = float((y - b) @ wv / denom) if denom > 1e-12 else 0.0
+            s = max(-1.0, min(1.0, s))
+            worst = max(worst, float(np.abs(y - (b + s * wv)).max()))
+        return worst
+
+    build.deviation = deviation
     return build, np.array([FOG_MOR[0]]), np.array([FOG_MOR[1]])
 
 
@@ -287,7 +346,10 @@ def main():
     ap.add_argument("--h", type=int, default=28)
     ap.add_argument("--frames", type=int, default=design.VERIFY_FRAMES)
     ap.add_argument("--budget", type=int, default=design.VERIFY_CELL_BUDGET)
-    ap.add_argument("--airlight", type=float, default=0.78)
+    ap.add_argument("--fog-model", choices=["illum", "koschmieder"], default="illum",
+                    help="'koschmieder' is the D3-failing diagnostic; see FINDINGS")
+    ap.add_argument("--airlight", type=float, default=None,
+                    help="override the MEASURED airlight; default reads calibration")
     args = ap.parse_args()
     LEDGER.mkdir(parents=True, exist_ok=True)
 
@@ -344,6 +406,28 @@ def main():
         frames_in = clear_frames(args.frames)
         masks = [None] * len(frames_in)
 
+    fog_A, fog_d_sun = (0.78, 0.78, 0.78), 0.0
+    if args.condition == "fog":
+        src = FOG_CAL if FOG_CAL.exists() else FOG_CAL_FALLBACK
+        if not src.exists():
+            print("ERROR: no fog calibration. Run scripts/fog_density_sweep.py (or "
+                  "fit_operating_point.py) first -- an ASSUMED airlight is what D4 exists "
+                  "to eliminate.")
+            return 2
+        cal = json.load(open(src))
+        if "densities" in cal:
+            # use the density closest to the CARLA preset the closed loop actually drives
+            row = min(cal["densities"], key=lambda r: abs(r["fog_density"] - 70.0))
+            fog_A = tuple(row["airlight"])
+            fog_d_sun = float(cal.get("d_sun_m", 0.0))
+        else:
+            fog_A = tuple(cal["airlight_median"])
+        if args.airlight is not None:
+            fog_A = (args.airlight,) * 3
+        print(f"  [fog calibration] {src.name}: A = "
+              f"[{fog_A[0]:.3f} {fog_A[1]:.3f} {fog_A[2]:.3f}], d_sun = {fog_d_sun:.2f} m, "
+              f"model = {args.fog_model}")
+
     rows = []
     print(f"  {'frame':>5s} {'clear':>8s} {'cert':>8s} {'fals':>8s} {'unk':>8s} {'bnds':>6s}")
     print("  " + "-" * 50)
@@ -351,8 +435,10 @@ def main():
         mask = masks[i]
         xf = img.astype(np.float32) / 255.0
         if args.condition == "fog":
-            build, lo, hi = fog_map(xf, args.w, args.h,
-                                    (args.airlight,) * 3)
+            if args.fog_model == "illum":
+                build, lo, hi = fog_map_illum(xf, args.w, args.h, fog_A, fog_d_sun)
+            else:
+                build, lo, hi = fog_map(xf, args.w, args.h, fog_A)
         elif args.condition == "night":
             build, lo, hi = night_map(xf, args.w, args.h)
         else:
@@ -409,7 +495,9 @@ def main():
               "cell_budget": args.budget,
               "axis": {"fog": FOG_MOR, "night": [NIGHT_AMBIENT, NIGHT_RETRO],
                        "shadows": SHADOW_DEPTH}[args.condition],
-              "airlight": args.airlight if args.condition == "fog" else None,
+              "airlight": list(fog_A) if args.condition == "fog" else None,
+              "fog_model": args.fog_model if args.condition == "fog" else None,
+              "d_sun_m": fog_d_sun if args.condition == "fog" else None,
               "median_certified": float(np.median(cert)),
               "median_falsified": float(np.median(fals)),
               "median_unknown": float(np.median([r["unknown"] for r in rows])),

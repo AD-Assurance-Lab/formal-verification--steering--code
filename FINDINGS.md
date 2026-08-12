@@ -10,6 +10,82 @@ file is for characterization measurements, which are not ledger cells.
 
 ---
 
+## F15. CARLA condition frames are pose-paired, so disturbance masks can be measured
+
+The ego drives the same scripted route under each condition and the manifest records
+`(x, y, yaw)`. Nearest-pose matching gives **median position error 0.039 m eastbound /
+0.129 m westbound, yaw 0.03 deg**. A 0.04 m longitudinal offset moves a point 5 m ahead by
+about 0.6 px, so these are genuinely pixel-aligned pairs.
+
+This is the opposite of the ACDC situation and is easy to conflate with it. ACDC was
+rejected for paired photometry because its condition pairs have **no** pixel
+correspondence, which is what invalidated the previous generation's paired R^2. That is a
+statement about ACDC, not about paired photometry.
+
+**What it unlocks:** disturbance masks measured rather than declared; D3 checks (a), (b),
+(c), (f) computable with no depth camera; and the preset-to-axis calibration that lets
+closed loop and verification be evaluated at the same place on an axis.
+
+**Shadows is calibrated for free by it.** With `S` the raw per-pixel per-channel dimming
+`1 - shadows/clear`, the model `x' = x0 * (1 - s*S)` reproduces the observed CARLA shadows
+frame exactly at `s = 1`. So the closed-loop operating point sits at exactly `s = 1` on the
+declared `[0, 1]` axis.
+
+**Masks must be per frame, not pooled.** Cast shadows are static in the world and therefore
+move through the image as the ego drives, so a mask averaged over 400 poses blurs them into
+a smooth global dimming. Measured: pooled relative spatial structure (std/mean) 0.36 versus
+0.93 per frame — pooling discards roughly two thirds of it. The map stays affine in `s`
+either way, because for a given frame the mask is a constant image.
+
+---
+
+## F14. Plain Koschmieder fails D3 on CARLA fog; the missing term is surface illumination
+
+**The falsifier D3(a) exists for exactly this, and it fired.** Fitting pose-paired frames
+at `fog_density=70`, road ROI:
+
+    rendered  delta-mu  -0.0309     (CARLA fog DARKENS the road)
+    modelled  delta-mu  +0.0150     (Koschmieder veiling BRIGHTENS it)
+    ROI R^2   -0.030               (worse than predicting the mean)
+
+Opposite signs. Full-frame rmse looks acceptable at 0.053 only because the sky dominates:
+CARLA fog brightens the sky by **+0.42** while darkening the road by **-0.03** at the same
+time, and no single global airlight can do both. This is the pooled-statistics trap D3(d)
+was written to catch.
+
+**Why this was dangerous.** `CLAUDE.md` names train/verify family mismatch as one of the two
+never-ruled-out causes of the previous study's inverted fog result. Our students train on
+CARLA-rendered fog, and we were about to certify them against a model that moves the road
+the wrong way.
+
+**The physics.** Fog also attenuates the sunlight reaching the road surface, so the surface
+radiance itself drops. Fixed-radiance Koschmieder omits this. Adding it:
+
+    x' = A*(1 - t) + t * k * x0
+
+| model | MOR | rmse | ROI R^2 | (a) sign | (b) magnitude | (f) R^2 |
+|---|---|---|---|---|---|---|
+| Koschmieder | 250 m | 0.0529 | -0.030 | 0/8 | 0/8 | 0/8 |
+| + illumination | **61 m** | 0.0314 | **+0.870** | **8/8** | **8/8** | **8/8** |
+
+Every computable D3 check passes, and the operating point moves from the mild half of the
+axis to **MOR ~ 61 m**, its severe end. `k ~ 0.70` at that density.
+
+**Airlight is now measured, not assumed (D4).** `A ~ [0.47, 0.44, 0.43]`, against the 0.78
+the previous generation assumed — off by about 1.7x.
+
+**Verifiability is preserved at d = 1.** Giving `k` the same Koschmieder form over an
+effective sun path, `k(MOR) = exp(-ln20 * d_sun / MOR)`, makes it a function of MOR alone,
+so a sub-interval stays rank-1 in one scalar rather than needing a second bounded
+dimension.
+
+**Still open:** `k(MOR)` is a one-parameter law and needs validating across densities, which
+`scripts/fog_density_sweep.py` measures. And the rank-1 chord is only as sound as the true
+curve's bow away from it is small — `DISTURBANCE_MATH.md` asserts that deviation shrinks
+quadratically but nothing measured it, so `fog_map_illum.deviation` now reports it per cell.
+
+---
+
 ## F12. Model size is NOT the binding constraint on verifiability; input dimension is
 
 **Status: measured. Settles the architecture question and answers the scaling question.**
