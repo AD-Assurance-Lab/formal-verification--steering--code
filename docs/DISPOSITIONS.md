@@ -323,3 +323,51 @@ three-plus, and it is correspondingly weaker evidence for a recurring corner. Th
 x, y) instrumentation added tonight is still the right way to settle it.
 
 `S_mixed` now passes clear, night and shadows cleanly and fails only fog, at 1/20.
+
+---
+
+## D-04 resolution (partial) — the static-capture harness does not reproduce the preset
+
+Chasing the fog `k` disagreement to its root, at the SAME pose, same nominal preset:
+
+| region | route frame (dataset) | my static capture | ratio |
+|---|---|---|---|
+| sky, rows 0–180 | **0.0021** | **0.2568** | 123x |
+| road, rows 240–450 | 0.3135 | 0.2203 | 0.70 |
+| hood, rows 450–480 | 0.2447 | 0.1343 | 0.55 |
+
+The dataset's clear, night and shadows frames have a **black sky**; fog has a bright one.
+That is not a defect — `CLEAR_BASELINE` sets `scattering_intensity = 0.0` and
+`mie_scattering_scale = 0.0`, so with no atmospheric scattering the sky renders black, and
+fog is bright precisely because the fog volume scatters. The dataset is behaving as
+specified.
+
+**It is my ad-hoc static harness that is wrong.** It renders a bright sky from the same
+nominal preset, so it is not reproducing `CLEAR_BASELINE` — most likely because the world
+retains scattering state from preceding runs and the harness does not establish it the way
+`set_condition` does in the real pipeline.
+
+**Ruled out along the way:** world staleness (a full Town04 reload gives an identical
+0.2204), render settling (converges by ~10 ticks and is flat out to 320), dataset vintage
+(the last `CLEAR_BASELINE` change is the commit that immediately precedes collection), and
+motion blur as the primary term (route frames are blurrier — Laplacian variance 90 vs 199 —
+but blur cannot move a regional mean by 42%).
+
+**Why this matters, and how far.** The fog airlight `A` is driven mainly by the sky region,
+so fitting against a harness whose sky is wrong by two orders of magnitude will bias `A`
+and, through the A/k trade-off, bias `k`. That is the most likely root of D-04.
+
+**What it does NOT implicate.** The closed-loop pipeline renders live through
+`set_condition`, and `S_mixed` passes clear, night and shadows cleanly, which is not what a
+gross train/render mismatch would produce. The ledger cells stand. What is in doubt is the
+**static-capture calibration path**: `fog_density_sweep.py` and the MOR(density) curve.
+
+**Consequence for the fog cells now running.** They use the route-frame calibration, which
+is measured from dataset frames on both sides of the pair and is therefore unaffected by
+the harness bug — and `k` is bounded over an interval that spans the harness's value
+anyway, so the certificates stay sound. The sweep's MOR(density) curve should be treated as
+unvalidated until the harness reproduces the preset.
+
+**Next step when CARLA is free:** make the static harness use `set_condition` exactly as the
+collection pipeline does, re-capture one clear frame, and confirm the sky reads ~0.00
+before rerunning the sweep.
