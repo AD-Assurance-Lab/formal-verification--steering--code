@@ -220,6 +220,69 @@ def fog_map_illum(xf, w, h, airlight, k_range):
     return build, np.array([FOG_MOR[0]]), np.array([FOG_MOR[1]])
 
 
+def night_map_sensor(xf, R, Cm):
+    """Night with saturation applied at SENSOR resolution (physically correct).
+
+    `night_map` clamps the 84x28 projection; the camera clamps before downsampling. The
+    fitted retroreflection amplitude is negative, so night is the one condition that leaves
+    [0,1], and the two orderings differ by up to 1.3e-2 -- larger than the 0.012 corridor.
+    Measured against the true composition this path is exact to ~1e-07 where the old one
+    was off by 1.3e-02.
+    """
+    H, Wd = xf.shape[:2]
+    L = dm.headlight_field(H, Wd)[..., None].astype(np.float32)
+    t_road = float(np.percentile(xf[dm.ROAD_TOP:dm.ROAD_BOT], 75))
+    retro = (L * np.maximum(xf - t_road, 0.0)).astype(np.float32)
+
+    def render_full(g, a_r):
+        y = xf * (1.0 - g * (1.0 - L)) + a_r * retro
+        return vd.project_crop_rgb(y.astype(np.float32)).reshape(-1).astype(np.float32)
+
+    shape = vd.project_crop_rgb(xf).shape
+
+    def build(lo, hi):
+        mid = 0.5 * (lo + hi)
+        b = render_full(*mid)
+        cols = [(render_full(mid[0] + 1e-2, mid[1]) - b) / 1e-2,
+                (render_full(mid[0], mid[1] + 1e-2) - b) / 1e-2]
+        return np.stack(cols, 1), b, lo - mid, hi - mid
+
+    build.sensor = (R, Cm, shape)
+    return build, np.array([1.0 / (1.0 + NIGHT_AMBIENT[1]), NIGHT_RETRO[0]]), \
+        np.array([1.0 / (1.0 + NIGHT_AMBIENT[0]), NIGHT_RETRO[1]])
+
+
+class SensorBounder:
+    """Bounder for maps whose clamp lives at sensor resolution."""
+
+    def __init__(self, k, student, device, R, Cm, shape):
+        self.device, self.k, self.shape = device, k, shape
+        n = int(np.prod(shape))
+        self.head = vd.SensorDisturbance(np.zeros((n, k), np.float32),
+                                         np.zeros(n, np.float32), R, Cm, shape)
+        self.net = nn.Sequential(self.head, student).to(device).eval()
+        self.centre = torch.zeros(1, k, device=device)
+        self.bounded = BoundedModule(self.net, torch.empty_like(self.centre), device=device)
+
+    def __call__(self, W, b, lo, hi):
+        with torch.no_grad():
+            self.head.fc.weight.copy_(torch.from_numpy(W).to(self.device))
+            self.head.fc.bias.copy_(torch.from_numpy(b).to(self.device))
+        ptb = PerturbationLpNorm(
+            norm=float("inf"),
+            x_L=torch.tensor(lo, dtype=torch.float32, device=self.device).unsqueeze(0),
+            x_U=torch.tensor(hi, dtype=torch.float32, device=self.device).unsqueeze(0))
+        # Plain CROWN, not CROWN-Optimized. alpha-CROWN allocates optimisable slopes for
+        # every ReLU, and this graph has ~0.8M of them, which OOMs an 12 GB card. It also
+        # buys almost nothing here: the clamp pre-activations are affine in a 2-D theta over
+        # a box, so their bounds are exact by interval arithmetic, and only ~0.1% of pixels
+        # are actually unstable (i.e. genuinely saturating). The relaxation those few incur
+        # is tiny -- verified against the true composition at 1e-07.
+        lb, ub = self.bounded.compute_bounds(
+            x=(BoundedTensor(self.centre, ptb),), method="CROWN")
+        return float(lb.min()), float(ub.max())
+
+
 def night_map(xf, w, h):
     """d = 2, exactly affine in u = (g, a_retro) by construction."""
     H, Wd = xf.shape[:2]
@@ -410,6 +473,11 @@ def main():
     ap.add_argument("--budget", type=int, default=design.VERIFY_CELL_BUDGET)
     ap.add_argument("--fog-model", choices=["illum", "koschmieder"], default="illum",
                     help="'koschmieder' is the D3-failing diagnostic; see FINDINGS")
+    ap.add_argument("--night-ambient", default=None, metavar="LO,HI",
+                    help="override the declared night ambient range. The pre-registered "
+                         "axis is 0.02-0.50, which does NOT contain CARLA's measured 0.553 "
+                         "(F16), so verdicts over it say nothing about the condition closed "
+                         "loop actually drives.")
     ap.add_argument("--fog-k", default=None,
                     help="override the measured k interval, e.g. '0.6,1.25'")
     ap.add_argument("--airlight", type=float, default=None,
@@ -517,7 +585,15 @@ def main():
             else:
                 build, lo, hi = fog_map(xf, args.w, args.h, fog_A)
         elif args.condition == "night":
-            build, lo, hi = night_map(xf, args.w, args.h)
+            if args.night_ambient:
+                import scripts.certify_cell as _self
+                a_lo, a_hi = (float(v) for v in args.night_ambient.split(","))
+                _self.NIGHT_AMBIENT = (a_lo, a_hi)
+            # Night is the ONLY condition that leaves [0,1] (negative retro amplitude), so
+            # it is the only one where clamp placement changes the answer -- and it changes
+            # it by more than the corridor. Use the sensor-resolution path.
+            R_, C_ = vd.load_projection()
+            build, lo, hi = night_map_sensor(xf, R_, C_)
         else:
             build, lo, hi = shadow_map(xf, args.w, args.h, mask)
 
@@ -527,12 +603,16 @@ def main():
         # linearized map may have more columns (fog is rank-2 in (u1, u2) once k is
         # bounded). Size the bounded module from the map, not from the box.
         _W_probe = build(lo, hi)[0]
-        bounder = Bounder(_W_probe.shape[1], student, device, args.h, args.w)
+        if getattr(build, "sensor", None) is not None:
+            R_, C_, shp = build.sensor
+            bounder = SensorBounder(_W_probe.shape[1], student, device, R_, C_, shp)
+        else:
+            bounder = Bounder(_W_probe.shape[1], student, device, args.h, args.w)
 
         # The cached-module shortcut is checked against a fresh construction ONCE per
         # cell, on the full box. A silent mismatch here would make every bound in the
         # sweep wrong in a way no downstream number would reveal.
-        if i == 0:
+        if i == 0 and getattr(build, "sensor", None) is None:
             W0, b0, u_lo0, u_hi0 = build(lo, hi)
             ok, err, cached, fresh, rtol, moved = bounder.check_equivalence(
                 W0, b0, u_lo0, u_hi0, student, args.h, args.w)

@@ -285,3 +285,155 @@ def linear_map_for(cond, x0_full_bgr, ranges, w=84, h=28, probe=PROBE_DELTA,
         th = lo + rng.rand(len(lo)) * (hi - lo)
         err = max(err, float(np.abs(render(th) - (b + W @ (th - nom))).max()))
     return W.astype(np.float32), b.astype(np.float32), lo - nom, hi - nom, err
+
+
+# ── Saturation at the SENSOR, not after downsampling ─────────────────────────
+
+class SensorDisturbance(nn.Module):
+    """x'(theta) = project(clamp01(W theta + b)) with the clamp at FULL RESOLUTION.
+
+    WHY THIS EXISTS. `LinearDisturbance` bakes the crop-and-downsample into (W, b) and then
+    clamps the 84x28 result, i.e. it computes clamp(project(.)). The physical order is the
+    reverse: a camera cannot record negative light, so saturation happens at the sensor,
+    before any downsampling. Those differ -- clamp-then-average is not average-then-clamp --
+    and measured on the night model the gap reached 1.3e-2, larger than the 0.012 corridor
+    the study certifies against. Verifying the wrong composition is not conservative, it is
+    simply verifying a different function than the network computes.
+
+    It only matters where the disturbance leaves [0,1]. Fog (A(1-t) + t*k*x0) and shadows
+    (x0*(1-s*S)) cannot; night can, because the fitted retroreflection amplitude is negative
+    and drives marking pixels below zero. So this path exists for night and for any future
+    additive condition (rain streaks, snow flakes), and fog/shadows are unaffected either
+    way.
+
+    COST. The clamp becomes ~0.8M elementwise ReLU ops. That is affordable because the
+    pre-activations are an affine function of a 1-2 dimensional theta, so their bounds are
+    interval arithmetic rather than a propagation, and the network output is a scalar, so
+    the backward pass carries one row.
+
+    The projection is exact, not approximated: cv2's INTER_AREA downsample is separable, so
+    it factors into R (h x H_crop) and C (w x W_full), recovered by probing and verified to
+    1.1e-07 against cv2 itself. That keeps this path numerically identical to the
+    preprocessing the network is trained and deployed with.
+    """
+
+    def __init__(self, W_full, b_full, R, C, crop_shape):
+        super().__init__()
+        n, k = W_full.shape
+        self.fc = nn.Linear(k, n)
+        with torch.no_grad():
+            self.fc.weight.copy_(torch.from_numpy(W_full))
+            self.fc.bias.copy_(torch.from_numpy(b_full))
+        self.clamp = Clamp01()
+        # The separable projection as two Linear layers on the LAST dim with a transpose
+        # between. A broadcast matmul is mathematically identical but auto_LiRPA's shape
+        # inference mis-reshapes it (it assumed the final 84-wide layout one step early);
+        # Linear-on-last-dim is the form it traces reliably.
+        c, hc, wf = crop_shape
+        h, w = R.shape[0], C.shape[0]
+        self.projw = nn.Linear(wf, w, bias=False)
+        self.projh = nn.Linear(hc, h, bias=False)
+        with torch.no_grad():
+            self.projw.weight.copy_(torch.from_numpy(np.ascontiguousarray(C)).float())
+            self.projh.weight.copy_(torch.from_numpy(np.ascontiguousarray(R)).float())
+        self.crop_shape = crop_shape          # (3, H_crop, W_full)
+        self.dim = k
+
+    def forward(self, theta_rel):
+        c, hc, wf = self.crop_shape
+        x = self.fc(theta_rel).view(1, c, hc, wf)
+        x = self.clamp(x)                      # saturate at sensor resolution
+        x = self.projw(x)                      # (1,c,hc,w)
+        x = x.transpose(2, 3)                  # (1,c,w,hc)
+        x = self.projh(x)                      # (1,c,w,h)
+        return x.transpose(2, 3)               # (1,c,h,w)
+
+
+def load_projection(path=None):
+    """R, C for the exact separable INTER_AREA downsample."""
+    import os
+    p = path or os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                             "results", "calibration", "projection_matrices.npz")
+    d = np.load(p)
+    return d["R"].astype(np.float32), d["C"].astype(np.float32)
+
+
+def project_crop_rgb(full_bgr_float):
+    """The cropped RGB CHW block the projection consumes. No clipping, no resize."""
+    rgb = cv2.cvtColor(np.ascontiguousarray(full_bgr_float), cv2.COLOR_BGR2RGB)
+    return rgb[STUDENT_CROP_TOP:STUDENT_CROP_BOT].transpose(2, 0, 1)
+
+
+class SparseSensorDisturbance(nn.Module):
+    """Sensor-resolution clamping, with the provably-stable 99.9% folded into a linear term.
+
+    `SensorDisturbance` is correct but puts ~0.4M pixels through Clamp01, and auto_LiRPA
+    allocates per-neuron for each -- it OOMs a 12 GB card sharing space with CARLA.
+
+    Almost none of those pixels need relaxing. Over a given theta box the pre-activation
+    interval of each pixel is exact (the map is affine in a 1-2 dimensional theta), so each
+    pixel is provably one of:
+
+        hi <= 0            clamp is the constant 0
+        lo >= 1            clamp is the constant 1
+        0 <= lo, hi <= 1   clamp is the identity
+        otherwise          genuinely unstable -- needs a ReLU
+
+    Measured on night: 503 unstable of 403,200 at the operating point (0.125%), 2,480 over
+    the full axis. So with P the (linear) projection,
+
+        P clamp(W u + b) = P_H 1 + P_I (W_I u + b_I) + P_U clamp(W_U u + b_U)
+
+    and only the last term carries ReLUs. That is EXACT, not an approximation: the stable
+    classifications are proved by interval arithmetic on the box being verified.
+    """
+
+    def __init__(self, W, b, R, C, crop_shape, u_lo, u_hi):
+        super().__init__()
+        n, k = W.shape
+        c, hc, wf = crop_shape
+        h, w = R.shape[0], C.shape[0]
+
+        lo_v = b + (W * np.where(W > 0, u_lo, u_hi)).sum(1)
+        hi_v = b + (W * np.where(W > 0, u_hi, u_lo)).sum(1)
+        stable_hi = lo_v >= 1.0
+        stable_id = (lo_v >= 0.0) & (hi_v <= 1.0) & ~stable_hi
+        unstable = ~((hi_v <= 0.0) | stable_hi | stable_id)
+        idx = np.flatnonzero(unstable)
+
+        def P(vec):                      # (n,) -> (h*w*c,) via the separable projection
+            v = vec.reshape(c, hc, wf).astype(np.float64)
+            return np.einsum('ip,cpq,jq->cij', R, v, C).astype(np.float32).reshape(-1)
+
+        const = np.where(stable_hi, 1.0, 0.0) + np.where(stable_id, b, 0.0)
+        skip_b = P(const)
+        skip_W = np.stack([P(np.where(stable_id, W[:, j], 0.0)) for j in range(k)], 1)
+
+        PU = np.zeros((h * w * c, len(idx)), np.float32)
+        for m, flat in enumerate(idx):
+            ch, rem = divmod(int(flat), hc * wf)
+            p, q = divmod(rem, wf)
+            col = np.zeros((c, h, w), np.float32)
+            col[ch] = np.outer(R[:, p], C[:, q])
+            PU[:, m] = col.reshape(-1)
+
+        self.pre = nn.Linear(k, max(len(idx), 1))
+        self.post = nn.Linear(max(len(idx), 1), h * w * c, bias=True)
+        self.skip = nn.Linear(k, h * w * c, bias=False)
+        with torch.no_grad():
+            if len(idx):
+                self.pre.weight.copy_(torch.from_numpy(W[idx]))
+                self.pre.bias.copy_(torch.from_numpy(b[idx]))
+                self.post.weight.copy_(torch.from_numpy(PU))
+            else:
+                self.pre.weight.zero_(); self.pre.bias.zero_(); self.post.weight.zero_()
+            self.post.bias.copy_(torch.from_numpy(skip_b))
+            self.skip.weight.copy_(torch.from_numpy(skip_W))
+        self.clamp = Clamp01()
+        self.out_shape = (1, c, h, w)
+        self.n_unstable = int(len(idx))
+        self.dim = k
+
+    def forward(self, theta_rel):
+        y = self.post(self.clamp(self.pre(theta_rel))) + self.skip(theta_rel)
+        return y.view(self.out_shape)
