@@ -196,8 +196,16 @@ frames; closed loop drives live renders. Tonight's agreements stand — falsific
 needs one real violating region — but "verification predicts closed loop" is being claimed
 across an undeclared domain gap. **This makes the fix blocking rather than cosmetic.**
 
-**Decision:** re-collect the `conditions` dataset under the current presets, or pin the old
-preset explicitly. Leaving the two silently different is the one option that should be off
+**But the cause is not the preset — I bisected it and was wrong about that.** None of the
+fields `ae3ec28` newly pins (`mie_scattering_scale`, `scattering_intensity`, `cloudiness`)
+move the rendering at all; a 100x sky difference is unreachable from scattering, and a pure
+black sky is a sky not being rendered. Leading hypothesis, untested: the **server graphics
+quality level** (tonight is `-quality-level=Epic`; Low disables volumetric sky). The commit
+landing the same minute collection began made it look causal. So pinning the preset is NOT
+the fix — one CARLA restart at a different quality level would confirm.
+
+**Decision:** re-collect the `conditions` dataset in a rendering environment that matches
+how closed loop runs. Leaving the two silently different is the one option that should be off
 the table. Until then, photometry must use dataset frames on both sides of a comparison —
 which the fog route-frame calibration already does.
 

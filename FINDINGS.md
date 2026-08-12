@@ -70,6 +70,31 @@ declared, and that gap has to close before the claim is airtight.
 
 **This raises the priority of the fix from tidiness to blocking.**
 
+**The cause is NOT the weather preset — corrected after bisecting it.** I attributed this
+to `ae3ec28` replacing a read-modify-write `set_clear_weather` with a constructed
+`CLEAR_BASELINE`. Testing the fields that commit newly pins:
+
+    TARGET (dataset)           sky 0.0021   road 0.3135
+    current CLEAR_BASELINE     sky 0.2575   road 0.2205
+    mie_scattering_scale=0.03  sky 0.2575   road 0.2206
+    scattering_intensity=1.0   sky 0.2575   road 0.2206
+    cloudiness=0               sky 0.1886   road 0.1460   (wrong direction)
+
+None of them move it. A 100x sky difference is not reachable from any scattering parameter,
+and a **pure black** sky is not physical under manual exposure with an overcast preset — it
+is a sky that is not being rendered at all.
+
+**Leading hypothesis, untested: the server's graphics quality level.** Tonight's runs launch
+CARLA with `-quality-level=Epic`; a Low-quality server disables volumetric sky and
+atmosphere, which would give exactly a black sky, and would also change how the road is lit.
+The timing coincidence with `ae3ec28` misled me — the commit landed the same minute
+collection began, which made it look causal.
+
+**So "pin the old preset" is not the fix.** The difference is outside the weather
+parameters entirely, and the recollection decision below should be taken on the basis that
+the *rendering environment* differed, not the preset. Confirming it costs one CARLA restart
+at a different quality level and one frame capture.
+
 **Recommended fix, and it is Zach's call because it costs a recollection:** re-collect the
 `conditions` dataset under the current constructed presets, or pin the old preset
 explicitly. Do not leave the two silently different. Until then, any photometry must use
