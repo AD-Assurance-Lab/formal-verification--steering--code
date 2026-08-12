@@ -55,7 +55,19 @@ def save_route(name, route):
 
 
 def load_route(name):
-    return np.load(os.path.join(ROUTES_DIR, f"{name}.npy"))
+    """Load a route. `ROUTE_ROLL` rotates the index origin without touching geometry.
+
+    Diagnostic only, default 0 (identical behaviour). It exists to separate two
+    explanations that coincide on this map: the western intersection occupies the LAST 16
+    of 1522 westbound indices, so "failures at the junction" and "failures at the route's
+    index seam, where nearest_index wraps and pure pursuit's lookahead crosses a
+    discontinuity" are the same observation. Rolling the origin moves the seam to a
+    straight while leaving the path, the spawn and the lap-termination test unchanged, so
+    whichever the failures follow is the cause. See D-09.
+    """
+    route = np.load(os.path.join(ROUTES_DIR, f"{name}.npy"))
+    roll = int(os.environ.get("ROUTE_ROLL", "0"))
+    return np.roll(route, roll, axis=0) if roll else route
 
 
 def nearest_index(route, x, y, hint=None, window=80):

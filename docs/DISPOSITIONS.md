@@ -737,3 +737,39 @@ needs to change.
 (eastbound) and two broken runs, and the fourth attempt drifted 6 m off-lane during warm-up
 before it reached the junction. The seam finding makes the control less important than the
 experiment above, which tests the actual question directly.
+
+---
+
+## D-09 RESOLVED — failures follow the junction, not the seam. It is a real ODD boundary.
+
+Recorded 2026-08-12 04:10. `ROUTE_ROLL=761` moves the westbound junction from route indices
+1506–1521 (on the seam) to 745–760 (mid-route), leaving geometry, spawn and lap termination
+untouched. Rerunning `clear / S_clear`, 20 runs:
+
+    2/20 failures
+      rep 2 westbound  2.35 ft  x -373.9  y 11.9
+      rep 6 eastbound  2.52 ft  x -368.1  y 29.3
+
+    unrolled, for comparison: x -374.1, -373.9, -374.1 (westbound), -370.5 (eastbound)
+
+**Failures land in the same physical place with the seam moved half a lap away.** So they
+follow the intersection, not the route's index discontinuity. The representation
+explanation is eliminated; the perception one stands.
+
+Consistent with D-08's eastbound control, which showed the expert tracks that same region
+at 0.00 ft — the reference is feasible, and it is the learned policies that degrade there.
+
+**So the ODD-boundary reading is correct after all, and now it is supported.** An
+end-to-end lane-keeping policy fails inside an intersection because the lane markings it
+depends on are absent. `S_clear` departs 2.5% of the time on its own training condition for
+this reason, and both students show marginal excursions there.
+
+**Do not exclude junction segments from the metric.** That was my first instinct, and it
+would have deleted a real finding. Report it: the ODD is "lane-marked road", and the study
+has measured where that boundary lies.
+
+**Note the route of this conclusion.** I reached it, withdrew it as unsupported, and
+reached it again with evidence. The middle step was right: the first control was broken,
+and a conclusion resting on a parked car deserved withdrawal even though it happened to
+point the correct way. Being right by luck and being right are different, and only the
+second is reportable.

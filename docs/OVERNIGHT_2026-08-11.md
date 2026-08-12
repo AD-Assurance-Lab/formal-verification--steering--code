@@ -41,17 +41,19 @@ Every marginal failure in every cell — and both departures — traces to one p
 western intersection at the end of the lap. Confirmed across both students, both
 directions and two conditions, at ~step 1690 of ~1700.
 
-**Cause unresolved — see D-07, which I asserted and then withdrew.** I claimed an expert
-control had shown the reference is drivable there. It had not: the first run's vehicle never
-moved, and the second never reaches the junction because the lap ends at loop closure. So
-whether the reference through the intersection is trackable is still open, and the choice
-between "report it as an ODD boundary" and "exclude it as a metric artefact" cannot be made
-yet.
+**It is a real ODD boundary, and it is not a metric artefact (D-09).** The intersection
+happens to sit on the route's index seam, so "failures at the junction" and "failures at the
+seam" were the same observation. Rotating the route's index origin half a lap moves the seam
+to a straight and changes nothing else — and the failures stay at the same physical place
+(x −373.9 / −368.1). So they follow the *intersection*, not the encoding. The expert also
+tracks that region eastbound at 0.00 ft, so the reference is feasible.
 
-**What is established:** the failures are real. Each recorded max-CTE position was checked
-against the true distance to the reference polyline — the 86 ft departure matches exactly,
-so the vehicle genuinely left the road, and there is no `nearest_index` wraparound at lap
-end. Setting the junction aside only to show the conditioning effect:
+**Conclusion: an end-to-end lane-keeping policy degrades where lane markings are absent.**
+The ODD is "lane-marked road", and this study has measured where that boundary lies. Do NOT
+exclude junction segments from the metric — that was my first instinct and it would have
+deleted a real finding. The failures are also genuinely real: each max-CTE position was
+checked against true distance to the reference polyline, and the 86 ft departure matches
+exactly. Setting the junction aside only to show the conditioning effect:
 
 | | clear | night | fog | shadows |
 |---|---|---|---|---|
