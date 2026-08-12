@@ -368,9 +368,21 @@ the harness bug — and `k` is bounded over an interval that spans the harness's
 anyway, so the certificates stay sound. The sweep's MOR(density) curve should be treated as
 unvalidated until the harness reproduces the preset.
 
-**Next step when CARLA is free:** make the static harness use `set_condition` exactly as the
-collection pipeline does, re-capture one clear frame, and confirm the sky reads ~0.00
-before rerunning the sweep.
+**That proposed next step is already eliminated.** I was going to route the harness through
+`set_condition`, but reading it, for a non-night condition it does exactly what the harness
+already does — `world.set_weather(weather_params(name))` plus headlights. So the difference
+is not the weather call. Do not spend time re-testing that.
+
+**What is actually still unknown:** why the same constructed `CLEAR_BASELINE` renders a
+black sky in the dataset frames and a bright one in a live static capture. Note the
+Town04-reload test measured only the road ROI, so it does not rule out a sky difference
+surviving a reload. The cheapest next probe is to capture one clear frame immediately after
+a fresh reload and print the SKY mean, before anything else touches the world.
+
+**Priority: low.** This blocks only the static-capture calibration path
+(`fog_density_sweep.py` and its MOR(density) curve, both already marked unvalidated). It
+does not touch the ledger cells, which render live and whose fog calibration comes from
+route frames on both sides of each pair.
 
 ---
 
