@@ -1,0 +1,366 @@
+#!/usr/bin/env python3
+"""M6: run one verification sweep and write it to the ledger as a cell. No CARLA.
+
+This is the right half of the ledger. `certify_fog.py` / `certify_night.py` are the
+per-condition studies; this is the thing that produces a VERDICT, using the aggregation
+rule pre-registered in `study.design.verify_verdict` before any cell was run.
+
+    python scripts/certify_cell.py --student S_clear_84x28 --condition fog \
+        --channels 8,16,16 --fc 32 --cell-name S_clear
+
+The blind protocol (CLAUDE.md) requires these to be committed BEFORE the matching
+closed-loop cell. `python -m study.ledger --check-order` checks that against git history.
+
+Corridor is centred on CLEAR-WEATHER steering, not on the disturbed midpoint (trap 6).
+Centring on the midpoint certifies insensitivity to the disturbance parameter while
+allowing an arbitrary systematic offset from what clear weather would do -- which is the
+actual hazard, and the bug that once made night read 100% certified while failing 85% of
+closed-loop frames.
+"""
+
+import argparse
+import csv
+import heapq
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+import cv2
+import numpy as np
+import torch
+import torch.nn as nn
+
+REPO = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO))
+sys.path.insert(0, str(REPO / "pipeline"))
+
+import config as C  # noqa: E402
+import disturbance_models as dm  # noqa: E402
+import verifiable_disturbance as vd  # noqa: E402
+from student import StudentNet  # noqa: E402
+from study import design  # noqa: E402
+
+from auto_LiRPA import BoundedModule, BoundedTensor, PerturbationLpNorm  # noqa: E402
+
+LEDGER = REPO / "results" / "ledger"
+SHADOW_MASK = REPO / "results" / "calibration" / "shadow_mask.npy"
+
+# Declared axes, in the LINEARIZED parameterization each condition is affine in.
+NIGHT_AMBIENT = (0.02, 0.50)
+NIGHT_RETRO = (0.0, 3.0)
+FOG_MOR = (60.0, 2000.0)
+SHADOW_DEPTH = (0.0, 0.75)     # s in x' = x0 * (1 - s*S); 0.75 = deep cast shadow
+
+
+def clear_frames(n):
+    """Clear-weather frames sampled evenly along the route, both directions."""
+    base = REPO / "pipeline" / "data" / "conditions"
+    with open(base / "manifest.csv") as fh:
+        rows = [r for r in csv.DictReader(fh) if r["weather"] == "clear"]
+    picks = rows[:: max(1, len(rows) // n)][:n]
+    return [cv2.imread(str(base / r["image"])) for r in picks]
+
+
+def clear_steer(student, xf, device, w, h):
+    with torch.no_grad():
+        return float(student(torch.from_numpy(
+            vd._project(xf, w, h).reshape(1, 3, h, w).astype(np.float32)).to(device)).item())
+
+
+# ── per-condition linear maps ────────────────────────────────────────────────
+# Each returns a callable (lo, hi) -> (W, b) giving the affine map from a box in the
+# linearized parameter u to the student's input, plus the initial box.
+
+def fog_map(xf, w, h, airlight):
+    """Rank-1 in one scalar per MOR sub-interval. Transmission is PER-ROW, never banded
+    (F8: 6-band discretization was the binding constraint, not the method)."""
+    H = xf.shape[0]
+    A = np.asarray(airlight, np.float32).reshape(1, 1, 3)
+
+    def veil(t_rows):
+        return A + t_rows.astype(np.float32).reshape(-1, 1, 1) * (xf - A)
+
+    def build(lo, hi):
+        # box is in MOR metres; rank-1 reparameterization s in [-1, 1]
+        t_lo = dm.transmission(H, hi[0], dm.CARLA_GEOM)   # larger MOR -> larger t
+        t_hi = dm.transmission(H, lo[0], dm.CARLA_GEOM)
+        tbar, delta = 0.5 * (t_lo + t_hi), 0.5 * (t_hi - t_lo)
+        b = vd._project(veil(tbar), w, h).reshape(-1).astype(np.float32)
+        W = (vd._project(veil(tbar + delta), w, h).reshape(-1).astype(np.float32)
+             - b).reshape(-1, 1)
+        return W, b, np.array([-1.0]), np.array([1.0])
+
+    return build, np.array([FOG_MOR[0]]), np.array([FOG_MOR[1]])
+
+
+def night_map(xf, w, h):
+    """d = 2, exactly affine in u = (g, a_retro) by construction."""
+    H, Wd = xf.shape[:2]
+    L = dm.headlight_field(H, Wd)[..., None].astype(np.float32)
+    t_road = float(np.percentile(xf[dm.ROAD_TOP:dm.ROAD_BOT], 75))
+    retro = (L * np.maximum(xf - t_road, 0.0)).astype(np.float32)
+
+    def render(g, a_r):
+        return vd._project((xf * (1.0 - g * (1.0 - L)) + a_r * retro).astype(np.float32),
+                           w, h).reshape(-1).astype(np.float32)
+
+    def build(lo, hi):
+        mid = 0.5 * (lo + hi)
+        b = render(*mid)
+        cols = [(render(mid[0] + 1e-2, mid[1]) - b) / 1e-2,
+                (render(mid[0], mid[1] + 1e-2) - b) / 1e-2]
+        return np.stack(cols, 1), b, lo - mid, hi - mid
+
+    # g = 1/(1+ambient) is decreasing in ambient
+    return build, np.array([1.0 / (1.0 + NIGHT_AMBIENT[1]), NIGHT_RETRO[0]]), \
+        np.array([1.0 / (1.0 + NIGHT_AMBIENT[0]), NIGHT_RETRO[1]])
+
+
+def shadow_map(xf, w, h, mask):
+    """d = 1, fixed mask with bounded depth: x' = x0 * (1 - s*S). Affine in s.
+
+    The mask is MEASURED from pose-paired clear/shadows CARLA frames, not declared --
+    see scripts/measure_shadow_mask.py. Letting the mask move with solar elevation is
+    NOT affine (DISTURBANCE_MATH.md) and is deliberately not attempted.
+    """
+    # measure_shadow_mask.py emits a PER-CHANNEL mask (a low sun is warmer as well as
+    # dimmer); a 2-D luminance mask is still accepted and broadcast.
+    S = mask.astype(np.float32)
+    if S.ndim == 2:
+        S = S[..., None]
+
+    def render(s):
+        return vd._project((xf * (1.0 - s * S)).astype(np.float32),
+                           w, h).reshape(-1).astype(np.float32)
+
+    def build(lo, hi):
+        mid = 0.5 * (lo + hi)
+        b = render(float(mid[0]))
+        W = ((render(float(mid[0]) + 1e-2) - b) / 1e-2).reshape(-1, 1)
+        return W, b, lo - mid, hi - mid
+
+    return build, np.array([SHADOW_DEPTH[0]]), np.array([SHADOW_DEPTH[1]])
+
+
+# ── branch and bound ─────────────────────────────────────────────────────────
+class Bounder:
+    """alpha-CROWN over a rebindable affine head.
+
+    Constructing a BoundedModule costs far more than the bound itself here -- the network
+    is tiny and the graph trace dominates. Since every sub-box differs only in the WEIGHTS
+    of the leading Linear layer, the graph is identical and can be traced once per frame,
+    then rebound in place. Measured: ~8.3 s/bound rebuilding versus the time below.
+
+    This is a soundness-relevant shortcut, so `check_equivalence` verifies it against a
+    freshly constructed module rather than assuming auto_LiRPA reads live weights.
+    """
+
+    def __init__(self, k, student, device, h, w):
+        self.device, self.k = device, k
+        dummy_W = np.zeros((3 * h * w, k), np.float32)
+        dummy_b = np.zeros(3 * h * w, np.float32)
+        self.head = vd.LinearDisturbance(dummy_W, dummy_b, (1, 3, h, w))
+        self.net = nn.Sequential(self.head, student).to(device).eval()
+        self.centre = torch.zeros(1, k, device=device)
+        self.bounded = BoundedModule(self.net, torch.empty_like(self.centre),
+                                     device=device)
+
+    def _bind(self, W, b):
+        with torch.no_grad():
+            self.head.fc.weight.copy_(torch.from_numpy(W).to(self.device))
+            self.head.fc.bias.copy_(torch.from_numpy(b).to(self.device))
+
+    def __call__(self, W, b, lo, hi):
+        self._bind(W, b)
+        ptb = PerturbationLpNorm(
+            norm=float("inf"),
+            x_L=torch.tensor(lo, dtype=torch.float32, device=self.device).unsqueeze(0),
+            x_U=torch.tensor(hi, dtype=torch.float32, device=self.device).unsqueeze(0))
+        lb, ub = self.bounded.compute_bounds(
+            x=(BoundedTensor(self.centre, ptb),), method="CROWN-Optimized")
+        return float(lb.min()), float(ub.max())
+
+    def check_equivalence(self, W, b, lo, hi, student, h, w, tol=1e-4):
+        """Same box, cached module vs a fresh one. Must agree or the shortcut is unsound."""
+        l1, u1 = self(W, b, lo, hi)
+        fresh_net = nn.Sequential(vd.LinearDisturbance(W, b, (1, 3, h, w)),
+                                  student).to(self.device).eval()
+        centre = torch.zeros(1, self.k, device=self.device)
+        ptb = PerturbationLpNorm(
+            norm=float("inf"),
+            x_L=torch.tensor(lo, dtype=torch.float32, device=self.device).unsqueeze(0),
+            x_U=torch.tensor(hi, dtype=torch.float32, device=self.device).unsqueeze(0))
+        fresh = BoundedModule(fresh_net, torch.empty_like(centre), device=self.device)
+        l2, u2 = fresh.compute_bounds(x=(BoundedTensor(centre, ptb),),
+                                      method="CROWN-Optimized")
+        l2, u2 = float(l2.min()), float(u2.max())
+        err = max(abs(l1 - l2), abs(u1 - u2))
+        return err <= tol, err, (l1, u1), (l2, u2)
+
+
+def sweep(build, box_lo, box_hi, bounder, corridor, budget):
+    """Largest-volume-first BaB over the declared axis box.
+
+    Largest-first, NOT LIFO: `stack.pop()` is depth-first on the smallest box, which
+    descends into a tiny corner while large undecided siblings sit untouched. Measured
+    symptom of that bug: raising the budget 48 -> 400 changed resolved volume by nothing.
+    """
+    total = float(np.prod(box_hi - box_lo))
+    heap, cells, n, ctr = [], [], 0, 0
+    heapq.heappush(heap, (-total, ctr, box_lo, box_hi))
+    while heap and n < budget:
+        _, _, lo, hi = heapq.heappop(heap)
+        W, b, u_lo, u_hi = build(lo, hi)
+        l, u = bounder(W, b, u_lo, u_hi)
+        n += 1
+        vol = float(np.prod(hi - lo))
+        if l >= corridor[0] and u <= corridor[1]:
+            cells.append(("CERTIFIED", vol, lo.tolist(), hi.tolist()))
+        elif u < corridor[0] or l > corridor[1]:
+            cells.append(("FALSIFIED", vol, lo.tolist(), hi.tolist()))
+        else:
+            d = int(np.argmax(hi - lo))
+            mid = 0.5 * (lo[d] + hi[d])
+            a_hi = hi.copy(); a_hi[d] = mid
+            b_lo = lo.copy(); b_lo[d] = mid
+            for s_lo, s_hi in ((lo, a_hi), (b_lo, hi)):
+                ctr += 1
+                heapq.heappush(heap, (-float(np.prod(s_hi - s_lo)), ctr, s_lo, s_hi))
+    for _, _, lo, hi in heap:
+        cells.append(("UNKNOWN", float(np.prod(hi - lo)), lo.tolist(), hi.tolist()))
+    frac = {v: sum(x for t, x, _, _ in cells if t == v) / total
+            for v in ("CERTIFIED", "FALSIFIED", "UNKNOWN")}
+    return frac, n, cells
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--student", required=True)
+    ap.add_argument("--condition", required=True,
+                    choices=["clear", "fog", "night", "shadows"])
+    ap.add_argument("--cell-name", required=True, help="ledger name: S_clear or S_mixed")
+    ap.add_argument("--channels", default="8,16,16")
+    ap.add_argument("--fc", type=int, default=32)
+    ap.add_argument("--w", type=int, default=84)
+    ap.add_argument("--h", type=int, default=28)
+    ap.add_argument("--frames", type=int, default=design.VERIFY_FRAMES)
+    ap.add_argument("--budget", type=int, default=design.VERIFY_CELL_BUDGET)
+    ap.add_argument("--airlight", type=float, default=0.78)
+    args = ap.parse_args()
+    LEDGER.mkdir(parents=True, exist_ok=True)
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    student = StudentNet(args.h, args.w,
+                         channels=tuple(int(v) for v in args.channels.split(",")),
+                         fc=args.fc).to(device)
+    student.load_state_dict(torch.load(
+        f"{C.CHECKPOINT_DIR}/{args.student}.pth", map_location=device))
+    student.eval()
+    tol = C.CLOSED_LOOP_TOLERANCE
+    nrelu = student.num_relu_neurons()
+
+    print(f"{args.condition} / {args.cell_name}  ({args.student}, {nrelu} ReLU)")
+    print(f"corridor +/-{tol:.4f} around clear-weather steering, "
+          f"{args.frames} frames x {args.budget} bounds\n")
+
+    # ── the degenerate cell ──────────────────────────────────────────────────
+    if args.condition == "clear":
+        record = {"condition": "clear", "student": args.cell_name,
+                  "instrument": "verify", "verdict": "CERTIFIED", "vacuous": True,
+                  "relu_neurons": nrelu, "tolerance": tol,
+                  "note": ("Degenerate by construction: the clear disturbance box has zero "
+                           "width, so the bound is exact and equals the clear-weather "
+                           "steering it is compared against. Recorded for completeness; "
+                           "not evidence, and excluded from certified-rate summaries.")}
+        path = LEDGER / f"clear__{args.cell_name}__verify.json"
+        json.dump(record, open(path, "w"), indent=2)
+        print(f"VACUOUS CERTIFIED (zero-width box)\nwrote {path}")
+        return 0
+
+    mask = None
+    if args.condition == "shadows":
+        if not SHADOW_MASK.exists():
+            print(f"ERROR: no measured shadow mask at {SHADOW_MASK}.\n"
+                  f"Run scripts/measure_shadow_mask.py first -- a declared mask would "
+                  f"make this cell an assumption rather than a measurement.")
+            return 2
+        mask = np.load(SHADOW_MASK)
+
+    rows = []
+    print(f"  {'frame':>5s} {'clear':>8s} {'cert':>8s} {'fals':>8s} {'unk':>8s} {'bnds':>6s}")
+    print("  " + "-" * 50)
+    for i, img in enumerate(clear_frames(args.frames)):
+        xf = img.astype(np.float32) / 255.0
+        if args.condition == "fog":
+            build, lo, hi = fog_map(xf, args.w, args.h,
+                                    (args.airlight,) * 3)
+        elif args.condition == "night":
+            build, lo, hi = night_map(xf, args.w, args.h)
+        else:
+            build, lo, hi = shadow_map(xf, args.w, args.h, mask)
+
+        cs = clear_steer(student, xf, device, args.w, args.h)
+        corridor = (cs - tol, cs + tol)
+        bounder = Bounder(len(lo), student, device, args.h, args.w)
+
+        # The cached-module shortcut is checked against a fresh construction ONCE per
+        # cell, on the full box. A silent mismatch here would make every bound in the
+        # sweep wrong in a way no downstream number would reveal.
+        if i == 0:
+            W0, b0, u_lo0, u_hi0 = build(lo, hi)
+            ok, err, cached, fresh = bounder.check_equivalence(
+                W0, b0, u_lo0, u_hi0, student, args.h, args.w)
+            print(f"  [cache check] cached {cached[0]:+.6f},{cached[1]:+.6f}  "
+                  f"fresh {fresh[0]:+.6f},{fresh[1]:+.6f}  err {err:.2e}  "
+                  f"{'OK' if ok else 'MISMATCH'}")
+            if not ok:
+                print("  ABORT: cached BoundedModule disagrees with a fresh one; "
+                      "the sweep would be unsound.")
+                return 3
+
+        frac, n, cells = sweep(build, lo, hi, bounder, corridor, args.budget)
+        print(f"  {i:5d} {cs:+8.4f} {frac['CERTIFIED']:7.1%} {frac['FALSIFIED']:7.1%} "
+              f"{frac['UNKNOWN']:7.1%} {n:6d}")
+        rows.append({"frame": i, "clear_steer": cs, "bounds": n,
+                     "certified": frac["CERTIFIED"], "falsified": frac["FALSIFIED"],
+                     "unknown": frac["UNKNOWN"],
+                     "falsified_regions": [[c[2], c[3]] for c in cells
+                                           if c[0] == "FALSIFIED"]})
+
+    cert = [r["certified"] for r in rows]
+    fals = [r["falsified"] for r in rows]
+    verdict = design.verify_verdict(cert, fals)
+
+    print("\n" + "=" * 52)
+    print(f"  median certified {np.median(cert):.1%}   "
+          f"median falsified {np.median(fals):.1%}   "
+          f"median unknown {np.median([r['unknown'] for r in rows]):.1%}")
+    print(f"  frames with any falsified region: "
+          f"{sum(1 for f in fals if f > 0)}/{len(fals)}")
+    print(f"  VERDICT  {verdict}   (pre-registered expectation "
+          f"{design.expected(args.cell_name, args.condition, 'verify')})")
+    print("=" * 52)
+
+    head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO,
+                          capture_output=True, text=True).stdout.strip()
+    record = {"condition": args.condition, "student": args.cell_name,
+              "instrument": "verify", "verdict": verdict,
+              "checkpoint": args.student, "relu_neurons": nrelu,
+              "tolerance": tol, "frames": len(rows),
+              "cell_budget": args.budget,
+              "axis": {"fog": FOG_MOR, "night": [NIGHT_AMBIENT, NIGHT_RETRO],
+                       "shadows": SHADOW_DEPTH}[args.condition],
+              "airlight": args.airlight if args.condition == "fog" else None,
+              "median_certified": float(np.median(cert)),
+              "median_falsified": float(np.median(fals)),
+              "median_unknown": float(np.median([r["unknown"] for r in rows])),
+              "rule_commit": head, "per_frame": rows}
+    path = LEDGER / f"{args.condition}__{args.cell_name}__verify.json"
+    json.dump(record, open(path, "w"), indent=2)
+    print(f"\nwrote {path}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
