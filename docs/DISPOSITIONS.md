@@ -404,3 +404,47 @@ reason is systematic rather than incidental. Until `verify_verdict` is replaced,
 from this protocol carries no assurance. I have not rewritten it tonight: it is
 pre-registered, and replacing it is the kind of change that has to be deliberate and
 committed as an amendment, not slipped in at 01:00 by the process that just failed it.
+
+---
+
+## D-01 RESOLVED — it is one specific corner, not a too-strict verdict rule
+
+Recorded 2026-08-12 02:43. 20 extra repetitions of `fog / S_mixed` (40 runs), written to a
+`_diag_` name so it is not a ledger cell.
+
+    3/40 failures, rate 7.5%, Wilson [0.03, 0.20]
+
+    rep  4  westbound  3.09 ft  step 1683  x -365.8  y 11.6
+    rep  9  westbound  2.91 ft  step 1684  x -365.8  y 11.7
+    rep 12  westbound  2.23 ft  step 1683  x -365.9  y 11.9
+
+**All three failures are at the same place**, within 0.3 m of each other and at the same
+step of the lap (~1683 of ~1700, near the westbound finish). Every failure across every
+clean cell tonight has been westbound; there has not been a single marginal eastbound
+failure. Westbound is systematically harder in this cell too: median max-CTE 1.27 ft
+against eastbound's 0.62 ft, worst 3.09 ft against 0.91 ft.
+
+**This settles the question D-01 posed.** The two candidates were "the verdict rule is too
+strict for a stochastic simulator" and "there is a specific westbound corner where the
+controller is marginal". It is the second. Three independent failures landing inside a
+0.3 m window is not what stability-cliff non-determinism looks like — that would scatter
+along the route.
+
+**So do not loosen the verdict rule.** It was reporting something real. Had it been
+relaxed to accommodate the first 1-in-20 failure, this corner would have been hidden, and
+that is precisely the retrofitting the pre-registration exists to prevent.
+
+**What it means for the study.** `S_mixed` drives fog competently everywhere except one
+location, where it clips a 2.19 ft budget by 0.04-0.90 ft without departing. That is a
+narrow, characterised, reportable defect rather than a robustness failure, and it is a much
+better sentence than either option D-01 originally offered.
+
+**Follow-ups, cheapest first:**
+
+1. Look at what is at `x ≈ -365.8, y ≈ 11.7` on Town04 — geometry, lane markings, a
+   junction — and whether the expert's own trajectory is marginal there.
+2. Check whether the *clear* cells' marginal failures land at the same spot. The one clean
+   instance so far is `clear / S_clear` rep 9 westbound, and that cell predates the
+   `max_cte_at` instrumentation, so it needs a rerun to say.
+3. If it is a route artefact rather than a policy defect, say so explicitly in the paper
+   rather than reporting a 7.5% fog failure rate that is really one corner.
