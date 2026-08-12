@@ -170,6 +170,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--condition", required=True, choices=["fog", "night"])
     ap.add_argument("--frames", type=int, default=24)
+    ap.add_argument("--model", choices=["illum", "koschmieder"], default="illum",
+                    help="fog only; 'koschmieder' is the D3-failing diagnostic (F14)")
     args = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
 
@@ -189,12 +191,17 @@ def main():
         clear = cimg.astype(np.float32) / 255.0
         obs = oimg.astype(np.float32) / 255.0
         if args.condition == "fog":
-            mor, A, rmse, pred = fit_fog(clear, obs, mor_grid)
+            if args.model == "illum":
+                mor, A, kv, rmse, pred = fit_fog_illum(clear, obs, mor_grid)
+            else:
+                mor, A, rmse, pred = fit_fog(clear, obs, mor_grid)
+                kv = np.ones(3, np.float32)
             d3 = d3_partial(clear, obs, pred, roi)
             rows.append({"frame": i, "pose_err_m": perr, "mor_m": mor,
-                         "airlight": A.tolist(), "rmse": rmse, "d3_partial": d3})
+                         "airlight": A.tolist(), "k": kv.tolist(),
+                         "rmse": rmse, "d3_partial": d3})
             print(f"  {i:3d}  MOR {mor:7.1f} m   A = [{A[0]:.3f} {A[1]:.3f} {A[2]:.3f}]"
-                  f"   rmse {rmse:.4f}")
+                  f"   k = {float(np.mean(kv)):.3f}   rmse {rmse:.4f}")
         else:
             g, a_r, rmse, pred = fit_night(clear, obs)
             d3 = d3_partial(clear, obs, pred, roi)
@@ -213,9 +220,14 @@ def main():
               f"IQR [{np.percentile(mor,25):.1f}, {np.percentile(mor,75):.1f}]")
         print(f"  airlight median [{np.median(A[:,0]):.3f} {np.median(A[:,1]):.3f} "
               f"{np.median(A[:,2]):.3f}]   (0.78 was ASSUMED, never measured)")
-        summary = {"condition": "fog", "mor_median_m": float(np.median(mor)),
+        K = np.array([r["k"] for r in rows])
+        print(f"  k        median [{np.median(K[:,0]):.3f} {np.median(K[:,1]):.3f} "
+              f"{np.median(K[:,2]):.3f}]   (surface illumination attenuation)")
+        summary = {"condition": "fog", "model": args.model,
+                   "mor_median_m": float(np.median(mor)),
                    "mor_iqr": [float(np.percentile(mor, 25)), float(np.percentile(mor, 75))],
-                   "airlight_median": [float(np.median(A[:, c])) for c in range(3)]}
+                   "airlight_median": [float(np.median(A[:, c])) for c in range(3)],
+                   "k_median": [float(np.median(K[:, c])) for c in range(3)]}
         axis_note = (f"CARLA fog_density=70 sits at MOR ~ {np.median(mor):.0f} m on the "
                      f"declared 2000 -> 60 m axis.")
     else:

@@ -130,37 +130,63 @@ def fog_map(xf, w, h, airlight):
     return build, np.array([FOG_MOR[0]]), np.array([FOG_MOR[1]])
 
 
-def fog_map_illum(xf, w, h, airlight, d_sun):
+def fog_map_illum(xf, w, h, airlight, k_range):
     """Koschmieder WITH surface-illumination attenuation, rank-1 per MOR sub-interval.
 
         x'(MOR) = A*(1 - t(MOR)) + t(MOR) * k(MOR) * x0
-        k(MOR)  = exp(-ln(20) * d_sun / MOR)
+        u1 = t(MOR),  u2 = t(MOR) * k,  k in a MEASURED INTERVAL
 
     Plain Koschmieder (`fog_map`) is retained only as a diagnostic: measured against
     pose-paired CARLA frames it fails D3(a), brightening the road ROI by +0.015 where CARLA
     darkens it by -0.031, at ROI R^2 -0.03. Certifying our students against it would
     reproduce the train/verify family mismatch CLAUDE.md blames for the previous study.
 
-    `k` is the attenuation of the sunlight reaching the road, given the same Koschmieder
-    form over an effective sun path `d_sun`, so it is a function of MOR alone and the map
-    stays d = 1 rather than needing a second bounded dimension.
+    `k` is the attenuation of the sunlight reaching the road. It is BOUNDED, not fitted --
+    see render_u for why -- so a sub-interval is rank-2 in (u1, u2) rather than rank-1.
     """
     H = xf.shape[0]
     A = np.asarray(airlight, np.float32).reshape(1, 1, 3)
-    ln20 = np.log(20.0)
+    k_lo, k_hi = k_range
 
-    def render(mor):
-        t = dm.transmission(H, mor, dm.CARLA_GEOM).astype(np.float32).reshape(-1, 1, 1)
-        k = float(np.exp(-ln20 * d_sun / max(mor, 1e-6)))
-        return vd._project((A * (1.0 - t) + t * k * xf).astype(np.float32),
-                           w, h).reshape(-1).astype(np.float32)
+    def render_u(u1, u2):
+        """x' = A*(1 - u1) + u2 * x0, with u1 = t and u2 = t*k, both per row.
+
+        BOUNDING k RATHER THAN FITTING IT. Two honest fits disagree: route frames put
+        k ~ 0.70 at fog_density 70 with a sharp rmse minimum, the static-pose sweep puts it
+        near 1.1. Picking either would be choosing the number that suits me. Treating k as
+        an INTERVAL that contains both is sound whichever is right, and the cost is that a
+        sub-interval becomes rank-2 instead of rank-1 -- d = 2, which night already pays.
+
+        u1 and u2 are bounded independently even though u2 = u1*k couples them. That is an
+        over-approximation, never an under-approximation, so certificates stay valid and
+        only tightness suffers.
+        """
+        y = A * (1.0 - u1) + u2 * xf
+        return vd._project(y.astype(np.float32), w, h).reshape(-1).astype(np.float32)
+
+    def _t(mor):
+        return dm.transmission(H, mor, dm.CARLA_GEOM).astype(np.float32).reshape(-1, 1, 1)
+
+    def _boxes(lo, hi):
+        t_lo, t_hi = _t(float(lo[0])), _t(float(hi[0]))   # larger MOR -> larger t
+        u1_bar, u1_del = 0.5 * (t_lo + t_hi), 0.5 * (t_hi - t_lo)
+        p_lo, p_hi = t_lo * k_lo, t_hi * k_hi
+        u2_bar, u2_del = 0.5 * (p_lo + p_hi), 0.5 * (p_hi - p_lo)
+        return u1_bar, u1_del, u2_bar, u2_del
+
+    def render(mor, k=None):
+        """The TRUE map at a physical (MOR, k), used for the deviation check."""
+        t = _t(mor)
+        kk = 0.5 * (k_lo + k_hi) if k is None else k
+        return render_u(t, t * kk)
 
     def build(lo, hi):
-        y_hi = render(float(hi[0]))     # larger MOR = milder
-        y_lo = render(float(lo[0]))
-        b = 0.5 * (y_lo + y_hi)
-        W = (0.5 * (y_hi - y_lo)).reshape(-1, 1)
-        return W, b, np.array([-1.0]), np.array([1.0])
+        u1_bar, u1_del, u2_bar, u2_del = _boxes(lo, hi)
+        b = render_u(u1_bar, u2_bar)
+        c1 = render_u(u1_bar + u1_del, u2_bar) - b
+        c2 = render_u(u1_bar, u2_bar + u2_del) - b
+        W = np.stack([c1, c2], axis=1)
+        return W, b, np.array([-1.0, -1.0]), np.array([1.0, 1.0])
 
     def deviation(lo, hi, n=5):
         """Max distance from the true x'(MOR) curve to the rank-1 SEGMENT, in pixel units.
@@ -173,14 +199,18 @@ def fog_map_illum(xf, w, h, airlight, d_sun):
         visible instead of implicit.
         """
         W, b, _, _ = build(lo, hi)
-        wv = W.reshape(-1)
-        denom = float(wv @ wv)
         worst = 0.0
+        G = W.T @ W
         for m in np.linspace(float(lo[0]), float(hi[0]), n):
-            y = render(float(m))
-            s = float((y - b) @ wv / denom) if denom > 1e-12 else 0.0
-            s = max(-1.0, min(1.0, s))
-            worst = max(worst, float(np.abs(y - (b + s * wv)).max()))
+            for kk in (k_range[0], 0.5 * (k_range[0] + k_range[1]), k_range[1]):
+                y = render(float(m), kk)
+                rhs = W.T @ (y - b)
+                try:
+                    coef = np.linalg.solve(G, rhs)
+                except np.linalg.LinAlgError:
+                    continue
+                coef = np.clip(coef, -1.0, 1.0)
+                worst = max(worst, float(np.abs(y - (b + W @ coef)).max()))
         return worst
 
     build.deviation = deviation
@@ -348,6 +378,8 @@ def main():
     ap.add_argument("--budget", type=int, default=design.VERIFY_CELL_BUDGET)
     ap.add_argument("--fog-model", choices=["illum", "koschmieder"], default="illum",
                     help="'koschmieder' is the D3-failing diagnostic; see FINDINGS")
+    ap.add_argument("--fog-k", default=None,
+                    help="override the measured k interval, e.g. '0.6,1.25'")
     ap.add_argument("--airlight", type=float, default=None,
                     help="override the MEASURED airlight; default reads calibration")
     args = ap.parse_args()
@@ -407,27 +439,37 @@ def main():
         frames_in = clear_frames(args.frames)
         masks = [None] * len(frames_in)
 
-    fog_A, fog_d_sun = (0.78, 0.78, 0.78), 0.0
+    fog_A, fog_k = (0.78, 0.78, 0.78), (1.0, 1.0)
     if args.condition == "fog":
-        src = FOG_CAL if FOG_CAL.exists() else FOG_CAL_FALLBACK
-        if not src.exists():
-            print("ERROR: no fog calibration. Run scripts/fog_density_sweep.py (or "
-                  "fit_operating_point.py) first -- an ASSUMED airlight is what D4 exists "
-                  "to eliminate.")
+        srcs = [q for q in (FOG_CAL, FOG_CAL_FALLBACK) if q.exists()]
+        if not srcs:
+            print("ERROR: no fog calibration. Run scripts/fit_operating_point.py and/or "
+                  "scripts/fog_density_sweep.py first -- an ASSUMED airlight is exactly "
+                  "what D4 exists to eliminate.")
             return 2
-        cal = json.load(open(src))
-        if "densities" in cal:
-            # use the density closest to the CARLA preset the closed loop actually drives
-            row = min(cal["densities"], key=lambda r: abs(r["fog_density"] - 70.0))
-            fog_A = tuple(row["airlight"])
-            fog_d_sun = float(cal.get("d_sun_m", 0.0))
-        else:
-            fog_A = tuple(cal["airlight_median"])
+        ks, As = [], []
+        for q in srcs:
+            cal = json.load(open(q))
+            if "densities" in cal:
+                row = min(cal["densities"], key=lambda r: abs(r["fog_density"] - 70.0))
+                As.append(row["airlight"]); ks.append(float(np.mean(row["k"])))
+            else:
+                As.append(cal["airlight_median"])
+                if "k_median" in cal:
+                    ks.append(float(np.mean(cal["k_median"])))
+        fog_A = tuple(float(np.mean([a[c] for a in As])) for c in range(3))
         if args.airlight is not None:
             fog_A = (args.airlight,) * 3
-        print(f"  [fog calibration] {src.name}: A = "
-              f"[{fog_A[0]:.3f} {fog_A[1]:.3f} {fog_A[2]:.3f}], d_sun = {fog_d_sun:.2f} m, "
-              f"model = {args.fog_model}")
+        # k is BOUNDED across every fit we have, with a margin, because the fits disagree.
+        if args.fog_k is not None:
+            lo, hi = (float(v) for v in args.fog_k.split(","))
+        elif ks:
+            lo, hi = min(ks) * 0.9, max(ks) * 1.1
+        else:
+            lo, hi = 0.60, 1.25
+        fog_k = (lo, hi)
+        print(f"  [fog calibration] A = [{fog_A[0]:.3f} {fog_A[1]:.3f} {fog_A[2]:.3f}], "
+              f"k in [{lo:.3f}, {hi:.3f}] from {len(srcs)} fit(s), model = {args.fog_model}")
 
     rows = []
     print(f"  {'frame':>5s} {'clear':>8s} {'cert':>8s} {'fals':>8s} {'unk':>8s} {'bnds':>6s}")
@@ -437,7 +479,7 @@ def main():
         xf = img.astype(np.float32) / 255.0
         if args.condition == "fog":
             if args.fog_model == "illum":
-                build, lo, hi = fog_map_illum(xf, args.w, args.h, fog_A, fog_d_sun)
+                build, lo, hi = fog_map_illum(xf, args.w, args.h, fog_A, fog_k)
             else:
                 build, lo, hi = fog_map(xf, args.w, args.h, fog_A)
         elif args.condition == "night":
@@ -498,7 +540,7 @@ def main():
                        "shadows": SHADOW_DEPTH}[args.condition],
               "airlight": list(fog_A) if args.condition == "fog" else None,
               "fog_model": args.fog_model if args.condition == "fog" else None,
-              "d_sun_m": fog_d_sun if args.condition == "fog" else None,
+              "fog_k_interval": list(fog_k) if args.condition == "fog" else None,
               "median_certified": float(np.median(cert)),
               "median_falsified": float(np.median(fals)),
               "median_unknown": float(np.median([r["unknown"] for r in rows])),
