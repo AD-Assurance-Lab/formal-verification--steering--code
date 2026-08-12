@@ -315,7 +315,26 @@ class Bounder:
         return float(lb.min()), float(ub.max())
 
     def check_equivalence(self, W, b, lo, hi, student, h, w, tol=1e-4):
-        """Same box, cached module vs a fresh one. Must agree or the shortcut is unsound."""
+        """Same box, cached module vs a fresh one, PLUS a staleness probe.
+
+        Two things are being checked, and only the second is really about soundness:
+
+        1. AGREEMENT. Tolerance is relative to the bound's own width, not absolute. The
+           bound is optimised (CROWN-Optimized runs a gradient loop on the alpha
+           parameters with early stopping), so two independent constructions converge to
+           slightly different alphas. Every alpha yields a VALID bound -- that is what
+           alpha-CROWN soundness means -- so a small disagreement is optimiser noise, not
+           unsoundness. Measured: 1.6e-07 on the 5,152-ReLU student against a bound width
+           of 0.21, and 2.8e-04 on the 15,456-ReLU student against a width of 2.12. Both
+           are ~1e-6 to 1e-4 RELATIVE; an absolute 1e-4 threshold simply scales wrong with
+           network size and bound magnitude.
+
+        2. STALENESS -- the failure this guard actually exists for. If the cached module
+           ignored the rebound weights it would silently evaluate every sub-box with the
+           FIRST box's map. That does not look like 0.02%; it looks like the bound not
+           moving at all. So bind a materially different W and require the bound to move
+           far more than the agreement tolerance.
+        """
         l1, u1 = self(W, b, lo, hi)
         fresh_net = nn.Sequential(vd.LinearDisturbance(W, b, (1, 3, h, w)),
                                   student).to(self.device).eval()
@@ -329,7 +348,17 @@ class Bounder:
                                       method="CROWN-Optimized")
         l2, u2 = float(l2.min()), float(u2.max())
         err = max(abs(l1 - l2), abs(u1 - u2))
-        return err <= tol, err, (l1, u1), (l2, u2)
+        width = max(abs(u2 - l2), 1e-9)
+        rel_tol = max(tol, 1e-3 * width)
+        agree = err <= rel_tol
+
+        # staleness probe: a halved map must produce a visibly different bound
+        l3, u3 = self(0.5 * W, b, lo, hi)
+        moved = max(abs(l3 - l1), abs(u3 - u1))
+        responsive = moved > 10.0 * rel_tol
+        # restore the real map before the sweep uses this bounder
+        self._bind(W, b)
+        return (agree and responsive), err, (l1, u1), (l2, u2), rel_tol, moved
 
 
 def sweep(build, box_lo, box_hi, bounder, corridor, budget):
@@ -505,10 +534,12 @@ def main():
         # sweep wrong in a way no downstream number would reveal.
         if i == 0:
             W0, b0, u_lo0, u_hi0 = build(lo, hi)
-            ok, err, cached, fresh = bounder.check_equivalence(
+            ok, err, cached, fresh, rtol, moved = bounder.check_equivalence(
                 W0, b0, u_lo0, u_hi0, student, args.h, args.w)
             print(f"  [cache check] cached {cached[0]:+.6f},{cached[1]:+.6f}  "
-                  f"fresh {fresh[0]:+.6f},{fresh[1]:+.6f}  err {err:.2e}  "
+                  f"fresh {fresh[0]:+.6f},{fresh[1]:+.6f}\n"
+                  f"                err {err:.2e} vs rel_tol {rtol:.2e}; "
+                  f"staleness probe moved bound {moved:.2e}  "
                   f"{'OK' if ok else 'MISMATCH'}")
             if not ok:
                 print("  ABORT: cached BoundedModule disagrees with a fresh one; "
