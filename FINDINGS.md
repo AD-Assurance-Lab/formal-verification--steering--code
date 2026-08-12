@@ -10,6 +10,58 @@ file is for characterization measurements, which are not ledger cells.
 
 ---
 
+## F17. The M6 aggregation rule, not the verifier, produced an unsound certificate
+
+`shadows / S_clear / verify` returned CERTIFIED. Closed loop then failed **20/20, 16 runs
+departing, median max-CTE 21.3 ft**. That is the one outcome that invalidates the tool
+rather than the experiment, and it was my pre-registered blind prediction.
+
+**It is not the disturbance model.** Shadows reconstructs CARLA almost exactly at `s = 1`:
+D3 (a),(b),(c),(f) all **12/12**, median ROI R^2 **+0.996**, reconstruction error 0.0008 on
+the road ROI, and only 0.7% of the frame (0.0% of the road ROI) is brighter under shadows
+than clear, which is the only thing the multiplicative form cannot represent.
+
+**It is not the verifier.** alpha-CROWN bounds are sound for the frames they are given.
+
+**It is the sampling.** The pre-registered rule evaluates `VERIFY_FRAMES = 12` frames and
+takes the MEDIAN. Measured directly on 400 pose-matched on-route frames, `S_clear` under
+shadows exceeds the steering corridor on **37.8%** of them, p99 = 0.20, max 0.36 — up to
+30x tolerance. A median over 12 frames cannot see a 38% tail, and a lap has ~1700 frames.
+The certificate was never wrong about what it examined; it was silent about the 99.3% of
+the route it never looked at, and the aggregation rule turned that silence into CERTIFIED.
+
+**The corridor itself is strongly predictive once measured densely.** Fraction of on-route
+frames whose steering deviates beyond the corridor, against closed-loop outcome:
+
+| model | condition | frames over corridor | closed loop |
+|---|---|---|---|
+| S_clear | night | 86.0% | FAIL 20/20 |
+| S_clear | shadows | 37.0% | FAIL 20/20 |
+| S_clear | fog | 23.7% | *predicted FAIL, not yet run* |
+| S_mixed | night | 8.0% | PASS 0/20 |
+| S_mixed | shadows | 3.3% | PASS 0/20 |
+| S_mixed | fog | 3.0% | FAIL 1/20 (the marginal cell, D-01) |
+
+Every cell above 23% fails; every cell at or below 8% passes, with the single marginal
+exception that D-01 is already about. So the per-frame corridor is a good surrogate for lap
+safety — the study's premise holds — and the defect is entirely in how the sweep was
+summarised.
+
+**Fix, and it is a pre-registration change so it is Zach's call.** The verification
+statistic should be a COVERAGE over the route — the fraction of frames whose *bound* stays
+inside the corridor, over a large frame sample — not a median over a handful. `CERTIFIED`
+should then require that fraction to be near 1, and the frame count should be justified
+against the number of frames in a lap rather than chosen for runtime.
+
+**What this does not touch.** `night / S_clear` was FALSIFIED and failed 20/20, and
+falsification is an existence claim: finding a violating region on any frame is enough, so
+sparse sampling can only make it miss violations, never invent them. The confirmed blind
+prediction stands. It is CERTIFIED that sparse sampling can fabricate, which is exactly the
+asymmetry the pre-registered rule was written around — the rule got the asymmetry right and
+the sample size wrong.
+
+---
+
 ## F16. The declared night axis does not contain the night CARLA actually renders
 
 Fitting the night model to pose-paired frames at `sun_altitude_angle = -25`:

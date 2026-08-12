@@ -267,3 +267,20 @@ alarm, reserved for verification calling something safe that was not. It fired o
 mean only "the network agrees with itself at the nominal frame". The check now distinguishes
 vacuous cells and says so explicitly rather than counting them as soundness violations. The
 closed-loop contradiction is still reported, and still fails the ledger.
+
+---
+
+## P-02 — prediction from the corrected statistic, committed BEFORE the fog cell runs
+
+Recorded 2026-08-12 ~23:55. `fog / S_clear / closed_loop` has **not** been run.
+
+Measured on 300 pose-matched on-route frames, `S_clear` under fog exceeds the steering
+corridor on **23.7%** of them. Every cell measured above 23% has failed closed loop; every
+cell at or below 8% has passed. So:
+
+**Prediction: `fog / S_clear / closed_loop` will FAIL, and not marginally — expect
+departures, closer to the shadows cell (37%, 20/20 with 16 departures) than to the
+marginal 1-in-20 cells.**
+
+This is on the record before the drive. If it comes back PASS, the coverage statistic in
+F17 is wrong and F17 should be withdrawn rather than patched.
