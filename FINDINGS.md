@@ -89,9 +89,10 @@ is a sky that is not being rendered at all.
 Epic server on :3000 was untouched — but it failed for a mundane reason worth
 recording: **CARLA binds `rpc-port`, `+1` AND `+2`.** The Epic server on 3000 already owned
 3001 and 3002, so the Low server had a port conflict from the start, and my client
-"connecting to :3001" was talking to the Epic server's streaming port. Retried on port 3010, clear of that conflict, and it still would not come up: **a second
-concurrent CARLA instance does not start on this machine** (no listener, empty log, both
-attempts). So the blocker is not the port — testing a different quality level requires
+"connecting to :3001" was talking to the Epic server's streaming port. Retried on port 3010, clear of that conflict, and the precise behaviour is: **a second concurrent
+CARLA starts as a process but never binds its RPC port** while another server is running.
+The binary is there in `ps` with `carla-rpc-port=3010`, the log stays empty, and nothing
+ever listens on 3010-3012. So the blocker is not the port — testing a different quality level requires
 stopping the running server first, and that is a shared resource, so it is not something to
 do unilaterally.
 
