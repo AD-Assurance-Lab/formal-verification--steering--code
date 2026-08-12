@@ -35,6 +35,23 @@ repaired and measured, one is diagnosed.
 
 **Nothing in the ledger has been silenced.** `python -m study.ledger` still exits nonzero.
 
+## The study's spine, with the junction artefact set aside
+
+Every marginal (non-departing) failure in every cell traces to one place: the western
+intersection at the end of the lap, where `route.py` builds a *synthetic* reference because
+no painted centreline exists. Confirmed across both students, both directions and two
+conditions, at ~step 1690 of ~1700. Setting those aside:
+
+| | clear | night | fog | shadows |
+|---|---|---|---|---|
+| **S_clear** | junction only, no departures | **20/20 FAIL, all departed** | **20/20 FAIL, all departed** | **20/20 FAIL, 16 departed** |
+| **S_mixed** | **PASS 0/20** | **PASS 0/20** | junction only, no departures | **PASS 0/20** |
+
+The clear-only student departs the road on every condition it never saw. The mixed student
+completes every lap. The only blemish on either is a shared route artefact. That is the
+result the study was built to produce, and verification predicted the night column before
+the car drove.
+
 ## The completed ledger, 16/16 active cells
 
 | condition | S_clear closed loop | S_clear verify | S_mixed closed loop | S_mixed verify |
