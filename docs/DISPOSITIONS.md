@@ -93,3 +93,31 @@ and understates spatial structure. The mask is now measured **per frame** from t
 own pose-matched counterpart, which keeps the map affine in `s` and makes `s = 1` reproduce
 the observed CARLA shadows frame exactly. Both runs are kept; the pooled one is retained as
 a diagnostic, not as the cell.
+
+---
+
+## P-01 — prediction recorded BEFORE running the `S_mixed` verify cells
+
+Recorded 2026-08-11 22:42, with `S_mixed` verification not yet started. Costs nothing to
+be on the record, and an unrecorded expectation is not a prediction.
+
+**I expect `night / S_mixed / verify` to come back FALSIFIED, contradicting the
+pre-registered CERTIFIED — and I expect that to be a calibration artefact, not a real
+disagreement.**
+
+Reasoning: `night / S_mixed / closed_loop` already returned PASS at 0/20. The declared
+night axis is `ambient in [0.02, 0.50]`, i.e. `g = 1/(1+ambient) in [0.667, 0.980]`, which
+at the far field where the headlight field `L -> 0` scales the image to between 0.02x and
+0.33x. Whether CARLA's `sun_altitude_angle = -25` preset is anywhere near that severe is
+**unmeasured** — it is precisely the preset-to-axis mapping M5 owes. If the declared axis is
+harsher than what CARLA renders, verification falsifies a policy that drives the preset
+fine, and the two instruments disagree because they are being asked different questions.
+
+Note the direction: FALSIFIED-but-passes is the **conservative** direction and does not
+trip `unsound_cells`, which only fires on CERTIFIED-but-fails. Over-strict is survivable;
+unsound is not.
+
+The fix is not to widen the corridor or shrink the axis after the fact. It is to measure
+where CARLA's night preset actually sits on the illuminance axis and evaluate verification
+over an interval containing that point — the same alignment that shadows already has for
+free from its pose-paired mask.
