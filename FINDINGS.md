@@ -89,9 +89,15 @@ is a sky that is not being rendered at all.
 Epic server on :3000 was untouched — but it failed for a mundane reason worth
 recording: **CARLA binds `rpc-port`, `+1` AND `+2`.** The Epic server on 3000 already owned
 3001 and 3002, so the Low server had a port conflict from the start, and my client
-"connecting to :3001" was talking to the Epic server's streaming port. **No measurement was
-obtained; do not read this as evidence either way.** The retry is cheap and should use a
-port at least 3 away — e.g. 3010 — and skip the world reload. Tonight's runs launch
+"connecting to :3001" was talking to the Epic server's streaming port. Retried on port 3010, clear of that conflict, and it still would not come up: **a second
+concurrent CARLA instance does not start on this machine** (no listener, empty log, both
+attempts). So the blocker is not the port — testing a different quality level requires
+stopping the running server first, and that is a shared resource, so it is not something to
+do unilaterally.
+
+**No measurement was obtained; do not read this as evidence either way.** The retry is one
+CARLA restart at `-quality-level=Low`, one frame capture at a known pose, comparing the sky
+mean against the dataset's 0.0021 and the Epic server's 0.2575. Tonight's runs launch
 CARLA with `-quality-level=Epic`; a Low-quality server disables volumetric sky and
 atmosphere, which would give exactly a black sky, and would also change how the road is lit.
 The timing coincidence with `ae3ec28` misled me — the commit landed the same minute
