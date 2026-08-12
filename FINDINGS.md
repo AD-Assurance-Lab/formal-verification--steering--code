@@ -10,6 +10,52 @@ file is for characterization measurements, which are not ledger cells.
 
 ---
 
+## F18. The training dataset was rendered with a DIFFERENT clear preset than the code now produces
+
+Chasing D-04's sky discrepancy to its root. At the same pose, same nominal condition:
+
+    dataset frame (2026-08-11 12:28)   sky 0.0021   road ROI 0.3135
+    fresh world, current code          sky 0.2577   road ROI 0.2205
+
+Confirmed on a **freshly loaded Town04** with the weather set before any actor exists, and
+the live weather reads back exactly `CLEAR_BASELINE` (`scattering 0.0, mie 0.0, sun_alt 90,
+cloud 80`). So this is not world drift, not settling, and not the harness.
+
+**Cause.** `CLEAR_BASELINE` was introduced by commit `ae3ec28` at 12:28 — the same minute
+the dataset's first frame was written. Before it, `set_clear_weather` was a
+**read-modify-write**: `w = world.get_weather()` followed by setting a handful of fields,
+leaving `scattering_intensity`, `mie_scattering_scale` and the rest at whatever the world
+already held. That is the very pattern `ae3ec28` was written to eliminate, and the dataset
+was collected on the wrong side of it.
+
+**The sky part is harmless.** `CROP_TOP = 180` removes it before the network, and the
+dataset's first non-black row is 146, so no sky reaches the model.
+
+**The road part is not.** The road ROI is inside the crop, and it differs by **30%**
+(0.3135 trained versus 0.2205 rendered today). The students were trained on frames
+measurably brighter than what closed-loop testing now renders. Every closed-loop cell in
+this ledger was driven under that mismatch.
+
+**What it does and does not explain.**
+
+- It does **not** invalidate the ledger. Both students faced the identical mismatch, and
+  `S_mixed` still passes clear, night and shadows at 0/20, so the policies tolerate it. The
+  `S_clear`-versus-`S_mixed` contrast is unaffected because it is a within-comparison.
+- It **does** bias the photometric calibration, which is how it surfaced. The fog fits used
+  dataset frames (old preset) while the static sweep used live renders (new preset), each
+  internally consistent but not consistent with each other. **That is the root of D-04's
+  `k` disagreement** — 0.72 from dataset pairs against ~1.14 from live pairs.
+- It **may** contribute to the marginal excursions, since a 30% darker road is a domain
+  shift the students never trained on. Untested.
+
+**Recommended fix, and it is Zach's call because it costs a recollection:** re-collect the
+`conditions` dataset under the current constructed presets, or pin the old preset
+explicitly. Do not leave the two silently different. Until then, any photometry must use
+dataset frames on **both** sides of a comparison — which the fog route-frame calibration
+already does, which is why it remains the one to trust.
+
+---
+
 ## F17. The M6 aggregation rule, not the verifier, produced an unsound certificate
 
 `shadows / S_clear / verify` returned CERTIFIED. Closed loop then failed **20/20, 16 runs
