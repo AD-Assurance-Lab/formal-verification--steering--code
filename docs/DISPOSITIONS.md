@@ -527,3 +527,53 @@ That is a much cleaner statement of the study's spine than anything available si
 ago: the clear-only student departs the road on every unseen condition, the mixed student
 completes every lap, and the only blemish on either is a shared route artefact at an
 intersection where the reference path is synthetic.
+
+---
+
+## D-05 RESOLVED — every clear failure, departures included, is the intersection
+
+Recorded 2026-08-12 03:33, pooling **80 runs** of `clear / S_clear` across three cells.
+
+    80 runs, 9 failures (11.2%), 2 departures (2.5%)
+
+Both departures are eastbound at essentially the same magnitude — 86.42 ft and 86.17 ft,
+each 1.2% of frames over budget — which is a reproducible mode, not noise. And the location
+settles what it is:
+
+    rep 3 eastbound  86.17 ft  DEPARTED  step 1705  x -371.0  y 3.8
+
+Step 1705 is the end of the lap and x = -371.0 is **inside the western intersection**, the
+same place as every marginal excursion. `y = 3.8` is far off both lanes (eastbound ~30,
+westbound ~12), so the vehicle really did leave the road — but it left it in the one place
+where `route.py` follows a *synthetic* centreline and there is no painted cue to follow.
+
+So the departures are not a second failure mode. They are the junction artefact escalating
+when the drift happens to run far enough to trip the departure test.
+
+### I revised this twice; here is the honest arc
+
+1. First reading: the control "genuinely fails its own training condition", so the S_clear
+   arm is confounded. Based on 2/20 including one departure.
+2. Second reading: the failures are "entirely the junction artefact, no departures", so the
+   control is mostly clean. Based on a 20-rep rerun that happened to contain none — **too
+   thin a sample to support a negative claim about a 2.5% event.** Same sample-size mistake
+   as F17, in a different guise.
+3. This reading, on 80 runs: the failures *are* all the junction, departures included, and
+   the departure rate there is 2.5%.
+
+The second reading reached roughly the right conclusion for a bad reason, which is not the
+same as being right. Twenty runs cannot establish "no departures" at a 2.5% rate — the
+chance of seeing none is about 60%.
+
+### Why the control is nevertheless sound
+
+    S_clear on clear     2.5% departures, ALL inside the intersection
+    S_clear on night     100% departures, throughout the route
+    S_clear on fog       100% departures, throughout the route
+    S_clear on shadows    80% departures, throughout the route
+
+A 40x separation, and the failures are in different places for different reasons. "S_clear
+fails the conditions it never saw" is supportable. The caveat that belongs in the paper is
+narrow and specific: *on clear it also departs 2.5% of the time, at an intersection where
+the reference path is synthetic* — which is an argument for fixing the route or the metric,
+not evidence that the control cannot drive.
