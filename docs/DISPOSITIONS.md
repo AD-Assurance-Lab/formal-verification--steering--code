@@ -694,3 +694,46 @@ the marginal excursions occurred — it remains open.
 That asymmetry matters and should not be smoothed over. Do not generalise the eastbound
 result to westbound; fix the start-pose construction (use the route's own travel direction,
 and verify the vehicle is on-road and moving before trusting the numbers) and rerun.
+
+---
+
+## D-09 — the junction coincides with the route's index SEAM; the two explanations are confounded
+
+Recorded 2026-08-12 04:08. Found while trying to fix the westbound control, and it is more
+useful than the control would have been.
+
+    westbound junction route indices: 1506..1521  of 1522
+
+The intersection occupies the **last 16 indices of the route**, so it sits exactly on the
+seam where the closed-loop route wraps 1521 -> 0, which is also where the lap-termination
+test fires. Every failure tonight — marginal and departure, both students, all conditions —
+happened there.
+
+**So two explanations are confounded, and no measurement tonight separates them:**
+
+1. *Perception*: an intersection with no lane markings, where an end-to-end policy has no
+   cue. (Supported eastbound by D-08: the expert tracks that region at 0.00 ft, so the
+   reference is feasible and the failure is the policy's.)
+2. *Representation*: the route's index seam, where `nearest_index` can wrap and pure
+   pursuit's lookahead `route[(i + n_ahead) % n]` crosses the discontinuity.
+
+They are at the same place, so "failures cluster at the junction" and "failures cluster at
+the seam" are the same observation.
+
+**What rules part of it out.** The CTE values themselves are sound: each recorded max-CTE
+position was checked against true distance to the reference polyline and the 86 ft
+departure matched exactly. So the *measurement* does not wrap. That does not clear
+explanation 2 — a policy steered by a lookahead that crosses the seam can genuinely drive
+off, and the CTE would then correctly report a real excursion.
+
+**How to separate them, and it is cheap.** Rebuild the route with its seam moved to the
+middle of a straight — e.g. rotate the index origin by half a lap — and rerun one cell. If
+failures follow the *junction*, it is perception and the ODD-boundary reading is right. If
+they follow the *seam*, it is representation and the excursions are an artefact of the
+route encoding rather than anything about weather robustness. Nothing else in the pipeline
+needs to change.
+
+**Why I stopped here.** Three attempts at the expert control produced one valid answer
+(eastbound) and two broken runs, and the fourth attempt drifted 6 m off-lane during warm-up
+before it reached the junction. The seam finding makes the control less important than the
+experiment above, which tests the actual question directly.
