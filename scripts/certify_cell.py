@@ -220,6 +220,41 @@ def fog_map_illum(xf, w, h, airlight, k_range):
     return build, np.array([FOG_MOR[0]]), np.array([FOG_MOR[1]])
 
 
+NIGHT_GAIN = REPO / "results" / "calibration" / "night_gain.npy"
+NIGHT_S = (0.0, 1.0)   # s=0 clear, s=1 the MEASURED CARLA night
+
+
+def night_map_gain(xf, w, h, G):
+    """Night as a MEASURED illumination field: x' = x0 * (1 + s*(G-1)). d = 1.
+
+    Replaces the analytic ambient-plus-assumed-beam model, which reproduced CARLA at
+    road-ROI R^2 0.243 and drove S_mixed's steering 27x further than reality. The assumed
+    beam shape was wrong, and the multiplicative form could only dim, while CARLA's
+    headlight pool is 1.42x BRIGHTER than the overcast clear baseline near the bumper.
+
+    G is measured from pose-paired frames and is predictive -- applying it needs only the
+    clear image. Held out: road-ROI R^2 +0.832. It captures ambient dimming and the
+    headlight pool (fixed in image coordinates, so it survives pooling over poses); it does
+    NOT capture retroreflection off markings, which move between poses and average out.
+
+    Values stay in [0,1] wherever G <= 1/x0, so unlike the old model this one rarely
+    saturates and does not need the sensor-clamp path.
+    """
+    Gf = G.astype(np.float32)
+
+    def render(s):
+        return vd._project((xf * (1.0 + s * (Gf - 1.0))).astype(np.float32),
+                           w, h).reshape(-1).astype(np.float32)
+
+    def build(lo, hi):
+        mid = 0.5 * (lo + hi)
+        b = render(float(mid[0]))
+        W = ((render(float(mid[0]) + 1e-2) - b) / 1e-2).reshape(-1, 1)
+        return W, b, lo - mid, hi - mid
+
+    return build, np.array([NIGHT_S[0]]), np.array([NIGHT_S[1]])
+
+
 def night_map_sensor(xf, R, Cm):
     """Night with saturation applied at SENSOR resolution (physically correct).
 
@@ -253,34 +288,32 @@ def night_map_sensor(xf, R, Cm):
 
 
 class SensorBounder:
-    """Bounder for maps whose clamp lives at sensor resolution."""
+    """Bounder for maps whose clamp lives at sensor resolution.
+
+    Unlike `Bounder` this cannot cache the traced graph: which pixels are provably stable
+    depends on the box, so the module is rebuilt per sub-box. That is cheap -- only the
+    genuinely unstable pixels carry ReLUs (~500 of 403,200 at the night operating point),
+    so each graph is small even though the underlying image is not.
+    """
 
     def __init__(self, k, student, device, R, Cm, shape):
-        self.device, self.k, self.shape = device, k, shape
-        n = int(np.prod(shape))
-        self.head = vd.SensorDisturbance(np.zeros((n, k), np.float32),
-                                         np.zeros(n, np.float32), R, Cm, shape)
-        self.net = nn.Sequential(self.head, student).to(device).eval()
-        self.centre = torch.zeros(1, k, device=device)
-        self.bounded = BoundedModule(self.net, torch.empty_like(self.centre), device=device)
+        self.k, self.student, self.device = k, student, device
+        self.R, self.Cm, self.shape = R, Cm, shape
 
     def __call__(self, W, b, lo, hi):
-        with torch.no_grad():
-            self.head.fc.weight.copy_(torch.from_numpy(W).to(self.device))
-            self.head.fc.bias.copy_(torch.from_numpy(b).to(self.device))
+        head = vd.SparseSensorDisturbance(W, b, self.R, self.Cm, self.shape, lo, hi)
+        net = nn.Sequential(head, self.student).to(self.device).eval()
+        centre = torch.zeros(1, self.k, device=self.device)
         ptb = PerturbationLpNorm(
             norm=float("inf"),
             x_L=torch.tensor(lo, dtype=torch.float32, device=self.device).unsqueeze(0),
             x_U=torch.tensor(hi, dtype=torch.float32, device=self.device).unsqueeze(0))
-        # Plain CROWN, not CROWN-Optimized. alpha-CROWN allocates optimisable slopes for
-        # every ReLU, and this graph has ~0.8M of them, which OOMs an 12 GB card. It also
-        # buys almost nothing here: the clamp pre-activations are affine in a 2-D theta over
-        # a box, so their bounds are exact by interval arithmetic, and only ~0.1% of pixels
-        # are actually unstable (i.e. genuinely saturating). The relaxation those few incur
-        # is tiny -- verified against the true composition at 1e-07.
-        lb, ub = self.bounded.compute_bounds(
-            x=(BoundedTensor(self.centre, ptb),), method="CROWN")
-        return float(lb.min()), float(ub.max())
+        bm = BoundedModule(net, torch.empty_like(centre), device=self.device)
+        lb, ub = bm.compute_bounds(x=(BoundedTensor(centre, ptb),),
+                                   method="CROWN-Optimized")
+        out = float(lb.min()), float(ub.max())
+        del bm, net, head
+        return out
 
 
 def night_map(xf, w, h):
@@ -473,6 +506,9 @@ def main():
     ap.add_argument("--budget", type=int, default=design.VERIFY_CELL_BUDGET)
     ap.add_argument("--fog-model", choices=["illum", "koschmieder"], default="illum",
                     help="'koschmieder' is the D3-failing diagnostic; see FINDINGS")
+    ap.add_argument("--night-analytic", action="store_true",
+                    help="use the superseded analytic beam model (R^2 0.243) instead of "
+                         "the measured illumination field (R^2 0.832)")
     ap.add_argument("--night-ambient", default=None, metavar="LO,HI",
                     help="override the declared night ambient range. The pre-registered "
                          "axis is 0.02-0.50, which does NOT contain CARLA's measured 0.553 "
@@ -592,8 +628,11 @@ def main():
             # Night is the ONLY condition that leaves [0,1] (negative retro amplitude), so
             # it is the only one where clamp placement changes the answer -- and it changes
             # it by more than the corridor. Use the sensor-resolution path.
-            R_, C_ = vd.load_projection()
-            build, lo, hi = night_map_sensor(xf, R_, C_)
+            if NIGHT_GAIN.exists() and not args.night_analytic:
+                build, lo, hi = night_map_gain(xf, args.w, args.h, np.load(NIGHT_GAIN))
+            else:
+                R_, C_ = vd.load_projection()
+                build, lo, hi = night_map_sensor(xf, R_, C_)
         else:
             build, lo, hi = shadow_map(xf, args.w, args.h, mask)
 
