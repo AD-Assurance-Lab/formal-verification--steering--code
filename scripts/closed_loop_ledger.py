@@ -198,4 +198,12 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # One CARLA client per port. Two synchronous clients on one world interleave ticks
+    # and silently corrupt each other -- see pipeline/carla_lock.py for the run this cost.
+    from carla_lock import carla_lock, CarlaBusy
+    try:
+        with carla_lock(owner=" ".join(sys.argv[:3])):
+            sys.exit(main())
+    except CarlaBusy as exc:
+        print(exc)
+        sys.exit(4)

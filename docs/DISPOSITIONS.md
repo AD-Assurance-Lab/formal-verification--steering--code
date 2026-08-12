@@ -121,3 +121,67 @@ The fix is not to widen the corridor or shrink the axis after the fact. It is to
 where CARLA's night preset actually sits on the illuminance axis and evaluate verification
 over an interval containing that point — the same alignment that shadows already has for
 free from its pose-paired mask.
+
+---
+
+## D-03 — `clear / S_mixed / closed_loop` rerun of 2026-08-11 23:14 is CONTAMINATED, discard it
+
+**Status: my error. The cell is being deleted and rerun, not reported.**
+
+While that cell was driving on CARLA port 3000, I opened a **second client on the same
+port** to run a photometric comparison. Both were in synchronous mode, so their
+`world.tick()` calls interleaved, and the second client additionally set the weather and
+teleported a vehicle into the running scene.
+
+    rep 0 eastbound   1.15 ft  PASS
+    rep 0 westbound   0.50 ft  PASS
+    rep 1 eastbound   1.26 ft  PASS
+    rep 1 westbound   0.50 ft  PASS
+    rep 2 eastbound  20.69 ft  FAIL (departed)   <- my second client
+
+A 20.69 ft departure after four runs at 0.50-1.26 ft is not a model failure. The timing
+matches the intrusion exactly.
+
+**Nothing errored.** The simulator served both clients, every frame looked plausible, and
+the corrupted run is indistinguishable from a real result unless you know what else was
+running. That is the same shape as the read-after-write and queue-desync traps in
+`CLAUDE.md`, and I walked into it while being careful about CARLA as a *shared* resource
+between projects — the collision was with my own run.
+
+**Fix, so it cannot recur:** `pipeline/carla_lock.py` takes an exclusive per-port lock.
+`closed_loop_ledger.py` and `fog_density_sweep.py` now acquire it and refuse to start if
+another holder is alive, rather than queueing behind it.
+
+**Consequence:** the cell's JSON and its completion marker are deleted and the cell reruns
+on a quiet server. No other cell is affected — `fog`, `night` and `shadows` for `S_mixed`
+all completed before phase 2 began, and the frozen fog sweep's captures finished at
+23:13:45, before phase 2 started at 23:14:40.
+
+---
+
+## D-04 — the fog `k` disagreement is OPEN; three hypotheses tested and falsified
+
+Route frames put the surface-illumination attenuation at `k ~ 0.72` at `fog_density=70`;
+the static-pose sweep puts it at `~1.1-1.2`. These are not both reasonable: scanning `k` on
+route frames, rmse has a sharp minimum at 0.70 and D3 (a),(b),(f) pass only for `k <= 0.8`.
+
+**Tested and ruled out:**
+
+| hypothesis | test | result |
+|---|---|---|
+| camera not warmed up, biasing the clear baseline dark | 20 warm-up ticks + end-of-sweep drift check | **no** — density 10 gave k 1.070 without, 1.098 with; drift 0.0053 |
+| vehicle captured above ride height, corrupting depth-per-row | measured z: 0.2943 two ticks after teleport vs 0.0135 settled; settle then freeze physics | **no** — k unchanged (1.098, 1.125 at densities 10, 20) |
+| sweep poses drift off-road, so the "road ROI" is not road | route path is straight at y ~ 30.1, yaw ~ 0.05 for the full 220 m | **no** — poses are on-road and aligned |
+| scene/position dependence | fit route frames restricted to the sweep's own x-range | **no** — k is 0.732 / 0.720 / 0.712 near / mid / far |
+
+**Leading untested hypothesis: motion blur.** The route frames were captured from a vehicle
+moving at 20 mph; the sweep's vehicle is stationary. CARLA's RGB camera applies motion blur
+by default. Untested because testing it needs CARLA, and CARLA is running ledger cells —
+see D-03 for what happens when I ignore that.
+
+**What is used meanwhile, and why it is not cherry-picking.** Verification uses the
+**route-frame** calibration, because the frames a policy meets in closed loop are
+moving-camera frames, and the model's job is to reproduce *those*. The route fit passes all
+four computable D3 checks 8/8 (ROI R^2 +0.870); the sweep's `k` fails them on route frames.
+`k` is nonetheless carried as a bounded interval spanning both fits, so a certificate stays
+sound whichever fit is eventually vindicated.
