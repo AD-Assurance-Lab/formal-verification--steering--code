@@ -39,7 +39,9 @@ import disturbance_models as dm  # noqa: E402
 from imaging import raw_to_bgr  # noqa: E402
 
 OUT = REPO / "results" / "calibration"
-DENSITIES = [0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0]
+DENSITIES = [0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0, 0.0]
+WARMUP_TICKS = 20     # camera settling before ANY capture
+SETTLE_TICKS = 8      # after a weather write, before capture
 
 
 def fit_at(clear, obs, mor_grid):
@@ -85,6 +87,22 @@ def main():
         vehicle.set_autopilot(False)
         vehicle.apply_control(carla.VehicleControl(throttle=0.0, brake=1.0))
 
+        # Spawn the camera ONCE, up front, and warm it up.
+        #
+        # The first version spawned it inside the density loop, so the clear baseline --
+        # which every other density is measured against -- came from the camera's very
+        # first frames. That biased the baseline dark and made fog look relatively
+        # brighter, which is very likely why the sweep fitted k ~ 1.18 while the route
+        # frames fit k ~ 0.70 with a sharp rmse minimum. A corrupted denominator does not
+        # announce itself; it just returns a plausible wrong number.
+        camera, img_queue = env.spawn_camera(world, vehicle, condition="fog")
+        for _ in range(WARMUP_TICKS):
+            fid = world.tick()
+            try:
+                env.grab_frame(img_queue, fid)
+            except Exception:
+                pass
+
         offsets = np.linspace(0.0, 220.0, args.poses)
         for di, density in enumerate(DENSITIES):
             # CONSTRUCT the weather; never read-modify-write.
@@ -93,11 +111,10 @@ def main():
             if density == 0.0:
                 w.fog_distance = 0.0
             world.set_weather(w)
-            world.tick()          # the write lands on the NEXT tick
-            world.tick()
-
-            if camera is None:
-                camera, img_queue = env.spawn_camera(world, vehicle, condition="fog")
+            # the write lands on the NEXT tick, and volumetric fog needs a few more to
+            # settle; measured by re-capturing the clear baseline at the end of the sweep.
+            for _ in range(SETTLE_TICKS):
+                world.tick()
 
             frames = []
             for oi, off in enumerate(offsets):
@@ -107,8 +124,10 @@ def main():
                 world.tick()      # placement lands next tick
                 fid = world.tick()
                 frames.append(raw_to_bgr(env.grab_frame(img_queue, fid)).copy())
-            captures[density] = frames
-            print(f"  density {density:5.1f}: {len(frames)} poses captured")
+            key = density if density not in captures else "0_end"
+            captures[key] = frames
+            print(f"  density {density:5.1f}: {len(frames)} poses captured"
+                  f"{' (end-of-sweep drift check)' if key == '0_end' else ''}")
     finally:
         for label, fn in (("camera", lambda: camera and camera.destroy()),
                           ("vehicle", lambda: vehicle and vehicle.destroy()),
@@ -121,6 +140,14 @@ def main():
     if 0.0 not in captures:
         print("no clear baseline captured")
         return 2
+
+    # Baseline drift check: the clear capture repeated at the end must match the first.
+    if "0_end" in captures:
+        d = [float(np.abs(a.astype(np.float32) - b.astype(np.float32)).mean() / 255.0)
+             for a, b in zip(captures[0.0], captures["0_end"])]
+        print(f"\n  clear baseline drift, start vs end: mean |diff| {np.mean(d):.4f} "
+              f"(max {np.max(d):.4f}) -- large means the scene was still settling")
+        captures.pop("0_end")
 
     mor_grid = np.concatenate([np.arange(6, 200, 2.0), np.arange(200, 3000, 25.0)])
     rows = []
