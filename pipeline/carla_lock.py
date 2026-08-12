@@ -31,6 +31,12 @@ import config as C
 
 LOCK_DIR = Path(os.environ.get("CARLA_LOCK_DIR", "/tmp/claude-1000/carla-locks"))
 
+# CARLA binds rpc-port, rpc-port+1 AND rpc-port+2. A server on 3000 owns 3000-3002, so a
+# second server started on 3001 or 3002 silently conflicts and never becomes ready, while a
+# client "connecting to 3001" reaches the FIRST server's streaming port. Space concurrent
+# servers by at least 3. Measured the hard way on 2026-08-12.
+PORT_SPAN = 3
+
 
 class CarlaBusy(RuntimeError):
     pass

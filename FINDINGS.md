@@ -86,10 +86,12 @@ is a sky that is not being rendered at all.
 
 **Leading hypothesis, STILL UNTESTED: the server's graphics quality level.** I attempted it
 — launched a second, short-lived CARLA on port 3001 at `-quality-level=Low` so the running
-Epic server on :3000 was untouched — but it accepted connections without ever becoming
-ready and timed out, then self-terminated. **No measurement was obtained; do not read this
-as evidence either way.** The retry is cheap: bring up Low on a spare port, skip the world
-reload (which is what appears to have wedged it), and capture one frame. Tonight's runs launch
+Epic server on :3000 was untouched — but it failed for a mundane reason worth
+recording: **CARLA binds `rpc-port`, `+1` AND `+2`.** The Epic server on 3000 already owned
+3001 and 3002, so the Low server had a port conflict from the start, and my client
+"connecting to :3001" was talking to the Epic server's streaming port. **No measurement was
+obtained; do not read this as evidence either way.** The retry is cheap and should use a
+port at least 3 away — e.g. 3010 — and skip the world reload. Tonight's runs launch
 CARLA with `-quality-level=Epic`; a Low-quality server disables volumetric sky and
 atmosphere, which would give exactly a black sky, and would also change how the road is lit.
 The timing coincidence with `ae3ec28` misled me — the commit landed the same minute
