@@ -36,6 +36,41 @@ Pre-registered. Filled in as results arrive. `python -m study.ledger` checks it.
 **Rows 1-4 are the spine.** The verification column must agree with the closed-loop column
 in every cell. Any disagreement is a bug until dispositioned.
 
+### How a verification sweep collapses to one verdict
+
+**Pre-registered 2026-08-11, before any verification cell was run.** A sweep returns, per
+frame, the fraction of the declared axis box resolved CERTIFIED / FALSIFIED / UNKNOWN. The
+rule that turns those into a ledger verdict lives in `study.design.verify_verdict` and is
+deliberately asymmetric:
+
+| verdict | condition |
+|---|---|
+| FALSIFIED | the **median** frame has a nonzero falsified sub-region |
+| CERTIFIED | nothing falsified **and** median certified fraction >= 50% |
+| UNKNOWN | otherwise |
+
+`FALSIFIED` is an existence claim backed by soundness, so it needs no coverage threshold —
+only evidence it is a property of the route rather than one frame. `CERTIFIED` is a
+coverage claim, so "nothing was falsified" is explicitly *not* sufficient: an all-UNKNOWN
+sweep also falsifies nothing, and reading that as certified is how the previous study
+turned 11.5% UNKNOWN into a robustness finding.
+
+**The `clear` verify cell is vacuous.** Its disturbance box has zero width, so the bound is
+exact and CERTIFIED holds by construction. It is recorded with `vacuous: true` and excluded
+from every certified-rate summary.
+
+### What is compared, and what M5 still owes
+
+Closed loop drives **one point** on each axis (the CARLA preset). Verification covers an
+**interval**. Mapping the preset onto the axis — CARLA `fog_density=70` to a MOR in metres —
+is M5 calibration and is **not done**. Until it is, the two instruments are not being
+evaluated at the same axis location, and the ledger comparison rests on the weaker claim
+that a policy falsified across the majority of an axis is the policy that fails the preset
+drawn from it.
+
+This does not weaken the black-box demo, which is the funding-facing result and needs no
+calibration at all: given two unlabelled policies, verification alone separates them.
+
 ### Each student is sized to its own task -- architectures may differ
 
 **Revised 2026-08-11 (Zach).** An earlier rule here forced identical architecture across
