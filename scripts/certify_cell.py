@@ -45,7 +45,10 @@ from auto_LiRPA import BoundedModule, BoundedTensor, PerturbationLpNorm  # noqa:
 
 LEDGER = REPO / "results" / "ledger"
 SHADOW_MASK = REPO / "results" / "calibration" / "shadow_mask.npy"
-FOG_CAL = REPO / "results" / "calibration" / "fog_density_sweep.json"
+# Prefer the frozen-physics sweep: the earlier one captured 0.29 m above ride height,
+# which biases depth-per-row and therefore the (MOR, k) fit. See D-04.
+FOG_CAL = REPO / "results" / "calibration" / "fog_density_sweep_frozen.json"
+FOG_CAL_OLD = REPO / "results" / "calibration" / "fog_density_sweep.json"
 FOG_CAL_FALLBACK = REPO / "results" / "calibration" / "operating_point_fog.json"
 
 # Declared axes, in the LINEARIZED parameterization each condition is affine in.
@@ -442,6 +445,8 @@ def main():
     fog_A, fog_k = (0.78, 0.78, 0.78), (1.0, 1.0)
     if args.condition == "fog":
         srcs = [q for q in (FOG_CAL, FOG_CAL_FALLBACK) if q.exists()]
+        if FOG_CAL not in srcs and FOG_CAL_OLD.exists():
+            srcs.append(FOG_CAL_OLD)
         if not srcs:
             print("ERROR: no fog calibration. Run scripts/fit_operating_point.py and/or "
                   "scripts/fog_density_sweep.py first -- an ASSUMED airlight is exactly "
