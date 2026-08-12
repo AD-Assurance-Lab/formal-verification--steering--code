@@ -371,6 +371,7 @@ def main():
     if args.condition == "clear":
         record = {"condition": "clear", "student": args.cell_name,
                   "instrument": "verify", "verdict": "CERTIFIED", "vacuous": True,
+                  "checkpoint": args.student,
                   "relu_neurons": nrelu, "tolerance": tol,
                   "note": ("Degenerate by construction: the clear disturbance box has zero "
                            "width, so the bound is exact and equals the clear-weather "

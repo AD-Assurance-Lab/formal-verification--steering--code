@@ -92,9 +92,31 @@ stage ledger_mixed_clear "rerun ledger cell S_mixed/clear, 10 reps" \
 # predicted FALSIFIED; shadows was predicted CERTIFIED, which CONTRADICTS the
 # pre-registered ledger. That contradiction is the interesting one, because the prediction
 # is on the record before the drive.
+#
+# The checkpoint is read FROM THE VERIFY CELL, not globbed independently. Both instruments
+# must judge the same weights or the ledger row compares two different models -- and a glob
+# for "*_dagger_r*.pth" silently starts resolving to something else the moment a
+# student-DAgger round lands. Today both sides happen to agree; that is luck, not a
+# guarantee.
+ckpt_from_verify() {
+    $PY - "$1" <<'PYEOF'
+import json, sys, pathlib
+p = pathlib.Path("results/ledger") / f"{sys.argv[1]}__S_clear__verify.json"
+print(json.load(open(p)).get("checkpoint", "") if p.exists() else "")
+PYEOF
+}
+
 for cond in clear fog night shadows; do
-    stage "ledger_clear_$cond" "ledger cell S_clear/$cond, 10 reps" \
-        $PY -u scripts/closed_loop_ledger.py --student "$CLEARM" \
+    want=$(ckpt_from_verify "$cond")
+    if [ -z "$want" ]; then
+        log "SKIP ledger_clear_$cond -- no verify cell yet; the blind protocol needs it first"
+        continue
+    fi
+    if [ "$want" != "$CLEARM" ]; then
+        log "NOTE ledger_clear_$cond uses '$want' (from the verify cell), not '$CLEARM'"
+    fi
+    stage "ledger_clear_$cond" "ledger cell S_clear/$cond, 10 reps, $want" \
+        $PY -u scripts/closed_loop_ledger.py --student "$want" \
             --condition "$cond" --reps 10 --channels 8,16,16 --fc 32 \
             --cell-name S_clear
 done
