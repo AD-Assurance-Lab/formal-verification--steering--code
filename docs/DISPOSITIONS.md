@@ -284,3 +284,42 @@ marginal 1-in-20 cells.**
 
 This is on the record before the drive. If it comes back PASS, the coverage statistic in
 F17 is wrong and F17 should be withdrawn rather than patched.
+
+
+---
+
+## D-06 — CORRECTION: two of the three "marginal westbound" failures were also my contamination
+
+Recorded 2026-08-12 00:09. **This withdraws part of what D-01 and D-05 claimed.**
+
+The `clear / S_mixed` cell was rerun on a quiet server with the port lock held:
+
+    clear / S_mixed / closed_loop   PASS   0/20
+      all 20 runs passed, median max-CTE 0.72 ft, worst 1.49 ft
+      westbound specifically: median 0.49 ft, worst 0.82 ft
+
+The contaminated version of that cell reported 3/20 failures. I attributed rep 2 (20.69 ft,
+departed) to my concurrent CARLA client and treated reps 4 and 9 (2.45 and 2.23 ft
+westbound) as genuine marginal excursions — the beginning of a pattern. **They were not.**
+On a quiet server the worst westbound run is 0.82 ft, less than half of what those
+"marginal failures" recorded, so all three failures came from the intrusion.
+
+**What I got wrong, specifically.** I wrote that the marginal-westbound pattern "now shows
+up on clear, the condition S_mixed was trained on", and drew the inference that the issue
+therefore could not be about disturbance robustness. That inference was built on
+contaminated data. I had already identified the cell as contaminated and still mined it for
+a secondary conclusion, which is the wrong instinct: a run corrupted at one point is not
+trustworthy at any other point.
+
+**What actually survives:**
+
+- `fog / S_mixed` rep 0 westbound, 2.61 ft — clean cell, predates any contamination. D-01
+  stands as originally written, on that single instance.
+- `clear / S_clear` rep 9 westbound, 2.19 ft, exactly at budget — clean cell (it ran
+  23:25-23:31, well clear of the 23:16-23:18 intrusion). D-05 stands.
+
+So the marginal-westbound observation rests on **two** instances in different cells, not
+three-plus, and it is correspondingly weaker evidence for a recurring corner. The (step,
+x, y) instrumentation added tonight is still the right way to settle it.
+
+`S_mixed` now passes clear, night and shadows cleanly and fails only fog, at 1/20.

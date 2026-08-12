@@ -21,12 +21,14 @@ when I first raised it, because the same pattern appeared on **clear**, the cond
 | cell | failing run | max CTE | budget | departed |
 |---|---|---|---|---|
 | fog / S_mixed | rep 0 westbound | 2.61 ft | 2.19 | no |
-| clear / S_mixed | rep 4 westbound | 2.45 ft | 2.19 | no |
-| clear / S_mixed | rep 9 westbound | 2.23 ft | 2.19 | no |
+| clear / S_clear | rep 9 westbound | 2.19 ft | 2.19 | no |
 
-Passing westbound runs sit at 0.50–1.75 ft. Three marginal westbound excursions across two
-conditions, one of them the training condition, is not a story about disturbance
-robustness. Either the verdict rule (any failure in 20 → FAIL) is too strict for a
+**Corrected 00:09 (D-06).** I originally listed two further instances from
+`clear / S_mixed`. That cell was contaminated by my own concurrent CARLA client; rerun
+clean it is **PASS 0/20** with a worst westbound run of 0.82 ft. I had already flagged the
+cell as contaminated and still drew a secondary conclusion from it, which was wrong — a run
+corrupted at one point is not trustworthy at another. The pattern rests on two instances in
+different cells, not three, and is weaker evidence for a recurring corner than I said. Either the verdict rule (any failure in 20 → FAIL) is too strict for a
 stochastic simulator, or there is a specific westbound corner where the controller is
 marginal. Cells now record the (step, x, y) of the worst excursion so the next run can tell
 those apart — that was an instrumentation gap.
