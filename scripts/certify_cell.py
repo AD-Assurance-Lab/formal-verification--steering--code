@@ -489,7 +489,11 @@ def main():
 
         cs = clear_steer(student, xf, device, args.w, args.h)
         corridor = (cs - tol, cs + tol)
-        bounder = Bounder(len(lo), student, device, args.h, args.w)
+        # The BaB box is in PHYSICAL units (MOR alone, so 1-D for fog) while the
+        # linearized map may have more columns (fog is rank-2 in (u1, u2) once k is
+        # bounded). Size the bounded module from the map, not from the box.
+        _W_probe = build(lo, hi)[0]
+        bounder = Bounder(_W_probe.shape[1], student, device, args.h, args.w)
 
         # The cached-module shortcut is checked against a fresh construction ONCE per
         # cell, on the full box. A silent mismatch here would make every bound in the

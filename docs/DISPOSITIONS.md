@@ -185,3 +185,30 @@ moving-camera frames, and the model's job is to reproduce *those*. The route fit
 four computable D3 checks 8/8 (ROI R^2 +0.870); the sweep's `k` fails them on route frames.
 `k` is nonetheless carried as a bounded interval spanning both fits, so a certificate stays
 sound whichever fit is eventually vindicated.
+
+### D-04 addendum — the frozen sweep's `k` is constant, which argues the sweep is at fault
+
+Frozen-physics sweep, 8 poses per density:
+
+| density | 10 | 30 | 50 | 70 | 90 | 100 |
+|---|---|---|---|---|---|---|
+| MOR (m) | 862 | 237 | 153 | 106 | 77 | 64 |
+| k | 1.098 | 1.144 | 1.129 | 1.141 | 1.174 | 1.140 |
+| A | 0.308 | 0.363 | 0.395 | 0.408 | 0.417 | 0.418 |
+
+MOR falls monotonically and plausibly, and A rises as it should. But `k` sits at ~1.14
+**independently of density**, and that is the tell: `k` is meant to be the attenuation of
+sunlight reaching the road, so it must fall as fog thickens. A constant multiplicative
+factor is not attenuation — it is a fixed offset between this capture's clear baseline and
+its fog frames. `d_sun` is `nan` for the same reason: no fitted `k` is below 1.
+
+So the disagreement is most likely a defect in the **static capture's clear baseline**,
+not in the route frames, which is the opposite of what I assumed when I started chasing
+warm-up and ride height. The route frames remain the primary calibration, and they are also
+the right choice on principle: they are moving-camera frames, which is what a policy
+actually meets in closed loop.
+
+`k` stays bounded over [0.637, 1.330] regardless. Measured cost of that conservatism, at a
+budget of only 16 bounds on one frame: 50% certified, 0% falsified, 50% UNKNOWN — loose but
+not vacuous, and it tightens with the full budget. Resolving D-04 would buy back tightness,
+which is the concrete reason to finish it rather than leave it.
