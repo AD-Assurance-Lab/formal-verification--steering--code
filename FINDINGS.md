@@ -10,6 +10,49 @@ file is for characterization measurements, which are not ledger cells.
 
 ---
 
+## F16. The declared night axis does not contain the night CARLA actually renders
+
+Fitting the night model to pose-paired frames at `sun_altitude_angle = -25`:
+
+    ambient   0.553      declared axis 0.02 - 0.50   -> OUTSIDE, on the mild side
+    a_retro  -4.23       declared axis 0.0 - 3.0     -> OUTSIDE, and WRONG SIGN
+    rmse      0.101
+
+**The axis excludes the operating point.** Larger `ambient` means more ambient light, so
+CARLA's night is *milder* than the mildest point on our declared axis. Verification has
+therefore been sweeping a region the closed loop never visits, and the two instruments are
+answering different questions. This is the concrete form of the calibration debt recorded
+in `STUDY.md`, and it was predicted in direction (P-01) before being measured.
+
+**The retro term does not exist in this simulator.** `a_retro` fits strongly negative, i.e.
+lane markings get *darker* relative to asphalt at night rather than brighter. That is what
+a scene with no headlights looks like, and CARLA's night having no headlights is already a
+known defect. Retroreflection was added to the model precisely because a pure brightness
+scale "does not look like night"; in CARLA it is unphysical, and the fitted amplitude is
+the model straining against a term whose premise is absent.
+
+**D3 partial, road ROI, 10 frames:**
+
+| check | result |
+|---|---|
+| (a) delta-mu sign | **10/10 pass** — rendered -0.1033, model -0.1063 |
+| (b) delta-mu magnitude | **10/10 pass** |
+| (c) delta-sigma ratio | 0/10 fail |
+| (f) ROI R^2 >= 0.5 | 0/10 fail, median +0.243 |
+
+So night is the opposite failure to fog's: fog got the road's mean shift *backwards*
+(F14) while night gets the mean right and the *structure* wrong. Night is closer to usable,
+but neither passes as it stands.
+
+**Consequence for the ledger.** The committed night verify cells stand as run, over the
+pre-registered axis, because amending a pre-registered axis after seeing results is not
+mine to do. They should be read as "falsified over the declared axis", not as a statement
+about CARLA's night. A calibrated re-run over an interval containing ambient 0.553 is
+recorded separately as a diagnostic, so the comparison is available without rewriting the
+pre-registration.
+
+---
+
 ## F15. CARLA condition frames are pose-paired, so disturbance masks can be measured
 
 The ego drives the same scripted route under each condition and the manifest records
