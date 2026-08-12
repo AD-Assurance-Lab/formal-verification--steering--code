@@ -41,13 +41,17 @@ Every marginal failure in every cell — and both departures — traces to one p
 western intersection at the end of the lap. Confirmed across both students, both
 directions and two conditions, at ~step 1690 of ~1700.
 
-**It is not a metric artefact.** I first thought the reference there was unfair (no painted
-centreline, so `route.py` constructs one) and was going to recommend excluding junction
-segments. The control says otherwise: pure pursuit, which never looks at an image, tracks
-that same reference through the junction to within **0.05 ft**. The path is drivable; the
-students lack the visual cue, not a feasible reference. So this is a real ODD boundary —
-end-to-end lane keeping degrades where markings vanish — and it should be reported, not
-excluded (D-07). Setting it aside only to show the conditioning effect:
+**Cause unresolved — see D-07, which I asserted and then withdrew.** I claimed an expert
+control had shown the reference is drivable there. It had not: the first run's vehicle never
+moved, and the second never reaches the junction because the lap ends at loop closure. So
+whether the reference through the intersection is trackable is still open, and the choice
+between "report it as an ODD boundary" and "exclude it as a metric artefact" cannot be made
+yet.
+
+**What is established:** the failures are real. Each recorded max-CTE position was checked
+against the true distance to the reference polyline — the 86 ft departure matches exactly,
+so the vehicle genuinely left the road, and there is no `nearest_index` wraparound at lap
+end. Setting the junction aside only to show the conditioning effect:
 
 | | clear | night | fog | shadows |
 |---|---|---|---|---|

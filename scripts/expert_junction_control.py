@@ -26,6 +26,14 @@ from route import load_route, signed_cte_route, pure_pursuit_route  # noqa: E402
 
 from carla_lock import carla_lock  # noqa: E402
 
+# Where the students actually failed, from the ledger cells' max_cte_at fields.
+FAILURE_POINTS = {
+    "westbound": [("marginal x-374 y11.9", -374.0, 11.9),
+                  ("marginal x-365.8 y11.7", -365.8, 11.7)],
+    "eastbound": [("marginal x-370.5 y29.0", -370.5, 29.0),
+                  ("DEPARTURE x-371 y3.8", -371.0, 3.8)],
+}
+
 
 def lap(world, vehicle, direction, route, max_steps=2200):
     env.teleport(vehicle, {"eastbound": C.SPAWN_EASTBOUND,
@@ -33,6 +41,26 @@ def lap(world, vehicle, direction, route, max_steps=2200):
     for _ in range(10):
         world.tick()
     spd = env.SpeedController()
+    # WITHOUT THIS THE CAR NEVER MOVES. The first version of this control omitted the
+    # warm-up that closed_loop_ledger does, so the vehicle sat at spawn for all 2200
+    # steps, reported a max CTE of 0.14 ft -- because it was parked exactly on the route --
+    # and I read that as "the expert tracks the reference perfectly through the junction".
+    # It had not driven anywhere near the junction. A control that does not exercise the
+    # thing it controls for is worse than no control: it manufactures confidence.
+    vehicle.set_autopilot(False)
+    # warmup_to_speed wants a camera queue to drain; this control needs no images, so
+    # accelerate to target speed inline instead.
+    for _ in range(15):
+        vehicle.apply_control(carla.VehicleControl(throttle=0.0, brake=1.0))
+        world.tick()
+    for _ in range(80):
+        if env.speed_mph(vehicle) >= C.TARGET_SPEED_MPH * 0.95:
+            break
+        tf0 = vehicle.get_transform()
+        st, _, _ = pure_pursuit_route(route, tf0)
+        thr, brk = spd.control(vehicle)
+        vehicle.apply_control(carla.VehicleControl(throttle=thr, brake=brk, steer=st))
+        world.tick()
     start = vehicle.get_transform().location
     out, hint, left = [], None, False
     for _ in range(max_steps):
@@ -77,20 +105,23 @@ def main():
                     continue
                 a = np.array(series)
                 cte, xs = a[:, 0], a[:, 1]
-                # the junction spans roughly x -360 .. -390
-                inj = (xs > -392) & (xs < -358)
-                out = ~inj
-                print(f"\n{direction}: {len(a)} steps, budget {C.CTE_BUDGET_M:.3f} m")
-                print(f"  OUTSIDE junction : max {cte[out].max()*3.28084:5.2f} ft  "
-                      f"median {np.median(cte[out])*3.28084:5.2f} ft  "
-                      f"over budget {100*(cte[out] > C.CTE_BUDGET_M).mean():.2f}%")
-                if inj.any():
-                    print(f"  INSIDE  junction : max {cte[inj].max()*3.28084:5.2f} ft  "
-                          f"median {np.median(cte[inj])*3.28084:5.2f} ft  "
-                          f"over budget {100*(cte[inj] > C.CTE_BUDGET_M).mean():.2f}%")
-                i = int(cte.argmax())
-                print(f"  worst overall    : {cte[i]*3.28084:.2f} ft at "
-                      f"x {a[i,1]:.1f} y {a[i,2]:.1f}")
+                ys = a[:, 2]
+                print(f"\n{direction}: {len(a)} steps, budget {C.CTE_BUDGET_M:.3f} m, "
+                      f"x {xs.min():.0f}..{xs.max():.0f} (a real lap spans ~900 m)")
+                print(f"  whole lap        : max {cte.max()*3.28084:5.2f} ft  "
+                      f"median {np.median(cte)*3.28084:5.2f} ft  "
+                      f"over budget {100*(cte > C.CTE_BUDGET_M).mean():.2f}%")
+                # measure AT the observed student failure points, by 2-D proximity
+                for label, fx, fy in FAILURE_POINTS.get(direction, []):
+                    d2 = np.hypot(xs - fx, ys - fy)
+                    near = d2 < 8.0
+                    if near.any():
+                        print(f"  near {label:22s}: {near.sum():4d} steps within 8 m, "
+                              f"expert max {cte[near].max()*3.28084:5.2f} ft, "
+                              f"over budget {100*(cte[near] > C.CTE_BUDGET_M).mean():.2f}%")
+                    else:
+                        print(f"  near {label:22s}: LAP NEVER CAME WITHIN 8 m "
+                              f"(closest {d2.min():.1f} m) -- control does not cover it")
         finally:
             try:
                 if v:

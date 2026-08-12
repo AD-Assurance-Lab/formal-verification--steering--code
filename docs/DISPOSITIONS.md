@@ -614,3 +614,49 @@ deleting the region that breaks it.
 **How this was caught.** Only by running the control. The junction explanation fit every
 observation — same location, both directions, both students, every condition — and it was
 wrong about the cause. Fitting all the data is not the same as being right.
+
+---
+
+## D-07 WITHDRAWN — the expert control never drove the junction; it establishes nothing
+
+Recorded 2026-08-12 03:52. **I asserted D-07 on a broken control and must take it back.**
+
+D-07 claimed pure pursuit tracks the reference through the intersection to within 0.05 ft,
+and concluded the reference is drivable and the excursions are a real ODD boundary. Both
+runs behind that claim were invalid:
+
+1. **First run: the car never moved.** I omitted the warm-up `closed_loop_ledger` performs,
+   so the vehicle sat at spawn for all 2200 steps. Its "max CTE 0.14 ft" was a parked car
+   sitting exactly on the route. I read that as perfect tracking. The tell was there in the
+   output — the closest approach to every student failure was 13–33 m, which is roughly the
+   spawn-to-junction distance — and I did not check it before writing the conclusion.
+
+2. **Second run, with the car actually driving: it still never reaches the junction.**
+   Comparing by route index rather than world coordinate: the expert visits 1055/1522
+   (eastbound) and 1068/1522 (westbound) route indices and **0 of the junction indices** in
+   both directions. The lap terminates on loop closure (within 12 m of start) and the spawn
+   sits just west of the intersection, so the expert lap ends before entering it.
+
+**So the question D-07 claimed to answer is still open:** is the reference through the
+junction trackable? Unknown. To find out, the control must not stop at loop closure — start
+the expert mid-route, or extend past the closure point.
+
+### What IS established, and it is not nothing
+
+The CTE measurement is sound, which was worth checking given the failures all cluster at
+lap end where `nearest_index` could wrap. Comparing each recorded max-CTE position against
+the true distance to the reference polyline:
+
+    departure   reported 86.17 ft   true distance 86.17 ft   exact
+    marginals   reported 2.2-3.1 ft true distance 3.2-4.2 ft
+
+The departure is exact, so the vehicle genuinely left the road by 86 ft — no index
+wraparound. The marginal gap is the expected vertex-versus-segment difference at ~1 m route
+spacing, not an error. **The failures are real deviations from a real reference.**
+
+### The lesson, which is the same one twice tonight
+
+D-05 and D-07 both went wrong the same way: I ran something, it produced a number in the
+direction I expected, and I wrote the conclusion without checking that the experiment had
+exercised what it claimed to. A parked car reports excellent tracking. Twenty runs report
+no departures at a 2.5% rate. Neither is evidence, and both look like evidence.
