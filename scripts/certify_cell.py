@@ -451,7 +451,13 @@ class Bounder:
         # staleness probe: a halved map must produce a visibly different bound
         l3, u3 = self(0.5 * W, b, lo, hi)
         moved = max(abs(l3 - l1), abs(u3 - u1))
-        responsive = moved > 10.0 * rel_tol
+        # Staleness shows up as the bound NOT MOVING when the map changes, so the probe
+        # must be compared against how much cached and fresh disagree -- not against the
+        # tolerance. Keying it to rel_tol misfires whenever the bound is legitimately
+        # narrow: shadows on S_mixed agrees to 3.0e-08 and the probe moved 9.0e-04, a
+        # 30,000x separation that is obviously responsive, yet 9.0e-04 < 10*rel_tol
+        # aborted the sweep.
+        responsive = moved > 100.0 * max(err, 1e-9)
         # restore the real map before the sweep uses this bounder
         self._bind(W, b)
         return (agree and responsive), err, (l1, u1), (l2, u2), rel_tol, moved

@@ -10,6 +10,69 @@ file is for characterization measurements, which are not ledger cells.
 
 ---
 
+## F19. Image fidelity is not behavioural fidelity, and the gap is worst for the GOOD model
+
+A disturbance model can reproduce CARLA's images well and still be useless for verifying a
+policy trained on the real thing. Measured, comparing each student's steering response to
+REAL CARLA frames against the same student's response to the MODELLED disturbance:
+
+| condition, model | image R^2 | real vs modelled steering response |
+|---|---|---|
+| fog, `S_clear` | 0.848 | 1.2x — faithful |
+| fog, `S_mixed` | 0.848 | **23.8x — useless** |
+| night, `S_clear` | 0.243 | 3.0x |
+| night, `S_mixed` | 0.243 | **27x** |
+
+**The mechanism.** `S_mixed` was trained on CARLA's real fog and night, so it keys on
+features specific to how CARLA renders them, and is acutely sensitive to exactly the
+residual the analytic model fails to reproduce. `S_clear` never learned those features, so
+modelled and real disturbances look about the same to it. The consequence is perverse: the
+analytic model is *most* wrong about the *best* policy, which is precisely backwards for a
+tool meant to certify good policies.
+
+**So an image-fidelity gate is necessary but NOT sufficient**, and D3 as written would have
+passed fog. A behavioural check -- does the policy respond to the modelled disturbance as
+it does to the real one -- belongs alongside it.
+
+**Fixed by measuring the disturbance rather than assuming its form**, per condition:
+
+| condition | model | image R^2 | `S_mixed` behavioural |
+|---|---|---|---|
+| night | analytic ambient + assumed beam | 0.243 | 27x |
+| night | **measured illumination field** | **0.832** | ~1x |
+| fog | analytic Koschmieder + k | 0.848 | 23.8x |
+| fog | **measured affine field** | **0.950** | **0.8x** |
+
+At CARLA's measured night this turns verification from useless into exact discrimination:
+`S_clear` falsified 10/10, `S_mixed` certified 10/10, matching closed loop both ways.
+
+---
+
+## F20. Verification flags intermediate severities that closed loop never drives
+
+`S_mixed` certifies at CARLA's actual night and fog levels but falsifies over the FULL
+declared axis. That is not a false alarm -- it is the two instruments answering different
+questions. Closed loop drives one point per condition; verification covers the continuum
+between clear and that point.
+
+Measured empirically, steering deviation versus visibility for `S_mixed`:
+
+    MOR 2000 m   5% of frames over corridor
+    MOR  500 m  10%
+    MOR  250 m  20%
+    MOR  140 m  50%
+    MOR   90 m  55%   <- CARLA's fog level
+
+so degradation is monotone in fog thickness for the mixed model, and the axis contains
+regions never simulated. **This makes a falsifiable prediction**: drive CARLA at a fog
+density corresponding to an intermediate MOR the verifier flags, and the mixed model should
+degrade there. That is the S1 interpolation stretch goal, promoted from "nice if it lands"
+to the natural next experiment -- and it is the strongest available argument for
+verification as a tool, because it is the one claim closed-loop testing cannot make without
+running every point.
+
+---
+
 ## F18. The training dataset was rendered with a DIFFERENT clear preset than the code now produces
 
 Chasing D-04's sky discrepancy to its root. At the same pose, same nominal condition:
