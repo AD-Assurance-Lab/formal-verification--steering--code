@@ -47,6 +47,23 @@ exception that D-01 is already about. So the per-frame corridor is a good surrog
 safety — the study's premise holds — and the defect is entirely in how the sweep was
 summarised.
 
+**CONFIRMED IN ADVANCE, 2026-08-12 01:05.** F17 predicted the sparse protocol would
+produce a *second* unsound certificate, and P-02 named the cell and the outcome before the
+drive. `fog / S_clear`:
+
+    verify (12 frames, median)   CERTIFIED, 72.3% certified, 0% falsified
+    dense corridor breach        23.7% of on-route frames  ->  predicted FAIL with departures
+    closed loop                  FAIL 20/20, ALL 20 runs departed, median max-CTE 92.3 ft
+
+So the sparse protocol certified a policy that leaves the road on every single run, and the
+dense statistic called it correctly beforehand. Two unsound certificates now, both from the
+same defect, one of them predicted. That is as strong as this diagnosis can get.
+
+**Consequence: no verification cell produced by the 12-frame median protocol should be
+reported as a certificate.** The FALSIFIED cells survive (existence claims, argued below);
+the CERTIFIED ones do not. `study.design.VERIFY_FRAMES` and `verify_verdict` need replacing
+before M6 can be claimed.
+
 **Fix, and it is a pre-registration change so it is Zach's call.** The verification
 statistic should be a COVERAGE over the route — the fraction of frames whose *bound* stays
 inside the corridor, over a large frame sample — not a median over a handful. `CERTIFIED`

@@ -371,3 +371,24 @@ unvalidated until the harness reproduces the preset.
 **Next step when CARLA is free:** make the static harness use `set_condition` exactly as the
 collection pipeline does, re-capture one clear frame, and confirm the sky reads ~0.00
 before rerunning the sweep.
+
+---
+
+## P-02 RESOLVED — confirmed, emphatically
+
+    predicted (before the drive): FAIL, with departures, closer to the shadows cell
+    measured: FAIL 20/20, ALL 20 runs departed, median max-CTE 92.3 ft (range 90.1-98.7)
+
+The verify cell for the same pair says CERTIFIED at 72.3%. So the pre-registered 12-frame
+median protocol certified a policy that departs the road on every single run, and the dense
+corridor-breach statistic (23.7%) predicted the failure before it happened.
+
+This is the second unsound certificate of the night and the first one predicted in advance.
+Together with `shadows / S_clear` it settles F17: the defect is the aggregation rule, not
+the verifier and not the disturbance models.
+
+**Immediate consequence.** Two of the four `S_clear` verify cells are unsound, and the
+reason is systematic rather than incidental. Until `verify_verdict` is replaced, CERTIFIED
+from this protocol carries no assurance. I have not rewritten it tonight: it is
+pre-registered, and replacing it is the kind of change that has to be deliberate and
+committed as an amendment, not slipped in at 01:00 by the process that just failed it.
