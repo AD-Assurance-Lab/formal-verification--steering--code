@@ -70,6 +70,32 @@ inside the corridor, over a large frame sample — not a median over a handful. 
 should then require that fraction to be near 1, and the frame count should be justified
 against the number of frames in a lap rather than chosen for runtime.
 
+**THE PROPOSED FIX IS VALIDATED ON DATA ALREADY COLLECTED.** Re-scoring tonight's six
+non-vacuous verify cells with a coverage rule — `CERTIFIED` requires **every** sampled
+frame fully certified, not the median — costs nothing and gives:
+
+| cell | current rule | proposed rule | closed loop | |
+|---|---|---|---|---|
+| fog / S_clear | CERTIFIED | UNKNOWN | FAIL 20/20 | unsound → fixed |
+| fog / S_mixed | CERTIFIED | UNKNOWN | FAIL 1/20 | unsound → fixed |
+| shadows / S_clear | CERTIFIED | UNKNOWN | FAIL 20/20 | unsound → fixed |
+| shadows / S_mixed | CERTIFIED | CERTIFIED | PASS 0/20 | correct |
+| night / S_clear | FALSIFIED | FALSIFIED | FAIL 20/20 | correct |
+| night / S_mixed | FALSIFIED | FALSIFIED | PASS 0/20 | over-strict (F16 axis) |
+
+**All three unsound certificates disappear, and the one correct CERTIFIED survives.** The
+cost is honest: two cells drop to UNKNOWN rather than becoming FALSIFIED, because 12 frames
+genuinely cannot support a positive claim about a 1700-frame lap. UNKNOWN is the right
+answer there.
+
+`shadows / S_clear` is the instructive one — 11 of 12 frames were fully certified and a
+single frame carried a falsified region. The median discarded that frame; requiring all
+frames catches it. That is F17 in one line: the tail is the whole signal, and a median is
+built to ignore tails.
+
+The remaining disagreement (`night / S_mixed`) is the F16 axis misalignment, not the
+aggregation rule, and it is in the conservative direction.
+
 **What this does not touch.** `night / S_clear` was FALSIFIED and failed 20/20, and
 falsification is an existence claim: finding a violating region on any frame is enough, so
 sparse sampling can only make it miss violations, never invent them. The confirmed blind
