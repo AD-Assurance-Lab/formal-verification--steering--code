@@ -171,6 +171,37 @@ reported as a certificate.** The FALSIFIED cells survive (existence claims, argu
 the CERTIFIED ones do not. `study.design.VERIFY_FRAMES` and `verify_verdict` need replacing
 before M6 can be claimed.
 
+**DIRECT TEST: the disturbance model DOES predict; only the frame selection was wrong.**
+Zach asked the right question — if verification does not predict closed loop, in what sense
+is the model correct? Answered by verifying the frames that actually matter instead of an
+even sample. Screening 120 pose-matched shadows pairs for `S_clear`, **41 (34%) already
+violate the corridor empirically**. Running the same model and the same verifier on the six
+worst:
+
+| frame | empirical deviation | verification |
+|---|---|---|
+| 0 | 0.2088 (17x tol) | **79.0% falsified** |
+| 1 | 0.1459 (12x tol) | **78.1% falsified** |
+| 2 | 0.1360 (11x tol) | **70.1% falsified** |
+| 3 | 0.1261 (10x tol) | **78.8% falsified** |
+| 4 | 0.1112 (9x tol) | **67.3% falsified** |
+| 5 | 0.1093 (9x tol) | **67.9% falsified** |
+
+**6/6 falsified, none UNKNOWN.** So the physics is right and the verifier is capable — the
+sweep simply never looked at these frames. Two corrections follow:
+
+1. It is **not** enough to change how frames are aggregated; the frame **selection** is the
+   defect. Twelve evenly-spaced frames cannot represent a 1700-frame lap where a third of
+   the route violates. Sampling must be dense, or deliberately include worst-case frames.
+2. My earlier statement that the fix "only converts CERTIFIED to UNKNOWN, which is not
+   prediction" was true of the even sample and **wrong in general**. With frames chosen
+   properly the verdict is FALSIFIED, and FALSIFIED before the drive is exactly the
+   prediction the study claims.
+
+**And it means tuning the disturbance model would have been the wrong repair** — it already
+reproduces CARLA at ROI R^2 0.996 and already falsifies the failing frames. Adjusting it to
+make verdicts agree would have fitted the answer while breaking a model that was correct.
+
 **Fix, and it is a pre-registration change so it is Zach's call.** The verification
 statistic should be a COVERAGE over the route — the fraction of frames whose *bound* stays
 inside the corridor, over a large frame sample — not a median over a handful. `CERTIFIED`
