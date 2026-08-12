@@ -482,3 +482,48 @@ nothing to do with the disturbance under test. Note this affects **all** cells e
 it does not change the ordering of any result reported tonight — `S_clear` still fails
 night, fog and shadows catastrophically with departures, which is nothing like a junction
 excursion.
+
+---
+
+## D-05 UPDATE — the control is less compromised than I said; its failures are the junction too
+
+Recorded 2026-08-12 03:07. `clear / S_clear` rerun, 20 reps, with location recording:
+
+    4/20 failures, NONE departed
+      rep 1 westbound  2.23 ft  step 1687  x -374.1  y 11.9
+      rep 6 westbound  2.39 ft  step 1687  x -373.9  y 11.9
+      rep 8 westbound  2.26 ft  step 1688  x -374.1  y 11.9
+      rep 8 eastbound  3.73 ft  step 1693  x -370.5  y 29.0
+
+Every one is inside the western intersection at the end of the lap (~step 1690 of ~1700).
+The westbound three cluster within 0.2 m; the eastbound one is the same junction on its own
+lane. **This corrects two things I said earlier:**
+
+1. "Every marginal failure is westbound" — wrong, there is now an eastbound instance. The
+   direction was incidental; the *junction* is the invariant.
+2. D-05 said the negative control "genuinely fails its own training condition" and is
+   therefore compromised. On this rerun its failures are **entirely** the junction artefact
+   that affects every cell equally, with no departures at all. That is not a policy that
+   drives badly on clear.
+
+**What remains genuinely open for D-05:** the original cell's rep 8 eastbound departure at
+86.42 ft. Nothing in this 20-rep rerun resembles it, so it is a rare event rather than the
+control being broken, and its cause is unknown. One departure in 40 runs on the training
+condition is still worth explaining before the control is called clean.
+
+**Net effect on the study.** With junction excursions set aside, the picture sharpens
+considerably:
+
+    S_clear   clear    marginal junction excursions only, no departures
+              night    20/20 FAIL, every run DEPARTED
+              fog      20/20 FAIL, every run DEPARTED
+              shadows  20/20 FAIL, 16/20 DEPARTED
+    S_mixed   clear    PASS 0/20
+              night    PASS 0/20
+              shadows  PASS 0/20
+              fog      marginal junction excursions only, no departures
+
+That is a much cleaner statement of the study's spine than anything available six hours
+ago: the clear-only student departs the road on every unseen condition, the mixed student
+completes every lap, and the only blemish on either is a shared route artefact at an
+intersection where the reference path is synthetic.
