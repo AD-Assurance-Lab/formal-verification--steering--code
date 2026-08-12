@@ -20,6 +20,7 @@ import os
 import sys
 from pathlib import Path
 
+import cv2
 import numpy as np
 import torch
 
@@ -51,8 +52,25 @@ def wilson(k, n, z=1.96):
     return (max(0.0, centre - half), min(1.0, centre + half))
 
 
-def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps):
-    """One lap under policy control. Returns (max_abs_cte_m, frac_over_budget, departed, where)."""
+def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps,
+               log_dir=None):
+    """One lap under policy control. Returns (max_abs_cte_m, frac_over_budget, departed, where).
+
+    `log_dir` saves EVERY frame the policy actually saw, with its pose, its steering output
+    and its CTE. That exists to fix the two defects that made the first verification sweep
+    unsound (F17, F18):
+
+      SAMPLING. Verifying 12 or even 60 frames sampled from a dataset is a guess at a
+        ~1700-frame lap. Measured, 34% of frames breach the corridor and an even sample
+        missed all of them. Verifying the logged trajectory covers what the car met.
+      DOMAIN.   Verification read SAVED dataset frames while closed loop drove LIVE renders,
+        and those differ enough to move steering past tolerance on 40% of frames. Logged
+        frames are live renders by construction, so the gap closes.
+
+    It also enables the strong protocol: log the CLEAR lap, apply a disturbance model to
+    those frames, verify, and only THEN drive the disturbed lap. That is a prediction, on
+    the real trajectory, in the right image domain.
+    """
     route = load_route(direction)
     hint = None
     speed_ctrl = env.SpeedController()
@@ -69,7 +87,13 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps):
     # with only a scalar max there is no way to tell a recurring bad corner from bad luck
     # -- which is exactly the question D-01 turns on.
     ctes, poses, left, stalled, offroad, departed = [], [], False, 0, 0, False
+    log_rows, frames_dir = [], None
+    if log_dir is not None:
+        frames_dir = Path(log_dir) / "frames"
+        frames_dir.mkdir(parents=True, exist_ok=True)
+    step_i = -1
     for _ in range(max_steps):
+        step_i += 1
         # Keep the chase camera on the car. Omitting this leaves the spectator wherever
         # warmup left it while the vehicle drives off into the distance -- the view is
         # cosmetic, but a run you cannot watch is a run you cannot sanity-check by eye,
@@ -90,6 +114,19 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps):
             ctes.append(abs(cte))
             poses.append((float(loc.x), float(loc.y)))
 
+        if frames_dir is not None:
+            # Save the FULL-resolution BGR frame, not the 84x28 network input: a
+            # disturbance model must be applied at sensor resolution before crop and
+            # downsample, or thin structure is diluted and the model is quantitatively
+            # wrong (disturbance_models.py opens on exactly this).
+            name = f"{step_i:05d}.png"
+            cv2.imwrite(str(frames_dir / name), env.raw_to_bgr(image))
+            log_rows.append(dict(step=step_i, image=f"frames/{name}",
+                                 x=float(loc.x), y=float(loc.y),
+                                 yaw=float(tf.rotation.yaw), steer=float(steer),
+                                 cte_m=("" if cte is None else float(cte)),
+                                 speed_mph=float(env.speed_mph(vehicle))))
+
         thr, brk = speed_ctrl.control(vehicle)
         vehicle.apply_control(carla.VehicleControl(throttle=thr, brake=brk, steer=steer))
 
@@ -103,6 +140,12 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps):
         if stalled >= 20 or offroad >= 15:
             departed = True
             break
+
+    if log_rows:
+        with open(Path(log_dir) / "manifest.csv", "w", newline="") as fh:
+            wtr = csv.DictWriter(fh, fieldnames=list(log_rows[0].keys()))
+            wtr.writeheader()
+            wtr.writerows(log_rows)
 
     if not ctes:
         return (float("inf"), 1.0, True, None)
@@ -126,6 +169,13 @@ def main():
     ap.add_argument("--cell-name", default=None,
                     help="ledger student name, if it differs from the checkpoint "
                          "(e.g. --student S_mixed_84x28 --cell-name S_mixed)")
+    ap.add_argument("--log-frames", default=None, metavar="DIR",
+                    help="save every frame the policy saw, with pose/steer/CTE, under DIR. "
+                         "Enables trajectory verification: verify the frames the car "
+                         "actually met instead of a sample of the dataset (F17/F18).")
+    ap.add_argument("--log-frames-reps", type=int, default=1,
+                    help="how many reps per direction to log (default 1). A lap is ~1700 "
+                         "frames at ~0.3 MB, so logging all 10 reps costs several GB.")
     args = ap.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -151,8 +201,15 @@ def main():
 
         for rep in range(args.reps):
             for d in ("eastbound", "westbound"):
+                ldir = None
+                if args.log_frames and rep < args.log_frames_reps:
+                    ldir = (Path(args.log_frames) /
+                            f"{args.condition}_{d}_rep{rep:02d}")
                 mx, frac, departed, where = drive_once(world, vehicle, cam_queue, model,
-                                                device, d, args.max_steps)
+                                                device, d, args.max_steps, log_dir=ldir)
+                if ldir is not None:
+                    n = len(list((ldir / "frames").glob("*.png"))) if (ldir/"frames").exists() else 0
+                    print(f"    logged {n} frames -> {ldir}")
                 ok = (not departed) and mx <= C.CTE_BUDGET_M
                 runs.append(dict(rep=rep, direction=d, max_cte_m=mx,
                                  frac_over_budget=frac, departed=departed, passed=ok,

@@ -18,3 +18,7 @@ venv*/
 
 # Local notes
 scratch/
+
+# trajectory frame logs: ~0.5 GB per lap, regenerable
+results/traj/
+results/trajectory/*.json
