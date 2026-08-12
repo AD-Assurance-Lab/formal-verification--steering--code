@@ -773,3 +773,47 @@ reached it again with evidence. The middle step was right: the first control was
 and a conclusion resting on a parked car deserved withdrawal even though it happened to
 point the correct way. Being right by luck and being right are different, and only the
 second is reportable.
+
+---
+
+## D-10 — fog `k` narrowed to the route-frame fit; why this is not tuning toward a verdict
+
+Recorded 2026-08-12 11:20. **This changes a verification input, so the reasoning is on the
+record before the cells are re-run.**
+
+Fog was the only condition running at d = 2, because two calibrations disagreed on the
+surface-illumination term `k` (route frames 0.72, static sweep ~1.14) and I bounded it over
+both, [0.637, 1.255]. That was the right call while both measurements stood. It is no
+longer, because one of them has an identified defect.
+
+**Why the static sweep is excluded, not out-voted.** Its clear baseline renders a sky at
+0.2575 where the dataset's is 0.0021 — a 100x difference, from a harness that does not
+reproduce the preset (D-04, F18). Airlight is driven by the sky region, and `A` trades off
+against `k` in the fit, so a sky wrong by two orders of magnitude biases `k` directly. The
+route-frame fit uses dataset frames on **both** sides of every pair, so it is internally
+consistent, and it is the one that passes the fidelity checks — D3 (a),(b),(c),(f) 8/8 at
+ROI R^2 +0.870, with a sharp rmse minimum at k = 0.70 that degrades 3.5x by k = 1.20.
+
+**This is not the thing I argued against.** Zach proposed tuning the disturbance model until
+verification matched closed loop; I said no, because that fits the answer. This is
+different: a measurement is being dropped for a cause identified independently of any
+verdict, and the surviving value was chosen by image fidelity, not by which verdict it
+produces. The distinction is that the criterion is pixels, not agreement.
+
+**Measured effect, same frame, same student, same verifier:**
+
+| | certified | falsified | UNKNOWN |
+|---|---|---|---|
+| k bounded [0.637, 1.255] | 56.2% | 0.0% | **43.8%** |
+| k fixed 0.717 | 82.4% | **17.6%** | **0.0%** |
+
+UNKNOWN collapses and the verifier resolves a violation it previously could not. On an
+8-frame sample the cell goes FALSIFIED with median UNKNOWN 0.0%, and costs roughly 3x less
+because many frames resolve in 11-17 bounds instead of exhausting 96.
+
+**What is given up, and it should be said in the paper.** The interval was sound under
+either calibration; a point estimate is only sound if the route-frame fit is right. The
+honest framing is that fog certificates are conditional on a calibration measured from
+dataset pairs and validated by D3 — not on an assumption-free bound. If D-04's root cause
+is ever fixed and the static sweep agrees, the interval can come back and the certificates
+strengthen.
