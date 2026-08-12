@@ -1,0 +1,181 @@
+{
+  "verdict": "FAIL",
+  "repetitions": 20,
+  "failures": 2,
+  "failure_rate": 0.1,
+  "wilson_95": [
+    0.027865893984153206,
+    0.30103820641179335
+  ],
+  "student": "S_clear_84x28",
+  "condition": "clear",
+  "exposure": {
+    "shutter": 800.0,
+    "iso": 100.0,
+    "fstop": 2.8,
+    "gamma": 2.2
+  },
+  "cte_budget_m": 0.6679999999999999,
+  "runs": [
+    {
+      "rep": 0,
+      "direction": "eastbound",
+      "max_cte_m": 0.4461161492307527,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 0,
+      "direction": "westbound",
+      "max_cte_m": 0.5543940279248156,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 1,
+      "direction": "eastbound",
+      "max_cte_m": 0.2563908526172864,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 1,
+      "direction": "westbound",
+      "max_cte_m": 0.6088647320380254,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 2,
+      "direction": "eastbound",
+      "max_cte_m": 0.22324393142385962,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 2,
+      "direction": "westbound",
+      "max_cte_m": 0.6153005715351696,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 3,
+      "direction": "eastbound",
+      "max_cte_m": 0.3059092296258882,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 3,
+      "direction": "westbound",
+      "max_cte_m": 0.6399459684240113,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 4,
+      "direction": "eastbound",
+      "max_cte_m": 0.4412530793649047,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 4,
+      "direction": "westbound",
+      "max_cte_m": 0.6425618646777306,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 5,
+      "direction": "eastbound",
+      "max_cte_m": 0.2662005357134153,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 5,
+      "direction": "westbound",
+      "max_cte_m": 0.5856448460080902,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 6,
+      "direction": "eastbound",
+      "max_cte_m": 0.2574134824026131,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 6,
+      "direction": "westbound",
+      "max_cte_m": 0.6659707936722484,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 7,
+      "direction": "eastbound",
+      "max_cte_m": 0.27457527690081,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 7,
+      "direction": "westbound",
+      "max_cte_m": 0.515393879441698,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 8,
+      "direction": "eastbound",
+      "max_cte_m": 26.33946463584255,
+      "frac_over_budget": 0.012316715542521995,
+      "departed": true,
+      "passed": false
+    },
+    {
+      "rep": 8,
+      "direction": "westbound",
+      "max_cte_m": 0.6113774286964465,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 9,
+      "direction": "eastbound",
+      "max_cte_m": 0.33956476281423664,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 9,
+      "direction": "westbound",
+      "max_cte_m": 0.6686229714308611,
+      "frac_over_budget": 0.0011806375442739079,
+      "departed": false,
+      "passed": false
+    }
+  ]
+}

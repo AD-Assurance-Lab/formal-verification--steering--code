@@ -212,3 +212,58 @@ actually meets in closed loop.
 budget of only 16 bounds on one frame: 50% certified, 0% falsified, 50% UNKNOWN — loose but
 not vacuous, and it tightens with the full budget. Resolving D-04 would buy back tightness,
 which is the concrete reason to finish it rather than leave it.
+
+---
+
+## D-05 — `S_clear` fails its OWN training condition; the negative control is compromised
+
+**Status: OPEN. Needs your call on whether to retrain the control.**
+
+Recorded 2026-08-12 ~23:40, from a cell whose verification counterpart was committed first.
+
+    clear / S_clear / closed_loop   FAIL   2/20   Wilson [0.03, 0.30]
+      rep 8 eastbound  86.42 ft  DEPARTED
+      rep 9 westbound   2.19 ft  marginal, exactly at budget
+      passing runs: median 1.58 ft, worst 2.18 ft (budget 2.19)
+
+`overnight.sh` anticipated this in writing before the run: *"The negative control has to be
+a GOOD clear specialist. If S_clear is merely undertrained, 'S_clear fails fog' is
+confounded — it must fail because it never saw fog, not because it drives badly."* It is
+now confounded, and I am not going to pretend otherwise.
+
+### But the night result survives it, and the margin is the reason
+
+    night / S_clear   20/20 failures, EVERY run departed, 54-59% of frames over budget
+    clear / S_clear    2/20 failures,  1 departure,        1.2% of frames over budget
+
+These are not the same phenomenon at different strengths. On clear the policy completes 19
+of 20 laps with a median max-CTE of 1.58 ft, comfortably inside budget; on night it never
+completes a lap and spends the majority of every lap outside it. A policy that "drives
+badly in general" does not produce that gap. So `S_clear` genuinely cannot drive night, and
+verification said so before the drive.
+
+What the confound *does* cost is the clean version of the claim. "S_clear fails only what
+it never saw" is no longer supportable as stated; "S_clear fails night catastrophically and
+clear only marginally" is, and it is the weaker sentence.
+
+### Options
+
+1. **Retrain / extend student-DAgger on `S_clear`** until clear is clean, then rerun the
+   S_clear row. Costs a few hours of CARLA and re-runs four cells. Gives the clean control.
+   Note the verify cells would need recommitting first to preserve the blind protocol.
+2. **Report as measured**, with the margin argument above carrying the weight.
+3. **Diagnose first.** Both marginal failures across every cell tonight are *westbound*, and
+   cells now record the (step, x, y) of the worst excursion. One more clear cell would show
+   whether there is a single recurring corner. Cheapest of the three, and it also settles
+   D-01.
+
+Recommendation: 3, then 1 if a corner is not the explanation.
+
+### A related fix, not a silencing
+
+`study.ledger` reported this as `certified safe, closed loop FAILED` — its most serious
+alarm, reserved for verification calling something safe that was not. It fired on the
+**vacuous** clear cell, which asserts nothing: a zero-width disturbance box makes CERTIFIED
+mean only "the network agrees with itself at the nominal frame". The check now distinguishes
+vacuous cells and says so explicitly rather than counting them as soundness violations. The
+closed-loop contradiction is still reported, and still fails the ledger.

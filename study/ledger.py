@@ -81,6 +81,19 @@ def unsound_cells(rows):
             if not cl or not ve:
                 continue
             if ve.get("verdict") == "CERTIFIED" and cl.get("verdict") == "FAIL":
+                if ve.get("vacuous"):
+                    # A vacuous cell makes NO safety claim: the clear disturbance box has
+                    # zero width, so CERTIFIED means only "the network agrees with itself
+                    # at the nominal frame". Pairing that with a closed-loop failure is
+                    # not verification calling something safe that was not -- it is the
+                    # policy failing its own training condition, which `problems_with`
+                    # already reports as a contradiction. Counting it here would fire the
+                    # tool's most serious alarm on a cell that asserted nothing.
+                    out.append(
+                        f"{cond.name}/{student}: closed loop FAILED, and the verify cell "
+                        f"is VACUOUS so it neither predicted nor missed it (not a "
+                        f"soundness violation; see the closed-loop contradiction above)")
+                    continue
                 out.append(f"{cond.name}/{student}: certified safe, closed loop FAILED")
     return out
 
