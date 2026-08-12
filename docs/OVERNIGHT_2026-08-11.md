@@ -6,10 +6,32 @@ state.
 
 ## The short version
 
-M4 closed loop and M6 verification both advanced, but **the night's most important results
-are negative**, and they land on the disturbance models rather than on the policies. Two of
-the three disturbance models do not reproduce what CARLA renders. One is repaired and
-measured; one is diagnosed and not yet repaired.
+Two things happened, and they point opposite ways.
+
+**The study's central claim was demonstrated.** `night / S_clear`: verification committed
+FALSIFIED to git *before* the drive, closed loop then failed 20/20 with every run departing.
+`--check-order` confirms the ordering from git history. That is step 4 of `CLAUDE.md`, as a
+prediction.
+
+**And the M6 protocol I pre-registered is broken.** It produced **two unsound certificates**
+— `shadows / S_clear` and `fog / S_clear` both CERTIFIED, both then failing closed loop
+20/20 with departures (median max-CTE 21.3 ft and 92.3 ft). Certifying a policy that leaves
+the road on every run is the one failure mode that invalidates the tool rather than the
+experiment.
+
+The cause is diagnosed and it is narrow: **not** the verifier (α-CROWN bounds are sound for
+the frames given), **not** the disturbance models (shadows reconstructs CARLA at ROI
+R² +0.996). It is the aggregation rule — 12 frames and a median, against ~1700 frames per
+lap, where 37.8% of on-route frames breach the corridor. Measured densely the same corridor
+separates every cell correctly (≥23.7% fails, ≤8% passes), so the *premise* holds and only
+my summary statistic was wrong. F17 predicted the second unsound certificate before it
+happened, and P-02 named the cell and the outcome.
+
+**So: do not report any CERTIFIED verdict from tonight's protocol.** FALSIFIED survives —
+it is an existence claim, and sparse sampling can only miss violations, never invent them.
+
+Separately, two of the three disturbance models do not reproduce what CARLA renders; one is
+repaired and measured, one is diagnosed.
 
 **Nothing in the ledger has been silenced.** `python -m study.ledger` still exits nonzero.
 
@@ -37,7 +59,14 @@ not four, and correspondingly weaker.
 Options and costs are in D-01. My recommendation is unchanged: add repetitions first, since
 it is cheap and discriminates, then decide.
 
-**2. The night axis needs amending, and that is a pre-registration change.** Measured, the
+**2. `verify_verdict` and `VERIFY_FRAMES` need replacing.** This is the fix for F17 and it
+is a pre-registration change, so it is yours to make. The statistic should be a COVERAGE
+over the route — the fraction of frames whose bound stays in the corridor, over a frame
+sample justified against the ~1700 frames in a lap — with CERTIFIED requiring that fraction
+near 1. I deliberately did not rewrite it at 01:00: the process that just failed a
+pre-registered rule should not quietly replace it.
+
+**3. The night axis needs amending, and that is a pre-registration change.** Measured, the
 CARLA night preset sits at `ambient = 0.553` against a declared axis of `0.02–0.50`. The
 axis **does not contain the point closed loop drives**. I did not amend it — changing a
 pre-registered axis after seeing results is your call, not mine. The committed night cells
