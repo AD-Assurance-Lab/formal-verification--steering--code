@@ -1,0 +1,181 @@
+{
+  "verdict": "PASS",
+  "repetitions": 20,
+  "failures": 0,
+  "failure_rate": 0.0,
+  "wilson_95": [
+    0.0,
+    0.16113012549493322
+  ],
+  "student": "S_mixed_84x28_w3",
+  "condition": "shadows",
+  "exposure": {
+    "shutter": 800.0,
+    "iso": 100.0,
+    "fstop": 2.8,
+    "gamma": 2.2
+  },
+  "cte_budget_m": 0.6679999999999999,
+  "runs": [
+    {
+      "rep": 0,
+      "direction": "eastbound",
+      "max_cte_m": 0.23030003327024287,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 0,
+      "direction": "westbound",
+      "max_cte_m": 0.5429078666071386,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 1,
+      "direction": "eastbound",
+      "max_cte_m": 0.2456151089158148,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 1,
+      "direction": "westbound",
+      "max_cte_m": 0.2866819840557529,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 2,
+      "direction": "eastbound",
+      "max_cte_m": 0.2546588359097064,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 2,
+      "direction": "westbound",
+      "max_cte_m": 0.388895946643803,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 3,
+      "direction": "eastbound",
+      "max_cte_m": 0.22892656233916486,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 3,
+      "direction": "westbound",
+      "max_cte_m": 0.48226139463738754,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 4,
+      "direction": "eastbound",
+      "max_cte_m": 0.24453050133911572,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 4,
+      "direction": "westbound",
+      "max_cte_m": 0.5052801099568173,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 5,
+      "direction": "eastbound",
+      "max_cte_m": 0.25510183988523893,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 5,
+      "direction": "westbound",
+      "max_cte_m": 0.48614598599751657,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 6,
+      "direction": "eastbound",
+      "max_cte_m": 0.23538897147104085,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 6,
+      "direction": "westbound",
+      "max_cte_m": 0.5227509249552889,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 7,
+      "direction": "eastbound",
+      "max_cte_m": 0.27666100020890627,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 7,
+      "direction": "westbound",
+      "max_cte_m": 0.4086724123362592,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 8,
+      "direction": "eastbound",
+      "max_cte_m": 0.21440760106800555,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 8,
+      "direction": "westbound",
+      "max_cte_m": 0.3553398663977659,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 9,
+      "direction": "eastbound",
+      "max_cte_m": 0.2787195488440518,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 9,
+      "direction": "westbound",
+      "max_cte_m": 0.4130695820663292,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    }
+  ]
+}

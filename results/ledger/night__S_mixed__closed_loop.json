@@ -1,0 +1,181 @@
+{
+  "verdict": "PASS",
+  "repetitions": 20,
+  "failures": 0,
+  "failure_rate": 0.0,
+  "wilson_95": [
+    0.0,
+    0.16113012549493322
+  ],
+  "student": "S_mixed_84x28_w3",
+  "condition": "night",
+  "exposure": {
+    "shutter": 200.0,
+    "iso": 100.0,
+    "fstop": 2.8,
+    "gamma": 2.2
+  },
+  "cte_budget_m": 0.6679999999999999,
+  "runs": [
+    {
+      "rep": 0,
+      "direction": "eastbound",
+      "max_cte_m": 0.18494552041084938,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 0,
+      "direction": "westbound",
+      "max_cte_m": 0.29372659781300997,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 1,
+      "direction": "eastbound",
+      "max_cte_m": 0.18858902815814113,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 1,
+      "direction": "westbound",
+      "max_cte_m": 0.31430744247955045,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 2,
+      "direction": "eastbound",
+      "max_cte_m": 0.19794022949681875,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 2,
+      "direction": "westbound",
+      "max_cte_m": 0.31288094543443834,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 3,
+      "direction": "eastbound",
+      "max_cte_m": 0.18524890868932423,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 3,
+      "direction": "westbound",
+      "max_cte_m": 0.29890341444070984,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 4,
+      "direction": "eastbound",
+      "max_cte_m": 0.18991185938628782,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 4,
+      "direction": "westbound",
+      "max_cte_m": 0.3030495816065713,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 5,
+      "direction": "eastbound",
+      "max_cte_m": 0.1863801023161021,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 5,
+      "direction": "westbound",
+      "max_cte_m": 0.2756132508840216,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 6,
+      "direction": "eastbound",
+      "max_cte_m": 0.1929965349616729,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 6,
+      "direction": "westbound",
+      "max_cte_m": 0.41990865215195117,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 7,
+      "direction": "eastbound",
+      "max_cte_m": 0.19236212560817695,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 7,
+      "direction": "westbound",
+      "max_cte_m": 0.39494893712941365,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 8,
+      "direction": "eastbound",
+      "max_cte_m": 0.19155836987587854,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 8,
+      "direction": "westbound",
+      "max_cte_m": 0.3579801222391216,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 9,
+      "direction": "eastbound",
+      "max_cte_m": 0.19842920505933778,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    },
+    {
+      "rep": 9,
+      "direction": "westbound",
+      "max_cte_m": 0.3565120930303447,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true
+    }
+  ]
+}
