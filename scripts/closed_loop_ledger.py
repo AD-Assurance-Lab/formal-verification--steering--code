@@ -64,7 +64,11 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps):
     spawn = SPAWNS[direction]
     start = carla.Location(x=spawn["x"], y=spawn["y"], z=spawn["z"])
 
-    ctes, left, stalled, offroad, departed = [], False, 0, 0, False
+    # Track WHERE the worst excursion happens, not just how big it is. Three westbound
+    # failures across two conditions all sat at 2.2-2.6 ft against a 2.19 ft budget, and
+    # with only a scalar max there is no way to tell a recurring bad corner from bad luck
+    # -- which is exactly the question D-01 turns on.
+    ctes, poses, left, stalled, offroad, departed = [], [], False, 0, 0, False
     for _ in range(max_steps):
         # Keep the chase camera on the car. Omitting this leaves the spectator wherever
         # warmup left it while the vehicle drives off into the distance -- the view is
@@ -84,6 +88,7 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps):
         cte, hint = signed_cte_route(route, loc.x, loc.y, hint)
         if cte is not None:
             ctes.append(abs(cte))
+            poses.append((float(loc.x), float(loc.y)))
 
         thr, brk = speed_ctrl.control(vehicle)
         vehicle.apply_control(carla.VehicleControl(throttle=thr, brake=brk, steer=steer))
@@ -100,9 +105,11 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps):
             break
 
     if not ctes:
-        return (float("inf"), 1.0, True)
+        return (float("inf"), 1.0, True, None)
     arr = np.array(ctes)
-    return (float(arr.max()), float((arr > C.CTE_BUDGET_M).mean()), departed)
+    i = int(arr.argmax())
+    where = dict(step=i, x=poses[i][0], y=poses[i][1]) if i < len(poses) else None
+    return (float(arr.max()), float((arr > C.CTE_BUDGET_M).mean()), departed, where)
 
 
 def main():
@@ -144,11 +151,12 @@ def main():
 
         for rep in range(args.reps):
             for d in ("eastbound", "westbound"):
-                mx, frac, departed = drive_once(world, vehicle, cam_queue, model,
+                mx, frac, departed, where = drive_once(world, vehicle, cam_queue, model,
                                                 device, d, args.max_steps)
                 ok = (not departed) and mx <= C.CTE_BUDGET_M
                 runs.append(dict(rep=rep, direction=d, max_cte_m=mx,
-                                 frac_over_budget=frac, departed=departed, passed=ok))
+                                 frac_over_budget=frac, departed=departed, passed=ok,
+                                 max_cte_at=where))
                 print(f"  rep {rep} {d:10s} max|CTE|={mx * C.M_TO_FT:6.2f} ft "
                       f"over={frac * 100:5.1f}%  {'PASS' if ok else 'FAIL'}"
                       f"{'  (departed)' if departed else ''}")
