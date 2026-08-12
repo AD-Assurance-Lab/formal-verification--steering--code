@@ -52,7 +52,7 @@ def wilson(k, n, z=1.96):
 
 
 def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps):
-    """One lap under policy control. Returns (max_abs_cte_m, frac_over_budget, departed)."""
+    """One lap under policy control. Returns (max_abs_cte_m, frac_over_budget, departed, where)."""
     route = load_route(direction)
     hint = None
     speed_ctrl = env.SpeedController()
