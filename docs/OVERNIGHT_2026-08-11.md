@@ -172,7 +172,26 @@ closed loop, ≤8% passes. The machinery works; the sampling in my aggregation r
 
 ## Open
 
-**D-04 is the only substantive open item. Everything else on this list closed overnight.**
+**D-04 is RESOLVED — see F18, and it needs a decision from you.**
+
+The fog `k` disagreement traced to a real defect: **the training dataset was rendered with
+a different clear preset than the code now produces.** `CLEAR_BASELINE` landed in `ae3ec28`
+at 12:28, the same minute the dataset's first frame was written; the prior
+`set_clear_weather` was a read-modify-write that inherited the world's scattering state.
+At the same pose, dataset road ROI reads **0.3135** against a fresh world's **0.2205** — a
+**30% difference inside the crop the network sees.**
+
+The ledger survives: both students faced the identical mismatch, `S_mixed` still passes
+0/20, and the `S_clear` vs `S_mixed` contrast is a within-comparison. But it explains the
+fog `k` split (0.72 from dataset pairs, ~1.14 from live pairs — each self-consistent,
+mutually not), and it may contribute to the marginal excursions, which is untested.
+
+**Decision:** re-collect the `conditions` dataset under the current presets, or pin the old
+preset explicitly. Leaving the two silently different is the one option that should be off
+the table. Until then, photometry must use dataset frames on both sides of a comparison —
+which the fog route-frame calibration already does.
+
+### Superseded note on D-04
 
 **D-04 — fog `k`.** Route frames say 0.72, the static sweep says ~1.14 *independently of
 density*. A real attenuation must fall as fog thickens, so the constant points at the
