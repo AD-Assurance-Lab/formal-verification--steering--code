@@ -577,3 +577,40 @@ fails the conditions it never saw" is supportable. The caveat that belongs in th
 narrow and specific: *on clear it also departs 2.5% of the time, at an intersection where
 the reference path is synthetic* — which is an argument for fixing the route or the metric,
 not evidence that the control cannot drive.
+
+---
+
+## D-07 — CORRECTION: the intersection is NOT a route artefact. It is a real ODD boundary.
+
+Recorded 2026-08-12 03:40. **This overturns the recommendation in D-01's root-cause note
+and in the overnight report.**
+
+Pure pursuit steers geometrically toward a point on the reference path and never looks at
+an image, so it has no perception to lose. Driving it round both laps under clear weather:
+
+    eastbound   outside junction  max 0.17 ft   over budget 0.00%
+    westbound   outside junction  max 0.14 ft   over budget 0.00%
+    westbound   INSIDE  junction  max 0.05 ft   over budget 0.00%
+
+The expert tracks the reference through the intersection to within **0.05 ft**. The
+reference path is therefore geometrically feasible and perfectly drivable, junction or not.
+
+**So I was wrong.** I argued the excursions were an artefact of scoring against a synthetic
+centreline where no painted line exists, and recommended excluding junction segments from
+the metric or ending the lap earlier. Both would have hidden a real result. The path is
+drivable; what the students lack there is the *visual cue*, not a feasible reference.
+
+**What it actually is.** An end-to-end lane-keeping policy fails inside an intersection
+because the lane markings it depends on are absent. That is a genuine limitation of the
+policy class and a real boundary of the operational design domain — considerably more
+interesting than a metric bug, and exactly the sort of thing this study exists to find.
+
+**Revised recommendation.** Do **not** exclude junction segments. Report the intersection
+behaviour as a finding: both students degrade where markings vanish, `S_clear` to the point
+of departing 2.5% of the time on its own training condition. If the study wants a clean
+lane-keeping claim it should say "outside intersections" explicitly, rather than quietly
+deleting the region that breaks it.
+
+**How this was caught.** Only by running the control. The junction explanation fit every
+observation — same location, both directions, both students, every condition — and it was
+wrong about the cause. Fitting all the data is not the same as being right.

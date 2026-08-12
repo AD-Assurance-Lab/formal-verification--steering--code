@@ -37,10 +37,17 @@ repaired and measured, one is diagnosed.
 
 ## The study's spine, with the junction artefact set aside
 
-Every marginal (non-departing) failure in every cell traces to one place: the western
-intersection at the end of the lap, where `route.py` builds a *synthetic* reference because
-no painted centreline exists. Confirmed across both students, both directions and two
-conditions, at ~step 1690 of ~1700. Setting those aside:
+Every marginal failure in every cell — and both departures — traces to one place: the
+western intersection at the end of the lap. Confirmed across both students, both
+directions and two conditions, at ~step 1690 of ~1700.
+
+**It is not a metric artefact.** I first thought the reference there was unfair (no painted
+centreline, so `route.py` constructs one) and was going to recommend excluding junction
+segments. The control says otherwise: pure pursuit, which never looks at an image, tracks
+that same reference through the junction to within **0.05 ft**. The path is drivable; the
+students lack the visual cue, not a feasible reference. So this is a real ODD boundary —
+end-to-end lane keeping degrades where markings vanish — and it should be reported, not
+excluded (D-07). Setting it aside only to show the conditioning effect:
 
 | | clear | night | fog | shadows |
 |---|---|---|---|---|
