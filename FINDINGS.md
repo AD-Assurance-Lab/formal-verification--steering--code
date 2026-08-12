@@ -84,7 +84,12 @@ None of them move it. A 100x sky difference is not reachable from any scattering
 and a **pure black** sky is not physical under manual exposure with an overcast preset — it
 is a sky that is not being rendered at all.
 
-**Leading hypothesis, untested: the server's graphics quality level.** Tonight's runs launch
+**Leading hypothesis, STILL UNTESTED: the server's graphics quality level.** I attempted it
+— launched a second, short-lived CARLA on port 3001 at `-quality-level=Low` so the running
+Epic server on :3000 was untouched — but it accepted connections without ever becoming
+ready and timed out, then self-terminated. **No measurement was obtained; do not read this
+as evidence either way.** The retry is cheap: bring up Low on a spare port, skip the world
+reload (which is what appears to have wedged it), and capture one frame. Tonight's runs launch
 CARLA with `-quality-level=Epic`; a Low-quality server disables volumetric sky and
 atmosphere, which would give exactly a black sky, and would also change how the road is lit.
 The timing coincidence with `ae3ec28` misled me — the commit landed the same minute
