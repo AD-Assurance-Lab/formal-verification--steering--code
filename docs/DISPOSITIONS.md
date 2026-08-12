@@ -660,3 +660,37 @@ D-05 and D-07 both went wrong the same way: I ran something, it produced a numbe
 direction I expected, and I wrote the conclusion without checking that the experiment had
 exercised what it claimed to. A parked car reports excellent tracking. Twenty runs report
 no departures at a 2.5% rate. Neither is evidence, and both look like evidence.
+
+---
+
+## D-08 — expert control, third attempt: EASTBOUND answered, westbound still not
+
+Recorded 2026-08-12 04:00. Starting the expert 120 route indices *before* the junction so
+it must drive through, rather than at spawn where the lap ends first:
+
+    eastbound   visited 183 idx, junction 14/14   max CTE IN JUNCTION  0.00 ft,   0% over budget
+    westbound   visited 123 idx, junction  5/16   max CTE             159.68 ft, 100% over budget
+
+**Eastbound is a real result.** The expert covers every junction index and tracks the
+reference to 0.00 ft, against a 2.19 ft budget, having driven ~180 route points cleanly
+(whole-drive max 0.12 ft). So the reference path through the intersection **is** trackable
+eastbound. The student's eastbound failure at that same place (3.73 ft, and the 86 ft
+departure) is therefore not caused by an infeasible reference.
+
+**Westbound is not a result, it is a broken run.** 123 indices in 400 steps is far short of
+the ~700 expected at 20 mph, only 5 of 16 junction indices were reached, and 159.68 ft is
+not a tracking error, it is a vehicle somewhere else entirely. The start pose is computed
+from `route[ji[0]-120]`, and route index order need not follow travel direction, so
+westbound very likely started facing the wrong way or off-road. **I am not reporting the
+159.68 ft as evidence of anything.**
+
+### Where this leaves the question
+
+For **eastbound**, D-07's withdrawn claim turns out to have been right for the wrong
+reasons: the reference is drivable and the failure is the policy's, consistent with an ODD
+boundary at intersections where markings vanish. For **westbound** — which is where most of
+the marginal excursions occurred — it remains open.
+
+That asymmetry matters and should not be smoothed over. Do not generalise the eastbound
+result to westbound; fix the start-pose construction (use the route's own travel direction,
+and verify the vehicle is on-road and moving before trusting the numbers) and rerun.
