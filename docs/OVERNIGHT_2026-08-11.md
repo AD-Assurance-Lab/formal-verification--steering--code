@@ -35,7 +35,7 @@ repaired and measured, one is diagnosed.
 
 **Nothing in the ledger has been silenced.** `python -m study.ledger` still exits nonzero.
 
-## The study's spine, with the junction artefact set aside
+## The study's spine, with intersection behaviour separated out
 
 Every marginal failure in every cell — and both departures — traces to one place: the
 western intersection at the end of the lap. Confirmed across both students, both
@@ -150,6 +150,11 @@ headlights looks like. The mirror image of fog's failure.
   then failed closed loop 20/20 with 16 departures. Not the verifier and not the
   disturbance model (shadows reconstructs CARLA at ROI R² +0.996) — 12 frames and a median,
   against ~1700 frames per lap, where 37.8% of on-route frames breach the corridor. (F17)
+- **I asserted the expert control, withdrew it, then re-established it properly.** D-07
+  claimed the expert tracks the junction reference; run 1 had a parked car (I omitted the
+  warm-up) and run 2 never reached the junction. Withdrawn as unsupported — correctly, even
+  though it pointed the right way. D-08 and D-09 then established it with controls that
+  actually exercised the question.
 - **Every fog bound before tonight rested on an unmeasured assertion**: the rank-1 chord
   assumes the true curve barely bows off it. `DISTURBANCE_MATH.md` asserts this; no code
   checked. It is now measured per cell.
@@ -167,9 +172,15 @@ closed loop, ≤8% passes. The machinery works; the sampling in my aggregation r
 
 ## Open
 
+**D-04 is the only substantive open item. Everything else on this list closed overnight.**
+
 **D-04 — fog `k`.** Route frames say 0.72, the static sweep says ~1.14 *independently of
 density*. A real attenuation must fall as fog thickens, so the constant points at the
 sweep's clear baseline, not at the route frames. Leading untested hypothesis: the route
 camera moves at 20 mph and the sweep's is static, and CARLA applies motion blur by default.
 Meanwhile `k` is carried as a bounded interval spanning both fits — sound either way, at a
 measured cost in tightness. Resolving it buys that tightness back.
+
+Minor and non-blocking: the westbound expert control (D-08) still needs a valid start pose;
+eastbound already answered the question and D-09 settled the underlying issue by a different
+route, so this is tidying rather than evidence.
