@@ -77,38 +77,53 @@ def cells():
 # axis box that branch-and-bound resolved as CERTIFIED, FALSIFIED, or left UNKNOWN. Those
 # have to collapse to one of the three ledger verdicts, and the collapse is where a result
 # could quietly be talked into agreeing with closed loop.
-VERIFY_FRAMES = 12            # clear-weather frames, sampled evenly along the route
+VERIFY_FRAMES = 60            # AMENDED 2026-08-12, was 12 -- see below
 VERIFY_CELL_BUDGET = 96       # bound computations per frame, per condition
-VERIFY_CERTIFIED_MIN = 0.50   # certified volume fraction required to call a cell CERTIFIED
+VERIFY_CERTIFIED_MIN = 0.50   # retained for the superseded rule; unused by verify_verdict
+VERIFY_FALSIFY_FRAC = 0.05    # fraction of frames carrying a violation to call FALSIFIED
 
 
 def verify_verdict(certified_fracs, falsified_fracs):
     """Collapse a per-frame verification sweep into one ledger verdict.
 
-    Deliberately ASYMMETRIC, because the two claims are not symmetric:
+    AMENDED 2026-08-12. The original rule took the MEDIAN over 12 frames. It produced three
+    UNSOUND certificates -- cells CERTIFIED whose closed loop then failed, twice with the
+    vehicle leaving the road on every run. The amendment is made deliberately, with the
+    reason recorded, and it is NOT a loosening: it makes CERTIFIED strictly harder to earn.
 
-      FALSIFIED is an EXISTENCE claim and is backed by soundness -- the bound lies wholly
-        outside the corridor, so a real violating parameter value is present. It needs no
-        coverage threshold, only evidence that it is a property of the route rather than
-        of one unlucky frame. Hence: the MEDIAN frame has a falsified region.
+    Two things were wrong, and the second was the deeper one.
 
-      CERTIFIED is a COVERAGE claim. "Nothing was falsified" is not it -- an all-UNKNOWN
-        sweep also falsifies nothing, and reading that as certified would let bound
-        looseness masquerade as robustness. That is exactly the previous study's failure
-        mode (11.5% UNKNOWN read as a robustness result). Hence: a majority of the axis
-        must be positively certified.
+    AGGREGATION. A median discards a minority of violating frames by construction. Measured
+    on `S_clear` under shadows, 34% of pose-matched route frames already breach the corridor
+    empirically, and the median saw none of it.
 
-    Median over frames, not mean and not any-frame: one outlier frame should not decide a
-    cell in either direction.
+    SELECTION. Twelve evenly-spaced frames cannot represent a ~1700-frame lap. Verifying the
+    frames that actually break the policy, with the SAME disturbance model and verifier,
+    falsified 6 of 6 at 67-79% of the axis with zero UNKNOWN -- so the physics and the
+    verifier were always capable, and the sweep simply never looked. Hence 12 -> 60 frames,
+    still sampled UNIFORMLY along the route: choosing frames by their rendered-condition
+    behaviour would import information from the simulator into a prediction that is supposed
+    to precede it.
+
+    The rule:
+
+      FALSIFIED  a violation region exists on at least VERIFY_FALSIFY_FRAC of frames.
+                 An existence claim backed by soundness, so it needs evidence of being a
+                 property of the route rather than one frame -- but not a majority, which
+                 is what the median silently demanded and what hid the 34%.
+      CERTIFIED  EVERY sampled frame is fully certified. "Nothing was falsified" is not
+                 enough; an all-UNKNOWN sweep also falsifies nothing, and reading that as
+                 certified is how bound looseness masquerades as robustness.
+      UNKNOWN    otherwise -- including the honest case where 60 frames cannot support a
+                 positive claim about 1700.
     """
-    import statistics
-    if not certified_fracs:
+    n = len(certified_fracs)
+    if not n:
         return "UNKNOWN"
-    c = statistics.median(certified_fracs)
-    f = statistics.median(falsified_fracs)
-    if f > 0.0:
+    frac_with_violation = sum(1 for f in falsified_fracs if f > 0.0) / n
+    if frac_with_violation >= VERIFY_FALSIFY_FRAC:
         return "FALSIFIED"
-    if c >= VERIFY_CERTIFIED_MIN:
+    if all(c >= 0.999 for c in certified_fracs):
         return "CERTIFIED"
     return "UNKNOWN"
 
