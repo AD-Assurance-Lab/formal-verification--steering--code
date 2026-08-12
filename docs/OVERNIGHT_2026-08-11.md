@@ -186,6 +186,16 @@ The ledger survives: both students faced the identical mismatch, `S_mixed` still
 fog `k` split (0.72 from dataset pairs, ~1.14 from live pairs — each self-consistent,
 mutually not), and it may contribute to the marginal excursions, which is untested.
 
+**Measured, and it is as large as the disturbances themselves.** Feeding each student the
+dataset frame and the live render of the same pose, the steering shift exceeds the
+certification tolerance on **40%** of frames for `S_clear` (max 0.329, 27x tolerance) and
+30% for `S_mixed`. For scale, `S_clear` exceeds the corridor on 37% of frames under shadows.
+
+**And it means the two instruments read different images.** Verification uses dataset
+frames; closed loop drives live renders. Tonight's agreements stand — falsification only
+needs one real violating region — but "verification predicts closed loop" is being claimed
+across an undeclared domain gap. **This makes the fix blocking rather than cosmetic.**
+
 **Decision:** re-collect the `conditions` dataset under the current presets, or pin the old
 preset explicitly. Leaving the two silently different is the one option that should be off
 the table. Until then, photometry must use dataset frames on both sides of a comparison —

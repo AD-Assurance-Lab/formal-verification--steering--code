@@ -48,6 +48,28 @@ this ledger was driven under that mismatch.
 - It **may** contribute to the marginal excursions, since a 30% darker road is a domain
   shift the students never trained on. Untested.
 
+**MEASURED, and it is bigger than the disturbances under study.** Feeding each student the
+dataset frame and the live render of the *same pose*, and comparing their steering:
+
+    tolerance 0.0120
+    S_clear   median 0.0109   p90 0.3038   max 0.3290   over tolerance on 40% of frames
+    S_mixed   median 0.0036   p90 0.1537   max 0.1710   over tolerance on 30% of frames
+
+For scale, `S_clear` exceeds the corridor on 37% of frames under **shadows** and 23.7% under
+**fog**. The preset change on its own reaches 40%. The domain shift is not a detail beside
+the weather effects; it is the same size.
+
+**Why this matters for the ledger's central comparison.** Verification reads **dataset**
+frames (old preset). Closed loop drives **live renders** (new preset). Those two visual
+domains differ by more than the certification tolerance on 30–40% of frames, so the two
+instruments are not being applied to the same images. Tonight's agreements — most
+importantly `night / S_clear`, FALSIFIED then 20/20 failure — are still agreements, and
+falsification is robust because it only needs one real violating region. But the *general*
+claim "verification predicts closed loop" is being made across a domain gap that nobody
+declared, and that gap has to close before the claim is airtight.
+
+**This raises the priority of the fix from tidiness to blocking.**
+
 **Recommended fix, and it is Zach's call because it costs a recollection:** re-collect the
 `conditions` dataset under the current constructed presets, or pin the old preset
 explicitly. Do not leave the two silently different. Until then, any photometry must use
