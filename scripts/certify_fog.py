@@ -118,11 +118,16 @@ def main():
     ap.add_argument("--max-depth", type=int, default=7)
     ap.add_argument("--w", type=int, default=84)
     ap.add_argument("--h", type=int, default=28)
+    ap.add_argument("--channels", default="8,16,16",
+                    help="must match the checkpoint; ReLU count drives bound looseness")
+    ap.add_argument("--fc", type=int, default=32)
     args = ap.parse_args()
     RESULTS.mkdir(parents=True, exist_ok=True)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    student = StudentNet(args.h, args.w).to(device)
+    student = StudentNet(args.h, args.w,
+                         channels=tuple(int(v) for v in args.channels.split(",")),
+                         fc=args.fc).to(device)
     student.load_state_dict(torch.load(
         f"{C.CHECKPOINT_DIR}/{args.student}.pth", map_location=device))
     student.eval()

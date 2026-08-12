@@ -10,6 +10,45 @@ file is for characterization measurements, which are not ledger cells.
 
 ---
 
+## F12. Model size is NOT the binding constraint on verifiability; input dimension is
+
+**Status: measured. Settles the architecture question and answers the scaling question.**
+
+Fog axis, adaptive BaB, corridor on clear-weather steering, 5 frames each:
+
+| student | ReLU | UNKNOWN (mean) | bounds/frame |
+|---|---|---|---|
+| `S_clear` | 5,152 | 0.78% | 15 |
+| `S_mixed_w2` | 10,304 | **0.94%** | 10 |
+| `S_mixed_w3` | 15,456 | **2.5%** | 16 |
+
+**Tripling the network barely moved decisiveness.** All three stay far from the ~11% UNKNOWN
+where certification stops being useful. Architecture size is not what to optimise, which
+is the call Zach made on scope and the measurement supports.
+
+**What DOES determine verifiability is input dimensionality**, and the controlled comparison
+is in F9/F8: the SAME 5,152-neuron network is
+
+- **31.8x too loose to certify anything** under a pixel-space L-inf ball at eps=1/255 over
+  7,056 input dimensions
+- **decisive at 0.78% UNKNOWN** under the 1-dimensional physical parameter
+
+Same network, same verifier, same day. The entire difference is the dimension of the
+perturbation set.
+
+**Consequence for scaling to bigger models** (Zach is building a 5090 box for exactly this):
+GPU buys memory and branch-and-bound throughput, not tightness. Compute converts to
+tightness only through BaB, which is linear gain against exponential need. Scale the
+NETWORK freely; do not scale the PERTURBATION DIMENSION. Prefer wider over deeper, since
+relaxation error compounds with depth in a way it does not with width -- consistent with a
+3x width increase costing almost nothing here.
+
+**Flagged, unresolved:** one w3 frame returns **100% FALSIFIED** across the whole visibility
+range -- a decisive negative, not looseness. `w2`'s worst frame is 3.1% falsified on the same
+five frames. Genuine w3 weakness or a hard frame is not yet distinguishable, and absolute
+certified rates are untrustworthy until the airlight is calibrated (D4). Recorded, not
+explained.
+
 ## F11. Width is the capacity lever; resolution loses on BOTH axes
 
 **Status: measured. Settles a question I had reopened, and confirms the frozen repo's
