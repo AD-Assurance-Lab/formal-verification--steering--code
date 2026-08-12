@@ -35,6 +35,24 @@ repaired and measured, one is diagnosed.
 
 **Nothing in the ledger has been silenced.** `python -m study.ledger` still exits nonzero.
 
+## The completed ledger, 16/16 active cells
+
+| condition | S_clear closed loop | S_clear verify | S_mixed closed loop | S_mixed verify |
+|---|---|---|---|---|
+| clear | FAIL 2/20 ⚠ | CERTIFIED (vacuous) | PASS 0/20 | CERTIFIED (vacuous) |
+| night | FAIL 20/20 | **FALSIFIED** ✓blind | PASS 0/20 | FALSIFIED ⚠ |
+| fog | FAIL 20/20 | CERTIFIED ⚠**unsound** | FAIL 1/20 ⚠ | CERTIFIED ⚠**unsound** |
+| shadows | FAIL 20/20 | CERTIFIED ⚠**unsound** | PASS 0/20 | CERTIFIED |
+
+Three cells are **CERTIFIED with a failing closed loop** — `fog/S_clear`, `shadows/S_clear`
+and `fog/S_mixed`. All three come from the same defect (F17), and `fog/S_mixed` is the
+mildest: closed loop failed there at 1/20 on a single marginal excursion, which is the D-01
+question rather than a departure.
+
+Ordering: `--check-order` flags only `night/S_mixed` and `shadows/S_mixed`, both known —
+their closed-loop cells ran in the original overnight script before I inverted the order.
+Every `S_clear` cell is properly blind.
+
 ## What needs your decision
 
 **1. D-01 — does a 1-in-20 marginal excursion fail a cell?** Two clean instances, in
