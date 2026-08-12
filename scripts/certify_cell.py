@@ -50,7 +50,7 @@ SHADOW_MASK = REPO / "results" / "calibration" / "shadow_mask.npy"
 NIGHT_AMBIENT = (0.02, 0.50)
 NIGHT_RETRO = (0.0, 3.0)
 FOG_MOR = (60.0, 2000.0)
-SHADOW_DEPTH = (0.0, 0.75)     # s in x' = x0 * (1 - s*S); 0.75 = deep cast shadow
+SHADOW_DEPTH = (0.0, 1.0)      # s in x0*(1-s*S); s=0 clear, s=1 IS the measured CARLA shadows frame
 
 
 def clear_frames(n):
@@ -60,6 +60,40 @@ def clear_frames(n):
         rows = [r for r in csv.DictReader(fh) if r["weather"] == "clear"]
     picks = rows[:: max(1, len(rows) // n)][:n]
     return [cv2.imread(str(base / r["image"])) for r in picks]
+
+
+def paired_frames(n, other, max_pos_m=0.15, max_yaw_deg=0.30):
+    """(clear, other) frames at the SAME POSE, sampled evenly along the route.
+
+    Needed because a mask averaged over many poses is not a shadow mask. Cast shadows are
+    static in the world and therefore MOVE through the image as the ego drives, so
+    averaging ratio images across poses blurs them into a smooth global dimming and throws
+    away the very spatial structure that distinguishes shadows from a brightness change.
+
+    Pairing is possible because the ego drives the same scripted route under each condition
+    and the manifest records (x, y, yaw). Pairs looser than the thresholds are dropped.
+    """
+    base = REPO / "pipeline" / "data" / "conditions"
+    with open(base / "manifest.csv") as fh:
+        rows = list(csv.DictReader(fh))
+    out = []
+    for direction in ("eastbound", "westbound"):
+        cr = [r for r in rows if r["weather"] == "clear" and r["direction"] == direction]
+        orr = [r for r in rows if r["weather"] == other and r["direction"] == direction]
+        if not cr or not orr:
+            continue
+        cp = np.array([[float(r["x"]), float(r["y"]), float(r["yaw"])] for r in cr])
+        op = np.array([[float(r["x"]), float(r["y"]), float(r["yaw"])] for r in orr])
+        dist = np.linalg.norm(cp[:, None, :2] - op[None, :, :2], axis=2)
+        j = dist.argmin(1)
+        dmin = dist[np.arange(len(cp)), j]
+        dyaw = np.abs(((cp[:, 2] - op[j, 2] + 180) % 360) - 180)
+        ok = np.flatnonzero((dmin < max_pos_m) & (dyaw < max_yaw_deg))
+        for i in ok:
+            out.append((cr[i], orr[j[i]], float(dmin[i])))
+    out = out[:: max(1, len(out) // n)][:n]
+    return [(cv2.imread(str(base / a["image"])), cv2.imread(str(base / b["image"])), d)
+            for a, b, d in out]
 
 
 def clear_steer(student, xf, device, w, h):
@@ -120,12 +154,19 @@ def night_map(xf, w, h):
 def shadow_map(xf, w, h, mask):
     """d = 1, fixed mask with bounded depth: x' = x0 * (1 - s*S). Affine in s.
 
-    The mask is MEASURED from pose-paired clear/shadows CARLA frames, not declared --
-    see scripts/measure_shadow_mask.py. Letting the mask move with solar elevation is
-    NOT affine (DISTURBANCE_MATH.md) and is deliberately not attempted.
+    The mask is MEASURED from this frame's own pose-matched shadows counterpart, per
+    channel (a low sun could warm as well as dim). Letting the mask move with solar
+    elevation is NOT affine (DISTURBANCE_MATH.md) and is deliberately not attempted --
+    but the mask may be measured PER FRAME, which is different: for a given frame it is a
+    constant image, so the map stays affine in the single bounded parameter s.
+
+    WHAT s MEANS, AND WHY THE AXIS IS ALREADY CALIBRATED. S is the raw fractional dimming
+    1 - shadows/clear, unnormalized, so s = 1 reproduces the observed CARLA shadows frame
+    exactly and s = 0 is clear. The axis is therefore "fraction of the measured solar
+    elevation 90 -> 15 effect", and the closed-loop operating point sits at exactly s = 1.
+    That is the preset-to-axis alignment M5 still owes fog and night; for shadows it falls
+    out of the measurement.
     """
-    # measure_shadow_mask.py emits a PER-CHANNEL mask (a low sun is warmer as well as
-    # dimmer); a 2-D luminance mask is still accepted and broadcast.
     S = mask.astype(np.float32)
     if S.ndim == 2:
         S = S[..., None]
@@ -278,19 +319,36 @@ def main():
         print(f"VACUOUS CERTIFIED (zero-width box)\nwrote {path}")
         return 0
 
-    mask = None
+    # Shadows uses a PER-FRAME mask measured from that frame's own pose-matched shadows
+    # counterpart. The pooled mask from measure_shadow_mask.py is retained as a diagnostic
+    # but is not used here: averaged across poses it blurs moving cast shadows into a
+    # smooth global dimming.
     if args.condition == "shadows":
-        if not SHADOW_MASK.exists():
-            print(f"ERROR: no measured shadow mask at {SHADOW_MASK}.\n"
-                  f"Run scripts/measure_shadow_mask.py first -- a declared mask would "
-                  f"make this cell an assumption rather than a measurement.")
+        pairs = paired_frames(args.frames, "shadows")
+        if len(pairs) < args.frames:
+            print(f"ERROR: only {len(pairs)} pose-matched shadow pairs, need {args.frames}")
             return 2
-        mask = np.load(SHADOW_MASK)
+        frames_in = [p[0] for p in pairs]
+        masks = []
+        for cimg, simg, _ in pairs:
+            cf = cimg.astype(np.float32) / 255.0
+            sf = simg.astype(np.float32) / 255.0
+            # raw fractional dimming; s = 1 reproduces the observed shadows frame
+            masks.append(np.clip(1.0 - np.divide(sf, cf, out=np.ones_like(sf),
+                                                 where=cf > 0.04), 0.0, 1.0))
+        print(f"  [shadow masks] {len(pairs)} pose-matched pairs, "
+              f"median pose err {np.median([p[2] for p in pairs]):.3f} m, "
+              f"mean dimming {np.mean([m.mean() for m in masks]):.3f}, "
+              f"mean spatial std {np.mean([m.std() for m in masks]):.3f}")
+    else:
+        frames_in = clear_frames(args.frames)
+        masks = [None] * len(frames_in)
 
     rows = []
     print(f"  {'frame':>5s} {'clear':>8s} {'cert':>8s} {'fals':>8s} {'unk':>8s} {'bnds':>6s}")
     print("  " + "-" * 50)
-    for i, img in enumerate(clear_frames(args.frames)):
+    for i, img in enumerate(frames_in):
+        mask = masks[i]
         xf = img.astype(np.float32) / 255.0
         if args.condition == "fog":
             build, lo, hi = fog_map(xf, args.w, args.h,
