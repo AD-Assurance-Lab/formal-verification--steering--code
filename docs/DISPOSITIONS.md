@@ -448,3 +448,37 @@ better sentence than either option D-01 originally offered.
    `max_cte_at` instrumentation, so it needs a rerun to say.
 3. If it is a route artefact rather than a policy defect, say so explicitly in the paper
    rather than reporting a 7.5% fog failure rate that is really one corner.
+
+### D-01 root cause — the corner is inside the western intersection
+
+Probing Town04 along the westbound lane at the failure point:
+
+    x        lane w   junction   curvature deg/m   lane id
+    -355.0     3.50     False          0.000         -2
+    -360.0     3.50     True           0.000         -2
+    -365.8     3.50     True           0.000         -2   <-- all three failures
+    -380.0     3.50     True           1.510         -1
+
+The westbound lap ends by driving back into the western intersection, and all three
+failures land inside it, at step ~1683 of ~1700.
+
+**Why the policy drifts there, and why the number is partly an artefact of the metric.**
+`route.py` builds the reference by tracing lane centreline with a *straightest-at-junction*
+policy. Inside a junction there is no painted centreline, so the reference is a
+**constructed** path, and the policy has no visual cue corresponding to it. The vehicle is
+being scored against a line that is not on the road, in the one place the road stops
+telling it where to go.
+
+This is not the metric being broken — CTE is measured against a fixed route polyline, not a
+live `get_waypoint` projection, so it is not the lane-snapping artefact `route.py` was
+written to avoid. The deviation is real. But "the lane-keeping policy deviates where there
+is no lane" is a different and much narrower claim than "the policy fails in fog 7.5% of
+the time", and only the first is supported.
+
+**Recommendation, and it changes a success criterion so it is Zach's call.** Either exclude
+junction segments from the CTE metric, or end the lap before the intersection. Both are
+defensible; doing neither means every cell carries a junction-driven failure rate that has
+nothing to do with the disturbance under test. Note this affects **all** cells equally, so
+it does not change the ordering of any result reported tonight — `S_clear` still fails
+night, fog and shadows catastrophically with departures, which is nothing like a junction
+excursion.
