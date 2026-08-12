@@ -4,7 +4,7 @@ Written 2026-08-12 after exhausting the work that needed no simulator. Ordered s
 stage answers a question the previous stage raised, and so an interruption at any point
 still leaves a defensible result.
 
-Total CARLA time ≈ **9–11 h**. Nothing here needs supervision; all of it is scripted.
+Total CARLA time ≈ **6 h**. Nothing here needs supervision; all of it is scripted.
 
 ---
 
@@ -20,42 +20,50 @@ they differ enough to move steering on 40% of frames — F18), and the **interpo
 
 ---
 
-## Stage 1 — Re-collect the conditions dataset (≈ 2.5 h) **[blocking]**
+## Stage 1 — Log frames on every closed-loop lap (≈ 0 h extra) **[replaces recollection]**
 
-**Why first.** Everything downstream reads these frames. The current set was captured in a
-rendering environment that no longer reproduces (F18): at the same pose the dataset road ROI
-reads 0.3135 against a live 0.2205, and that shift alone moves student steering past the
-certification tolerance on 40% of frames — larger than fog or shadows. Until it closes,
-verification and closed loop are not looking at the same world, and *every* agreement in the
-ledger carries an asterisk.
+**Revised 2026-08-12 after Zach asked why recollection was needed. It is not.** The earlier
+plan opened with a 2.5 h dataset recollection to close the domain gap (F18: dataset road ROI
+0.3135 against a live 0.2205, enough to move steering past tolerance on 40% of frames).
+That was written before `certify_trajectory.py` existed and I failed to revisit it.
 
-    scripts/overnight.sh  (collection stages only)
-    clear / fog / night / shadows, both directions, same route and presets
+Verification only has to read the **same domain** closed loop drives. Logging frames during
+the closed-loop laps achieves that by construction, at no extra simulator cost:
 
-**Before starting**, capture one clear frame and check the road ROI against 0.2205 and the
-sky against 0.2575. If they match the live values, the environment is consistent and the
-recollection is sound. Record the launch command and quality level in the manifest — the
-leading hypothesis for F18 is the server's `-quality-level`, never confirmed because a
-second CARLA will not start alongside the first.
+    closed_loop_ledger.py --condition <cond> --reps 10 --log-frames results/traj
 
-**Exit criterion.** A freshly captured frame and a dataset frame at the same pose agree to
-within noise (< 0.01 on road-ROI mean).
+Run it for clear and for each condition. The clear laps supply the frames verification
+consumes; the condition laps supply the pose-matched counterparts the disturbance fields are
+fitted from.
 
-**If skipped:** everything still runs, but the domain-gap caveat stays in the paper.
+**What recollection would have bought, and why we are declining it.** The students were
+*trained* on old-domain frames, so they are deployed slightly out of distribution.
+Recollecting would fix that — but it also means retraining both students and discarding all
+eight closed-loop cells. The models demonstrably absorb the shift (`S_mixed` passes clear,
+night and shadows at 0/20 in the live domain), so this is a nice-to-have, not a correctness
+requirement. Revisit only if a result turns on it.
+
+**Exit criterion.** Every condition has ≥ 1 logged lap per direction, pose-matchable to the
+clear laps within 0.15 m.
 
 ---
 
-## Stage 2 — Re-derive the measured disturbance fields (≈ 0 h CARLA, 20 min CPU)
+## Stage 2 — Re-fit the measured fields IN THE LIVE DOMAIN (≈ 0 h CARLA, 30 min CPU)
 
-From the Stage 1 pairs, rebuild what F19 showed must be measured rather than assumed:
+The night illumination field, fog affine field and shadow masks are currently fitted from
+*dataset* pairs. Verification will consume *live* frames, so the fields must map
+live-clear → live-disturbed or the domain gap simply moves from the frames into the fields.
 
-    scripts/measure_night_gain.py       night illumination field
-    scripts/measure_shadow_mask.py      shadow masks
-    (fog affine field, same recipe)
+    pose-match Stage 1's clear laps against each condition lap
+    re-fit: night gain G, fog affine (a,b), shadow masks S
 
-**Exit criterion.** Held-out road-ROI R² ≥ 0.8 per condition, and — the check F19 says is
-missing from D3 — the **behavioural ratio** within 2x: each student's response to the
-modelled disturbance must match its response to the real one.
+**Exit criterion**, both checks, per condition:
+
+  * held-out road-ROI image R² ≥ 0.8
+  * **behavioural ratio within 2x** — each student's response to the modelled disturbance
+    must match its response to the real one. This is the check F19 showed is missing from
+    D3, where the analytic fog model passed on images (R² 0.848) while being 23.8x wrong
+    behaviourally for `S_mixed`.
 
 ---
 
@@ -149,13 +157,16 @@ sends it back.
 
 | stage | hours | blocking? |
 |---|---|---|
-| 1. re-collect dataset | 2.5 | yes — everything reads it |
-| 2. re-derive fields | 0.3 | no CARLA |
+| 1. log frames on closed-loop laps | 0 extra | folded into the laps we drive anyway |
+| 2. re-fit fields in the live domain | 0.5 CPU | yes — Stage 4 depends on it |
 | 3. fog density sweep | 1.0 | needed for Stage 5 |
 | 4. trajectory-logged prediction | 1.5 | **the headline** |
 | 5. interpolation | 2.0 | **the novel result** |
 | 6. junction | 1.0 | reporting decision |
 | 7. quality-level check | 0.25 | tidies F18 |
+
+Total ≈ **6 h**, down from 9–11 h: dropping the recollection also drops the retraining risk
+that came with it.
 
 Stage 4 is the one to protect if time is short: it is the cleanest form of the study's
 central claim. Stage 5 is the one most likely to produce something no closed-loop study
