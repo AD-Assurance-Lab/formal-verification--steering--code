@@ -67,6 +67,7 @@ def fit_at(clear, obs, mor_grid):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--poses", type=int, default=12)
+    ap.add_argument("--tag", default="", help="suffix for the output file")
     args = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
 
@@ -86,6 +87,24 @@ def main():
         vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
         vehicle.set_autopilot(False)
         vehicle.apply_control(carla.VehicleControl(throttle=0.0, brake=1.0))
+
+        # SETTLE, THEN FREEZE PHYSICS.
+        #
+        # Measured: teleporting to the spawn z and capturing 2 ticks later leaves the car
+        # 0.2943 m above its settled height, and it then oscillates (-0.19, -0.22, -0.17)
+        # rather than converging. Camera height enters the depth model directly as
+        # d(row) = h*f/(row - horizon), so a 0.28 m error rescales every depth by ~23% and
+        # biases the (MOR, k) fit -- which is very likely why this sweep disagreed with the
+        # route frames on k. The start-vs-end drift check could not catch it because both
+        # clear passes carried the identical error.
+        #
+        # A static photometric capture does not need physics, so settle once, read the
+        # settled height, and freeze. Teleports are then exact and reproducible.
+        for _ in range(40):
+            world.tick()
+        z_settled = vehicle.get_transform().location.z
+        vehicle.set_simulate_physics(False)
+        print(f"  settled ride height z = {z_settled:.4f} (physics now frozen)")
 
         # Spawn the camera ONCE, up front, and warm it up.
         #
@@ -118,9 +137,10 @@ def main():
 
             frames = []
             for oi, off in enumerate(offsets):
-                pose = dict(C.SPAWN_EASTBOUND); pose["x"] += float(off)
-                tf = env.make_transform(pose)
-                vehicle.set_transform(tf)
+                pose = dict(C.SPAWN_EASTBOUND)
+                pose["x"] += float(off)
+                pose["z"] = z_settled
+                vehicle.set_transform(env.make_transform(pose))
                 world.tick()      # placement lands next tick
                 fid = world.tick()
                 frames.append(raw_to_bgr(env.grab_frame(img_queue, fid)).copy())
@@ -186,7 +206,7 @@ def main():
     print("  a large residual means k must be bounded per sub-interval instead (d = 2).")
     print("=" * 52)
 
-    path = OUT / "fog_density_sweep.json"
+    path = OUT / f"fog_density_sweep{args.tag}.json"
     json.dump({"densities": rows, "d_sun_m": d_sun, "k_law_max_resid": resid,
                "poses": args.poses}, open(path, "w"), indent=2)
     print(f"\nwrote {path}")
