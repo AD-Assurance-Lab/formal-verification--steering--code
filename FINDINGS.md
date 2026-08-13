@@ -994,3 +994,69 @@ state, the image as a verified affine function of it, and the bicycle model clos
 loop, the reachable offset tube can be propagated along the route and compared against the
 0.668 m budget. That is verification predicting a closed-loop outcome rather than a
 per-frame proxy for one.
+
+## F23 -- the missing state was HEADING, and it explains every diverging tube
+
+Closed-loop reachability diverged under every condition including clear weather, where the
+real vehicle holds 0.13 m. Not a loose bound: with offset-only feedback the discrete
+spectral radius is 1.115, so the loop is an undamped oscillator that MUST diverge. Every
+capture in this study had placed the vehicle at lateral offsets with its heading ALIGNED to
+the path, so the policy's response to heading error had never been measured -- the spring
+was measured, the damper was not. Stability needs k_psi <= -0.5; measured values are -1.0 to
+-2.4 in daylight.
+
+With (offset x yaw) captured, a linearized criterion with NO fitted parameters
+
+    FAIL if |lambda(A)| >= 1   or   |bias| > |k_o| * CTE_BUDGET
+
+scored 7/8 in-sample against the corrected ground truth, missing only `S_clear`/shadows.
+Night is caught by a ~4x collapse in control authority (k_o -0.178 -> -0.045).
+
+## F24 -- two corrections that changed the numbers
+
+**dt was wrong.** It had been derived from pose spacing over speed rather than the 0.2 s
+control period. At 0.4 s the criterion read 8/8, but the shadows FAIL it appeared to catch
+came from |lambda| = 2.05, which collapses to 0.80 at the true rate. Corrected: 7/8.
+
+**Exposure followed the preset name, not the sun.** Sweeping sun altitude under
+`condition="clear"` captured below-horizon scenes through the daylight camera, while `night`
+declares 4x exposure. It produced `S_mixed` FAILING at night, which ground truth contradicts
+outright, and that contradiction is what exposed it. Headlights and exposure now both key
+off `sun_altitude_angle < 0`, which reproduces all three presets exactly.
+
+## F25 -- P-06 refuted: the criterion sees the night mechanism, not the shadow mechanism
+
+The criterion was frozen and committed (6a414d5) before any intermediate-altitude run.
+Prediction: `S_clear` PASS at sun >= +8, FAIL at <= +3; `S_mixed` PASS everywhere.
+
+    sun    +85  +75  +60  +45  +30  +22  +15   +8   +3    0   -5
+    pred  PASS PASS PASS PASS PASS PASS PASS PASS FAIL FAIL FAIL
+    S_clr PASS FAIL PASS FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL      3/7 scored
+
+`S_mixed` also failed at +8, +3 and 0 where it was predicted safe -- the unsafe direction,
+declared in advance as the more serious error. So the in-sample 7/8 did NOT generalise. The
+criterion detects control-authority collapse (darkness) and is blind to cast shadows, which
+it reads as healthy gain and small bias at the lane centre.
+
+**A genuine model finding, independent of the criterion.** `S_mixed` passes at all three
+altitudes it was trained on (+90 clear, +15 shadows, -25 night) and FAILS between them
+(+8, +3, 0). Training on discrete condition presets does not cover the continuum joining
+them, and 0 degrees -- sun exactly on the horizon, maximum direct glare -- is the worst
+point, failing 10/10 while -5 passes 0/10.
+
+## F26 -- eastbound captures are invalid; verification is scoped to westbound
+
+Several sun-altitude failures are direction-specific (fixed sun azimuth: travelling east or
+west puts the sun ahead or behind), so eastbound frames were captured to cover them. They
+measured an INVERTED restoring gain (k_o +0.03 against westbound -0.24), which would score
+7/8 -- and is an artefact. Validated against what the vehicle actually steered at the same
+locations:
+
+    westbound  captured steer at offset 0 vs driven:  mean |diff| 0.025
+    eastbound  captured steer at offset 0 vs driven:  mean |diff| 0.208   (sd 0.225 vs 0.008)
+
+Static placement does not reproduce eastbound driving. Manifest yaw is not the cause
+(agrees with the path tangent to 0.02 deg over the captured span). Cause UNKNOWN. The
+eastbound result is withdrawn, and every verification number in this study is measured
+westbound only -- stated as a scope limit, not a hidden one. The four canonical conditions
+are unaffected in kind: night and shadows fail 5/5 in BOTH directions.

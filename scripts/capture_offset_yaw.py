@@ -56,12 +56,15 @@ def main():
     ap.add_argument("--poses", type=int, default=40)
     ap.add_argument("--start-m", type=float, default=0.0)
     ap.add_argument("--length-m", type=float, default=160.0)
+    ap.add_argument("--direction", default="westbound",
+                    choices=["westbound", "eastbound"],
+                    help="several sun-altitude failures are direction-specific: the sun's\n                          azimuth is fixed, so travelling east or west puts it ahead or\n                          behind. Verification measured in one direction cannot see a\n                          failure that only occurs in the other.")
     args = ap.parse_args()
 
     base = REPO / "pipeline" / "data" / "live_pairs"
     with open(base / "manifest.csv") as fh:
         rows = [r for r in csv.DictReader(fh)
-                if r["weather"] == "clear" and r["direction"] == "westbound"]
+                if r["weather"] == "clear" and r["direction"] == args.direction]
     xy = np.array([[float(r["x"]), float(r["y"])] for r in rows])
     d = np.concatenate([[0], np.cumsum(np.linalg.norm(np.diff(xy, axis=0), axis=1))])
     want = np.linspace(args.start_m, args.start_m + args.length_m, args.poses)
@@ -85,7 +88,8 @@ def main():
         world.apply_settings(s)
         v = cam = None
         try:
-            v = env.spawn_vehicle(world, C.SPAWN_WESTBOUND)
+            v = env.spawn_vehicle(world, C.SPAWN_WESTBOUND if args.direction ==
+                                  "westbound" else C.SPAWN_EASTBOUND)
             v.apply_control(carla.VehicleControl(brake=1.0))
             for _ in range(40):
                 world.tick()
