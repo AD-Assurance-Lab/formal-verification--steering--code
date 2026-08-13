@@ -34,3 +34,44 @@ should not shrink as fog thickens.
   thresholds it replaced.
 * **`S_mixed` falsified anywhere** -- over-conservative off the calibration set, the same
   failure mode as P-03, and the sign test is not the answer either.
+
+---
+
+# RESULT — 2026-08-13 01:10. P-04 CONFIRMED, 6/6.
+
+| density | model | non-restoring offsets | verdict | actual | match |
+|---|---|---|---|---|---|
+| 25 | S_clear | -2.0 | FALSIFIED | FAIL 20/20 | yes |
+| 25 | S_mixed | none | certified | PASS 0/20 | yes |
+| 40 | S_clear | -2.0 | FALSIFIED | FAIL 20/20 | yes |
+| 40 | S_mixed | none | certified | PASS 0/20 | yes |
+| 55 | S_clear | -2.0 | FALSIFIED | FAIL 20/20 | yes |
+| 55 | S_mixed | none | certified | PASS 0/20 | yes |
+
+**Out-of-sample 6/6. Combined with the eight preset-condition cells, 14/14.**
+
+The predicted detail held too: `S_clear` fails on the negative side, at the same -2.0 m
+trapdoor, and the violation does not disappear as fog thickens.
+
+## Why this criterion works where five others failed
+
+Every earlier attempt measured error on the NOMINAL path -- per-frame magnitude, signed
+mean bias, sustained same-signed runs. F21 established that cannot work here: the frames
+that cause a departure are off-centre views that occur nowhere on the nominal path, so at
+fog 25-55 the true biases reverse sign every 8-16 frames while the vehicle departs on every
+run.
+
+This asks a STABILITY question instead of an accuracy one. Recovery from lateral offset `o`
+requires steer of the opposite sign; either the policy provides it across the reachable tube
+or it does not. `S_mixed` restores monotonically across +/-2 m in every condition and at
+every fog density. `S_clear` restores near the centre and reverses at -2.0 m -- a one-way
+trapdoor -- and under night loses restoring authority from -1.0 m outward, which is where it
+fails worst.
+
+## What is NOT yet established
+
+* These are POINT evaluations at 8 poses x 9 offsets, not alpha-CROWN bounds over the
+  offset intervals. The criterion is a strong empirical predictor; it is not yet a proof.
+  Bounding it is the obvious next step and the machinery already exists.
+* The tube is +/-2 m on a straight. Curves, and offsets beyond 2 m, are unprobed.
+* Eight poses on one route in one town.
