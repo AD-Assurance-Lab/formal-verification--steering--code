@@ -10,6 +10,50 @@ file is for characterization measurements, which are not ledger cells.
 
 ---
 
+## F21. Closed-loop failure here is feedback divergence, not bias accumulation on the nominal path
+
+The study's premise is that per-frame analysis of a policy, evaluated on the frames of a
+nominal trajectory, predicts whether it departs the road. Tested directly, that premise
+fails, and the test does not depend on bound tightness because it uses the REAL measured
+per-frame biases rather than verified bounds.
+
+Bicycle model, no tuned parameter: a bias `d` sustained for `N` frames departs iff
+`d*(N*dt)^2 >= 2L*budget/(v^2*MAX_STEER) = 0.0411`. Longest same-signed run measured on
+CARLA frames, against the actual outcome:
+
+| fog density | `S_clear` run | score | predicts | actual |
+|---|---|---|---|---|
+| 25 | N=8 at 0.0031 | 0.0080 | ok | **FAIL 20/20** |
+| 40 | N=10 at 0.0066 | 0.0263 | ok | **FAIL 20/20** |
+| 55 | N=16 at 0.0012 | 0.0120 | ok | **FAIL 20/20** |
+| 70 | N=74 at 0.0010 | 0.2088 | DEPART | FAIL 20/20 |
+
+`S_mixed` scores below threshold at every density and passes every density, 4/4.
+
+**So the nominal-path model explains one of four failures.** At 25-55 the real biases reverse
+sign every 8-16 frames while the vehicle leaves the road on every run. Whatever removes it
+from the lane is not a steady pull.
+
+**The mechanism it misses.** A policy makes an error, ends up off-centre, and then sees a
+view that does not occur anywhere on the nominal trajectory -- and its response there is
+what decides the lap. The frames that cause the departure are, by construction, absent from
+the set being verified. This is why `S_clear` can look almost benign frame-by-frame on the
+clear lap (median deviation 0.0029-0.0081, inside the corridor) and still depart 20/20.
+
+**What this bounds.** Per-frame verification over nominal-trajectory frames can support a
+NECESSARY condition -- a large sustained bias does imply departure, and that is how density
+70 is caught -- but not a sufficient one. Certifying a policy safe on this evidence is
+unsound, and the study produced exactly that error once (`S_clear` at density 55, CERTIFIED,
+departs 20/20).
+
+**What would close it,** and it is the vehicle-dynamics extension already identified as
+future work: propagate the state. Verify over a reachable TUBE around the nominal path
+rather than the path itself, so the off-centre states the policy actually visits are inside
+the verified set. That is closed-loop reachability, not per-frame bounding, and it is a
+different and larger piece of machinery.
+
+---
+
 ## F19. Image fidelity is not behavioural fidelity, and the gap is worst for the GOOD model
 
 A disturbance model can reproduce CARLA's images well and still be useless for verifying a

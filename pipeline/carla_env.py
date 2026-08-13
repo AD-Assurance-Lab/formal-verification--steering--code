@@ -106,6 +106,19 @@ CONDITION_DELTAS = {
 }
 
 
+def _density_override(name, w):
+    """FOG_DENSITY_OVERRIDE lets a run sample intermediate fog without editing presets.
+
+    Stage 5 asks whether the policies degrade at visibilities closed loop has never driven.
+    That needs fog at densities other than the single preset value, and it must be the SAME
+    code path the ledger uses, so the comparison is like-for-like."""
+    import os
+    v = os.environ.get("FOG_DENSITY_OVERRIDE")
+    if v and name == "fog":
+        w.fog_density = float(v)
+    return w
+
+
 def weather_params(name):
     """Fully-specified WeatherParameters for a condition. No live state is read."""
     if name not in CONDITION_DELTAS:
@@ -114,7 +127,7 @@ def weather_params(name):
     w = carla.WeatherParameters()
     for field, value in {**CLEAR_BASELINE, **CONDITION_DELTAS[name]}.items():
         setattr(w, field, value)
-    return w
+    return _density_override(name, w)
 
 
 def set_clear_weather(world):
