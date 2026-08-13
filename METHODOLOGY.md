@@ -239,3 +239,116 @@ conditions is the gating measurement and has not yet run.
 5. **Verification covers the parameterized family only.** It replaces exhaustive sampling
    *within* a disturbance family, not scenario sampling across routes and manoeuvres.
 6. **The ODD is narrow**: one route, one speed, one vehicle.
+
+---
+
+## 9. Verifying a policy without modelling the disturbance  *(supersedes 7.2)*
+
+Section 7.2 anticipated a per-condition disturbance model that verification would bound
+over. That approach was carried a long way and is now retired. What replaced it is simpler,
+and the reasons are worth stating because they generalise to conditions this study has not
+attempted.
+
+### 9.1 Why per-frame criteria cannot work
+
+Seven were built and six retired: analytic-model bias, measured-field bias, error
+accumulation, restoring sign, restoring sign over a bounded tube, and equilibrium offset.
+They failed for one reason, established twice independently. F21 showed the frames that
+cause a departure are off-centre views that appear nowhere on the nominal trajectory. F22
+tested the last of them directly -- predicted equilibrium against the CTE the vehicle
+actually reached, at 263 route locations -- and found r = -0.053, with flagged locations
+CLEANER than unflagged ones.
+
+> Closed-loop departure is a property of the TRAJECTORY. The cross-track error at a
+> location is set by where the vehicle came from, so no quantity evaluated at a single
+> frame or pose can carry it.
+
+A corollary that cost a day: a per-frame criterion can score 7/8 or 8/8 in-sample and still
+be measuring nothing. Both times the apparent agreement came from which poses happened to be
+sampled. In-sample agreement is not evidence; only a committed, out-of-sample prediction is.
+
+### 9.2 Measure the policy's response, do not model the image
+
+Every disturbance model in this study -- Koschmieder fog, per-pixel night gain, shadow
+masks -- exists to answer one question: what does the policy DO under this condition. The
+image model was only ever an intermediary, and a lossy one. Fitting it imposed real costs:
+pose-paired frames, an image-fidelity gate, a behavioural-fidelity gate (F19, because image
+R^2 alone passed a model that drove `S_mixed` 23.8x too hard), and a family-mismatch hazard
+that CLAUDE.md blames for the entire previous study.
+
+The alternative removes the intermediary. Place the vehicle at a known state, render
+whatever the simulator renders, and measure the steering response:
+
+    s(pose, o, psi)   for lateral offset o and heading error psi
+
+Nothing is fitted and no disturbance family is declared. This works for ANY condition the
+simulator can render, which is the property that matters for extending beyond fog, night and
+shadows. It carries two conditions of its own:
+
+- **Stochastic conditions need repeated samples.** Rain and snow differ between renders at
+  the same pose, so the response becomes a distribution and bounds must cover the samples.
+- **It sees perception only.** Conditions that change vehicle dynamics -- rain and snow
+  change tire friction -- have a component no perception-to-steering verifier can observe.
+  That boundary must be stated, not blurred; `set_tire_friction` exists for the other half.
+
+### 9.3 Heading error is not optional
+
+Captures placed the vehicle at lateral offsets with heading ALIGNED to the path, and every
+reachability tube built on them diverged -- including under clear weather, where the real
+vehicle holds 0.13 m. The cause was structural, not numerical: with offset-only feedback the
+discrete spectral radius is 1.115, so the loop is an undamped oscillator that must diverge.
+Damping enters through the policy's response to heading error, measured at k_psi = -1.0 to
+-2.4 in daylight and never captured. The spring was measured; the damper was not.
+
+> A lane-keeping loop has two states. Verifying one of them verifies a different system.
+
+### 9.4 dt is the control period
+
+The discrete dynamics must step at the controller's rate (`FIXED_DT`, 0.2 s), not at the
+spacing of whatever poses were captured. Deriving dt from pose spacing over speed inflated
+it to 0.4 s and then 1.2 s, which changed a criterion's score from 7/8 to a spurious 8/8 and
+in the extreme case failed every cell including bright daylight. Pose spacing is a sampling
+choice; the control period is physics.
+
+### 9.5 Validate the surrogate before bounding it
+
+Sound bounds on a surrogate that does not reproduce the system prove nothing about the
+system. Before any verification result is trusted, the captured response must be checked
+against what the vehicle actually did at the same locations:
+
+    westbound   captured steer at offset 0 vs driven:  mean |diff| 0.025   USABLE
+    eastbound   captured steer at offset 0 vs driven:  mean |diff| 0.208   REJECTED
+
+The eastbound captures measured an inverted restoring gain and would have scored 7/8. They
+are an artefact; static placement does not reproduce eastbound driving there, and the cause
+is still unknown (manifest yaw agrees with the path tangent to 0.02 deg, so it is not that).
+Verification in this study is therefore scoped to westbound, which is a stated limit rather
+than a hidden one. **Run this check first.** It is cheap, and it fails fast.
+
+### 9.6 Conditions lie on continuous axes, and the gaps are where models fail
+
+`clear`, `shadows` and `night` are not three phenomena. They are `sun_altitude_angle` at
++90, +15 and -25 of one parameter. Sweeping it converts a three-point comparison into a
+curve and makes transitions predictable in advance -- and it exposed a failure mode that
+discrete presets hide entirely:
+
+> `S_mixed` passes at all three altitudes it was TRAINED on and fails between them
+> (+8, +3, 0 degrees), worst at 0 where the sun sits on the horizon and glare is maximal.
+
+Training on discrete condition presets does not cover the continuum joining them. Any study
+that tests only at its training conditions cannot see this.
+
+Sweeping an axis requires everything keyed to that axis to follow it. Camera exposure and
+headlights were keyed to the CONDITION NAME, so a swept sun altitude captured below-horizon
+scenes through the daylight camera (night declares 4x exposure) and produced a result that
+contradicted known ground truth. Both now key off `sun_altitude_angle < 0`, which reproduces
+all three presets exactly.
+
+### 9.7 The blind protocol, and what it is worth
+
+Verification verdicts are committed to git before the closed-loop runs that test them
+(`python -m study.ledger --check-order`). Two predictions have been committed and both were
+refuted -- P-03 at 2/6, P-06 at 3/7 -- while the in-sample scores at the time were 14/14 and
+7/8. That gap is the entire argument for the protocol. It is also why P-06 declared its one
+known-wrong cell in advance: a prediction that quietly omits its weakest case is not a
+prediction.
