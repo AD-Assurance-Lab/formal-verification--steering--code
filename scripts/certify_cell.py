@@ -385,8 +385,13 @@ class Bounder:
     freshly constructed module rather than assuming auto_LiRPA reads live weights.
     """
 
-    def __init__(self, k, student, device, h, w):
-        self.device, self.k = device, k
+    def __init__(self, k, student, device, h, w, method="CROWN-Optimized"):
+        # `method` is selectable because the closed-loop tube needs thousands of bounds
+        # rather than dozens. Measured on this network, one interpolation cell: CROWN 47 ms
+        # at width 0.0186 against CROWN-Optimized 3654 ms at width 0.0175 -- 78x the cost
+        # for 6% tightness, which turns a 7.5-minute sweep into a 10-hour one. IBP is not a
+        # valid option here at width 1.42, 76x looser than either.
+        self.device, self.k, self.method = device, k, method
         dummy_W = np.zeros((3 * h * w, k), np.float32)
         dummy_b = np.zeros(3 * h * w, np.float32)
         self.head = vd.LinearDisturbance(dummy_W, dummy_b, (1, 3, h, w))
@@ -407,7 +412,7 @@ class Bounder:
             x_L=torch.tensor(lo, dtype=torch.float32, device=self.device).unsqueeze(0),
             x_U=torch.tensor(hi, dtype=torch.float32, device=self.device).unsqueeze(0))
         lb, ub = self.bounded.compute_bounds(
-            x=(BoundedTensor(self.centre, ptb),), method="CROWN-Optimized")
+            x=(BoundedTensor(self.centre, ptb),), method=self.method)
         return float(lb.min()), float(ub.max())
 
     def check_equivalence(self, W, b, lo, hi, student, h, w, tol=1e-4):

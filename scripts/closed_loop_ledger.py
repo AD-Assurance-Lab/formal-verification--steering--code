@@ -87,6 +87,7 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps,
     # with only a scalar max there is no way to tell a recurring bad corner from bad luck
     # -- which is exactly the question D-01 turns on.
     ctes, poses, left, stalled, offroad, departed = [], [], False, 0, 0, False
+    onset = [None]
     log_rows, frames_dir = [], None
     if log_dir is not None:
         frames_dir = Path(log_dir) / "frames"
@@ -113,6 +114,12 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps,
         if cte is not None:
             ctes.append(abs(cte))
             poses.append((float(loc.x), float(loc.y)))
+            # ONSET, not peak. max_cte_at records where the LARGEST error occurred, which
+            # for a departed run is wherever the vehicle finally drifted to -- it says
+            # nothing about where the failure began. Judging scope from it conflated
+            # "failed at the junction" with "failed elsewhere and ended up near it".
+            if onset[0] is None and abs(cte) > C.CTE_BUDGET_M:
+                onset[0] = dict(step=step_i, x=float(loc.x), y=float(loc.y))
 
         if frames_dir is not None:
             # Save the FULL-resolution BGR frame, not the 84x28 network input: a
@@ -152,6 +159,8 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps,
     arr = np.array(ctes)
     i = int(arr.argmax())
     where = dict(step=i, x=poses[i][0], y=poses[i][1]) if i < len(poses) else None
+    if where is not None and onset[0] is not None:
+        where["onset"] = onset[0]
     return (float(arr.max()), float((arr > C.CTE_BUDGET_M).mean()), departed, where)
 
 

@@ -119,6 +119,22 @@ def _density_override(name, w):
     return w
 
 
+def _sun_override(w):
+    """SUN_ALTITUDE_OVERRIDE exposes the axis the three lighting conditions already lie on.
+
+    `clear`, `shadows` and `night` are not separate phenomena -- they are sun_altitude_angle
+    90, 15 and -25 of one continuous physical parameter. Sweeping it turns a three-point
+    comparison into a curve, which is what makes a transition point predictable in advance
+    and therefore falsifiable. Headlights still key off the CONDITION, not the angle, so a
+    swept `shadows` run stays lights-off exactly as the preset is.
+    """
+    import os
+    v = os.environ.get("SUN_ALTITUDE_OVERRIDE")
+    if v:
+        w.sun_altitude_angle = float(v)
+    return w
+
+
 def weather_params(name):
     """Fully-specified WeatherParameters for a condition. No live state is read."""
     if name not in CONDITION_DELTAS:
@@ -127,7 +143,7 @@ def weather_params(name):
     w = carla.WeatherParameters()
     for field, value in {**CLEAR_BASELINE, **CONDITION_DELTAS[name]}.items():
         setattr(w, field, value)
-    return _density_override(name, w)
+    return _sun_override(_density_override(name, w))
 
 
 def set_clear_weather(world):
@@ -164,9 +180,15 @@ def set_weather(world, name, vehicle=None):
     Headlights follow the condition. v1 drove at night with them off, which is
     physically impossible for a real vehicle and made any night result an artefact.
     """
-    world.set_weather(weather_params(name))
+    w = weather_params(name)
+    world.set_weather(w)
     if vehicle is not None:
-        vehicle.set_light_state(_lights(name == "night"))
+        # Headlights follow the SUN, not the preset name, so that a swept sun altitude
+        # stays physical. The presets already encode this rule -- clear 90 and shadows 15
+        # are daylight with lights off, night -25 is below the horizon with lights on -- and
+        # keying off the name alone would drive a swept -10 degree scene with lights off,
+        # reintroducing the v1 artefact this comment block exists to prevent.
+        vehicle.set_light_state(_lights(w.sun_altitude_angle < 0.0))
 
 
 def set_condition(world, vehicle, name, camera=None):

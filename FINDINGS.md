@@ -953,3 +953,44 @@ preset.
 
 **Outstanding:** `TARGET_ROAD_SIGMA_RATIO` cannot be checked yet — the real-road sigma
 reference has not been measured from ACDC. Only the mu criterion is currently enforced.
+
+## F22 -- static-pose equilibrium does not predict local CTE (criterion retired)
+
+The equilibrium criterion (`o* = ` where the disturbed policy emits the control that held
+the lane) scored 7/8 on uniform poses, 6/8 on strength-stratified poses, and 3/8 as a
+fraction-of-lap predictor. Rather than keep adjusting the pose sampling, its core
+assumption was tested directly: at 263 route locations, compare the predicted equilibrium
+offset against the CTE the vehicle actually reached there, from logged closed-loop traces.
+
+    pooled Pearson r = -0.053   (n = 263)
+    real CTE where predicted IN lane   0.249 m   (n = 232)
+    real CTE where predicted OUT       0.045 m   (n =  31)
+
+No correlation, and the sign is backwards: locations flagged out-of-lane are locations the
+vehicle drove cleanly, while the shadows departure -- real CTE averaging 2.128 m -- sat at
+locations the criterion called safe. The 7/8 was which poses happened to be sampled, not a
+predictive relationship. **Retired.**
+
+Two caveats keep this from being stronger than it is. Passing runs hold CTE near 0.04 m
+everywhere, so there is little variance to correlate against outside the departures; and
+`S_clear`/night matched zero poses because the departed vehicle left the route entirely.
+The result is nonetheless sufficient to stop refining the criterion: a predictor whose
+flagged locations are *cleaner* than its unflagged ones is not being under-sampled.
+
+### Why every pointwise criterion has failed
+
+Six now: analytic-model bias, measured-field bias, accumulation, restoring sign, restoring
+sign over a bounded tube, equilibrium offset. F21 already identified the reason and this
+confirms it -- closed-loop departure is a property of the TRAJECTORY, not of any frame or
+pose on it. CTE at a location is set by the vehicle's history, not by local conditions, so
+no quantity evaluated at a single pose can carry the answer.
+
+### What follows
+
+Bound the closed loop itself. All the pieces now exist: dense measured offset->image data
+(40 poses x 13 offsets x 4 conditions), the affine interpolation between offsets already
+validated at 0.011 residual, and the alpha-CROWN machinery. With lateral offset as a 1-D
+state, the image as a verified affine function of it, and the bicycle model closing the
+loop, the reachable offset tube can be propagated along the route and compared against the
+0.668 m budget. That is verification predicting a closed-loop outcome rather than a
+per-frame proxy for one.
