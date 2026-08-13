@@ -42,11 +42,23 @@ Point evaluations gave 14/14. Upgrading to a proof over the *continuous* interva
 underway: α-CROWN bounds the steering between adjacent captured offsets (affine in one
 scalar, the same form as every disturbance field here).
 
-| condition | `S_clear` | `S_mixed` |
-|---|---|---|
-| night | **FALSIFIED** at [−2.0,−1.5] | **CERTIFIED**, margins +0.088…+0.317 |
-| fog | **FALSIFIED** at [−2.0,−1.5] | running |
-| shadows, clear | queued | queued |
+**COMPLETE — 8/8.** α-CROWN bounds the steering over every continuous offset interval,
+with a declared 0.5 m dead-band (no restoring requirement near the lane centre, where the
+required response falls below any achievable bound width).
+
+| condition | `S_clear` | `S_mixed` | driving |
+|---|---|---|---|
+| clear | **FALSIFIED** [−2.0,−1.5] | **CERTIFIED** | 2/20 vs 0/20 |
+| fog | **FALSIFIED** [−2.0,−1.5] | **CERTIFIED** | 20/20 vs 19/20 |
+| night | **FALSIFIED** [−2.0,−1.5] | **CERTIFIED** | 20/20 vs 0/20 |
+| shadows | **FALSIFIED** [−2.0,−1.5] | **CERTIFIED** | 20/20 vs 0/20 |
+
+**The same interval fails in every condition.** `S_clear` has no provable recovery authority
+2 m out regardless of weather — a property of the policy, not of the disturbance. Night
+erodes it inward to −1 m, which is where it fails worst. It also explains the clear-weather
+row: `S_clear` fails clear only 2/20, at the intersection, and the criterion falsifies it
+correctly, because an excursion there becomes a departure precisely because it cannot
+recover.
 
 ## Disturbance models
 
@@ -65,7 +77,6 @@ pool is 1.42× **brighter** than the overcast baseline near the bumper.
 
 ## What is NOT established
 
-* **The certificate is partial.** Two of four conditions bounded so far.
 * **The tube is straight-road only**, ±2 m, six poses, one route, one town. Curves unprobed.
 * **The dead-band is an assumption.** No restoring requirement within 0.5 m of centre,
   justified because the required response there falls below any achievable bound width —
