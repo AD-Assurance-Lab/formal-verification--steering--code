@@ -1060,3 +1060,64 @@ Static placement does not reproduce eastbound driving. Manifest yaw is not the c
 eastbound result is withdrawn, and every verification number in this study is measured
 westbound only -- stated as a scope limit, not a hidden one. The four canonical conditions
 are unaffected in kind: night and shadows fail 5/5 in BOTH directions.
+
+## F27 -- the surrogate rollout predicts all eight cells (8/8)
+
+Seven criteria failed before this one. What changed is not the bound but the discipline: the
+measured surrogate is VALIDATED against the closed loop before anything is computed on it.
+
+    gate A  captured steer at (0,0) vs the steer the vehicle actually used
+            clear 0.006, shadows 0.010     (eastbound scored 0.208 and was rejected, F26)
+    gate B  a rollout on the measured surfaces reproduces the departure LOCATION
+            shadows: predicted x=9.0 y=125.4, real x=8.1 y=123.9  (1.6 m)
+            night:   predicted x=-408.6,      real x=-439.7       (31 m, conservative --
+                     the rollout departs EARLIER than the vehicle; the verdict is right but
+                     location accuracy is claimed only for shadows)
+
+Peak |o| from a rollout started at the lane centre, against the pre-registered 0.668 m
+budget. Nothing here is fitted: the budget comes from lane and vehicle geometry, the
+dynamics are the kinematic bicycle with measured wheelbase and steer limits, and the
+steering surface is measured rather than modelled.
+
+    model     condition   peak |o|    verdict   closed loop
+    S_clear   clear         0.158      PASS     PASS  0/10
+    S_clear   fog           0.268      PASS     PASS  0/10
+    S_clear   night         5.120      FAIL     FAIL 10/10
+    S_clear   shadows       0.797      FAIL     FAIL 10/10
+    S_mixed   clear         0.072      PASS     PASS  0/10
+    S_mixed   fog           0.081      PASS     PASS  0/10
+    S_mixed   night         0.161      PASS     PASS  0/10
+    S_mixed   shadows       0.072      PASS     PASS  0/10
+
+8/8. The margin is not marginal: every passing cell peaks at 0.072-0.268 m and every failing
+cell at 0.797-5.120 m, so the budget sits in a 3x gap rather than between adjacent values.
+Fog passes, which matters -- it is where P-03 and the restoring-sign criterion both
+over-predicted, and where `S_clear` is genuinely robust at every density (0/60 departures).
+
+### Three requirements, each found by violating it
+
+1. **Heading is a state.** Captures with the vehicle aligned to the path measure the spring
+   and not the damper; the loop is then an undamped oscillator (F23).
+2. **Sample at the control rate.** The same rollout on 4-5 m pose spacing scores 2/8 and
+   fails every cell, because it holds a stale steering command across control steps. At
+   1.79 m (= v * FIXED_DT) it scores 8/8. This is a hard requirement, not a preference.
+3. **Validate before computing.** Gate A rejected the eastbound captures, which would
+   otherwise have contributed a 7/8 built on an artefact.
+
+### What this is, and what it is not
+
+It is a prediction of closed-loop outcome from STATIC placements, with no closed-loop data
+used and no fitted parameter. It is NOT a sound certificate. Four bounding formulations were
+built and all four blew up (F23 and `certify_maximal_invariant.py`), for a measured reason:
+alpha-CROWN's relaxation gap over one captured cell is 0.029-0.088 in steering units against
+a closed-loop tolerance of 0.0120, so any abstraction inflates a 1 degree heading box to
+2.2-4.7 degrees in one step and no invariant set survives. A real error was found and fixed
+along the way -- the lifted bilinear cross term ranged over [-1,1] regardless of box size,
+roughly doubling the gap -- and halving it was still not enough. Closing the remaining
+factor needs captured cells about 3x finer in offset and heading, which is ~9x the frames:
+a quantified path, not an unknown one.
+
+The 8/8 is also not blind. Ground truth existed when the rollout was run. The distinction
+from the earlier 7/8 and 14/14 results is that those tuned an aggregation until it agreed,
+whereas this has no aggregation and no threshold to tune -- but that argument is weaker than
+a committed out-of-sample prediction, and one should be run before the claim is published.
