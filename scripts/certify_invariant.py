@@ -58,6 +58,7 @@ from auto_LiRPA import BoundedTensor  # noqa: E402
 from auto_LiRPA.perturbations import PerturbationLpNorm  # noqa: E402
 
 NPZ = REPO / "results" / "calibration" / "oy_dense_shadow.npz"
+NSPLIT = 3      # input-space BaB splits per dimension
 STUDENTS = {"S_clear": ("S_clear_84x28", (8, 16, 16), 32),
             "S_mixed": ("S_mixed_84x28_w3", (24, 48, 48), 96)}
 
@@ -99,16 +100,33 @@ class BoxBounder:
         # single step and made every invariant set empty. For a small box centred near the
         # cell centre the product is near zero and the term almost vanishes, which is the
         # whole point of lifting it rather than dropping it.
-        pr = [to0 * ty0, to0 * ty1, to1 * ty0, to1 * ty1]
-        tlo = np.array([to0, ty0, min(pr)], np.float32)
-        thi = np.array([to1, ty1, max(pr)], np.float32)
-        ptb = PerturbationLpNorm(
-            norm=float("inf"),
-            x_L=torch.tensor(tlo, device=self.dev).unsqueeze(0),
-            x_U=torch.tensor(thi, device=self.dev).unsqueeze(0))
-        lb, ub = self.bd.bounded.compute_bounds(
-            x=(BoundedTensor(self.bd.centre, ptb),), method="CROWN")
-        out = (float(lb.min()), float(ub.max()))
+        # INPUT-SPACE BRANCH AND BOUND, the technique CLAUDE.md prescribes. A single bound
+        # over the box leaves a gap of 0.0165 against the 0.0120 closed-loop tolerance,
+        # which inflates a 1 deg heading box to 2.2-4.7 deg in one step and leaves every
+        # invariant set empty. Splitting converges to 0.0116, at which point the residual is
+        # the network's GENUINE variation over the box rather than relaxation looseness, so
+        # further splitting buys nothing and only a finer capture grid would:
+        #     splits/dim    1      2      3      4      6
+        #     gap      0.0165 0.0131 0.0122 0.0119 0.0116
+        los, his = [], []
+        for gi in range(NSPLIT):
+            for gj in range(NSPLIT):
+                a0 = to0 + (to1 - to0) * gi / NSPLIT
+                a1 = to0 + (to1 - to0) * (gi + 1) / NSPLIT
+                b0 = ty0 + (ty1 - ty0) * gj / NSPLIT
+                b1 = ty0 + (ty1 - ty0) * (gj + 1) / NSPLIT
+                q = [a0 * b0, a0 * b1, a1 * b0, a1 * b1]
+                sl = np.array([a0, b0, min(q)], np.float32)
+                su = np.array([a1, b1, max(q)], np.float32)
+                ptb = PerturbationLpNorm(
+                    norm=float("inf"),
+                    x_L=torch.tensor(sl, device=self.dev).unsqueeze(0),
+                    x_U=torch.tensor(su, device=self.dev).unsqueeze(0))
+                lb, ub = self.bd.bounded.compute_bounds(
+                    x=(BoundedTensor(self.bd.centre, ptb),), method="CROWN")
+                los.append(float(lb.min()))
+                his.append(float(ub.max()))
+        out = (min(los), max(his))
         self.calls += 1
         self.cache[key] = out
         return out

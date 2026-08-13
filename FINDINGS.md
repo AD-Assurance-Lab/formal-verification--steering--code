@@ -1121,3 +1121,30 @@ The 8/8 is also not blind. Ground truth existed when the rollout was run. The di
 from the earlier 7/8 and 14/14 results is that those tuned an aggregation until it agreed,
 whereas this has no aggregation and no threshold to tune -- but that argument is weaker than
 a committed out-of-sample prediction, and one should be run before the claim is published.
+
+## F28 -- verification must span the whole lap; segment scoping flipped two verdicts
+
+Zach: "You can't clip the road into segments and just test segments, it must be the full lap
+but no intersection." Correct, and it was not a technicality.
+
+Every verification capture had covered a 195-400 m window while the closed-loop test drives
+1600 steps = 2861 m (the junction begins at 3008 m and is out of scope). Scoring a
+segment-scoped prediction against a full-lap run compares two different roads. Re-captured
+over the whole lap at sun +5 degrees, on the SAME method and the same models:
+
+    model     195 m capture      full lap (0-2861 m)        closed loop
+    S_clear   PASS  0.288 m      FAIL 6.845 m at 2284 m     FAIL 5/5, onset 2286 m
+    S_mixed   PASS  0.065 m      FAIL 6.569 m at 2293 m     FAIL 4/5, onset 2717 m
+
+Both verdicts flip from wrong to right, and `S_clear`'s predicted departure lands within
+2 m of the real one on a 2.86 km lap. The P-07 "missed failure" was therefore a coverage
+limit and nothing else -- the method never examined the road where the vehicle left the lane.
+
+**Consequence for P-07's score.** The in-scope/whole-route split reported earlier is
+withdrawn as a way of scoring: a 195 m prediction cannot be scored against a full-lap run in
+either direction. The honest number for P-07 as committed is 6/10, and the fair re-test is a
+full-lap capture at each altitude, not a re-interpretation of the segment result.
+
+**Cost of the fix.** A full lap at control-rate spacing is 1600 poses x 9 offsets x 5 yaws =
+72,000 frames, about 80 minutes of CARLA per condition. That is the price of a verification
+result that spans the same road as the driving test, and it is not optional.
