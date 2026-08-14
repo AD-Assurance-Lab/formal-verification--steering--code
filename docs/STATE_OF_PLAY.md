@@ -106,9 +106,10 @@ Each of these invalidated earlier work and each is measured, not assumed:
   scored well in-sample and failed out-of-sample. F22 tested the last directly against
   ground truth at 263 locations and got r = -0.053, with flagged locations CLEANER than
   unflagged ones.
-- **Per-frame verification against a steering threshold** (F30). This is the intuitive
-  formulation -- bound the steering under the disturbance, compare to a lane-keeping
-  threshold -- and it cannot work here, for a reason no threshold choice repairs:
+- **MAXIMUM steering deviation as the statistic** (F30). Note carefully what is dead here:
+  the MAX, not per-frame verification itself. Bounding the steering under the disturbance and
+  comparing it to a lane-keeping threshold is exactly what section 0 does and it WORKS -- with
+  the mean. The maximum fails for a reason no threshold choice repairs:
 
       condition   S_clear max |dsteer|   S_mixed max |dsteer|
       fog             0.1114 PASS            0.0903 PASS
@@ -118,7 +119,9 @@ Each of these invalidated earlier work and each is measured, not assumed:
   `S_mixed` deviates MORE under shadows than `S_clear` does, and passes while `S_clear`
   fails 10/10. The ordering is wrong, so no threshold separates them. The cause is physical:
   a large deviation that reverses sign integrates to nothing while a small persistent one
-  walks the vehicle out of the lane, and a per-frame bound cannot see persistence.
+  walks the vehicle out of the lane. The error was DIMENSIONAL -- CLOSED_LOOP_TOLERANCE is a
+  sustained-error threshold and was being compared against a peak. The mean is the persistent
+  component it describes, and it separates the same cells by 3x (section 0).
 - **Counting proven-unsafe regions as a safety metric** (F33). It measures provability, not
   severity, and provability depends on bound width, which depends on network size. Measured
   directly, `S_clear` goes 43 to 78 percent non-restoring at night with its mean gain
