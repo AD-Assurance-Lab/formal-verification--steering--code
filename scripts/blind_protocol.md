@@ -60,3 +60,31 @@ Ten altitude-direction captures at a few minutes each, plus ten closed-loop cell
 roughly 2-3 h in total, not the 20 h first estimated. The earlier figure assumed the
 offset-by-heading grid, which this criterion does not use. Captures are independent and
 resumable.
+
+---
+
+## CORRECTION (2026-08-14 18:30): P-08 is out-of-sample, NOT blind
+
+The five altitudes were chosen as "untested by the certificate", which is true, but
+closed-loop results already existed at all five from the sun sweep. The protocol above
+requires verdicts to be committed BEFORE any closed-loop run at that altitude, and that
+premise was already violated when the altitudes were picked -- the outcomes were known.
+
+There is no evidence of contamination: the criterion has no free parameters, and the one
+tunable (16-way branch and bound) was fixed by a convergence study on `S_mixed`/night rather
+than on these altitudes. But "no evidence of contamination" is exactly the assurance a blind
+test exists to replace, so P-08 is reported as OUT-OF-SAMPLE and nothing more.
+
+### P-08b: the genuinely blind subset
+
+Audited against the ledger, only two cells have no driving data at all:
+
+    S_clear   +45 DRIVEN   +22 DRIVEN   +8 DRIVEN   +3 DRIVEN   -5 DRIVEN
+    S_mixed   +45 none     +22 none     +8 DRIVEN   +3 DRIVEN   -5 DRIVEN
+
+    BLIND CELLS:  S_mixed at +45 and +22, both directions -- four runs.
+
+Their certificate verdicts are computed in the same run as everything else and committed
+with it, before those cells are driven. That ordering is checkable in git rather than
+asserted. Four cells is a small test, and it is reported as small; it is not enlarged by
+counting cells whose answers were already known.
