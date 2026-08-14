@@ -45,8 +45,13 @@ import verifiable_disturbance as vd  # noqa: E402
 from imaging import raw_to_bgr  # noqa: E402
 from carla_lock import carla_lock  # noqa: E402
 
-OFFSETS = np.array([-1.5, -1.0, -0.6, -0.3, 0.0, 0.3, 0.6, 1.0, 1.5])
-YAWS = np.array([-6.0, -3.0, 0.0, 3.0, 6.0])       # degrees of heading error
+# OY_OFFSETS / OY_YAWS let the nominal-only capture (offset 0, yaw 0) run cheaply: the
+# for-all-disturbance coverage claim is per-frame and needs no state grid, so it costs
+# 3,200 frames per condition-direction instead of 72,000.
+OFFSETS = np.array([float(x) for x in os.environ.get(
+    "OY_OFFSETS", "-1.5,-1.0,-0.6,-0.3,0.0,0.3,0.6,1.0,1.5").split(",")])
+YAWS = np.array([float(x) for x in os.environ.get(
+    "OY_YAWS", "-6.0,-3.0,0.0,3.0,6.0").split(",")])   # degrees of heading error
 CONDS = os.environ.get("OY_CONDS", "clear,fog,night,shadows").split(",")
 OUT = REPO / os.environ.get("OY_OUT", "results/calibration/offset_yaw.npz")
 
@@ -80,7 +85,13 @@ def main():
     with carla_lock(owner="offset-yaw capture"):
         cl = carla.Client(C.HOST, C.PORT)
         cl.set_timeout(120.0)
-        world = cl.get_world()
+        # LOAD THE CONFIGURED MAP. `get_world()` returns whatever is loaded, and a freshly
+        # launched CARLA serves its DEFAULT map (Town10HD_Opt), not Town04. Placing the
+        # vehicle at Town04 coordinates inside Town10 put it below grade for the whole lap
+        # (settled z -2.60..1.09 m, pitch +-11 deg, 47 fallbacks) -- which looks exactly
+        # like a broken settle and is not. Earlier runs only worked because a previous
+        # closed-loop run had already loaded Town04.
+        world = env.load_town04(cl, fresh=False)
         orig = world.get_settings()
         s = world.get_settings()
         s.synchronous_mode = True
@@ -127,24 +138,36 @@ def main():
                 t = v.get_transform()
                 return t.location.z, t.rotation.pitch, t.rotation.roll
 
-            wp0 = world.get_map().get_waypoint(
-                carla.Location(x=float(poses[0]["x"]), y=float(poses[0]["y"]), z=z0),
-                project_to_road=True)
-            ref = wp0.transform.location.z
+            # ANCHOR ON THE ROAD AT EVERY POSE, do not chain from the previous one alone.
+            # Chaining has no reference to the actual surface, so one bad seed propagates for
+            # the whole lap and never recovers: on a freshly loaded map this produced
+            # z -2.60..-1.79 m with pitch +-11.5 deg and 21 fallbacks, the vehicle rendering
+            # from below grade for 2861 m. The running height is passed as the waypoint's z
+            # HINT, which is what disambiguates Town04's overpass -- the failure that made
+            # naive waypoint lookup unusable in the first place. Continuity now only picks
+            # the deck; the road decides the height.
+            cmap = world.get_map()
+            ref = None
             attitude, rejected = [], 0
             for r in poses:
                 x, y, yaw = float(r["x"]), float(r["y"]), float(r["yaw"])
-                az, ap, ar = settle(x, y, yaw, ref)
+                hint = z0 if ref is None else ref
+                wpz = cmap.get_waypoint(carla.Location(x=x, y=y, z=hint),
+                                        project_to_road=True).transform.location.z
+                az, ap, ar = settle(x, y, yaw, max(wpz, hint if ref else wpz))
                 ap = ((ap + 180) % 360) - 180
                 ar = ((ar + 180) % 360) - 180
-                # a highway vehicle does not pitch or roll steeply, and consecutive poses
-                # are 1.8 m apart, so a large jump means it fell or tumbled
-                if abs(ap) > 12 or abs(ar) > 12 or (attitude and abs(az - ref) > 4.0):
-                    az, ap, ar = settle(x, y, yaw, ref, ticks=40)
+                # a highway vehicle does not pitch or roll steeply, and it sits ON its road,
+                # so a large tilt or a big gap from the surface means it fell or tumbled
+                bad = abs(ap) > 12 or abs(ar) > 12 or abs(az - wpz) > 3.0
+                if bad:
+                    az, ap, ar = settle(x, y, yaw, wpz, ticks=40)
                     ap = ((ap + 180) % 360) - 180
                     ar = ((ar + 180) % 360) - 180
-                    if abs(ap) > 12 or abs(ar) > 12 or (attitude and abs(az - ref) > 4.0):
-                        az, ap, ar = ref, attitude[-1][1] if attitude else 0.0, 0.0
+                    if abs(ap) > 12 or abs(ar) > 12 or abs(az - wpz) > 3.0:
+                        # fall back to the road itself plus the settled ride height
+                        az = wpz + (attitude[-1][0] - wpz if attitude else 0.3)
+                        ap, ar = (attitude[-1][1], attitude[-1][2]) if attitude else (0.0, 0.0)
                         rejected += 1
                 attitude.append((az, ap, ar))
                 ref = az
