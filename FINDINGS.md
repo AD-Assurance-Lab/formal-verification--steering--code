@@ -1225,3 +1225,49 @@ useful closed-loop claim here, however tight the bound. The only route left is t
 LOOP: bound the steering over a set of vehicle states and propagate that set through the
 vehicle dynamics. That requires the (offset x heading) captures, so they are necessary rather
 than merely convenient.
+
+## F31 -- formal verification PROVES a vulnerability that 40 closed-loop runs missed
+
+This is the coverage-assurance result the study exists to demonstrate.
+
+`S_mixed` is the good model. It passes every cell in the ledger: clear, fog, night and
+shadows, 0/10 departures each, 40 runs, both directions, reproduced on a freshly restarted
+simulator. Scenario-based testing says it is safe.
+
+At 204-208 m and 215 m of the westbound lap, alpha-CROWN proves it is not:
+
+    state box   o in [+0.30, +1.00] m (right of lane centre)
+                psi in [+3.0, +6.0] deg (pointed further right)
+    a restoring policy must steer LEFT (negative) everywhere in that box
+
+        204 m   steer lower bound  +0.0598    PROVEN UNSAFE
+        206 m   steer lower bound  +0.2365    PROVEN UNSAFE
+        208 m   steer lower bound  +0.0138    PROVEN UNSAFE
+        215 m   steer lower bound  +0.0727    PROVEN UNSAFE
+
+A POSITIVE LOWER BOUND means every state in the continuous box -- uncountably many, not a
+grid -- produces steering to the right while the vehicle is already right of centre and
+pointed right. There is no restoring action anywhere in the set.
+
+**Why testing cannot find it.** The vulnerability only exists at heading errors of roughly
+3 degrees or more. In nominal driving `S_mixed` holds 0.13 m of cross-track error and a
+fraction of a degree of heading, so its trajectories never enter the region. Scenario-based
+testing samples TRAJECTORIES; this samples the STATE SPACE. No number of laps fixes that,
+because the states are not on any lap the policy drives.
+
+**Why it is not an artefact.** Found in the full-lap capture at 205-208 m, then reproduced
+by an INDEPENDENT capture hours later with its own settle pass and finer heading resolution,
+which put it at 204-208 m with the same sign and the same heading dependence. Grid evaluation
+alone is not proof -- both checks are finite -- so the certificate bounds the response over
+the continuous box rather than at points.
+
+**Stated soundness gap.** The bound is sound with respect to the bilinear image patch between
+the four captured corners, with the cross term lifted into its own input dimension over the
+exact product interval, which over-approximates the true patch. It is NOT a claim about
+images CARLA would render strictly between captured states; that residual is the same one
+declared throughout this study.
+
+**What this does not claim.** It does not show the vehicle will reach those states in normal
+operation -- that is a reachability question. It shows that IF it does, the policy has no
+corrective action there, which is exactly the class of latent defect an assurance argument
+based on driven miles cannot rule out.
