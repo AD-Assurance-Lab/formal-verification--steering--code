@@ -1351,3 +1351,60 @@ metric built on counting successful proofs silently rewards models whose bounds 
 Cross-model and cross-condition comparisons must use a quantity that does not depend on
 provability -- the measured response, or a bound-width-normalised score -- and certificates
 should be used for what they are: sound evidence about a specific set, not a scoreboard.
+
+## F34 -- the per-frame route works: SUSTAINED bias, not maximum deviation (F30 corrected)
+
+Zach: "would a cheap approximation work like just integrating the steering error bounds?"
+Yes, and it corrects F30.
+
+`CLOSED_LOOP_TOLERANCE` = 0.0120 is defined as the steering error which, SUSTAINED for
+T_CLOSED_LOOP_S = 1.85 s, carries the vehicle to the edge of its lane. F30 compared it
+against the MAXIMUM steering deviation. That is dimensionally the wrong quantity: the maximum
+is dominated by transients that reverse sign and integrate to nothing. The MEAN deviation is
+the sustained component the threshold actually describes.
+
+    persistent bias = mean over the lap of ( steer(disturbed) - steer(clear) )
+    FAIL  iff  |persistent bias| > CLOSED_LOOP_TOLERANCE
+
+    direction   model     condition   bias      x tol   verdict   closed loop
+    westbound   S_clear   clear      +0.00000    0.00    PASS      PASS  0/10
+    westbound   S_clear   fog        -0.00540    0.45    PASS      PASS  0/10
+    westbound   S_clear   night      -0.07064    5.88    FAIL      FAIL 10/10
+    westbound   S_clear   shadows    -0.01628    1.36    FAIL      FAIL 10/10
+    westbound   S_mixed   clear      +0.00000    0.00    PASS      PASS  0/10
+    westbound   S_mixed   fog        -0.00033    0.03    PASS      PASS  0/10
+    westbound   S_mixed   night      -0.00250    0.21    PASS      PASS  0/10
+    westbound   S_mixed   shadows    +0.00162    0.14    PASS      PASS  0/10
+    eastbound   S_clear   night      -0.06016    5.01    FAIL      FAIL 10/10
+    eastbound   S_clear   shadows    -0.01667    1.39    FAIL      FAIL 10/10
+    eastbound   S_mixed   night      -0.00227    0.19    PASS      PASS  0/10
+    eastbound   S_mixed   shadows    +0.00178    0.15    PASS      PASS  0/10
+
+14/14, both directions, eastbound reproducing westbound independently. Every passing cell is
+at or below 0.45x tolerance and every failing cell at or above 1.36x -- a 3x gap with the
+threshold inside it, so this does not depend on where the threshold sits within that gap.
+
+**Nothing is fitted.** The tolerance derives from lane width, vehicle width, wheelbase,
+speed and a closed-loop time constant measured long before this criterion existed. The
+statistic is an unweighted mean over every pose on the lap. There is no aggregation choice,
+no envelope, no pose selection.
+
+**It is PER-FRAME.** No vehicle dynamics are simulated and no trajectory is rolled out. The
+seven retired criteria and the propagation work were all attempts to reach the trajectory
+level; the answer was to use the right per-frame statistic instead.
+
+**Why F30 got the opposite answer.** Max deviation does not even ORDER the cells correctly
+(`S_mixed` deviates more under shadows than `S_clear` does, and passes while `S_clear` fails
+10/10), so no threshold could rescue it. The mean does, by 3x.
+
+**Two caveats before this is written up.** It is computed from RENDERED condition frames, so
+it is a measurement; the verification form bounds the same mean over the declared interval
+s in [0,1] with alpha-CROWN, which is a direct extension and not yet run. And it is
+IN-SAMPLE -- ground truth was known. Three committed blind predictions have already failed
+after looking strong in-sample (P-03 2/6, P-06 3/7, P-07 6/10), so a blind test is required
+before any claim. Eastbound fog is the one missing cell.
+
+**A bug worth recording.** The first run of this scored 8/14 because the nominal path was
+read as `frames[:, 0, 0]` -- the CORNER of the offset/heading grid, -1.5 m off centre and
+-6 deg of heading -- instead of its centre. Nominal-only captures have a 1x1 grid where the
+two coincide, which is why only the full-grid captures were wrong.
