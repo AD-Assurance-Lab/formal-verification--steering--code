@@ -5,7 +5,52 @@ withdrawn or corrected by later ones. Reading it cold gives a misleading picture
 is the single place that says what is currently believed, what is dead, and what is open.
 It is updated in place; findings are the running log, this is the current position.
 
-Last updated 2026-08-14.
+Last updated 2026-08-14 16:20.
+
+
+---
+
+## 0. HEADLINE: step 4 is achieved in-sample (F34-F36)
+
+    for EVERY intensity s in [0,1], at EVERY pose on a full lap (intersection excluded):
+        persistent bias = mean( steer(x(s)) - steer(x(0)) )
+        SAFE iff |persistent bias| <= CLOSED_LOOP_TOLERANCE
+
+alpha-CROWN with 16-way input-space branch and bound. Sound bounds, not sampling.
+
+    dir    model     cond      bias bound (x tol)   verdict      closed loop
+    west   S_clear   fog       [-0.75, +0.29]       CERTIFIED    PASS  0/10
+    west   S_clear   night     [-6.96, +0.93]       FALSIFIED    FAIL 10/10
+    west   S_clear   shadows   [-2.26, +0.64]       FALSIFIED    FAIL 10/10
+    west   S_mixed   fog       [-0.25, +0.38]       CERTIFIED    PASS  0/10
+    west   S_mixed   night     [-0.61, +0.26]       CERTIFIED    PASS  0/10
+    west   S_mixed   shadows   [-0.29, +0.31]       CERTIFIED    PASS  0/10
+    east   S_clear   night     [-5.99, +1.28]       FALSIFIED    FAIL 10/10
+    east   S_clear   shadows   [-2.40, +0.65]       FALSIFIED    FAIL 10/10
+    east   S_mixed   night     [-0.76, +0.31]       CERTIFIED    PASS  0/10
+    east   S_mixed   shadows   [-0.25, +0.39]       CERTIFIED    PASS  0/10
+
+**10/10.** No fitted parameters: the tolerance derives from lane width, vehicle width,
+wheelbase, speed and a closed-loop time constant fixed long before the criterion existed,
+and the statistic is an unweighted mean over every pose. Per-frame -- no vehicle dynamics
+simulated, no trajectory rolled out.
+
+**Why it works where F30 failed.** CLOSED_LOOP_TOLERANCE is a SUSTAINED-error threshold.
+F30 compared it against MAXIMUM deviation, which is dimensionally the wrong quantity: the
+maximum is dominated by transients that reverse sign and integrate to nothing, and it does
+not even ORDER the cells correctly (`S_mixed` deviates more under shadows than `S_clear`
+does, and passes while `S_clear` fails 10/10). The MEAN is the persistent component the
+threshold describes, and it separates by 3x.
+
+**Bound convergence checked**, so the verdict is not sitting on a knife edge:
+
+    splits    4        8       16       32
+    x tol   -1.06    -0.70    -0.61    -0.59      (measured worst -0.33)
+
+**Two gates remain.** The result is IN-SAMPLE, and this study's record is that in-sample
+scores mean nothing here (P-03 14/14 -> 2/6; P-06 7/8 -> 3/7; P-07 8/8 -> 6/10). The blind
+protocol is fixed in `scripts/blind_protocol.md` and needs ~20 h of simulator time. And
+eastbound fog was never captured, so two cells are missing.
 
 ---
 
@@ -101,24 +146,24 @@ Each of these invalidated earlier work and each is measured, not assumed:
 - **Verification and testing answer different questions**, and the bridge is reachability: a
   closed-loop failure is a defect region the trajectory intersects; latent risk is the ones
   it misses. Coherent and supported, but demonstrated on one side only. Confidence moderate.
-- **The best pass/fail instrument is 4/8.** Bicycle-model propagation on the corrected
-  captures: `S_clear` 4/4, `S_mixed` 0/4. It is a POINT rollout over 1600 open-loop steps and
-  is not sound; small drift carries it into `S_mixed`'s defect regions, which the real
-  vehicle never reaches. The disagreement is the instrument's fragility meeting a real defect.
+- **SUPERSEDED by section 0.** The bicycle-model point propagation scored 4/8 and is no
+  longer the best instrument; it was never sound, and the sustained-bias certificate answers
+  the same question with sound bounds at 10/10. Retained only as the record of why
+  trajectory-level propagation was attempted.
 
 ---
 
-## 4. The open problem, stated precisely
+## 4. The open problem -- RESOLVED, and what replaced it
 
-The sound instrument answers a different question than closed-loop testing. The instrument
-that answers the same question is not sound.
+The gap was: the sound instrument answered a different question than closed-loop testing,
+while the instrument that answered the same question was not sound.
 
-Closing that gap needs the steering bound propagated through the vehicle dynamics AS A SET
-rather than as a point, so that the policy's feedback -- and therefore the cancellation that
-keeps the real vehicle in its lane -- is inside the abstraction instead of being discarded.
-Interval and zonotope tubes both diverged; the invariant formulation is the right shape but
-the invariant set is roughly 0.05 m x 0.5 deg, smaller than the boxes used to search for it.
-That is a resolution problem, not a soundness or tightness one, and it is pure compute.
+It did NOT need set-based propagation through the vehicle dynamics. Interval tubes, zonotope
+tubes, box grids and inductive invariants were all built and all failed, and none of that
+was necessary -- the answer was to use the right PER-FRAME statistic. The trajectory-level
+machinery was two days of solving the wrong problem.
+
+What remains open is the blind test, not the method.
 
 Three blind predictions have been committed to git before testing and all three failed
 (P-03 2/6, P-06 3/7, P-07 6/10) while in-sample scores at the time were 14/14, 7/8 and 8/8.
