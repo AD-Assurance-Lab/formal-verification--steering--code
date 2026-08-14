@@ -109,24 +109,49 @@ def main():
             # Settling at all 72,000 placements would cost ~1.8M ticks, so it is done ONCE
             # PER POSE and reused across that pose's offsets and yaws: the offsets span
             # +-1.5 m laterally, over which the surface is effectively the same.
-            attitude = []
-            for r in poses:
-                wp = world.get_map().get_waypoint(
-                    carla.Location(x=float(r["x"]), y=float(r["y"]), z=z0),
-                    project_to_road=True)
+            # Drop from the PREVIOUS settled height, not from the map's waypoint. Town04's
+            # highway is a figure-8 with an overpass, so `get_waypoint(project_to_road=True)`
+            # can snap to the wrong deck; dropping from there sent the vehicle through the
+            # world and recorded nonsense (z -25.07..11.00 m, pitch -78..+51 deg over a lap).
+            # The route is continuous, so the previous pose's height is always a safe
+            # reference, and every result is validated before it is accepted.
+            def settle(x, y, yaw, ref_z, ticks=20):
                 v.set_transform(carla.Transform(
-                    carla.Location(x=float(r["x"]), y=float(r["y"]),
-                                   z=wp.transform.location.z + 0.6),
-                    carla.Rotation(yaw=float(r["yaw"]))))
+                    carla.Location(x=x, y=y, z=ref_z + 0.5),
+                    carla.Rotation(yaw=yaw)))
                 v.set_target_velocity(carla.Vector3D(0, 0, 0))
+                v.set_target_angular_velocity(carla.Vector3D(0, 0, 0))
                 v.apply_control(carla.VehicleControl(brake=1.0))
-                for _ in range(18):
+                for _ in range(ticks):
                     world.tick()
-                tf = v.get_transform()
-                attitude.append((tf.location.z, tf.rotation.pitch, tf.rotation.roll))
-            print(f"  settled {len(attitude)} poses: z "
-                  f"{min(a[0] for a in attitude):.2f}..{max(a[0] for a in attitude):.2f} m, "
-                  f"pitch {min(a[1] for a in attitude):+.2f}..{max(a[1] for a in attitude):+.2f} deg",
+                t = v.get_transform()
+                return t.location.z, t.rotation.pitch, t.rotation.roll
+
+            wp0 = world.get_map().get_waypoint(
+                carla.Location(x=float(poses[0]["x"]), y=float(poses[0]["y"]), z=z0),
+                project_to_road=True)
+            ref = wp0.transform.location.z
+            attitude, rejected = [], 0
+            for r in poses:
+                x, y, yaw = float(r["x"]), float(r["y"]), float(r["yaw"])
+                az, ap, ar = settle(x, y, yaw, ref)
+                ap = ((ap + 180) % 360) - 180
+                ar = ((ar + 180) % 360) - 180
+                # a highway vehicle does not pitch or roll steeply, and consecutive poses
+                # are 1.8 m apart, so a large jump means it fell or tumbled
+                if abs(ap) > 12 or abs(ar) > 12 or (attitude and abs(az - ref) > 4.0):
+                    az, ap, ar = settle(x, y, yaw, ref, ticks=40)
+                    ap = ((ap + 180) % 360) - 180
+                    ar = ((ar + 180) % 360) - 180
+                    if abs(ap) > 12 or abs(ar) > 12 or (attitude and abs(az - ref) > 4.0):
+                        az, ap, ar = ref, attitude[-1][1] if attitude else 0.0, 0.0
+                        rejected += 1
+                attitude.append((az, ap, ar))
+                ref = az
+            zs = [a[0] for a in attitude]
+            ps = [a[1] for a in attitude]
+            print(f"  settled {len(attitude)} poses: z {min(zs):.2f}..{max(zs):.2f} m, "
+                  f"pitch {min(ps):+.2f}..{max(ps):+.2f} deg, {rejected} fell back",
                   flush=True)
             v.set_simulate_physics(False)
             for ci, cond in enumerate(CONDS):
