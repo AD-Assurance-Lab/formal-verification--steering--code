@@ -95,3 +95,16 @@ GPU and become live tests at their milestone.
     image transformation from what the renderer produces — fog passed at 1.25-1.38x while
     moving the road mean by 0.003 against the renderer's 0.248. Check image statistics
     (mu, sigma over the ROI, per depth band) as well. See D3 in `STUDY.md`.
+
+## grep block-buffers into a file, so a working run looks stalled
+
+`cmd | grep pattern > log` buffers in 4 KB blocks when the output is not a terminal. A long
+job that prints progress will therefore write NOTHING to the log for many minutes, which is
+indistinguishable from a hang. This cost a 35-minute verification run that was killed and
+restarted while it was progressing normally, then nearly cost the restart too.
+
+    BAD   $PY -u job.py 2>&1 | grep -v WARNING > run.log
+    GOOD  $PY -u job.py 2>&1 | grep --line-buffered -v WARNING > run.log
+
+`python -u` alone is not enough -- it unbuffers PYTHON, and the buffering here is in grep.
+Symptom to recognise: process at 100% CPU, healthy RSS, state R, and an empty log.
