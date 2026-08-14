@@ -1188,3 +1188,40 @@ westbound may be passing gate A only because its stretch happens to match its sp
 Until then eastbound remains unusable and every verification number is westbound-only. That
 is a measured limitation with a named candidate cause, not an unexplained exclusion.
 
+
+## F30 -- sound per-frame verification over the disturbance interval is too conservative
+
+The coverage claim scenario testing cannot make is: for EVERY intensity s in [0,1], at EVERY
+pose, the steering stays inside the corridor. It was computed with alpha-CROWN over the
+one-scalar family x(s) = x_clear + s*(x_cond - x_clear), full lap, 4 sub-intervals per pose.
+
+    model     condition   max |dsteer| over s   poses over tol   closed loop
+    S_clear   fog                      0.1114        16/40       PASS  0/10
+    S_clear   night                    0.4124        38/40       FAIL 10/10
+    S_clear   shadows                  0.2275        27/40       FAIL 10/10
+    S_mixed   fog                      0.0903         6/40       PASS  0/10
+    S_mixed   night                    0.0757        21/40       PASS  0/10
+    S_mixed   shadows                  0.2494         4/40       PASS  0/10
+
+Every cell is FALSIFIED against the 0.0120 corridor -- deviations run 6x to 34x it -- while
+four of the six drive cleanly. Worse, the magnitudes do not rank with the outcomes:
+`S_mixed` deviates MORE under shadows (0.2494) than `S_clear` (0.2275), and one passes while
+the other departs on every run.
+
+**This is not a loose bound.** Input-space branch and bound converges the relaxation to the
+network's genuine output variation (0.0165 -> 0.0116 measured on a state box), so there is
+nothing left to tighten -- and it is why SDP-CROWN would add nothing: its advantage is L2
+geometry in high dimensions, and this input set is one scalar.
+
+**It is the criterion that is wrong, and the reason is temporal.** Closed-loop departure
+depends on whether a steering deviation PERSISTS, not on how large it is: a large deviation
+that reverses sign every few frames integrates to nothing, while a small persistent one
+walks the vehicle out of the lane (F21). A per-frame bound has no access to that structure,
+so it must either be vacuous or unsound, and soundness makes it vacuous.
+
+**Consequence for the study.** The per-frame corridor formulation -- which is what much of
+the neural-network verification literature assumes transfers to control -- cannot deliver a
+useful closed-loop claim here, however tight the bound. The only route left is to verify the
+LOOP: bound the steering over a set of vehicle states and propagate that set through the
+vehicle dynamics. That requires the (offset x heading) captures, so they are necessary rather
+than merely convenient.
