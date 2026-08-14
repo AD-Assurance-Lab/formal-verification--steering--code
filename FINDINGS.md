@@ -1408,3 +1408,39 @@ before any claim. Eastbound fog is the one missing cell.
 read as `frames[:, 0, 0]` -- the CORNER of the offset/heading grid, -1.5 m off centre and
 -6 deg of heading -- instead of its centre. Nominal-only captures have a 1x1 grid where the
 two coincide, which is why only the full-grid captures were wrong.
+
+## F35 -- bounding the sustained bias over the declared interval
+
+F34 MEASURED the persistent bias at the rendered condition. This bounds it over every
+intensity in the declared interval, x(s) = x_clear + s*(x_cond - x_clear) for s in [0,1],
+which is the for-all claim scenario testing cannot make. Three things came out of it.
+
+**A verdict-logic error, corrected.** The safety property is "safe at EVERY intensity", so
+ANY violation falsifies it. The first version required the WHOLE bias interval to lie
+outside the corridor before reporting FALSIFIED -- which asks whether the model is unsafe at
+every intensity, a different and much weaker statement. It scored 6 of 10 cells INCONCLUSIVE.
+With the correct rule the same bounds give 8/10.
+
+**Interior peaks are real, and they matter for the coverage argument.** Sampling s directly:
+
+    model     cond      worst |bias|   at s    endpoint
+    S_mixed   night        0.33x tol    0.8      0.22x
+    S_mixed   shadows      0.08x        0.6      0.06x
+    S_mixed   fog          0.16x        0.6      0.03x
+    S_clear   night        6.21x        1.0      6.21x
+    S_clear   shadows      1.70x        1.0      1.70x
+    S_clear   fog          0.57x        1.0      0.57x
+
+`S_mixed` is worst at INTERMEDIATE intensity in all three conditions, not at the endpoint --
+0.8 for night, 0.6 for shadows and fog. Scenario testing renders the full condition and
+would miss the worst case, though here the peaks are far inside the corridor so nothing is
+hidden. Measured over the whole interval the criterion is 6/6.
+
+**The remaining misses are bound looseness, not defects.** At NSPLIT = 4 the bound on
+`S_mixed`/night reads -0.0128 (1.07x tol) against a true worst of -0.0039 (0.33x) -- 3.3x
+conservative, enough to falsify a model that is safe at every intensity. That is the
+relaxation, and branch-and-bound is the fix; NSPLIT = 16 is running.
+
+This is the difference between a sound certificate and a measurement. The measurement says
+6/6. The certificate says 8/10 and will say more once the relaxation is tightened -- and
+unlike the measurement it covers intensities never rendered.
