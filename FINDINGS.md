@@ -1271,3 +1271,44 @@ declared throughout this study.
 operation -- that is a reachability question. It shows that IF it does, the policy has no
 corrective action there, which is exactly the class of latent defect an assurance argument
 based on driven miles cannot rule out.
+
+## F32 -- the vulnerability search generalises, and it INVERTS the safety ranking
+
+The westbound finding (F31) could have been one quirk of one stretch. It is not. Running the
+same certificate over the full EASTBOUND lap, 1600 poses, same state box (o in [0.30, 1.00] m
+right of centre, psi in [3, 6] deg pointed right):
+
+    S_mixed   PROVEN UNSAFE at 32 of 1600 poses
+              124, 254, 415, 421, 428, 430, 458, 466, 473, 480, 487, 494, 501, 508, 516,
+              560, 582, 619, 626, 633, 641, 1029, 1785, 1792, 1846, 1848, 2030, 2032,
+              2062, 2069, 2091, 2098 m
+    S_clear   PROVEN UNSAFE at 0 of 1600 poses
+
+With westbound (S_mixed 4, S_clear 0) that is 36 proven-unsafe state regions in one model
+and none in the other. The eastbound defects cluster (415-641 m contains 15 of them) rather
+than scattering, which is what a real feature of the road-policy interaction looks like
+rather than noise.
+
+**The ranking inverts.** Scenario testing says `S_mixed` is the safe model: 0/10 departures
+in all four conditions, 40 runs, while `S_clear` departs 10/10 under night and 10/10 under
+shadows. Verification says the opposite about latent state-space defects: `S_mixed` has 36
+regions where NO restoring action exists, `S_clear` has none anywhere on either lap.
+
+**Why both statements are true and not contradictory.** They answer different questions.
+Closed-loop testing asks "does this policy leave the lane on the trajectories it drives?"
+Verification asks "does a corrective action exist at every state the vehicle could occupy?"
+`S_mixed` never visits its defective states in nominal driving -- it holds 0.13 m of
+cross-track error and a fraction of a degree of heading -- so testing cannot reach them, at
+any mileage. `S_clear` fails visibly and often, which is arguably the safer failure mode:
+its deficiency is discoverable by driving.
+
+**The assurance argument.** A safety case built on driven miles would certify `S_mixed` and
+reject `S_clear`. It would be right about behaviour on the nominal trajectory and blind to
+36 states in which the certified policy has no corrective action. That blindness is
+structural: sampling trajectories cannot cover a state space, and no confidence interval on
+miles driven repairs it.
+
+**Bounds of the claim.** PROVEN UNSAFE means no restoring action exists anywhere in the
+state box; it does NOT mean the vehicle will reach that box, which is a separate reachability
+question this study does not answer. The bound is sound with respect to the bilinear image
+patch between captured corners, with the cross term lifted over its exact product interval.
