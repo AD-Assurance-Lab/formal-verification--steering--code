@@ -94,6 +94,40 @@ def main():
             for _ in range(40):
                 world.tick()
             z0 = v.get_transform().location.z
+
+            # ROAD ATTITUDE PER POSE, measured by letting physics settle the vehicle.
+            #
+            # Freezing physics at the SPAWN ride height and restoring yaw only was wrong
+            # wherever the road is not level with the spawn. Measured: the eastbound
+            # stretch climbs 7.17 m over its first 195 m, and the capture there failed
+            # validation at 0.202 against a 0.05 threshold -- the vehicle was floating or
+            # buried metres above or below the road. Westbound passed at 0.016 only because
+            # its first 195 m happens to be flat. Settling under gravity fixed both
+            # (eastbound 0.007, westbound 0.014), so the road, not the arithmetic, has to
+            # decide the ride height.
+            #
+            # Settling at all 72,000 placements would cost ~1.8M ticks, so it is done ONCE
+            # PER POSE and reused across that pose's offsets and yaws: the offsets span
+            # +-1.5 m laterally, over which the surface is effectively the same.
+            attitude = []
+            for r in poses:
+                wp = world.get_map().get_waypoint(
+                    carla.Location(x=float(r["x"]), y=float(r["y"]), z=z0),
+                    project_to_road=True)
+                v.set_transform(carla.Transform(
+                    carla.Location(x=float(r["x"]), y=float(r["y"]),
+                                   z=wp.transform.location.z + 0.6),
+                    carla.Rotation(yaw=float(r["yaw"]))))
+                v.set_target_velocity(carla.Vector3D(0, 0, 0))
+                v.apply_control(carla.VehicleControl(brake=1.0))
+                for _ in range(18):
+                    world.tick()
+                tf = v.get_transform()
+                attitude.append((tf.location.z, tf.rotation.pitch, tf.rotation.roll))
+            print(f"  settled {len(attitude)} poses: z "
+                  f"{min(a[0] for a in attitude):.2f}..{max(a[0] for a in attitude):.2f} m, "
+                  f"pitch {min(a[1] for a in attitude):+.2f}..{max(a[1] for a in attitude):+.2f} deg",
+                  flush=True)
             v.set_simulate_physics(False)
             for ci, cond in enumerate(CONDS):
                 if cam is not None:
@@ -109,12 +143,19 @@ def main():
                     yaw0 = float(r["yaw"])
                     nx = -math.sin(math.radians(yaw0))
                     ny = math.cos(math.radians(yaw0))
+                    # Keep the chase camera on the car. Without this the viewport stays
+                    # frozen wherever it was while the vehicle teleports along the route,
+                    # so a capture that is working looks identical to one that has hung --
+                    # and eyeballing the render is what caught the fog-in-night preset bug.
+                    env.update_spectator(world, v)
                     for oi, offv in enumerate(OFFSETS):
                         for yi, dy in enumerate(YAWS):
-                            v.set_transform(env.make_transform(
-                                dict(x=float(r["x"]) + nx * offv,
-                                     y=float(r["y"]) + ny * offv,
-                                     z=z0, yaw=yaw0 + float(dy))))
+                            az, apitch, aroll = attitude[pi]
+                            v.set_transform(carla.Transform(
+                                carla.Location(x=float(r["x"]) + nx * offv,
+                                               y=float(r["y"]) + ny * offv, z=az),
+                                carla.Rotation(pitch=apitch, yaw=yaw0 + float(dy),
+                                               roll=aroll)))
                             for _ in range(4):
                                 world.tick()
                             while True:
