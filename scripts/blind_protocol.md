@@ -29,7 +29,9 @@ gets both is doing something real.
 ## Order of operations, and why each step is fixed
 
 1. **Capture full-lap, both directions, at each altitude.** 0-2861 m, intersection excluded,
-   control-rate spacing, settled vehicle placement. ~2 h per altitude-direction.
+   control-rate spacing, settled vehicle placement. NOMINAL PATH ONLY (offset 0, heading 0):
+   the sustained-bias criterion needs no state grid, so this is 3,200 frames and a few
+   minutes rather than 72,000 frames and two hours.
    NOT 195 m segments: measured, `S_clear`/fog flips verdict between the 195 m and full-lap
    scopes (-0.0143 against -0.0054), which is what invalidated P-07's scoring.
 2. **Run the certificate and COMMIT the verdicts to git** -- before any closed-loop run at
@@ -54,6 +56,7 @@ gets both is doing something real.
 
 ## Cost
 
-Ten altitude-direction captures at ~2 h each is ~20 h of simulator time, plus ~1 h of
-closed-loop runs. The captures are independent and resumable, so this can run unattended and
-survives interruption.
+Ten altitude-direction captures at a few minutes each, plus ten closed-loop cells at ~5 min:
+roughly 2-3 h in total, not the 20 h first estimated. The earlier figure assumed the
+offset-by-heading grid, which this criterion does not use. Captures are independent and
+resumable.
