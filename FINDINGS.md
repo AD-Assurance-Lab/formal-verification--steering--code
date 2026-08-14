@@ -1444,3 +1444,52 @@ relaxation, and branch-and-bound is the fix; NSPLIT = 16 is running.
 This is the difference between a sound certificate and a measurement. The measurement says
 6/6. The certificate says 8/10 and will say more once the relaxation is tightened -- and
 unlike the measurement it covers intensities never rendered.
+
+## F36 -- STEP 4 ACHIEVED: sound certificate over the disturbance interval, 10/10
+
+The study's contribution, from CLAUDE.md: "Apply formal verification to both, and get the
+same answer without simulating." This is that result.
+
+    for EVERY intensity s in [0,1], at EVERY pose on a full lap (intersection excluded):
+        persistent bias = mean( steer(x(s)) - steer(x(0)) )
+        SAFE iff |persistent bias| <= CLOSED_LOOP_TOLERANCE
+
+alpha-CROWN with 16-way input-space branch and bound, both directions:
+
+    dir    model     cond      bias bound (x tol)   verdict      closed loop
+    west   S_clear   fog       [-0.75, +0.29]       CERTIFIED    PASS  0/10
+    west   S_clear   night     [-6.96, +0.93]       FALSIFIED    FAIL 10/10
+    west   S_clear   shadows   [-2.26, +0.64]       FALSIFIED    FAIL 10/10
+    west   S_mixed   fog       [-0.25, +0.38]       CERTIFIED    PASS  0/10
+    west   S_mixed   night     [-0.61, +0.26]       CERTIFIED    PASS  0/10
+    west   S_mixed   shadows   [-0.29, +0.31]       CERTIFIED    PASS  0/10
+    east   S_clear   night     [-5.99, +1.28]       FALSIFIED    FAIL 10/10
+    east   S_clear   shadows   [-2.40, +0.65]       FALSIFIED    FAIL 10/10
+    east   S_mixed   night     [-0.76, +0.31]       CERTIFIED    PASS  0/10
+    east   S_mixed   shadows   [-0.25, +0.39]       CERTIFIED    PASS  0/10
+
+10/10. Tightening branch and bound from 4 to 16 splits moved `S_mixed`/night from -1.07x to
+-0.61x and certified it, confirming that miss was relaxation looseness rather than a defect,
+exactly as direct sampling of the interval had predicted (true worst 0.33x).
+
+**What is proven.** Sound bounds, not sampling. The claim quantifies over a continuum of
+intensities, including the interior peaks where `S_mixed` is worst at s = 0.6-0.8 rather than
+at full strength -- operating points no closed-loop run renders. Per-pose bounds are averaged,
+which lets s differ BETWEEN poses, so the certificate also covers spatially varying
+disturbance rather than one global intensity.
+
+**No fitted parameters.** CLOSED_LOOP_TOLERANCE derives from lane width, vehicle width,
+wheelbase, speed and a closed-loop time constant fixed long before this criterion existed.
+The statistic is an unweighted mean over every pose. There is no threshold, envelope,
+aggregation rule or pose selection to tune.
+
+**Declared gaps.**
+- Two cells missing: eastbound fog was never captured (the simulator died mid-run).
+- IN-SAMPLE. Ground truth was known. Three committed blind predictions have failed after
+  looking strong in-sample (P-03 2/6, P-06 3/7, P-07 6/10), so a blind test at untested
+  operating points is required before this is claimed in print. It needs full-lap captures;
+  195 m segments cannot be scored against full-lap driving results (measured: `S_clear`/fog
+  flips verdict between the two scopes).
+- Sound with respect to the affine family between the clear and rendered frames, which is
+  exact in projection (1.2e-7) but is not a claim about images CARLA would render at
+  intermediate intensities.
