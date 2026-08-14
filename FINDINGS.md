@@ -1312,3 +1312,42 @@ miles driven repairs it.
 state box; it does NOT mean the vehicle will reach that box, which is a separate reachability
 question this study does not answer. The bound is sound with respect to the bilinear image
 patch between captured corners, with the cross term lifted over its exact product interval.
+
+## F33 -- CORRECTION to F32: counting proven regions is not a safety metric
+
+Zach questioned a table showing `S_mixed` with more proven-unsafe regions in CLEAR weather
+(2.0% of the lap) than `S_clear` has at NIGHT (1.1%) -- the trained-for condition of the good
+model looking worse than the failing condition of the bad one. He was right to. The counts
+are not comparable.
+
+"PROVEN UNSAFE" requires a strictly positive LOWER bound. That conflates how bad the policy
+is with how provable it is, and provability depends on bound width, which depends on network
+size (8/16/16 against 24/48/48). Measuring the response directly inside the same box, with
+no bounds involved:
+
+    model     condition   measured non-restoring   mean k_o    proven-unsafe
+    S_clear   clear            43.3%                -0.0996        0.0%
+    S_clear   night            77.7%                +0.0281        1.1%
+    S_mixed   clear            42.0%                -0.1188        2.0%
+    S_mixed   night            19.6%                -0.2051        0.1%
+
+The measured behaviour is exactly what the study predicts and what the driving tests say.
+`S_clear` COLLAPSES at night: 43% to 78% non-restoring, with the mean gain flipping POSITIVE
+-- anti-restoring on average across the box. `S_mixed` IMPROVES at night: 42% to 20%, gain
+nearly doubling. In clear weather the two are equivalent. `S_clear`/night is 77.7%
+non-restoring in reality and only 1.1% provable, because the bounds there are too wide to
+certify what is plainly happening.
+
+**What survives.** Each individual certificate is sound: a positive lower bound is a proof,
+so those regions really do lack any restoring action, and the reachability result stands
+(`S_mixed` holds 0.062 m where its defects begin at 0.30 m; 0 of 32 entered).
+
+**What does not.** F32's claim that verification "inverts the safety ranking" rested on
+comparing these counts and is WITHDRAWN. Ranked by measured behaviour, verification agrees
+with the driving tests about which model is better.
+
+**The methodological lesson.** A verifier reports what it can prove, not what is true. Any
+metric built on counting successful proofs silently rewards models whose bounds are loose.
+Cross-model and cross-condition comparisons must use a quantity that does not depend on
+provability -- the measured response, or a bound-width-normalised score -- and certificates
+should be used for what they are: sound evidence about a specific set, not a scoreboard.
