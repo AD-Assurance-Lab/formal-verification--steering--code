@@ -1148,3 +1148,43 @@ full-lap capture at each altitude, not a re-interpretation of the segment result
 **Cost of the fix.** A full lap at control-rate spacing is 1600 poses x 9 offsets x 5 yaws =
 72,000 frames, about 80 minutes of CARLA per condition. That is the price of a verification
 result that spans the same road as the driving test, and it is not optional.
+
+## F29 -- eastbound rejection confirmed, and the cause narrowed (F26 superseded in part)
+
+F26 rejected the eastbound captures on a validation failure. Zach pushed back: data must not
+be discarded because it does not fit, and the cause has to be found. Two candidate
+explanations were tested and both are refuted.
+
+**Not a sun-altitude confound.** The original eastbound capture was taken at
+SUN_ALTITUDE_OVERRIDE=75 and compared against a CLEAR (sun 90) drive, so cast shadows were
+confounded with a capture fault. Re-captured at true clear, matching the trace exactly:
+
+    direction   captured   driven   mean|diff|   sd cap   sd drv   verdict
+    eastbound     -0.166   +0.000       0.195    0.140    0.008    REJECTED
+    westbound     -0.035   -0.022       0.015    0.027    0.017    USABLE
+
+Eastbound is essentially unchanged (0.195 against 0.208). The confound was real but not the
+cause.
+
+**Not the sharpest corner, and not a position error.** The captured eastbound stretch is
+nearly straight (median curvature 0.001 deg/m, against 0.689 westbound); the sharpest bends
+are at 696 m east and 2234 m west, both outside it. And the manifest poses sit 0.055 m from
+the line the vehicle actually drives -- CLOSER than westbound's 0.585 m, which validates
+fine. So the vehicle is being placed in the right spot, at the right heading, and still
+renders a view that produces a -0.166 steering bias where the real vehicle steers 0.000.
+
+**Leading hypothesis: vehicle ATTITUDE under frozen physics.** `make_transform` sets YAW
+ONLY -- pitch and roll are forced to zero -- and z is the ride height settled at the SPAWN
+point, held fixed because physics is disabled before teleporting. The manifest records no z,
+pitch or roll, so none of it is restored. On a stretch whose elevation or camber differs from
+its spawn, the camera is then tilted or floating relative to the road surface, which is
+exactly what a constant steering bias with correct position and heading looks like.
+
+**Test, once CARLA is free:** re-enable physics and let the vehicle settle at each pose
+before capturing, then repeat gate A. If eastbound drops to the westbound figure, attitude
+was the cause and the same correction should be applied to every capture in the study --
+westbound may be passing gate A only because its stretch happens to match its spawn.
+
+Until then eastbound remains unusable and every verification number is westbound-only. That
+is a measured limitation with a named candidate cause, not an unexplained exclusion.
+
