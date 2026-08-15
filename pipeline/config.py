@@ -136,6 +136,20 @@ LOOKAHEAD_M = 5.0
 # ── Road geometry ────────────────────────────────────────────────────────────
 LANE_WIDTH_M = 3.500         # [MEASURED] constant on Town04 highway, both dirs
 
+# Where the measured route ends. NOT a round number for tidiness: the western traffic-light
+# intersection past this point is a real ODD boundary, not a route artifact (D-07 withdrawn,
+# D-09 resolved), the lane centreline is undefined through it, and every closed-loop and
+# verification number in the study excludes it. Was duplicated across seven scripts.
+LAP_END_M = 2861.0
+
+# ── The two verifiable students ──────────────────────────────────────────────
+# (name, checkpoint stem, conv channels, FC width). The mixed student is 3x the width of the
+# clear-only one -- width, not input resolution, is the verifier-friendly capacity lever,
+# because width adds parameters at fixed input-perturbation dimension. This registry was
+# copy-pasted into ~20 scripts in three mutually incompatible shapes.
+STUDENTS = (("S_clear", "S_clear_84x28", (8, 16, 16), 32),
+            ("S_mixed", "S_mixed_84x28_w3", (24, 48, 48), 96))
+
 # ── Spawn points (start just after the western intersection) ─────────────────
 SPAWN_EASTBOUND = {"x": -357.1, "y": 30.0, "z": 0.5, "yaw": 0.0}
 SPAWN_WESTBOUND = {"x": -396.8, "y": 12.8, "z": 0.5, "yaw": 180.0}
