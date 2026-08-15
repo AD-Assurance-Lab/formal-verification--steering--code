@@ -1740,3 +1740,55 @@ seconds.
 nominal ones were -- a gate-A equivalent at every grid point -- BEFORE any verdict is read
 from it. Until then its agreement on +30 and +60 is not evidence: those cells simply have an
 effect large enough to outrun the noise. That is the honest reading of tonight's result.
+
+## F41 -- the off-nominal captures fail a gate-A equivalent, by 4-5x the signal
+
+F40's addendum blamed the rollout's 36x over-prediction on the accuracy of the off-nominal
+surface. This measures it directly, on three cells, using the driven traces (which record
+x, y, yaw, steer and cte at every step) and including HEADING error, not just offset -- the
+first pass evaluated at zero heading and some of its error was that omission.
+
+Predicted steering at the vehicle's measured (offset, heading) vs what it actually commanded:
+
+    cell                |offset| band     n     mean |err|     p95
+    S_mixed  fog          0.00-0.15    1599       0.00469   0.01325
+    S_clear  night        0.00-0.15      10       0.03441   0.08430
+                          0.15-0.40       8       0.02925   0.07367
+                          0.40-0.80      10       0.03417   0.07664
+                          >1.50          37       0.38833   0.60782
+    S_clear  shadows      0.00-0.15     501       0.02101   0.06173
+                          0.15-0.40     122       0.02696   0.07734
+                          0.40-0.80      10       0.04832   0.11843
+                          >1.50         332       0.20916   0.32330
+
+Including heading barely moved `S_mixed` fog (0.00490 -> 0.00469), so the discrepancy is the
+surface, not the missing state.
+
+**Against the two references that matter.** Gate A on the NOMINAL captures achieved 0.0137
+against a 0.05 threshold. The disturbance driving term the rollout integrates is 0.0063 rad
+= 0.0052 in normalised units.
+
+    in-grid off-nominal error   0.021 - 0.048     (shadows bands have the sample size)
+    nominal capture error       0.0137
+    disturbance signal          0.0052
+
+The off-nominal captures are 1.5-3.5x less faithful than the nominal ones, and their error is
+**4-5x the disturbance effect** being integrated. Beyond the grid (>1.5 m) it reaches 0.21-0.39,
+as expected where `interp` clamps and there are no measurements at all.
+
+**Why this matters and why it went unnoticed.** A per-frame verdict compares one bound to one
+threshold, so a surface error of 0.02 is harmless. A rollout integrates that error every
+step, so within a few seconds it dominates whatever the disturbance did. The captures were
+built for the per-frame use and are adequate for it; they are not adequate for the loop, and
+nothing before tonight had tested them at off-nominal states.
+
+**The likely cause, and the next experiment.** Off-nominal frames come from STATIC placement:
+the vehicle is teleported to an offset and settled. A vehicle actually driving at that offset
+is steering to correct, and carries suspension pitch and roll from that steering which the
+static placement does not reproduce. Testing that means capturing frames from a vehicle
+DRIVEN through a known offset -- a perturbed closed-loop run -- and comparing against the
+static capture at the same pose. That is the gate the off-nominal grid has to pass before any
+rollout verdict can be believed.
+
+**Unchanged.** The canonical twelve stand at 12/12 under the sustained per-frame certificate.
+This finding constrains the loop-verification route, which was never part of that claim.
