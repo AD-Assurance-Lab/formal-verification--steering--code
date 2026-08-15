@@ -1843,3 +1843,148 @@ threshold and never accumulates this error, and its captures passed the gate bui
 use. The loop-verification route needs captures taken from a MOVING vehicle at a commanded
 offset, not from a teleported one. That is a capture-rig change, and it is the first thing to
 build if the loop route is pursued.
+
+## F43 -- the eastbound fog cell was certified against a baseline from another session
+
+Checking whether the committed 12/12 is reproducible turned up something else. Every cell
+takes its two endpoints from two different files,
+
+    clear      <- results/calibration/lap_{dir}_clear.npz
+    condition  <- results/calibration/lap_{dir}_{cond}.npz
+
+and those are separate CARLA sessions, recorded hours apart. The certificate interpolates
+between them, `x(s) = x_clear + s (x_cond - x_clear)`, so the clear endpoint defines the
+disturbance exactly as much as the condition endpoint does. Anything that drifted globally
+between the two sessions sits inside `(x_cond - x_clear)` and gets bounded as if it were
+weather.
+
+**`lap_eastbound_fog.npz` is the one capture that recorded its own clear frames**, at
+identical poses (max |dx| = |dy| = 0.0), which makes it the only cell where this can be
+measured rather than argued.
+
+    the two eastbound CLEAR captures, same poses, different sessions
+      signed mean   +0.04899        <- equals the abs mean, so it is a uniform offset
+      abs mean       0.04912
+      std            0.02076
+      present at 100% of poses, flat along the whole lap
+
+A uniform brightening of ~0.049 per pixel, not noise and not misalignment. Against fog's own
+disturbance of 0.0594 that is **83% of the signal**.
+
+**It inverts the sign of the fog disturbance.** Cross-direction consistency shows which
+captures are sound and which are not:
+
+    cond        W |mag|   E |mag|  rel gap    W signed   E signed
+    fog          0.0710    0.0421   40.7%     -0.0348    +0.0149   <- sign flip
+    night        0.1418    0.1424    0.4%     -0.0614    -0.0607
+    shadows      0.1305    0.1300    0.3%     -0.1288    -0.1284
+
+Night and shadows reproduce across directions to 0.3-0.4% in both magnitude and signed mean.
+Fog does not: the same preset reads as darkening westbound and BRIGHTENING eastbound, which
+is not something fog can do. Re-paired against its own clear, eastbound fog lands on the
+westbound value:
+
+    eastbound fog vs its INTERNAL clear   |mag| 0.0594   signed -0.0341
+    westbound fog                         |mag| 0.0710   signed -0.0348
+
+Signed means agree to 2%, and the sign flip is gone.
+
+**Effect on the certificate** (`scripts/baseline_pairing_probe.py`, eastbound fog, stride 8,
+NSPLIT 16 -- identical arithmetic to the certifier):
+
+    model     baseline    measured bias   x tol            bound         x tol     verdict
+    S_clear   external      -0.00644      -0.54   [-0.00984,+0.00348] [-0.82,+0.29] CERTIFIED
+    S_clear   internal      -0.00038      -0.03   [-0.00541,+0.00469] [-0.45,+0.39] CERTIFIED
+    S_mixed   external      +0.00220      +0.18   [-0.00259,+0.00512] [-0.22,+0.43] CERTIFIED
+    S_mixed   internal      +0.00077      +0.06   [-0.00206,+0.00306] [-0.17,+0.26] CERTIFIED
+
+**Both verdicts are unchanged, and the corrected numbers are better.** The measured bias falls
+17x for `S_clear` (-0.54x to -0.03x) and the bound tightens from -0.82x to -0.45x. -0.82x was
+the closest any CERTIFIED cell sat to the corridor edge in the published table, so correcting
+it widens the separation from the falsified cells rather than narrowing it: the worst
+certified cell becomes westbound `S_clear` fog at -0.75x against a worst falsified -2.26x, a
+genuine 3.0x gap where the paper had claimed 3x off a 2.76x ratio.
+
+**Scope: this is one cell, and the other eleven have positive evidence.** Only eastbound fog
+carries an internal baseline, so only it could be repaired directly. But the 0.3-0.4%
+cross-direction agreement for night and shadows is exactly what a drifting baseline would
+destroy, and westbound fog's signed mean matches the corrected eastbound value to 2%. The
+contamination is isolated to the cell that was captured last, on its own, to fill the gap
+F37 records ("saved under a filename the certifier did not look for").
+
+**Fixed** in `certify_sustained_bound.py`: a condition capture that recorded its own clear
+frames is now paired against those, and which baseline was used is printed and stored in
+`sustained_bound.json` (`"baseline": "paired" | "foreign"`) rather than chosen silently.
+
+**What this does NOT touch.** The verdict count is still 12/12 and every westbound number is
+unchanged -- the published Table I is westbound and is unaffected. What changed is one
+eastbound bound in Figure 5 and the "at most 0.82" claim in its caption.
+
+**The rule for future captures.** Record the clear baseline in the same session and the same
+file as the condition. It costs one extra condition slot per capture and it is the only thing
+that makes the disturbance a controlled comparison.
+
+## F44 -- there are two rendering regimes, and the disturbance is what survives both
+
+F43 left one thing unresolved: WHY do two nominally identical clear captures differ by a
+uniform +0.049? Two explanations had opposite consequences.
+
+  a. the capture protocol contaminates one condition slot -- e.g. the CARLA next-tick trap,
+     where the first condition renders under the weather the world had BEFORE `set_weather`.
+     If so the internal clear in `lap_eastbound_fog.npz` (clear is its FIRST condition) is
+     the WRONG one and F43's fix is backwards.
+  b. the absolute level drifts between sessions while the within-session difference holds.
+     If so the fix is right.
+
+Three 40-pose westbound captures on a freshly launched simulator settle it.
+
+    TODAY's clear against the ARCHIVED westbound clear
+      clear captured FIRST (with fog)     signed +0.04810   abs 0.04836
+      clear captured ALONE                signed +0.04814   abs 0.04840
+      clear captured SECOND (after fog)   signed +0.04817   abs 0.04843
+
+    TODAY's clear captures against EACH OTHER
+      first-slot vs alone                 signed -0.00004   abs 0.00008
+      second-slot vs alone                signed +0.00003   abs 0.00019
+      first-slot vs second-slot           signed -0.00007   abs 0.00012
+
+**Explanation (a) is dead.** Slot order changes the frames by 1e-4, which is 500x smaller
+than the effect. The capture script handles the next-tick ordering correctly; whatever else
+that trap has cost this project, it is not doing this.
+
+**Explanation (b) is confirmed, and the offset is a session property.** All three of today's
+captures sit +0.048 above the archive by the same amount, whether or not another condition
+was present. Two regimes exist; everything captured inside one session agrees with itself.
+
+**And the disturbance is preserved across the regimes.** This is what makes the study
+survivable:
+
+    fog disturbance computed WITHIN a file
+      today, clear first                  signed -0.03219   abs 0.06150
+      today, fog first                    signed -0.03215   abs 0.06150
+      archive, westbound (cross-file)     signed -0.03480   abs 0.07100
+      archive, eastbound re-paired (F43)  signed -0.03410   abs 0.05940
+
+Four measurements of the same physical disturbance, from three sessions and two regimes,
+agreeing to within 8%. The absolute level is what drifts; `x_cond - x_clear` is not.
+
+**Consequences, in order of importance.**
+
+1. **F43's fix is right, for the reason F43 gave.** Pair within the session and the regime
+   cancels. The eleven cells that pair across files are sound whenever both files sit in the
+   same regime, which is what the 0.3-0.4% cross-direction agreement for night and shadows
+   already indicated, and what westbound fog's -0.0348 against today's -0.0322 confirms
+   directly. Eastbound fog is the one cell that straddled the two.
+
+2. **Do NOT re-capture the study on today's simulator to "fix" this.** It would move all
+   twelve cells into the new regime while the closed-loop runs they are compared against
+   were driven in the old one, and gate A -- captured steering against driven steering,
+   0.0137 -- was measured in the old regime too. The regime is not known to be harmless to
+   that check; it is only known to cancel in the disturbance. Re-capturing is a decision
+   about the whole study's data, not a bug fix, and it needs the driving re-run with it.
+
+3. **The cause is not identified.** The candidate is the render path: this session cannot
+   open a window (Vulkan surface creation fails; only `-RenderOffScreen` starts), so today's
+   frames are offscreen-rendered while the archive was captured windowed. That is a
+   PLAUSIBLE cause and nothing here tests it -- it cannot be tested until windowed mode
+   works again on this machine. Recorded as the leading suspect, not as the answer.

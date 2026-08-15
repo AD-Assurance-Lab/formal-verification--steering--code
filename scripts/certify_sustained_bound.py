@@ -73,6 +73,28 @@ def nominal(path, cond):
     return fr[:int(np.searchsorted(d, 2861.0))]
 
 
+def baseline_for(cond_path, fallback):
+    """The s = 0 endpoint, preferring a clear baseline from the SAME capture session.
+
+    x_p(s) interpolates between clear and the condition, so the clear endpoint defines
+    the disturbance just as much as the condition endpoint does. Taking the two from
+    different CARLA sessions puts whatever drifted between them -- sun altitude,
+    exposure, a weather field the previous run left set -- inside (x_cond - x_clear),
+    where the certificate bounds it as if it were weather.
+
+    Measured, on the one capture that carries both (F43): the two eastbound `clear`
+    captures differ by a uniform +0.049 per pixel at identical poses, which is 83% of
+    the fog disturbance itself and inverts its sign (fog reads +0.015 against the
+    foreign baseline, -0.034 against its own, versus -0.035 westbound). Certifying
+    eastbound fog against its own clear moves S_clear from -0.82x to -0.45x.
+
+    So: if the condition capture recorded its own `clear`, that is the baseline.
+    Which one was used is printed, never chosen silently.
+    """
+    own = nominal(cond_path, "clear")
+    return (own, "paired") if own is not None else (fallback, "foreign")
+
+
 def main():
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     tol = C.CLOSED_LOOP_TOLERANCE
@@ -80,30 +102,39 @@ def main():
     stride = int(sys.argv[1]) if len(sys.argv) > 1 else 8
     print(f"\nSUSTAINED-BIAS BOUND over s in [0,1]   tolerance {tol:.4f}")
     print(f"  every intensity in the declared interval, every pose (stride {stride})\n")
-    print(f"  {'dir':10s} {'model':9s} {'cond':9s} {'bias bound':>22s} {'x tol':>12s}"
-          f"  verdict     drive")
+    print(f"  {'dir':10s} {'model':9s} {'cond':9s} {'base':8s} {'bias bound':>22s}"
+          f" {'x tol':>12s}  verdict     drive")
     out, ok, n = {}, 0, 0
     for direction in ("westbound", "eastbound"):
         base = cal / f"lap_{direction}_clear.npz"
         if not base.exists():
             continue
-        clr = nominal(base, "clear")
+        fallback = nominal(base, "clear")
+        # Baseline per CONDITION, not per direction: a capture that recorded its own
+        # clear frames is paired against those. See baseline_for.
+        bl = {}
+        for cond in ("fog", "night", "shadows"):
+            p = cal / f"lap_{direction}_{cond}.npz"
+            if p.exists():
+                bl[cond] = baseline_for(p, fallback)
         for nm, ck, ch, fc in STUDENTS:
             net = StudentNet(28, 84, channels=ch, fc=fc).to(dev)
             net.load_state_dict(torch.load(f"{C.CHECKPOINT_DIR}/{ck}.pth",
-                                           map_location=dev))
+                                           map_location=dev, weights_only=True))
             net.eval()
             bd = cc.Bounder(1, net, dev, 28, 84, method="CROWN")
-            with torch.no_grad():
-                sc = net(torch.from_numpy(clr[::stride]).to(dev)).cpu().numpy().reshape(-1)
             for cond in ("fog", "night", "shadows"):
                 p = cal / f"lap_{direction}_{cond}.npz"
                 if not p.exists():
                     print(f"  {direction:10s} {nm:9s} {cond:9s} {'capture missing':>22s}")
                     continue
+                clr, origin = bl[cond]
                 dis = nominal(p, cond)
                 if dis is None or len(dis) != len(clr):
                     continue
+                with torch.no_grad():
+                    sc = net(torch.from_numpy(clr[::stride]).to(dev)
+                             ).cpu().numpy().reshape(-1)
                 los, his = [], []
                 for i, k in enumerate(range(0, len(clr), stride)):
                     x0 = clr[k].reshape(-1).astype(np.float32)
@@ -129,8 +160,9 @@ def main():
                 match = (v == "CERTIFIED") == (t == "PASS")
                 ok += match
                 n += 1
-                out[f"{direction}/{nm}/{cond}"] = dict(lo=blo, hi=bhi, verdict=v, truth=t)
-                print(f"  {direction:10s} {nm:9s} {cond:9s} "
+                out[f"{direction}/{nm}/{cond}"] = dict(lo=blo, hi=bhi, verdict=v,
+                                                      truth=t, baseline=origin)
+                print(f"  {direction:10s} {nm:9s} {cond:9s} {origin:8s} "
                       f"[{blo:+.5f},{bhi:+.5f}] [{blo/tol:+5.2f},{bhi/tol:+5.2f}]"
                       f"  {v:12s} {t:5s} {'agree' if match else '-'}", flush=True)
     print(f"\n  decisive and correct: {ok}/{n}")

@@ -817,3 +817,76 @@ honest framing is that fog certificates are conditional on a calibration measure
 dataset pairs and validated by D3 — not on an assumption-free bound. If D-04's root cause
 is ever fixed and the static sweep agrees, the interval can come back and the certificates
 strengthen.
+
+---
+
+## D-11 — the eastbound fog certificate used a clear baseline from a different session
+
+Recorded 2026-08-15. **This changes a verification input, so the reasoning is on the record
+before the cells are re-run.** It was found while checking whether the committed 12/12 is
+reproducible, not by a ledger contradiction — the ledger cannot see it, because the affected
+quantity is an input to the certificate rather than one of its verdicts.
+
+### The defect
+
+`certify_sustained_bound.py` builds the disturbance from two files:
+
+    clear      <- lap_{dir}_clear.npz
+    condition  <- lap_{dir}_{cond}.npz
+
+The certificate interpolates between them, so the clear endpoint is half the definition of
+the disturbance. Those two files are different CARLA sessions, hours apart, and nothing in
+the pipeline required them to agree.
+
+### The measurement
+
+`lap_eastbound_fog.npz` is the only capture that recorded its own clear frames. Against the
+clear capture the certifier actually used, at identical poses (max |dx| = |dy| = 0.0):
+
+    signed mean +0.04899, abs mean 0.04912  ->  a uniform brightening, not noise
+    83% of the fog disturbance it is supposed to be certifying against
+
+### Candidate causes considered
+
+| candidate | ruled out? | why |
+|---|---|---|
+| pose misalignment | **yes** | max |dx| = |dy| = 0.0; the two captures are pose-identical |
+| random render noise | **yes** | signed mean equals abs mean, present at 100% of poses, flat along the lap — a DC offset, not noise |
+| a real fog property | **yes** | it is measured between two CLEAR captures; no fog is involved on either side |
+| coarse quantisation | **yes** | std is 0.021 against a 0.049 mean; the offset dominates its own spread |
+| affects all conditions equally | **no, and this is the useful part** | night and shadows reproduce across directions to 0.3-0.4%; fog differs by 41% and FLIPS SIGN (-0.0348 W, +0.0149 E). Re-paired against its own clear, eastbound fog reads -0.0341 against westbound's -0.0348 |
+
+### What it comes down to
+
+The same fog preset cannot darken the road in one direction and brighten it in the other.
+One capture is inconsistent with the rest and it is the one whose baseline came from a
+different session — the cell F37 records as added late, "saved under a filename the
+certifier did not look for".
+
+### Effect on the verdicts, measured before deciding anything
+
+    model     baseline    bound            x tol           verdict
+    S_clear   foreign     [-0.00984,+0.00348] [-0.82,+0.29] CERTIFIED
+    S_clear   paired      [-0.00541,+0.00469] [-0.45,+0.39] CERTIFIED
+    S_mixed   foreign     [-0.00259,+0.00512] [-0.22,+0.43] CERTIFIED
+    S_mixed   paired      [-0.00206,+0.00306] [-0.17,+0.26] CERTIFIED
+
+**No verdict changes, and the study is not better off for it having been wrong.** The
+corrected bound is tighter, so the correction widens the gap between certified and falsified
+cells rather than closing it. Had it gone the other way this would be a retraction.
+
+### The fix, and why it is not tuning
+
+A condition capture that recorded its own clear frames is paired against those; otherwise
+the dedicated clear capture is used, and which one was chosen is printed and stored in
+`sustained_bound.json`. This is not a parameter chosen to move a verdict — it is a rule that
+says a controlled comparison must vary one thing, and it is applied to every cell
+identically, including the eleven where it changes nothing.
+
+### What is NOT fixed
+
+Ten of the remaining eleven cells still take their baseline from a different session, because
+they have no internal one to use. The evidence they are sound is the 0.3-0.4% cross-direction
+agreement above, which a drifting baseline would have destroyed — that is positive evidence,
+not proof. **Future captures must record the clear baseline in the same file as the
+condition.** Until they do, this failure mode is undetectable in any cell but eastbound fog.

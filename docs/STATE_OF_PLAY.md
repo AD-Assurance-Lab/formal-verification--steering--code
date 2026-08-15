@@ -5,7 +5,7 @@ withdrawn or corrected by later ones. Reading it cold gives a misleading picture
 is the single place that says what is currently believed, what is dead, and what is open.
 It is updated in place; findings are the running log, this is the current position.
 
-Last updated 2026-08-15 00:00.
+Last updated 2026-08-15 12:30.
 
 
 ---
@@ -16,6 +16,12 @@ Last updated 2026-08-15 00:00.
 the bounds are sound, but a committed blind test refuted the criterion at an
 unseen operating point, in the unsafe direction. The correct scope is
 "agrees where failures are SUSTAINED", not "predicts closed-loop outcomes".
+
+**And read 0d: one of the twelve bounds below was computed against the wrong
+baseline.** The verdict count is unaffected (12/12 either way) and every
+westbound number here is unchanged, but eastbound fog moves from -0.82x to
+-0.45x. The table in this section is the westbound-plus-eastbound set as
+originally computed; 0d gives the correction.
 
     for EVERY intensity s in [0,1], at EVERY pose on a full lap (intersection excluded):
         persistent bias = mean( steer(x(s)) - steer(x(0)) )
