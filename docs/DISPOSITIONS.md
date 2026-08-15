@@ -890,3 +890,61 @@ they have no internal one to use. The evidence they are sound is the 0.3-0.4% cr
 agreement above, which a drifting baseline would have destroyed — that is positive evidence,
 not proof. **Future captures must record the clear baseline in the same file as the
 condition.** Until they do, this failure mode is undetectable in any cell but eastbound fog.
+
+---
+
+## D-12 — the ledger's `verify` cells belong to a RETIRED instrument, and the headline is not in the ledger at all
+
+Recorded 2026-08-15. This disposes of the two standing `verify` contradictions
+(`night/S_mixed`, `fog/S_mixed`), which have sat red without a written cause while D-01 and
+D-05 covered the two closed-loop ones.
+
+### What the ledger is actually holding
+
+Every non-vacuous `verify` cell carries `median_certified` / `median_falsified` /
+`cell_budget` / `fog_k_interval` — the 12-frame-median, per-frame-**fraction** instrument.
+None of them carries a sustained-bias bound. Checked all eight:
+
+    clear   S_clear   CERTIFIED   vacuous by construction
+    clear   S_mixed   CERTIFIED   vacuous by construction
+    fog     S_clear   FALSIFIED   12-frame median
+    fog     S_mixed   FALSIFIED   12-frame median   <- contradicts pre-registered CERTIFIED
+    night   S_clear   FALSIFIED   12-frame median
+    night   S_mixed   FALSIFIED   12-frame median   <- contradicts pre-registered CERTIFIED
+    shadows S_clear   FALSIFIED   12-frame median
+    shadows S_mixed   CERTIFIED   12-frame median
+
+### Why they are red, and why that is correct
+
+That instrument is retired. It counts the fraction of a disturbance axis it can prove safe,
+which F33 established measures **provability rather than severity** — provability depends on
+bound width, which depends on network size, and `S_mixed` is 3x the width of `S_clear`. Its
+verdicts are therefore expected to be wrong in exactly the direction observed: it falsifies
+the wider, safer model. Against ground truth it scores 4/8, and both cells the ledger flags
+are cells where it disagrees with driving and the sustained instrument agrees with driving.
+
+**The ledger is not malfunctioning here. It is correctly reporting that a superseded
+instrument disagreed with the study's expectations.**
+
+### The real gap
+
+The instrument that produces the paper's result — the sustained-bias bound of F34-F37 —
+**has no ledger cell type at all**. Its twelve results live in
+`results/calibration/sustained_bound.json`, which `study.ledger` never reads. So the
+executable smell test that `CLAUDE.md` says to run before interpreting any result does not
+cover the headline claim. That is how F43's baseline defect survived: the ledger could not
+have caught it, because it was never looking.
+
+### What was deliberately NOT done
+
+**The verify cells were not overwritten with the sustained verdicts.** Writing them now would
+place a verification verdict in git AFTER the closed-loop run it is supposed to have
+predicted, which is precisely what `python -m study.ledger --check-order` exists to detect.
+The blind protocol is worth more than a green ledger.
+
+### What should be done instead
+
+Give the ledger a THIRD instrument column for the sustained certificate, populated going
+forward, with the existing twelve entered as what they honestly are — in-sample, computed
+after the driving, and marked as such. The blind record then stays intact and the smell test
+starts covering the claim the paper actually makes.

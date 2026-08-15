@@ -159,6 +159,44 @@ loop route needs frames captured from a MOVING vehicle held at a commanded offse
 capture-rig change and the first thing to build if it is pursued.
 
 
+## 0d. THE CORRECTED TWELVE (F43, D-11) -- 12/12, and one bound was wrong
+
+Re-run 2026-08-15 with the baseline defect fixed. **Ten of the twelve cells reproduce the
+committed record to within 2e-7 of tolerance** -- i.e. bit-for-bit up to GPU float noise --
+which is the direct answer to "is the 12/12 stale?". It is not. Two cells changed, both
+eastbound fog, both because they had been certified against a clear baseline from a
+different capture session.
+
+    dir    model     cond      baseline   bias bound (x tol)   verdict      closed loop
+    west   S_clear   fog       foreign    [-0.75, +0.29]       CERTIFIED    PASS  0/10
+    west   S_clear   night     foreign    [-6.96, +0.93]       FALSIFIED    FAIL 10/10
+    west   S_clear   shadows   foreign    [-2.26, +0.64]       FALSIFIED    FAIL 10/10
+    west   S_mixed   fog       foreign    [-0.25, +0.38]       CERTIFIED    PASS  0/10
+    west   S_mixed   night     foreign    [-0.61, +0.26]       CERTIFIED    PASS  0/10
+    west   S_mixed   shadows   foreign    [-0.29, +0.31]       CERTIFIED    PASS  0/10
+    east   S_clear   fog       PAIRED     [-0.45, +0.39]       CERTIFIED    PASS  0/10   was [-0.82,+0.29]
+    east   S_clear   night     foreign    [-5.99, +1.28]       FALSIFIED    FAIL 10/10
+    east   S_clear   shadows   foreign    [-2.40, +0.65]       FALSIFIED    FAIL 10/10
+    east   S_mixed   fog       PAIRED     [-0.17, +0.26]       CERTIFIED    PASS  0/10   was [-0.22,+0.43]
+    east   S_mixed   night     foreign    [-0.76, +0.31]       CERTIFIED    PASS  0/10
+    east   S_mixed   shadows   foreign    [-0.25, +0.39]       CERTIFIED    PASS  0/10
+
+    12/12 -- every verdict identical to the committed record
+
+**The correction improves the result.** The worst certified cell was eastbound `S_clear` fog
+at 0.82x; it is now eastbound `S_mixed` night at 0.76x. Against a least-escaping falsified
+cell of 2.26x the separation goes from 2.76x to **2.99x**, so the paper's "3x gap" is now
+very nearly exact rather than a rounding.
+
+**`baseline` column.** `paired` means the clear endpoint came from the same capture file, and
+therefore the same session, as the condition. `foreign` means it came from
+`lap_{dir}_clear.npz`. Ten cells are still `foreign` because their captures have no internal
+clear to use; F44 gives the evidence that they are nonetheless sound, and it is positive
+evidence rather than proof. **New captures must record clear in the same file as the
+condition.**
+
+---
+
 ## 1. What is solid
 
 ### Closed-loop ground truth (complete)

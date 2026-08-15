@@ -1,74 +1,86 @@
 {
   "westbound/S_clear/fog": {
-    "lo": -0.008985728025436401,
-    "hi": 0.003461548127233982,
+    "lo": -0.008985730819404125,
+    "hi": 0.0034615499898791313,
     "verdict": "CERTIFIED",
-    "truth": "PASS"
+    "truth": "PASS",
+    "baseline": "foreign"
   },
   "westbound/S_clear/night": {
     "lo": -0.08364612609148026,
-    "hi": 0.01120341569185257,
+    "hi": 0.011203412897884846,
     "verdict": "FALSIFIED",
-    "truth": "FAIL"
+    "truth": "FAIL",
+    "baseline": "foreign"
   },
   "westbound/S_clear/shadows": {
-    "lo": -0.027115369215607643,
-    "hi": 0.00764935277402401,
+    "lo": -0.027115367352962494,
+    "hi": 0.007649353705346584,
     "verdict": "FALSIFIED",
-    "truth": "FAIL"
+    "truth": "FAIL",
+    "baseline": "foreign"
   },
   "westbound/S_mixed/fog": {
-    "lo": -0.003053129417821765,
-    "hi": 0.004622006323188543,
+    "lo": -0.0030531310476362705,
+    "hi": 0.004622005391865969,
     "verdict": "CERTIFIED",
-    "truth": "PASS"
+    "truth": "PASS",
+    "baseline": "foreign"
   },
   "westbound/S_mixed/night": {
-    "lo": -0.007345561403781176,
+    "lo": -0.007345559541136026,
     "hi": 0.0031423235777765512,
     "verdict": "CERTIFIED",
-    "truth": "PASS"
+    "truth": "PASS",
+    "baseline": "foreign"
   },
   "westbound/S_mixed/shadows": {
-    "lo": -0.0034534663427621126,
+    "lo": -0.0034534651786088943,
     "hi": 0.0037823510356247425,
     "verdict": "CERTIFIED",
-    "truth": "PASS"
+    "truth": "PASS",
+    "baseline": "foreign"
   },
   "eastbound/S_clear/fog": {
-    "lo": -0.009835386648774147,
-    "hi": 0.003483787178993225,
+    "lo": -0.005411420948803425,
+    "hi": 0.004686873406171799,
     "verdict": "CERTIFIED",
-    "truth": "PASS"
+    "truth": "PASS",
+    "baseline": "paired"
   },
   "eastbound/S_clear/night": {
     "lo": -0.07198227196931839,
-    "hi": 0.01535764243453741,
+    "hi": 0.01535764429718256,
     "verdict": "FALSIFIED",
-    "truth": "FAIL"
+    "truth": "FAIL",
+    "baseline": "foreign"
   },
   "eastbound/S_clear/shadows": {
-    "lo": -0.02878013625741005,
+    "lo": -0.028780139982700348,
     "hi": 0.007836730219423771,
     "verdict": "FALSIFIED",
-    "truth": "FAIL"
+    "truth": "FAIL",
+    "baseline": "foreign"
   },
   "eastbound/S_mixed/fog": {
-    "lo": -0.0025942290667444468,
-    "hi": 0.005120493937283754,
+    "lo": -0.00205831415951252,
+    "hi": 0.0030630643013864756,
     "verdict": "CERTIFIED",
-    "truth": "PASS"
+    "truth": "PASS",
+    "baseline": "paired"
   },
   "eastbound/S_mixed/night": {
-    "lo": -0.009077013470232487,
-    "hi": 0.003666400210931897,
+    "lo": -0.009077012538909912,
+    "hi": 0.00366639974527061,
     "verdict": "CERTIFIED",
-    "truth": "PASS"
+    "truth": "PASS",
+    "baseline": "foreign"
   },
   "eastbound/S_mixed/shadows": {
     "lo": -0.0030320570804178715,
-    "hi": 0.004644559230655432,
+    "hi": 0.004644558299332857,
     "verdict": "CERTIFIED",
-    "truth": "PASS"
+    "truth": "PASS",
+    "baseline": "foreign"
   }
 }
