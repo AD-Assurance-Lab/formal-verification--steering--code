@@ -67,3 +67,43 @@ exactly where S_clear does not", which is a discrimination, not a base rate.
 Three prior blind predictions in this study failed after strong in-sample scores
 (P-03 14/14 -> 2/6, P-06 7/8 -> 3/7, P-07 8/8 -> 6/10). That record is why this is worth
 running even at four cells.
+
+---
+
+## OUTCOME (2026-08-14 20:10): P-08b REFUTED, 2/4, in the unsafe direction
+
+    blind cell               certificate            driving        result
+    S_mixed +45 westbound    CERTIFIED [-0.37,+0.16]  PASS  0/10    correct
+    S_mixed +45 eastbound    CERTIFIED [-0.19,+0.23]  PASS  0/10    correct
+    S_mixed +22 westbound    CERTIFIED [-0.27,+0.31]  FAIL 10/10    REFUTED
+    S_mixed +22 eastbound    CERTIFIED [-0.15,+0.41]  FAIL 10/10    REFUTED
+
+`S_mixed` at +22 departs on EVERY one of ten runs, max |CTE| 2.38-5.11 ft against a 2.19 ft
+budget, in both directions. The certificate placed it at 0.31x and 0.41x of tolerance --
+not marginal, not a boundary case a tighter bound would fix. A model declared safe leaves
+its lane, reliably. This is the unsafe direction, named in advance as the most serious
+outcome, and it refutes the certificate as it stands.
+
+**The mechanism, from the data rather than reconstructed.** `frac_over_budget` is 0.2-0.9%:
+the departures are BRIEF excursions of a few metres on a 2.86 km lap, not sustained drift.
+The criterion averages the steering bias over the whole lap, so a large deviation lasting
+ten metres is diluted by roughly 1,590 poses where nothing is wrong.
+
+That is the same blind spot as F30, mirrored. The MAXIMUM could not see persistence, so it
+falsified everything. The MEAN cannot see LOCALISATION, so it certifies a model that departs
+briefly but repeatedly. Neither statistic alone spans both failure modes, and picking between
+them by in-sample score is exactly how this study arrived at a criterion that scored 10/10
+and then failed on the first genuinely unseen cell.
+
+**What survives.** The four canonical conditions still agree 10/10, and that result is not
+withdrawn -- but it is now known to be a statement about conditions whose failures are
+SUSTAINED. `S_clear` under night drifts continuously; `S_mixed` at +22 does not. The
+certificate discriminates the first kind and is blind to the second.
+
+**What does not.** Any claim that the certificate predicts closed-loop outcomes at unseen
+operating points. It does not. Two of four blind cells, both unsafe-direction errors.
+
+**The in-sample record, for the fourth time.** P-03 14/14 -> 2/6. P-06 7/8 -> 3/7.
+P-07 8/8 -> 6/10. P-08b 10/10 -> 2/4. Every criterion this study has produced scored well
+in-sample and failed out-of-sample. That pattern is now the most robust finding in the
+project and belongs in the writeup ahead of any particular criterion.
