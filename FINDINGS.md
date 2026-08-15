@@ -1522,3 +1522,70 @@ disturbance interval reproduces closed-loop outcomes for failures that are susta
 does not detect localised ones, and a committed blind test showed that in the unsafe
 direction. Both halves belong in the writeup; the second is what tells a reader where the
 method's edge is.
+
+## F38 -- windowing and a feedback-derived tolerance: 7/9, and +22 sits at 0.84-0.91
+
+Zach asked whether there is a middle ground between the maximum (blind to persistence) and
+the lap mean (blind to localisation), and whether the threshold could be retuned. Both
+questions turned out to be answerable without new data.
+
+**A windowed mean is the statistic the tolerance actually describes.**
+CLOSED_LOOP_TOLERANCE is defined for an error SUSTAINED over T_CLOSED_LOOP_S = 1.85 s, which
+at 8.94 m/s is 16.5 m -- a window, not a lap. Sweeping window length over the nine cells:
+
+    window   poses  max PASS  min FAIL  ratio
+      8.9m       5     10.71     12.81   1.20
+     16.1m       9      6.35      7.27   1.15
+     26.8m      15      3.98      4.36   1.10
+     44.7m      25      2.70      2.77   1.03
+     71.5m      40      2.30      2.11   0.92   <- ordering inverts
+    357.6m     200      0.96      0.77   0.81
+   2843.1m    1590      0.46      0.10   0.22   <- the lap mean
+
+At 9-45 m windows the ordering is CORRECT for all nine cells, including the blind +22 cell
+the lap mean certified. But every value sits 2.7-13x above a threshold of 1.0, so the fixed
+tolerance falsifies everything. Ordering right, scale wrong.
+
+**The scale error has a physical cause, and correcting it is a derivation not a fit.**
+The tolerance assumes a steering deviation integrates into lateral motion with NO corrective
+response. The policy corrects continuously, so the admissible bias is what its own restoring
+gain can absorb: tolerance = |k_o| * CTE_BUDGET_M, which is POLICY-SPECIFIC. With k_o
+measured from the (offset x heading) captures:
+
+    S_clear   k_o 0.2556  ->  tol 0.1707   14.2x the open-loop value
+    S_mixed   k_o 0.1550  ->  tol 0.1035    8.6x
+
+That recovers the ~10x gap from measured quantities, with no parameter fitted to outcomes.
+
+**Result: 7/9, and the two misses are marginal rather than gross.**
+
+    model     cell      windowed / derived tol   verdict   drive
+    S_clear   fog                        0.26     PASS     PASS
+    S_clear   night                      1.61     FAIL     FAIL
+    S_clear   shadows                    1.22     FAIL     FAIL
+    S_clear   sun+22                     0.91     PASS     FAIL   <- miss
+    S_mixed   fog                        0.51     PASS     PASS
+    S_mixed   night                      0.67     PASS     PASS
+    S_mixed   shadows                    0.44     PASS     PASS
+    S_mixed   sun+45                     0.74     PASS     PASS
+    S_mixed   sun+22                     0.84     PASS     FAIL   <- miss
+
+Under the lap mean these cells were certified at 0.24x -- deeply, wrongly safe. Three
+independent corrections (windowing, feedback-derived tolerance, per-policy gain) each moved
+them toward the boundary without crossing it: 0.84 and 0.91.
+
+**What that pattern suggests, stated as a hypothesis and not a result.** Every correction
+that improves the other seven leaves +22 just under the line. That is more consistent with a
+systematic factor of ~1.2 than with a wrong statistic -- but with only TWO failing cells of
+this type, it cannot be distinguished from coincidence. Resolving it needs more localised
+failures, which means more sun angles, split IN ADVANCE into a calibration set that fixes
+the window and a held-out set not examined until scoring. P-08 was compromised precisely by
+choosing operating points whose outcomes were already known.
+
+**Rain under this technique.** The measured-endpoint approach needs a rendered endpoint,
+which rain supplies, but rain is STOCHASTIC: two renders at one pose differ, so x_rain is not
+a point. The extension is to capture N realisations and verify over the CONVEX HULL of
+{clear, rain_1, ..., rain_N} -- an N-dimensional input set alpha-CROWN handles directly, and
+a richer family than a single line. Sound over the sampled realisations, not over the
+distribution. Unchanged and out of reach: rain lowers tire friction, which a
+perception-to-steering verifier structurally cannot observe.
