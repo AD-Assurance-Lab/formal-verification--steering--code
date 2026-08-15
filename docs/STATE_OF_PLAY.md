@@ -5,7 +5,7 @@ withdrawn or corrected by later ones. Reading it cold gives a misleading picture
 is the single place that says what is currently believed, what is dead, and what is open.
 It is updated in place; findings are the running log, this is the current position.
 
-Last updated 2026-08-14 20:15.
+Last updated 2026-08-15 00:00.
 
 
 ---
@@ -91,6 +91,50 @@ Every criterion produced here scored well in-sample and failed out-of-sample. Th
 is more durable than any individual criterion and belongs in the writeup ahead of them.
 
 ---
+
+---
+
+## 0c. P-09 SETTLED IT: the localised mode needs a different instrument (F39, F40)
+
+P-08b left one live hypothesis: that the misses were a systematic ~1.2x scale error rather
+than a wrong statistic. P-09 tested it with the split declared before capture and the
+held-out verdicts committed before driving (`070a2b2`).
+
+    cell   role          certificate   x tol (W/E)    driven        outcome
+    +60    calibration   PASS          0.72 / 0.91    PASS  0/10    agree
+    +30    calibration   PASS          0.73 / 0.89    FAIL 10/10    MISS
+    +37    held out      PASS          0.73 / 0.93    FAIL  3/10    MISS
+    +15    held out      PASS          0.68 / 0.87    PASS  0/10    agree
+
+    2/4 -- the same score as P-08b, on the same mode
+
+**Not a scale factor.** All four cells sit in a 0.68-0.93 band while driving spans 0/10 to
+10/10. Swept from 5.4 m to the full lap, the PASSING cell's statistic exceeds the FAILING
+cell's at every window length. No threshold and no window orders them; nothing was fitted.
+
+**Why: the nominal path does not contain the failure.** At the pose where +30 reproducibly
+departs, the windowed deviation ranks 1064th of 1599 poses, and both cells' lap maxima sit
+at the same unrelated pose 578. Every criterion built from centreline steering is a function
+of a measurement in which this failure is absent -- which is the whole explanation for eight
+criteria landing at chance on it.
+
+**The mechanism is visible off-nominal, and the direction is right.** Rolling the deviation
+dynamics over the measured (offset x heading) grid reproduces both sun cells from captured
+frames alone: +30 diverges to 11.4 m (measured departure 8.8-13.2 m), +60 stays at 0.24 m.
+It also locates the cause 150 m UPSTREAM of the symptom: the restoring gain inverts sign at
+y = 54..56 for +30 while clear and +60 keep correcting.
+
+**But the rollout is not yet a criterion (F40).** Against the canonical cells it scores 2/6
+with four false FAILs, and both available excuses are ruled out by measurement: `S_mixed` fog
+breaches the budget at 1.010 m while INSIDE the +-1.5 m grid, and an 81 m window does not
+help. The deviation model over-predicts drift by ~2x, so its verdicts are dominated by model
+error rather than by the disturbance.
+
+**Consequence for the write-up.** The paper claims the sustained certificate (12/12) and
+reports the localised mode as a MEASURED negative result: the obvious repair does not work at
+any window length, and the failure leaves no nominal-path signature. That is a bound on where
+the certificate applies, stated from evidence.
+
 
 ## 1. What is solid
 
