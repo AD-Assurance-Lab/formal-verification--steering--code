@@ -5,12 +5,17 @@ withdrawn or corrected by later ones. Reading it cold gives a misleading picture
 is the single place that says what is currently believed, what is dead, and what is open.
 It is updated in place; findings are the running log, this is the current position.
 
-Last updated 2026-08-14 16:20.
+Last updated 2026-08-14 20:15.
 
 
 ---
 
-## 0. HEADLINE: step 4 is achieved in-sample (F34-F36)
+## 0. HEADLINE: a certificate that works on ONE CLASS of failure (F34-F37)
+
+**Read section 0b before quoting anything here.** The 10/10 below is real and
+the bounds are sound, but a committed blind test refuted the criterion at an
+unseen operating point, in the unsafe direction. The correct scope is
+"agrees where failures are SUSTAINED", not "predicts closed-loop outcomes".
 
     for EVERY intensity s in [0,1], at EVERY pose on a full lap (intersection excluded):
         persistent bias = mean( steer(x(s)) - steer(x(0)) )
@@ -47,10 +52,43 @@ threshold describes, and it separates by 3x.
     splits    4        8       16       32
     x tol   -1.06    -0.70    -0.61    -0.59      (measured worst -0.33)
 
-**Two gates remain.** The result is IN-SAMPLE, and this study's record is that in-sample
-scores mean nothing here (P-03 14/14 -> 2/6; P-06 7/8 -> 3/7; P-07 8/8 -> 6/10). The blind
-protocol is fixed in `scripts/blind_protocol.md` and needs ~20 h of simulator time. And
-eastbound fog was never captured, so two cells are missing.
+---
+
+## 0b. THE BLIND TEST REFUTED IT (P-08b, 2/4, unsafe direction)
+
+    blind cell               certificate            driving       result
+    S_mixed +45 westbound    CERTIFIED [-0.37,+0.16]  PASS  0/10   correct
+    S_mixed +45 eastbound    CERTIFIED [-0.19,+0.23]  PASS  0/10   correct
+    S_mixed +22 westbound    CERTIFIED [-0.27,+0.31]  FAIL 10/10   REFUTED
+    S_mixed +22 eastbound    CERTIFIED [-0.15,+0.41]  FAIL 10/10   REFUTED
+
+`S_mixed` at +22 departs on EVERY one of ten runs, both directions, max |CTE| 2.38-5.11 ft
+against a 2.19 ft budget -- while the certificate placed it at 0.31x and 0.41x of tolerance.
+Not marginal. A model declared safe leaves its lane, reliably.
+
+**Mechanism, from the data.** `frac_over_budget` is 0.2-0.9%: brief excursions of a few
+metres on a 2.86 km lap. The criterion averages the steering bias over the WHOLE lap, so a
+large deviation lasting ten metres is diluted by ~1,590 clean poses.
+
+This is F30 mirrored. The MAXIMUM cannot see persistence, so it falsifies everything. The
+MEAN cannot see LOCALISATION, so it certifies a model that departs briefly but repeatedly.
+Neither statistic spans both failure modes, and choosing between them by in-sample score is
+how this study reached a criterion that scored 10/10 and then failed the first unseen cell.
+
+**Why the canonical 10/10 survives but means less.** All four canonical conditions fail
+through SUSTAINED drift, which a lap-wide mean detects. `S_clear` at night drifts
+continuously; `S_mixed` at +22 does not. The certificate discriminates the first kind and is
+blind to the second.
+
+**THE MOST ROBUST FINDING IN THIS PROJECT.** Four criteria, four times:
+
+    P-03  in-sample 14/14  ->  blind 2/6
+    P-06  in-sample  7/8   ->  blind 3/7
+    P-07  in-sample  8/8   ->  blind 6/10
+    P-08b in-sample 10/10  ->  blind 2/4
+
+Every criterion produced here scored well in-sample and failed out-of-sample. That pattern
+is more durable than any individual criterion and belongs in the writeup ahead of them.
 
 ---
 
