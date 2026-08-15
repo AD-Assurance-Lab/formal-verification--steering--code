@@ -5,6 +5,10 @@ checkpoints/
 runs/
 results/**/*.png
 results/**/*.npy
+# .npz captures are simulator output: 18 GB of them, regenerable from the scripts.
+# The .npy rule above did not cover the compressed archives the capture scripts write.
+results/**/*.npz
+results/traces/
 results/**/*.pt
 !results/ledger/
 

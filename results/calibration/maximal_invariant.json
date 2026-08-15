@@ -1,0 +1,16 @@
+{
+  "S_clear/clear": {
+    "verdict": "FAIL",
+    "boxes": 0,
+    "o_reach": 0.0,
+    "centre_in": false,
+    "bounds": 3986
+  },
+  "S_clear/shadows": {
+    "verdict": "FAIL",
+    "boxes": 0,
+    "o_reach": 0.0,
+    "centre_in": false,
+    "bounds": 3803
+  }
+}
