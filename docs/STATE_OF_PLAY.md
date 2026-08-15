@@ -136,6 +136,23 @@ any window length, and the failure leaves no nominal-path signature. That is a b
 the certificate applies, stated from evidence.
 
 
+**Follow-on (F40-F42), recorded so the loop route is not restarted blind.** Rolling the
+vehicle state over the measured (offset x heading) grid reproduces the two sun cells
+quantitatively (+30 diverges to 11.4 m against a measured 8.8-13.2 m departure; +60 stays at
+0.24 m) and locates the cause 150 m upstream of the symptom. It is NOT a criterion: 2/6 on the
+canonical cells, and the reason is measured rather than argued --
+
+    off-nominal surface error, in grid   0.021 - 0.048     (F41)
+    static vs driven frame, gain-corr.   0.0258            (F42, n=198)
+    nominal capture error (gate A)       0.0137
+    disturbance term a rollout integrates 0.0052
+
+The captures are 5x too coarse for integration and were never built for it. A per-frame
+verdict never accumulates that error, which is why the certificate above is unaffected. The
+loop route needs frames captured from a MOVING vehicle held at a commanded offset; that is a
+capture-rig change and the first thing to build if it is pursued.
+
+
 ## 1. What is solid
 
 ### Closed-loop ground truth (complete)
