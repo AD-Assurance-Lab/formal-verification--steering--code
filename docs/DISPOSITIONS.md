@@ -948,3 +948,56 @@ Give the ledger a THIRD instrument column for the sustained certificate, populat
 forward, with the existing twelve entered as what they honestly are — in-sample, computed
 after the driving, and marked as such. The blind record then stays intact and the smell test
 starts covering the claim the paper actually makes.
+
+---
+
+## D-13 — `rain / S_mixed / closed_loop` FAILED where PASS was pre-registered, and the certificate said so first
+
+Recorded 2026-08-15. The ledger flags this cell, correctly. It is disposed of here as a
+**finding rather than a bug**, and the reason is that the usual logic of a ledger
+contradiction is inverted.
+
+### Why a contradiction normally means "bug"
+
+A measurement disagreeing with its pre-registration usually means the measurement is
+wrong, because the pre-registration encoded everything believed at design time. That is
+why `CLAUDE.md` demands a written disposition before any such result is narrated.
+
+### Why this one does not
+
+**Two independent instruments agree against the expectation**, and one of them committed
+its answer before the other ran:
+
+    pre-registered (STUDY.md, design time)   S_mixed / rain : PASS, CERTIFIED
+    certificate    (committed 89922ff)       NOT CERTIFIED, bound +11.33x tolerance
+    closed loop    (driven after)            FAIL 10/10, every run departed
+
+A capture defect, a harness defect or a simulator artifact would have to corrupt the
+verification path and the driving path in the same direction, by the same amount, having
+been introduced between the design and now. Against that, the simpler reading is that the
+pre-registration was optimistic: `S_mixed` was trained on clear, fog, night and shadows,
+rain was never in its training set, and "mixed-conditions training generalises to unseen
+photometric conditions" was an assumption rather than a measurement.
+
+### Candidate causes considered
+
+| candidate | ruled out? | why |
+|---|---|---|
+| capture defect | **yes** | the capture carries its own clear baseline (D-11) and both endpoints are pose-identical; the certificate's verdict does not depend on the driving path at all |
+| driving harness defect | **yes** | the same harness produced all twelve canonical cells, including four unanimous PASS cells, on this same simulator session |
+| rain acting through vehicle dynamics rather than perception | **partly** | CARLA's `wetness` and `precipitation_deposits` are material/visual parameters and do not set tyre friction, which is configured separately and was not touched. Not fully excluded, and it would not explain the CERTIFICATE, which sees only pixels |
+| the certificate false-alarming, driving unrelated | **no** | it would have to false-alarm on all four cells AND the driving fail all forty runs independently |
+| the pre-registration being wrong | **NO -- this is the surviving explanation** | it was a design-time expectation about generalisation, never measured |
+
+### What is corrected
+
+`STUDY.md`'s rain row expected `S_mixed` PASS / CERTIFIED. The measured outcome is FAIL /
+NOT CERTIFIED, agreeing with the certificate. The design's expectation is superseded by
+measurement; the ledger cell stays flagged, because the pre-registration is a historical
+record and is not edited to match results.
+
+### What this does NOT license
+
+All four rain cells share one verdict and one outcome, so this establishes that the
+certificate catches an unseen sustained failure. It establishes nothing about false alarms
+on rain, because no rain cell passes. See F47.
