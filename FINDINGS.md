@@ -1493,3 +1493,32 @@ aggregation rule or pose selection to tune.
 - Sound with respect to the affine family between the clear and rendered frames, which is
   exact in projection (1.2e-7) but is not a claim about images CARLA would render at
   intermediate intensities.
+
+## F37 -- final table: 12/12 canonical, 2/4 blind
+
+Eastbound fog completed the set (it had been saved under a filename the certifier did not
+look for, which is why it read "capture missing" three times).
+
+    dir    model     cond      bias bound (x tol)   verdict      closed loop
+    west   S_clear   fog       [-0.75, +0.29]       CERTIFIED    PASS  0/10
+    west   S_clear   night     [-6.96, +0.93]       FALSIFIED    FAIL 10/10
+    west   S_clear   shadows   [-2.26, +0.64]       FALSIFIED    FAIL 10/10
+    west   S_mixed   fog       [-0.25, +0.38]       CERTIFIED    PASS  0/10
+    west   S_mixed   night     [-0.61, +0.26]       CERTIFIED    PASS  0/10
+    west   S_mixed   shadows   [-0.29, +0.31]       CERTIFIED    PASS  0/10
+    east   (same six cells, same verdicts)
+
+12/12, both directions, sound bounds over every intensity in the declared interval, no
+fitted parameters, per-frame with no vehicle dynamics simulated.
+
+**And 2/4 on the blind cells (P-08b).** `S_mixed` at +22 sun is CERTIFIED at 0.31x and 0.41x
+of tolerance and departs on all ten runs. The two results are not in tension: the canonical
+conditions all fail through SUSTAINED drift, which a lap-wide mean detects, while +22 fails
+through brief repeated excursions (0.2-0.9% of lap) that the same mean dilutes across ~1,590
+clean poses.
+
+**The defensible claim.** A sound per-frame certificate over a physically parameterised
+disturbance interval reproduces closed-loop outcomes for failures that are sustained. It
+does not detect localised ones, and a committed blind test showed that in the unsafe
+direction. Both halves belong in the writeup; the second is what tells a reader where the
+method's edge is.

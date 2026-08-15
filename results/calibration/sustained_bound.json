@@ -1,0 +1,74 @@
+{
+  "westbound/S_clear/fog": {
+    "lo": -0.008985728025436401,
+    "hi": 0.003461548127233982,
+    "verdict": "CERTIFIED",
+    "truth": "PASS"
+  },
+  "westbound/S_clear/night": {
+    "lo": -0.08364612609148026,
+    "hi": 0.01120341569185257,
+    "verdict": "FALSIFIED",
+    "truth": "FAIL"
+  },
+  "westbound/S_clear/shadows": {
+    "lo": -0.027115369215607643,
+    "hi": 0.00764935277402401,
+    "verdict": "FALSIFIED",
+    "truth": "FAIL"
+  },
+  "westbound/S_mixed/fog": {
+    "lo": -0.003053129417821765,
+    "hi": 0.004622006323188543,
+    "verdict": "CERTIFIED",
+    "truth": "PASS"
+  },
+  "westbound/S_mixed/night": {
+    "lo": -0.007345561403781176,
+    "hi": 0.0031423235777765512,
+    "verdict": "CERTIFIED",
+    "truth": "PASS"
+  },
+  "westbound/S_mixed/shadows": {
+    "lo": -0.0034534663427621126,
+    "hi": 0.0037823510356247425,
+    "verdict": "CERTIFIED",
+    "truth": "PASS"
+  },
+  "eastbound/S_clear/fog": {
+    "lo": -0.009835386648774147,
+    "hi": 0.003483787178993225,
+    "verdict": "CERTIFIED",
+    "truth": "PASS"
+  },
+  "eastbound/S_clear/night": {
+    "lo": -0.07198227196931839,
+    "hi": 0.01535764243453741,
+    "verdict": "FALSIFIED",
+    "truth": "FAIL"
+  },
+  "eastbound/S_clear/shadows": {
+    "lo": -0.02878013625741005,
+    "hi": 0.007836730219423771,
+    "verdict": "FALSIFIED",
+    "truth": "FAIL"
+  },
+  "eastbound/S_mixed/fog": {
+    "lo": -0.0025942290667444468,
+    "hi": 0.005120493937283754,
+    "verdict": "CERTIFIED",
+    "truth": "PASS"
+  },
+  "eastbound/S_mixed/night": {
+    "lo": -0.009077013470232487,
+    "hi": 0.003666400210931897,
+    "verdict": "CERTIFIED",
+    "truth": "PASS"
+  },
+  "eastbound/S_mixed/shadows": {
+    "lo": -0.0030320570804178715,
+    "hi": 0.004644559230655432,
+    "verdict": "CERTIFIED",
+    "truth": "PASS"
+  }
+}
