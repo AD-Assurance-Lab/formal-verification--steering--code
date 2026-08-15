@@ -26,3 +26,6 @@ scratch/
 # trajectory frame logs: ~0.5 GB per lap, regenerable
 results/traj/
 results/trajectory/*.json
+
+# driven-frame logs (regenerable; 144 MB per run)
+results/framelog/
