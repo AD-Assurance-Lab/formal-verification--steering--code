@@ -1589,3 +1589,63 @@ a point. The extension is to capture N realisations and verify over the CONVEX H
 a richer family than a single line. Sound over the sampled realisations, not over the
 distribution. Unchanged and out of reach: rain lowers tire friction, which a
 perception-to-steering verifier structurally cannot observe.
+
+## F39 -- P-09 resolves F38's hypothesis: the ~1.2x factor was coincidence, and the statistic is wrong
+
+F38 left a hypothesis: every correction moved the two `+22` misses toward the boundary
+without crossing it (0.84, 0.91), which looked more like a systematic ~1.2x factor than a
+wrong statistic -- but with two failing cells it could not be told from coincidence. P-09
+added cells of that type, with the calibration/held-out split declared before any capture
+(`results/predictions/P09_sun_angle_design.md`) and the held-out verdicts committed before
+either was driven (`070a2b2`).
+
+    cell   role          certificate   x tol (W/E)    driven        outcome
+    +60    calibration   PASS          0.72 / 0.91    PASS  0/10    agree
+    +30    calibration   PASS          0.73 / 0.89    FAIL 10/10    MISS
+    +37    held out      PASS          0.73 / 0.93    FAIL  3/10    MISS
+    +15    held out      PASS          0.68 / 0.87    PASS  0/10    agree
+
+    held out 1/2, overall 2/4 -- the same score as P-08b, on the same failure mode
+
+**It is not a scale factor.** All four cells sit in a 0.68-0.93 band while the driven
+outcomes span 0/10 to 10/10. A single multiplicative correction cannot separate cells that
+the statistic does not order.
+
+**The window is not the missing parameter either.** Step 2 of the protocol permitted tuning
+the window on the calibration cells. Swept from 5.4 m to the full lap, the PASSING cell's
+statistic exceeds the FAILING cell's at EVERY length:
+
+    window     poses   max PASS   min FAIL   ratio
+      5.4 m        3    0.23730    0.15994    0.67
+     16.1 m        9    0.09375    0.07553    0.81
+     44.7 m       25    0.03236    0.03154    0.97
+    143.1 m       80    0.01303    0.00884    0.68
+   2843.1 m     1590    0.00235    0.00040    0.17
+
+Never above 1.0. The ordering is inverted at every scale, so no threshold and no window
+repairs it, and nothing was fitted.
+
+**Why, located.** `+30` eastbound departs reproducibly at (x=-20, y=100..240), ~1990 m into
+the lap. At that pose the windowed steering deviation reads 0.00151 and ranks 1064th of 1599
+poses; for the passing `+60` it reads 0.00009, ranked 1569th. Both cells' lap maxima occur at
+the SAME pose 578, unrelated to either outcome.
+
+There is nothing to see on the nominal path. That is the whole explanation for why eight
+criteria built from centreline steering have landed at chance on this mode: they are all
+functions of a measurement that does not contain the failure.
+
+**The candidate that remains.** A lane-keeping policy is stable because steering responds to
+lateral offset with a restoring gain `k_o = d(steer)/d(offset)` of the correcting sign.
+Steering can be exactly right at zero offset while the RESPONSE to being off-centre is flat
+or inverted; drift then stops being corrected. This is invisible to any nominal-path
+statistic by construction, and it fits the direction dependence (eastbound departs 29-43 ft,
+westbound exceeds budget by 1-2 ft at the same angle) and the small `frac_over_budget`.
+Under test by capturing the (offset x heading) grid at +30, +60 and clear over 1800-2200 m.
+
+If it holds, the property to certify is the GAIN rather than the bias -- a bound on the
+policy's stability rather than on its output, and a stronger claim than the one that failed.
+
+**What is untouched.** The canonical twelve cells stand at 12/12 (F34-F37). Those conditions
+fail in the sustained way the criterion is built for. This is a distinct failure type and the
+honest statement, already written into the paper's limitations, is that the per-frame
+sustained certificate does not detect it.
