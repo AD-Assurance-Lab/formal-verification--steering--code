@@ -8,7 +8,7 @@
 # Distillation and student-DAgger follow separately, once both teachers pass.
 set -euo pipefail
 
-PY=/home/za/ad-assurance--workspace/sdp-crown--automated-driving--code/venv_sdp/bin/python
+PY="${PYTHON:-python3}"
 cd "$(dirname "$0")/.."
 M=pipeline/data/conditions/manifest.csv
 

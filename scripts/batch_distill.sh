@@ -20,7 +20,7 @@
 # this batch only narrows the candidates so one CARLA session can test them all.
 set -uo pipefail
 
-PY=/home/za/ad-assurance--workspace/sdp-crown--automated-driving--code/venv_sdp/bin/python
+PY="${PYTHON:-python3}"
 cd "$(dirname "$0")/.."
 
 # RESUMABLE. Something on this machine reaps background jobs -- twice today every

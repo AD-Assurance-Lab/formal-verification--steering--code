@@ -15,9 +15,9 @@
 set -uo pipefail
 
 export CARLA_PORT=${CARLA_PORT:-3000}
-PY=/home/za/ad-assurance--workspace/sdp-crown--automated-driving--code/venv_sdp/bin/python
+PY="${PYTHON:-python3}"
 cd "$(dirname "$0")/.."
-LOG=/home/za/.claude/jobs/00970870/tmp
+LOG="${LOG_DIR:-$(dirname "$0")/../results/logs}"
 MARK=pipeline/checkpoints/.overnight2_done
 PIDFILE=$LOG/my_carla2.pid
 mkdir -p "$MARK" "$LOG"
@@ -40,7 +40,7 @@ start_carla() {
         fi
     fi
     log "starting CARLA on :$CARLA_PORT"
-    ( cd /home/za/carla && DISPLAY=:0 setsid ./CarlaUE4.sh -quality-level=Epic \
+    ( cd "${CARLA_ROOT:-$HOME/carla}" && DISPLAY=:0 setsid ./CarlaUE4.sh -quality-level=Epic \
         -windowed -ResX=1280 -ResY=720 -carla-rpc-port="$CARLA_PORT" \
         > "$LOG/carla_phase2.log" 2>&1 & )
     for _ in $(seq 1 24); do

@@ -32,8 +32,20 @@
 # SDP-CROWN markers.
 # ---------------------------------------------------------------------------
 
-numpy>=1.24,<2.0
-opencv-python>=4.8
-scipy>=1.11
+# ---------------------------------------------------------------------------
+# VERSIONS THAT PRODUCED THE PUBLISHED RESULT, read off the environment that ran
+# it rather than aspired to. Verified 2026-08-15:
+#
+#   python 3.10.12   torch 2.5.1+cu121   auto_LiRPA 0.7.2
+#   numpy 2.2.6      opencv 4.13.0       scipy 1.15.3
+#
+# NOTE the numpy major version. This file previously pinned numpy<2.0 while every
+# result in the repo was produced under numpy 2.2.6, so installing it gave you a
+# DIFFERENT environment from the one that ran. If you are reproducing, match these.
+# ---------------------------------------------------------------------------
+
+numpy==2.2.6
+opencv-python==4.13.0
+scipy==1.15.3
 matplotlib>=3.7
 pytest>=7.4

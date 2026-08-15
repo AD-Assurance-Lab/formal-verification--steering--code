@@ -15,7 +15,7 @@
 # screen stops early if a small one already drives everything.
 set -uo pipefail
 
-PY=/home/za/ad-assurance--workspace/sdp-crown--automated-driving--code/venv_sdp/bin/python
+PY="${PYTHON:-python3}"
 cd "$(dirname "$0")/.."
 
 run_one() {   # student, channels, fc, label

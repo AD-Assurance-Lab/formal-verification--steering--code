@@ -19,11 +19,11 @@
 set -uo pipefail
 
 export CARLA_PORT=${CARLA_PORT:-3000}
-PY=/home/za/ad-assurance--workspace/sdp-crown--automated-driving--code/venv_sdp/bin/python
+PY="${PYTHON:-python3}"
 cd "$(dirname "$0")/.."
-LOG=/tmp/claude-1000/-home-za-ad-assurance--workspace/2d554514-19ad-4b08-93b4-d6fc6b8b3af3/scratchpad
+LOG="${LOG_DIR:-$(dirname "$0")/../results/logs}"
 MARK=pipeline/checkpoints/.overnight_done
-PIDFILE=/tmp/claude-1000/-home-za-ad-assurance--workspace/2d554514-19ad-4b08-93b4-d6fc6b8b3af3/scratchpad/my_carla.pid
+PIDFILE="${LOG_DIR:-$(dirname "$0")/../results/logs}/my_carla.pid"
 mkdir -p "$MARK"
 
 log() { echo "[$(date +%H:%M:%S)] $*"; }
@@ -45,7 +45,7 @@ start_carla() {
         fi
     fi
     log "starting CARLA on :$CARLA_PORT"
-    ( cd /home/za/carla && DISPLAY=:0 setsid ./CarlaUE4.sh -quality-level=Epic \
+    ( cd "${CARLA_ROOT:-$HOME/carla}" && DISPLAY=:0 setsid ./CarlaUE4.sh -quality-level=Epic \
         -windowed -ResX=1280 -ResY=720 -carla-rpc-port="$CARLA_PORT" \
         > "$LOG/carla_overnight.log" 2>&1 & echo $! > "$PIDFILE" )
     for _ in $(seq 1 24); do sleep 5; carla_up && { log "CARLA ready"; return 0; }; done

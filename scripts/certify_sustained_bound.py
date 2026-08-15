@@ -20,10 +20,19 @@ poses, so the certificate covers spatially varying disturbance -- fog thicker in
 shadow only under the trees -- which is strictly more general than a single global intensity
 and is what a real ODD looks like.
 
-VERDICTS
-    CERTIFIED    the whole bias interval lies inside the corridor: safe for every intensity
-    FALSIFIED    the whole interval lies outside: unsafe for every intensity
-    INCONCLUSIVE the interval straddles the corridor edge; the bound cannot decide
+VERDICTS -- and read this, because one of the two names is doing more work than it should
+
+    CERTIFIED  the whole bias interval lies inside the corridor. This is a PROOF: safe at
+               every intensity in [0,1], for any per-pose choice of s.
+
+    FALSIFIED  emitted whenever the interval is not wholly inside the corridor. The name is
+               inherited and it OVERSTATES what is known. A sound over-approximation can
+               certify; it cannot falsify. The honest reading is NOT CERTIFIED -- the bound
+               does not decide -- and the four cells carrying this verdict agree with
+               closed-loop failure without proving it. Turning one into a genuine
+               falsification means exhibiting a witness s* whose sampled lap-mean deviation
+               exceeds tolerance, which this repo can do cheaply and does not yet do.
+               Two independent reviewers raised this; see F45.
 
 Interpolating the stored 84x28 projections is exact rather than approximate: `_project` is
 linear and a convex combination of two valid images needs no clamp (measured agreement
@@ -33,6 +42,8 @@ linear and a convex combination of two valid images needs no clamp (measured agr
 """
 import sys
 import json
+import argparse
+import subprocess
 from pathlib import Path
 
 import numpy as np
@@ -95,13 +106,53 @@ def baseline_for(cond_path, fallback):
     return (own, "paired") if own is not None else (fallback, "foreign")
 
 
+def git_head():
+    """Commit the result was produced at, or None outside a checkout."""
+    try:
+        return subprocess.check_output(["git", "-C", str(REPO), "rev-parse", "HEAD"],
+                                       stderr=subprocess.DEVNULL).decode().strip()
+    except Exception:
+        return None
+
+
 def main():
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--stride", type=int, default=8,
+                    help="pose subsampling; 8 = every 8th pose of the lap (default 8)")
+    ap.add_argument("--nsplit", type=int, default=NSPLIT,
+                    help="branch-and-bound sub-intervals of s. CHANGES VERDICTS: at 4 the "
+                         "bound falsifies a model that is safe at every intensity "
+                         "(default %(default)s, or $NSPLIT)")
+    ap.add_argument("--allow-missing", action="store_true",
+                    help="continue when a capture is absent instead of refusing to run. "
+                         "A partial run's score is not comparable to the published 12/12")
+    args = ap.parse_args()
+    stride, nsplit = args.stride, args.nsplit
+
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     tol = C.CLOSED_LOOP_TOLERANCE
     cal = REPO / "results" / "calibration"
-    stride = int(sys.argv[1]) if len(sys.argv) > 1 else 8
+
+    # Refuse to produce a partial score that reads like a complete one. A silent `continue`
+    # here once printed a clean 6/6 that was indistinguishable from 12/12.
+    expected = [(d, c) for d in ("westbound", "eastbound")
+                for c in ("fog", "night", "shadows")]
+    missing = [f"lap_{d}_{c}.npz" for d, c in expected if not (cal / f"lap_{d}_{c}.npz").exists()]
+    missing += [f"lap_{d}_clear.npz" for d in ("westbound", "eastbound")
+                if not (cal / f"lap_{d}_clear.npz").exists()]
+    if missing and not args.allow_missing:
+        print(f"\nREFUSING TO RUN: {len(missing)} capture(s) absent from {cal}:",
+              file=sys.stderr)
+        for m in missing:
+            print(f"    {m}", file=sys.stderr)
+        print("\nThese are gitignored (~1.7 GB each); regenerate with "
+              "scripts/capture_offset_yaw.py, or pass --allow-missing to score a subset.",
+              file=sys.stderr)
+        return 2
+
     print(f"\nSUSTAINED-BIAS BOUND over s in [0,1]   tolerance {tol:.4f}")
-    print(f"  every intensity in the declared interval, every pose (stride {stride})\n")
+    print(f"  stride {stride}, {nsplit}-way branch and bound, {len(expected)} cells expected\n")
     print(f"  {'dir':10s} {'model':9s} {'cond':9s} {'base':8s} {'bias bound':>22s}"
           f" {'x tol':>12s}  verdict     drive")
     out, ok, n = {}, 0, 0
@@ -140,8 +191,8 @@ def main():
                     x0 = clr[k].reshape(-1).astype(np.float32)
                     x1 = dis[k].reshape(-1).astype(np.float32)
                     lo_i, hi_i = [], []
-                    for j in range(NSPLIT):
-                        a, b = j / NSPLIT, (j + 1) / NSPLIT
+                    for j in range(nsplit):
+                        a, b = j / nsplit, (j + 1) / nsplit
                         mid, half = 0.5 * (a + b), 0.5 * (b - a)
                         W = (half * (x1 - x0)).reshape(-1, 1)
                         l_, u_ = bd(W, x0 + mid * (x1 - x0),
@@ -165,7 +216,16 @@ def main():
                 print(f"  {direction:10s} {nm:9s} {cond:9s} {origin:8s} "
                       f"[{blo:+.5f},{bhi:+.5f}] [{blo/tol:+5.2f},{bhi/tol:+5.2f}]"
                       f"  {v:12s} {t:5s} {'agree' if match else '-'}", flush=True)
-    print(f"\n  decisive and correct: {ok}/{n}")
+    print(f"\n  decisive and correct: {ok}/{n} of {len(expected)} expected")
+    if n != len(expected):
+        print(f"  WARNING: {len(expected) - n} cell(s) did not run. This score is NOT "
+              f"comparable to the published 12/12.")
+    # Provenance travels with the numbers. NSPLIT and stride both change the result, and a
+    # bare JSON of bounds cannot be checked against a paper table without them.
+    out["_meta"] = dict(nsplit=nsplit, stride=stride, tolerance=tol,
+                        cells_expected=len(expected), cells_scored=n, correct=ok,
+                        git_commit=git_head(), device=dev,
+                        torch=torch.__version__, numpy=np.__version__)
     (cal / "sustained_bound.json").write_text(json.dumps(out, indent=2))
     return 0
 

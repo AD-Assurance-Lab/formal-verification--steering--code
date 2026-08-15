@@ -17,7 +17,7 @@ HOST = "127.0.0.1"
 PORT = int(os.environ.get("CARLA_PORT", "2000"))
 CLIENT_TIMEOUT_S = 120.0
 TRAFFIC_MANAGER_PORT = 8005
-CARLA_ROOT = "/home/za/carla"
+CARLA_ROOT = os.environ.get("CARLA_ROOT", os.path.expanduser("~/carla"))
 
 # ── Map ──────────────────────────────────────────────────────────────────────
 MAP_NAME = "Town04"

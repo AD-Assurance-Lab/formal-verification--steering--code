@@ -24,12 +24,14 @@ into a world you no longer understand.
 """
 import os
 import errno
+import tempfile
 import contextlib
 from pathlib import Path
 
 import config as C
 
-LOCK_DIR = Path(os.environ.get("CARLA_LOCK_DIR", "/tmp/claude-1000/carla-locks"))
+LOCK_DIR = Path(os.environ.get("CARLA_LOCK_DIR",
+                               Path(tempfile.gettempdir()) / "carla-locks"))
 
 # CARLA binds rpc-port, rpc-port+1 AND rpc-port+2. A server on 3000 owns 3000-3002, so a
 # second server started on 3001 or 3002 silently conflicts and never becomes ready, while a

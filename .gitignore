@@ -2,6 +2,13 @@
 data/
 datasets/
 checkpoints/
+# ...except the two students the published certificate actually loads. 403 KB total:
+# without them a clone contains the answer (sustained_bound.json) and nothing that
+# produced it. Every other checkpoint (teachers, DAgger rounds, width variants) stays out.
+!pipeline/checkpoints/
+pipeline/checkpoints/*
+!pipeline/checkpoints/S_clear_84x28.pth
+!pipeline/checkpoints/S_mixed_84x28_w3.pth
 runs/
 results/**/*.png
 results/**/*.npy
