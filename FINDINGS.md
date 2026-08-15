@@ -1706,3 +1706,37 @@ programme F30 identified, and it is a piece of work, not an overnight adjustment
 
 **Unchanged.** The canonical twelve stand at 12/12 under the sustained per-frame certificate
 (F34-F37). The localised mode remains undetected, which is what the paper's limitations say.
+
+### F40 addendum -- the over-prediction is 36x, and its cause is the off-nominal surface
+
+Calibrated the rollout against a MEASURED cross-track trace
+(`results/traces/Smixed_fog_fog_westbound_rep00.csv`, 1600 steps of x, y, yaw, steer, cte_m).
+
+    measured  |cte| max 0.155 m, mean 0.029 m
+    modelled  |o|   max 5.609 m          -> over-prediction 36.3x, not the ~2x first estimated
+
+The estimate of "roughly 2x" above was wrong and is corrected here.
+
+**It is not the integrator, and it is not a physical modelling gap.** A stable loop driven by
+bounded forcing settles near `excess / |k_o|` = 0.0063 / 0.154 = 0.04 m. The rollout should
+have sat at four centimetres. That it runs to 5.6 m means the loop it is integrating is not
+the stable one the pole analysis measured (mean rho 0.75).
+
+**The cause is that the off-nominal surface is not accurate enough to integrate.** Evaluating
+the network at the vehicle's MEASURED offset and comparing to the steering it actually
+commanded:
+
+    mean |error| 0.00490 normalised = 0.005987 rad     correlation +0.769
+    disturbance driving term                0.006327 rad
+
+The surface error is 0.95x the size of the signal being integrated. Gate A validated the
+NOMINAL captures against driven steering (0.0137 over a full lap, threshold 0.05); the
+off-nominal placements were never held to that standard, and this is the first measurement of
+them. A per-frame verdict tolerates that error because it never accumulates. A rollout
+integrates it, so noise of the same magnitude as the disturbance dominates within a few
+seconds.
+
+**Consequence.** The rollout route needs the off-nominal captures validated the way the
+nominal ones were -- a gate-A equivalent at every grid point -- BEFORE any verdict is read
+from it. Until then its agreement on +30 and +60 is not evidence: those cells simply have an
+effect large enough to outrun the noise. That is the honest reading of tonight's result.
