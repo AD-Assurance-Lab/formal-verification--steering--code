@@ -1988,3 +1988,67 @@ agreeing to within 8%. The absolute level is what drifts; `x_cond - x_clear` is 
    frames are offscreen-rendered while the archive was captured windowed. That is a
    PLAUSIBLE cause and nothing here tests it -- it cannot be tested until windowed mode
    works again on this machine. Recorded as the leading suspect, not as the answer.
+
+## F45 -- the tolerance horizon is a fitted parameter, and at its a-priori value the certificate is UNSOUND
+
+Two independent expert reviewers, reviewing the arXiv paper blind and separately, converged on
+the same objection and derived the same arithmetic. It reproduces exactly against this repo's
+own `sustained_bound.json`, so it is recorded here rather than argued with.
+
+`config.py` derives the tolerance as
+
+    CLOSED_LOOP_TOLERANCE = (2 L B) / (v^2 T^2) / MAX_STEER_RAD
+
+and sets `T_CLOSED_LOOP_S = 1.85` with the comment "[MEASURED, back-solved from the observed
+cliff]". The observed cliff is the closed-loop departure threshold -- i.e. **T was fitted to
+the same driving outcomes the certificate is then validated against.** The paper nonetheless
+claims "no fitted parameter" in the abstract, in the methodology, and in the conclusion.
+
+**Sweeping T against the twelve committed cells:**
+
+    T (s)    tolerance    score    failures
+    1.00      0.04111     10/12    west S_clear shadows UNSOUND CERT; east S_clear shadows UNSOUND CERT
+    1.20      0.02855     11/12    west S_clear shadows UNSOUND CERT
+    1.23      0.02717     11/12    west S_clear shadows UNSOUND CERT
+    1.50      0.01827     12/12    --
+    1.85      0.01201     12/12    --   <- the value in use
+    2.10      0.00932     12/12    --
+    2.13      0.00906     11/12    east S_mixed night false alarm
+    2.50      0.00658      9/12    three false alarms
+
+    admissible window: T in (1.231, 2.128) s
+
+**The serious part is the failure MODE at T = 1.0.** That is not an arbitrary value -- it is
+the one-second reaction horizon the paper itself introduces two sentences before back-solving
+1.85, and it is where `STEER_CORRIDOR_RAD` already sits (0.0502 rad, 0.041 normalised). At
+that value the criterion **certifies both shadows cells as safe, and both depart on 10/10
+runs.** An unsound certificate on a model that reliably leaves its lane is the worst failure
+this project can produce, and it is one parameter change away from the published result.
+
+**What this does and does not undermine.**
+
+- It does NOT show the criterion is wrong. The 3.0x separation gap is a ratio and is
+  invariant to T; the ordering of the cells is correct at every T. What T does is place the
+  threshold inside that gap, and T was chosen by looking at where the gap is.
+- It DOES mean "no fitted parameter" is not defensible as written. One parameter was fitted,
+  on the validation labels.
+- The 12/12 is **not fragile to using an honest value.** T = 1.5 s -- a standard human-factors
+  reaction time, obtainable without looking at our data -- scores 12/12 with the threshold
+  comfortably inside the gap. So the repair costs nothing except the "no fitted parameter"
+  sentence: adopt a literature T, report the admissible window as a sensitivity result, and
+  the claim becomes defensible instead of circular.
+
+**Recommended, not yet done** (this changes a published claim and is Zach's call):
+1. Set `T_CLOSED_LOOP_S` from the human-factors literature, not from our own cliff.
+2. Report the (1.231, 2.128) s window in the paper as a sensitivity analysis.
+3. Delete "no fitted parameter" from the abstract, methodology and conclusion.
+
+**A second, independent terminology objection from the same reviews, also correct.** A sound
+over-approximation can CERTIFY; it cannot FALSIFY. When a bound escapes the corridor the
+correct verdict is NOT CERTIFIED (unknown), not FALSIFIED. Under that reading the headline is
+eight sound certificates, none contradicted by driving, plus four uninformative unknowns that
+happen to coincide with failure. `certify_sustained_bound.py` emits the string `FALSIFIED`
+and the paper's Table I and Fig. 5 use it throughout. Making the claim sound requires either
+renaming the verdict, or producing a witness s* at which the sampled lap-mean deviation
+actually exceeds tolerance -- which this repo can do cheaply, since it already samples the
+family.
