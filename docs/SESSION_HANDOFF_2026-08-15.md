@@ -117,7 +117,7 @@ NOT "the criterion works/doesn't work" -- regardless of how the agreement column
 Driven captures are gitignored (`results/**/*.npz`), ~250 MB each, ~2 GB total:
 
     # CARLA must be up on port 3000, windowed on DISPLAY=:0
-    bash /path/to/driven_campaign.sh          # not in repo; recreate from the command below
+    bash scripts/driven_campaign.sh           # all 8 conditions, resumable
     CARLA_PORT=3000 [SUN_ALTITUDE_OVERRIDE=30] python -u scripts/capture_driven_offsets.py \
         --direction eastbound --condition clear --phases 6 \
         --out results/calibration/driven_<name>_eastbound.npz
