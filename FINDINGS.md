@@ -1792,3 +1792,54 @@ rollout verdict can be believed.
 
 **Unchanged.** The canonical twelve stand at 12/12 under the sustained per-frame certificate.
 This finding constrains the loop-verification route, which was never part of that claim.
+
+## F42 -- static placement does not reproduce what the camera sees while driving
+
+F41 named the suspect: off-nominal frames come from teleporting the vehicle to an offset and
+settling it under physics, while a vehicle actually at that offset is steering to correct and
+carries the resulting suspension state. This tests it against frames the car really met.
+
+Logged every frame of six `S_clear`/night runs with `--log-frames` (748 frames with a
+cross-track reading; night departs, so the vehicle transits the whole grid on its way out).
+For each frame whose measured (offset, heading) lands within 0.25 m and 3 deg of a grid node,
+compared the STATIC capture at that pose and node against the DRIVEN frame.
+
+The grid is coarse relative to the effect -- `k_psi` is about -1.29 rad/rad, so 3 deg of
+heading mismatch alone is ~0.055 of steering -- so the node prediction is corrected to the
+driven state to first order with the local measured gains before comparing. That correction
+removed only 14% of the discrepancy (0.0301 -> 0.0258), so quantisation is not the story.
+
+    n = 198 matched frames
+
+    image difference     0.0142 per pixel        night's own disturbance is 0.142
+    steering difference  0.0258 mean, 0.0827 p95, 0.1442 max
+
+    for reference   nominal gate A          0.0137
+                    disturbance driving term 0.0052
+
+    |offset| band      n    img err   steer diff
+      0.00-0.15       86     0.0147      0.03048
+      0.15-0.40       78     0.0135      0.02204
+      0.40-0.80       34     0.0143      0.02281
+
+**Two things follow.** The images genuinely differ: 0.0142 per pixel is 10% of the entire
+night disturbance the study is trying to certify against. And the steering discrepancy,
+0.0258, is 5x the disturbance effect a rollout integrates and about twice the nominal gate A
+figure.
+
+**It is flat across offset.** 0.030, 0.022, 0.023 across the three bands -- the discrepancy is
+not something that appears off-nominal, it is present at the centreline too. So it is not
+about lateral placement; it is about the difference between a settled, stationary vehicle and
+a moving one.
+
+**Read this with its caveat.** These frames come from DEPARTING runs, where the vehicle is
+turning hard and dynamic effects are at their largest. The typical-driving discrepancy is
+likely smaller, and gate A's 0.0137 on nominal captures is evidence that it is. What the
+measurement establishes is the ceiling: static captures are not interchangeable with driven
+frames at the precision a rollout needs.
+
+**Consequence.** The per-frame certificate is unaffected -- it compares one bound to one
+threshold and never accumulates this error, and its captures passed the gate built for that
+use. The loop-verification route needs captures taken from a MOVING vehicle at a commanded
+offset, not from a teleported one. That is a capture-rig change, and it is the first thing to
+build if the loop route is pursued.
