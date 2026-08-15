@@ -1649,3 +1649,60 @@ policy's stability rather than on its output, and a stronger claim than the one 
 fail in the sustained way the criterion is built for. This is a distinct failure type and the
 honest statement, already written into the paper's limitations, is that the per-frame
 sustained certificate does not detect it.
+
+## F40 -- the failure IS reproducible from captured frames, but the deviation model is not calibrated
+
+F39 established that the localised failure leaves no signature on the nominal path. The
+obvious response is the one F30 already named as the only route left: stop scoring the
+centreline and roll the vehicle state forward over the (offset x heading) grid.
+
+Captured 9 offsets x 5 headings over 1800-2200 m eastbound at +30 (departs 10/10), +60
+(clean 0/10) and clear, and integrated the deviation dynamics using ONLY captured frames:
+
+    o'   = o + v dt psi
+    psi' = psi + (v dt / L) MAX_STEER_RAD ( S_cond,i(o, psi) - S_clear,i(0, 0) )
+
+**On the two sun cells it reproduces closed-loop driving, quantitatively.**
+
+    cell   rollout max |o|   driven
+    +60             0.243 m  PASS  0/10
+    +30            11.387 m  FAIL 10/10, measured departure 8.8-13.2 m
+
+No simulator in the loop. The predicted magnitude lands inside the measured range.
+
+**And it localises the cause, which is upstream of the symptom.** Divergence begins near
+y = 54..61, where `+30`'s restoring gain INVERTS sign (+0.0222, +0.0204) while clear and +60
+stay correcting (-0.095, -0.100) -- local positive feedback, the policy steering further off
+lane. Peak CTE occurs ~150 m downstream at y = 100..240. That is why every statistic aimed at
+the departure site read zero: cause and symptom are in different places.
+
+**But it is NOT a criterion, and the reason is measured, not suspected.** Run against the
+canonical cells it scores 2/6, and the failures are not edge cases:
+
+    model     cond      rollout max |o|   driven    
+    S_clear   fog             17223 m     PASS  0/10   false FAIL
+    S_mixed   fog                 5.6 m   PASS  0/10   false FAIL
+    S_mixed   night               6.6 m   PASS  0/10   false FAIL
+    S_mixed   shadows          7094 m     PASS  0/10   false FAIL
+
+Two candidate excuses were tested and both fail:
+
+- *Extrapolation past the grid.* The grid spans +-1.5 m and a departure reaches 13 m, so
+  beyond the edge `interp` clamps and the dynamics are fictional. But `S_mixed` fog breaches
+  the 0.668 m budget at 1.010 m -- INSIDE the grid, where every value is measured. The false
+  alarm is real, not an artefact of leaving the domain.
+- *Integration length.* Shortening the window to 45 poses (81 m) with the state reset at each
+  window start still gives `S_clear` fog 23.1 m against a clean drive.
+
+**What that means.** The model over-predicts drift by roughly 2x. It omits steering actuation
+lag, the throttle/speed controller, and the difference between a kinematic bicycle and CARLA's
+tyre model. A 2x error turns a real 0.5 m excursion into a modelled 1.0 m one, which crosses a
+0.668 m budget -- so the verdicts are dominated by model error, not by the disturbance.
+
+**Status: promising direction, not a result.** Making it a criterion requires validating the
+deviation dynamics against measured CTE traces before any verdict is read off it, and a grid
+wide enough to contain the recovery envelope (+-1.5 m is not). That is the "verify the loop"
+programme F30 identified, and it is a piece of work, not an overnight adjustment.
+
+**Unchanged.** The canonical twelve stand at 12/12 under the sustained per-frame certificate
+(F34-F37). The localised mode remains undetected, which is what the paper's limitations say.
