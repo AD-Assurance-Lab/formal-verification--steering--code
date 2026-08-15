@@ -198,8 +198,15 @@ def fog_map_illum(xf, w, h, airlight, k_range):
         curve bows away from that chord, so the bound is only as sound as this deviation is
         small. `DISTURBANCE_MATH.md` says it shrinks quadratically as the interval narrows
         and that it is 'bounded analytically' -- but nothing in the code ever measured it,
-        so the claim rode on an assertion. This measures it per cell so the assumption is
-        visible instead of implicit.
+        so the claim rode on an assertion. This CAN measure it per cell.
+
+        **It has no callers.** Attaching it to `build` was as far as this got, so the
+        rank-1 chord error is still unmeasured and the docstring above still describes an
+        intention rather than a check that runs. Two consequences worth being precise
+        about: it affects only the rank-1 path used by the RETIRED per-condition
+        instrument, not `certify_sustained_bound.py`, whose family is a chord by
+        construction rather than an approximation to a curve; and anyone reviving that
+        path must call this first.
         """
         W, b, _, _ = build(lo, hi)
         worst = 0.0
@@ -633,9 +640,15 @@ def main():
                 build, lo, hi = fog_map(xf, args.w, args.h, fog_A)
         elif args.condition == "night":
             if args.night_ambient:
-                import scripts.certify_cell as _self
+                # `import scripts.certify_cell as _self` here was a SILENT NO-OP. Run as a
+                # script this module is __main__; that import loads a SECOND copy of the
+                # file and the override landed on the copy, while night_map_sensor read
+                # __main__.NIGHT_AMBIENT and never saw it. The flag appeared to work and
+                # changed nothing. Rebind on the module actually executing instead.
+                _self = sys.modules[__name__]
                 a_lo, a_hi = (float(v) for v in args.night_ambient.split(","))
                 _self.NIGHT_AMBIENT = (a_lo, a_hi)
+                assert NIGHT_AMBIENT == (a_lo, a_hi), "override did not take effect"
             # Night is the ONLY condition that leaves [0,1] (negative retro amplitude), so
             # it is the only one where clamp placement changes the answer -- and it changes
             # it by more than the corridor. Use the sensor-resolution path.

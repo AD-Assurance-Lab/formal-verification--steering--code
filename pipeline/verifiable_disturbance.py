@@ -16,8 +16,14 @@ numerically by probing.
     W[:,i] = P(model(x0, theta = e_i)) - b
 
 where P is crop-then-downsample. Then `x'(theta) = W theta + b` exactly, for the real
-model at real resolution. This is checked, not assumed: `verify_linearity` compares the
-reconstruction against the true model at random theta and reports the residual.
+model at real resolution. `verify_linearity` below compares the reconstruction against the
+true model at random theta and reports the residual.
+
+**It has no callers.** The exactness claim above rides on an assertion, not on a check that
+runs. This matters less than it would for the DELIVERED certificate, which does not use this
+map at all -- `certify_sustained_bound.py` interpolates between two rendered endpoints, and
+its own exactness (1.2e-7) is a property of the linear projection rather than of any
+photometric model. But anything built on `build_linear_map` should call this first.
 
 Why this matters: it means the certificate covers the *same* disturbance the closed-loop
 simulation injects, at the resolution weather actually acts, with no separate hand-written
@@ -172,8 +178,10 @@ def verify_linearity(cond, x0_full_bgr, theta_nom, deltas, box, n=6, w=84, h=28,
     """Check the recovered map against the true model at random theta inside the box.
 
     Reports max absolute pixel error. A large residual means the model is NOT linear in
-    the parameters as assumed, which would invalidate the certificate, so this must be
-    run before any verification result is reported.
+    the parameters as assumed, which would invalidate any certificate built on that map.
+
+    NOT CURRENTLY CALLED ANYWHERE -- see the module header. Run it before reporting a
+    result that depends on `build_linear_map`; the delivered certificate does not.
     """
     spec = SPECS[cond]
     model = dm.MODELS[cond]
