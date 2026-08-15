@@ -136,9 +136,11 @@ def main():
 
     # Refuse to produce a partial score that reads like a complete one. A silent `continue`
     # here once printed a clean 6/6 that was indistinguishable from 12/12.
-    expected = [(d, c) for d in ("westbound", "eastbound")
+    captures = [(d, c) for d in ("westbound", "eastbound")
                 for c in ("fog", "night", "shadows")]
-    missing = [f"lap_{d}_{c}.npz" for d, c in expected if not (cal / f"lap_{d}_{c}.npz").exists()]
+    # One cell per (direction, condition, STUDENT): six captures, twelve cells.
+    n_expected = len(captures) * len(STUDENTS)
+    missing = [f"lap_{d}_{c}.npz" for d, c in captures if not (cal / f"lap_{d}_{c}.npz").exists()]
     missing += [f"lap_{d}_clear.npz" for d in ("westbound", "eastbound")
                 if not (cal / f"lap_{d}_clear.npz").exists()]
     if missing and not args.allow_missing:
@@ -152,7 +154,7 @@ def main():
         return 2
 
     print(f"\nSUSTAINED-BIAS BOUND over s in [0,1]   tolerance {tol:.4f}")
-    print(f"  stride {stride}, {nsplit}-way branch and bound, {len(expected)} cells expected\n")
+    print(f"  stride {stride}, {nsplit}-way branch and bound, {n_expected} cells expected\n")
     print(f"  {'dir':10s} {'model':9s} {'cond':9s} {'base':8s} {'bias bound':>22s}"
           f" {'x tol':>12s}  verdict     drive")
     out, ok, n = {}, 0, 0
@@ -216,14 +218,14 @@ def main():
                 print(f"  {direction:10s} {nm:9s} {cond:9s} {origin:8s} "
                       f"[{blo:+.5f},{bhi:+.5f}] [{blo/tol:+5.2f},{bhi/tol:+5.2f}]"
                       f"  {v:12s} {t:5s} {'agree' if match else '-'}", flush=True)
-    print(f"\n  decisive and correct: {ok}/{n} of {len(expected)} expected")
-    if n != len(expected):
-        print(f"  WARNING: {len(expected) - n} cell(s) did not run. This score is NOT "
+    print(f"\n  decisive and correct: {ok}/{n} of {n_expected} expected")
+    if n != n_expected:
+        print(f"  WARNING: {n_expected - n} cell(s) did not run. This score is NOT "
               f"comparable to the published 12/12.")
     # Provenance travels with the numbers. NSPLIT and stride both change the result, and a
     # bare JSON of bounds cannot be checked against a paper table without them.
     out["_meta"] = dict(nsplit=nsplit, stride=stride, tolerance=tol,
-                        cells_expected=len(expected), cells_scored=n, correct=ok,
+                        cells_expected=n_expected, cells_scored=n, correct=ok,
                         git_commit=git_head(), device=dev,
                         torch=torch.__version__, numpy=np.__version__)
     (cal / "sustained_bound.json").write_text(json.dumps(out, indent=2))
