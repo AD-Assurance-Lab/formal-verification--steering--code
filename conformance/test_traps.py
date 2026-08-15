@@ -113,21 +113,58 @@ def test_corridor_is_centred_on_clear_steering():
 
 # --- trap 7: the closed-loop tolerance is derived, not a literal ----------------------
 
-def test_closed_loop_tolerance_is_derived_from_primitives():
-    """The per-frame corridor (0.041) is ~3.4x too permissive -- a vehicle departed the
-    road with every frame inside it. The tolerance that matters is the closed-loop
-    stability cliff, and it must be derived from measured primitives so it cannot drift
-    away from them."""
+def test_closed_loop_tolerance_tracks_the_geometry_it_is_written_in():
+    """The tolerance must MOVE when lane or vehicle geometry moves.
+
+    This test used to assert only that the string "0.012" did not appear on the
+    CLOSED_LOOP_TOLERANCE line, and called that "derived, not a literal". It passed while
+    the property did not hold: the measured cliff is laundered through a square root one
+    line above, as `T = 1.0 * sqrt(0.041/0.012) = 1.85`, so the literal was still there,
+    just spelled differently. A test that can be satisfied by renaming is not a test.
+
+    What actually matters is the property the comment claims -- that if lane width or
+    vehicle width changes, the tolerance follows -- so assert that directly by perturbing
+    the primitives and recomputing.
+    """
     config = _module("config")
-    assert hasattr(config, "CLOSED_LOOP_TOLERANCE"), (
-        "config must define CLOSED_LOOP_TOLERANCE"
+    assert hasattr(config, "CLOSED_LOOP_TOLERANCE")
+
+    def tol(lane_w, veh_w, wheelbase, speed, T, max_steer):
+        budget = (lane_w - veh_w) / 2.0
+        return (2.0 * wheelbase * budget) / (speed ** 2 * T ** 2) / max_steer
+
+    args = (config.LANE_WIDTH_M, config.VEHICLE_WIDTH_M, config.WHEELBASE_M,
+            config.TARGET_SPEED_MS, config.T_CLOSED_LOOP_S, config.MAX_STEER_RAD)
+    assert abs(tol(*args) - config.CLOSED_LOOP_TOLERANCE) < 1e-12, (
+        "CLOSED_LOOP_TOLERANCE does not equal the formula it claims to come from"
     )
+
+    # A wider lane means more room, so a larger admissible bias. A wider vehicle, less.
+    wider_lane = tol(config.LANE_WIDTH_M + 0.5, *args[1:])
+    wider_car = tol(args[0], config.VEHICLE_WIDTH_M + 0.5, *args[2:])
+    assert wider_lane > config.CLOSED_LOOP_TOLERANCE, "tolerance ignores lane width"
+    assert wider_car < config.CLOSED_LOOP_TOLERANCE, "tolerance ignores vehicle width"
+
+
+def test_the_calibrated_horizon_is_labelled_as_calibrated():
+    """T_CLOSED_LOOP_S is fitted on the closed-loop runs the certificate is validated
+    against (F45). It is legitimate to use it; it is not legitimate to call the criterion
+    unfitted. Guard the disclosure, because the claim outlived the correction twice.
+    """
+    config = _module("config")
+    assert hasattr(config, "T_CLOSED_LOOP_ADMISSIBLE_S"), (
+        "config must publish the range of T over which the verdicts hold"
+    )
+    lo, hi = config.T_CLOSED_LOOP_ADMISSIBLE_S
+    assert lo < config.T_CLOSED_LOOP_S < hi, "T in use is outside its own admissible window"
+
     source = importlib.import_module("inspect").getsource(config)
-    for line in source.splitlines():
-        if line.strip().startswith("CLOSED_LOOP_TOLERANCE"):
-            assert "0.012" not in line, (
-                "CLOSED_LOOP_TOLERANCE is a hardcoded literal; derive it from primitives"
-            )
+    line = next(l for l in source.splitlines()
+                if l.strip().startswith("T_CLOSED_LOOP_S"))
+    assert "CALIBRATED" in line.upper(), (
+        "T_CLOSED_LOOP_S must be labelled CALIBRATED, not MEASURED or derived: it is "
+        "back-solved from the validation data"
+    )
 
 
 # --- trap 17: parallel dataset preload -----------------------------------------------

@@ -2052,3 +2052,61 @@ and the paper's Table I and Fig. 5 use it throughout. Making the claim sound req
 renaming the verdict, or producing a witness s* at which the sampled lap-mean deviation
 actually exceeds tolerance -- which this repo can do cheaply, since it already samples the
 family.
+
+## F46 -- the family's interior IS behaviourally faithful, and the fog axis is not monotonic
+
+Both blind reviewers raised the same objection independently: the study invented a
+behavioural test for a disturbance model, used it to kill the analytic Koschmieder family
+(faithful to images at road-ROI R^2 0.848, drove the policy **23.8x** harder than real
+fog), and then never ran that test on the replacement. The interior of
+
+    x_p(s) = x_p^clear + s (x_p^cond - x_p^clear)
+
+is a pixel-space chord; only s = 0 and s = 1 are rendered. The paper's coverage claim
+rests entirely on that chord meaning something.
+
+**Run it.** Fog rendered at densities 17.5 / 35 / 52.5 against the canonical 70, 200 poses
+over the full westbound lap, every capture carrying its own clear
+(`scripts/interpolation_fidelity.py`). Each render is projected onto the chord to find the
+`s` it corresponds to, then the policy is evaluated at both points.
+
+    model     density   s*    pixel err   steer err   x tol   chord/render
+    S_clear      17.5  0.149    0.01648    +0.00219    +0.18   (render bias ~0)
+    S_clear      35.0  0.555    0.00622    +0.00266    +0.22        1.60x
+    S_clear      52.5  0.996    0.01211    +0.00114    +0.09        1.10x
+    S_mixed      17.5  0.149    0.01648    -0.00074    -0.06        0.45x
+    S_mixed      35.0  0.555    0.00622    +0.00089    +0.07        1.64x
+    S_mixed      52.5  0.996    0.01211    +0.00013    +0.01        1.06x
+
+**The chord passes the test the analytic model failed.** Where the render has a
+measurable effect the chord drives the policy 1.06-1.64x as hard, against Koschmieder's
+23.8x. In absolute terms the error a verdict would inherit never exceeds **0.22x
+tolerance**, against a worst certified margin of 0.76x and a least uncertified escape of
+2.26x. So the interior is not a fiction, and the coverage claim survives -- with a stated
+error bar rather than as an unquantified caveat. At d = 17.5 the ratio is meaningless
+because the render's own bias is +0.00001; the absolute error, 0.18x tolerance, is the
+honest statistic there and it is reported as such.
+
+**But the physical axis is NOT monotonic, and that is the new information.** Fog's signed
+effect on the road region, each against its own clear:
+
+    density    17.5     35.0     52.5     70.0
+    signed   +0.0115  -0.0133  -0.0464  -0.0342
+    |mag|     0.0116   0.0310   0.0672   0.0607
+
+It BRIGHTENS the road at low density and darkens it above, and both the signed effect and
+the magnitude turn over between 52.5 and 70. So `s` is not a monotone reparameterisation
+of density: it runs roughly linearly to d = 52.5 (s* = 0.15, 0.56, 1.00) and then
+saturates, with d = 70 landing back inside the chord rather than beyond it. Two
+consequences:
+
+1. The certificate over s in [0,1] does **not** cover "all densities up to 70". It covers
+   the chord between clear and the d = 70 render, and the worst real fog on this axis
+   (d ~ 52.5) sits at s ~ 1 rather than beyond it. That is lucky rather than designed.
+2. Any future family built by interpolating to a "maximum" condition should check
+   monotonicity first. Ours holds only because the fold is small and lands inside.
+
+**A control that fell out for free.** The four captures ran against one CARLA session and
+their four independent `clear` captures agree to **3e-4 per pixel** (signed means +4.7e-5
+to 0). F44's +0.048 regime offset is therefore a strictly BETWEEN-session effect, now
+confirmed from the other side: within a session the capture rig is reproducible to 1e-4.

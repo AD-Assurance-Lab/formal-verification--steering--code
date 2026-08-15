@@ -189,7 +189,33 @@ STEER_CORRIDOR_NORM = STEER_CORRIDOR_RAD / MAX_STEER_RAD  # 0.041 (network outpu
 # quantity to hold fixed.
 #
 #   0.041 / 0.012 = 3.42  ->  T = 1.0 s * sqrt(3.42) = 1.85 s
-T_CLOSED_LOOP_S = 1.85       # [MEASURED, back-solved from the observed cliff]
+#
+# ── BE PRECISE ABOUT WHAT THIS IS (F45) ──────────────────────────────────────
+# T_CLOSED_LOOP_S is CALIBRATED, not derived. It is back-solved so the tolerance
+# reproduces the measured stability cliff, and that cliff was measured on the same
+# closed-loop runs the certificate is later validated against. The study must NOT
+# describe the criterion as having "no fitted parameter": it has exactly one, and
+# it was fitted on the validation labels.
+#
+# That is defensible only because it is ONE global constant, calibrated once, never
+# per cell -- and because the verdicts survive a wide range of it. Swept against the
+# twelve committed cells (scripts/tolerance_sensitivity.py):
+#
+#     T = 1.00 s   10/12   BOTH shadows cells CERTIFIED while departing 10/10
+#     T = 1.23 s   11/12
+#     T = 1.50 s   12/12   <- a literature reaction time also works
+#     T = 1.85 s   12/12   <- this value
+#     T = 2.13 s   11/12
+#     admissible window: T in (1.231, 2.128) s
+#
+# The failure at T = 1.0 s is the one to remember: that is the a-priori one-second
+# horizon of T_HORIZON_S above, and at it the criterion issues UNSOUND CERTIFICATES
+# on two cells that leave the lane on every run. The ordering of the cells is correct
+# at every T -- the 3.0x separation is a ratio and is invariant -- so what T buys is
+# the PLACEMENT of the threshold inside that gap, and T was chosen by looking at
+# where the gap is.
+T_CLOSED_LOOP_S = 1.85       # [CALIBRATED on closed-loop data -- see F45 above]
+T_CLOSED_LOOP_ADMISSIBLE_S = (1.231, 2.128)   # verdicts unchanged inside this window
 CLOSED_LOOP_TOLERANCE_RAD = (
     (2.0 * WHEELBASE_M * CTE_BUDGET_M) / (TARGET_SPEED_MS ** 2 * T_CLOSED_LOOP_S ** 2)
 )
