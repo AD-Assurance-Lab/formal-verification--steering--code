@@ -122,3 +122,7 @@ replaces exhaustive sampling *within* a disturbance family, not scenario samplin
 routes and manoeuvres. One route, one speed, one vehicle, two policies. Transfer to a real
 camera is unproven. The interior of the disturbance family is an interpolation between two
 rendered endpoints, not a render. `STUDY.md` has the full list.
+
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
