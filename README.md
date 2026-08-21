@@ -1,4 +1,4 @@
-# formal-verification--automated-driving--code
+# formal-verification--steering--code
 
 Formal verification of end-to-end driving policies under physically-parameterized weather
 disturbances, characterized in CARLA.
