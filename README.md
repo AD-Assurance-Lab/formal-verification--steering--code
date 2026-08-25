@@ -11,13 +11,26 @@ code for the paper *Proving End-to-End Steering in Poor Visibility* (preprint in
 preparation).
 
 Two steering networks — one trained on clear weather, one on clear + fog + night +
-low sun — are driven over a full Town04 highway lap in both directions, then certified
+low sun — drive a full Town04 highway lap in both directions, then are certified
 with α-CROWN over the disturbance family between the rendered endpoints, without
-driving. The certificate agrees with closed-loop testing in all twelve cells:
+driving. The certificate agrees with closed-loop testing in all twelve cells.
 
-![Certified bounds vs closed-loop outcome, all twelve cells](figures/cert_bounds.png)
+<p align="center">
+  <img src="figures/route_map.png" width="330" alt="Town04 highway loop, both driven directions">
+  <img src="figures/vehicle.png" width="440" alt="The ego vehicle on the route">
+</p>
 
-![Cross-track error over the lap](figures/cte_lap.png)
+<p align="center">
+  <img src="figures/night_comparison.gif" width="780" alt="Night: the clear-only student departs within 35 m; the mixed student holds the lane">
+</p>
+
+<p align="center">
+  <img src="figures/cert_bounds.png" width="540" alt="Certified bounds vs closed-loop outcome, all twelve cells">
+</p>
+
+<p align="center">
+  <img src="figures/cte_lap.png" width="540" alt="Cross-track error over the lap">
+</p>
 
 The certificate detects failures that persist along the route; the peak statistic
 provably cannot (it misorders the two networks). Scope, caveats, and the fitted
@@ -38,12 +51,18 @@ tolerance horizon are in the paper.
 ```bash
 pip install -r requirements.txt   # plus torch, auto_LiRPA, and CARLA 0.9.16 (see file)
 
-# certificates, from full-lap captures (regenerate captures with capture_offset_yaw.py;
-# only the centreline slice is needed: OY_OFFSETS=0.0 OY_YAWS=0.0, ~38 MB per condition)
-python scripts/certify_sustained_bound.py
-
-# closed-loop table (CARLA server required)
+# 1. closed-loop driving (CARLA server required); the shipped checkpoints are the
+#    published students — retraining from scratch is pipeline/train.py -> dagger.py
+#    -> distill.py -> dagger_student.py
 python scripts/closed_loop_ledger.py --student S_clear_84x28 --condition night
+
+# 2. full-lap captures for verification (only the centreline slice is needed:
+#    OY_OFFSETS=0.0 OY_YAWS=0.0, ~38 MB per condition)
+python scripts/capture_offset_yaw.py
+
+# 3. formal verification: alpha-CROWN + input-space branch-and-bound over the
+#    disturbance family, no simulator -> the twelve certified bounds
+python scripts/certify_sustained_bound.py
 ```
 
 Every number in the paper traces to an artifact in `results/`; the paper repository
