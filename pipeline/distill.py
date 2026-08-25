@@ -125,6 +125,11 @@ def distill_student(in_w, in_h, out_name, teacher_name="steering_dagger_r02",
                     device=None, quiet=False):
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(0)
+    # Seed the augmentation RNG too: dataset._shift draws from the global `random`,
+    # and torch.manual_seed alone left retraining non-reproducible bit-for-bit.
+    import random as _random
+    _random.seed(0)
+    np.random.seed(0)
     os.makedirs(C.CHECKPOINT_DIR, exist_ok=True)
     _, rows = load_manifests(aggregated_manifests(base, dagger_dirs))
     if weathers:

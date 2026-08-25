@@ -92,11 +92,11 @@ def main():
         # like a broken settle and is not. Earlier runs only worked because a previous
         # closed-loop run had already loaded Town04.
         world = env.load_town04(cl, fresh=False)
-        orig = world.get_settings()
-        s = world.get_settings()
-        s.synchronous_mode = True
-        s.fixed_delta_seconds = C.FIXED_DT
-        world.apply_settings(s)
+        # enable_sync_mode also provisions bounded substepping. Hand-rolled settings here
+        # left CARLA's defaults (0.01 x 10 = 0.1 s of physics per 0.2 s tick), so the
+        # per-pose gravity settle ran under different physics than the driving pipeline --
+        # and this capture feeds verification.
+        orig = env.enable_sync_mode(world)
         v = cam = None
         try:
             v = env.spawn_vehicle(world, C.SPAWN_WESTBOUND if args.direction ==

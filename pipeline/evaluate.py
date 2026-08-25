@@ -106,7 +106,6 @@ def save_and_report(name, direction, records):
         w.writeheader(); w.writerows(records)
 
     stats = summarize_cte([r["cte_m"] for r in records])
-    completed = records[-1]["step"] < len(records) + 5  # loop closed vs aborted
     verdict = "PASS" if stats.get("passed") else "FAIL"
     print(f"  [{direction}] {verdict} | steps={stats['n']} "
           f"max|CTE|={stats['max_abs_cte_m']*C.M_TO_FT:.2f}ft "
@@ -136,7 +135,7 @@ def main():
     ap.add_argument("--direction", default="both", choices=["eastbound", "westbound", "both"])
     ap.add_argument("--max-steps", type=int, default=2000)
     ap.add_argument("--weather", default="clear",
-                    choices=["clear", "fog", "rain", "night"],
+                    choices=["clear", "fog", "rain", "night", "shadows"],
                     help="rendered CARLA condition; night switches the ego headlights on")
     args = ap.parse_args()
 
@@ -147,14 +146,16 @@ def main():
     world = env.load_town04(client)
     original = env.enable_sync_mode(world)
     world_map = world.get_map()
-    vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
-    camera, img_queue = env.spawn_camera(world, vehicle)
-    # after spawn: lights need the vehicle, and exposure is declared per condition
-    camera, img_queue = env.set_condition(world, vehicle, args.weather, camera)
-
+    # Spawn INSIDE the try: a failure here would otherwise skip the finally and leave
+    # the server hung in synchronous mode with no ticking client (trap 3b).
+    vehicle = camera = img_queue = None
     dirs = ["eastbound", "westbound"] if args.direction == "both" else [args.direction]
     results = {}
     try:
+        vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
+        camera, img_queue = env.spawn_camera(world, vehicle)
+        # after spawn: lights need the vehicle, and exposure is declared per condition
+        camera, img_queue = env.set_condition(world, vehicle, args.weather, camera)
         for d in dirs:
             recs = drive_nn(world, world_map, vehicle, img_queue, model, device, d, args.max_steps)
             results[d] = save_and_report(args.model, d, recs)
@@ -169,4 +170,13 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # One CARLA client per port. Two synchronous clients on one world interleave ticks
+    # and silently corrupt each other -- see pipeline/carla_lock.py for the run this
+    # cost. Every entry point that ticks the world takes the lock, in both directions:
+    # it refuses to start over someone else's run, and its own run is visible to them.
+    from carla_lock import carla_lock, CarlaBusy
+    try:
+        with carla_lock(owner=" ".join(sys.argv[:3])):
+            main()
+    except CarlaBusy as exc:
+        raise SystemExit(str(exc))

@@ -51,6 +51,11 @@ def train_model(manifest_paths, out, epochs=120, batch_size=64, lr=1e-3,
     re-training from scratch, which destabilizes on multi-condition aggregates)."""
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(0)
+    # Seed the augmentation RNG too: dataset._shift draws from the global `random`,
+    # and torch.manual_seed alone left retraining non-reproducible bit-for-bit.
+    import random as _random
+    _random.seed(0)
+    np.random.seed(0)
     os.makedirs(C.CHECKPOINT_DIR, exist_ok=True)
     os.makedirs(C.RESULTS_DIR, exist_ok=True)
 

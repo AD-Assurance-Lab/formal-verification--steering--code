@@ -138,12 +138,14 @@ def main():
     print(f"lane_width at spawn = {wp0.lane_width:.3f} m (config assumes {C.LANE_WIDTH_M})")
     print(C.summary())
 
-    vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
-    camera, img_queue = env.spawn_camera(world, vehicle)
-
+    # Spawn INSIDE the try: a failure here would otherwise skip the finally and leave
+    # the server hung in synchronous mode with no ticking client (trap 3b).
+    vehicle = camera = img_queue = None
     dirs = ["eastbound", "westbound"] if args.direction == "both" else [args.direction]
     results = {}
     try:
+        vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
+        camera, img_queue = env.spawn_camera(world, vehicle)
         for d in dirs:
             recs = drive_one(world, world_map, vehicle, img_queue, d, args.max_steps)
             results[d] = save_and_report(d, recs)
@@ -157,4 +159,13 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # One CARLA client per port. Two synchronous clients on one world interleave ticks
+    # and silently corrupt each other -- see pipeline/carla_lock.py for the run this
+    # cost. Every entry point that ticks the world takes the lock, in both directions:
+    # it refuses to start over someone else's run, and its own run is visible to them.
+    from carla_lock import carla_lock, CarlaBusy
+    try:
+        with carla_lock(owner=" ".join(sys.argv[:3])):
+            main()
+    except CarlaBusy as exc:
+        raise SystemExit(str(exc))

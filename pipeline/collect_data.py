@@ -100,12 +100,14 @@ def main():
     original = env.enable_sync_mode(world)
     world_map = world.get_map()
 
-    vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
-    camera, img_queue = env.spawn_camera(world, vehicle)
-
+    # Spawn INSIDE the try: a failure here would otherwise skip the finally and leave
+    # the server hung in synchronous mode with no ticking client (trap 3b).
+    vehicle = camera = img_queue = None
     dirs = ["eastbound", "westbound"] if args.direction == "both" else [args.direction]
     all_rows = []
     try:
+        vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
+        camera, img_queue = env.spawn_camera(world, vehicle)
         for weather in weathers:
             # Respawn the camera: exposure is declared per condition and is a
             # blueprint attribute, so it cannot be changed on a live sensor.
@@ -141,4 +143,13 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # One CARLA client per port. Two synchronous clients on one world interleave ticks
+    # and silently corrupt each other -- see pipeline/carla_lock.py for the run this
+    # cost. Every entry point that ticks the world takes the lock, in both directions:
+    # it refuses to start over someone else's run, and its own run is visible to them.
+    from carla_lock import carla_lock, CarlaBusy
+    try:
+        with carla_lock(owner=" ".join(sys.argv[:3])):
+            main()
+    except CarlaBusy as exc:
+        raise SystemExit(str(exc))
