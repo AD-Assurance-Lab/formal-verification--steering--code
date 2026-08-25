@@ -73,13 +73,14 @@ def main():
 
     client = carla.Client(C.HOST, C.PORT)
     client.set_timeout(C.CLIENT_TIMEOUT_S)
-    world = client.get_world()
-    original = world.get_settings()
-
-    settings = world.get_settings()
-    settings.synchronous_mode = True
-    settings.fixed_delta_seconds = C.FIXED_DT
-    world.apply_settings(settings)
+    # LOAD THE CONFIGURED MAP. `get_world()` returns whatever happens to be loaded; a
+    # freshly launched CARLA serves Town10, and this sweep would then capture Town10 at
+    # Town04 coordinates (capture_offset_yaw.py documents the incident).
+    world = env.load_town04(client, fresh=False)
+    # enable_sync_mode also provisions bounded substepping. Hand-rolled settings here
+    # left CARLA's defaults (0.01 x 10 = 0.1 s of physics per 0.2 s tick), so the
+    # settle loop below ran under different physics than the driving pipeline.
+    original = env.enable_sync_mode(world)
 
     vehicle = camera = None
     captures = {}

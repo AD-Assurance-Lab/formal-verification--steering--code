@@ -16,7 +16,9 @@ HOST = "127.0.0.1"
 # servers on port 2000, and kill-by-name taking down someone else's simulator.
 PORT = int(os.environ.get("CARLA_PORT", "2000"))
 CLIENT_TIMEOUT_S = 120.0
-TRAFFIC_MANAGER_PORT = 8005
+# No TrafficManager exists in this study -- the scene is ego + sensors only, so there
+# is no TM to seed and no NPC stochasticity. (A TM port constant used to sit here and
+# implied otherwise.)
 CARLA_ROOT = os.environ.get("CARLA_ROOT", os.path.expanduser("~/carla"))
 
 # ── Map ──────────────────────────────────────────────────────────────────────

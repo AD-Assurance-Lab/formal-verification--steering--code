@@ -36,6 +36,44 @@ from student import StudentNet, student_preprocess  # noqa: E402
 LEDGER = REPO / "results" / "ledger"
 SPAWNS = {"eastbound": C.SPAWN_EASTBOUND, "westbound": C.SPAWN_WESTBOUND}
 
+# Env vars that silently change what a run measures. A leftover export in the shell
+# would otherwise overwrite a canonical cell with a different disturbance and leave
+# no trace in the JSON or in git -- the same shape as the weather-preset trap, with
+# the process environment as the carrier.
+OVERRIDE_VARS = ("FOG_DENSITY_OVERRIDE", "SUN_ALTITUDE_OVERRIDE", "ROUTE_ROLL")
+
+
+def run_provenance(condition):
+    """Everything needed to attribute this cell to a configuration after the fact.
+
+    The weather block is the CONSTRUCTED parameters (env.weather_params), never a
+    read-back of live simulator state -- reads issued next to writes see the previous
+    tick (see carla_env.py). Recorded here because the cell filename encodes only the
+    condition NAME, and two runs under the same name can differ via overrides."""
+    import datetime
+    import subprocess
+    w = env.weather_params(condition)
+    weather = {f: float(getattr(w, f)) for f in sorted(env.CLEAR_BASELINE)}
+    try:
+        sha = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True,
+                             text=True, cwd=REPO, timeout=10).stdout.strip() or None
+        dirty = bool(subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=no"],
+            capture_output=True, text=True, cwd=REPO, timeout=10).stdout.strip())
+    except Exception:
+        sha, dirty = None, None
+    return dict(
+        run_started=datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
+        weather=weather,
+        env_overrides={k: os.environ[k] for k in OVERRIDE_VARS if os.environ.get(k)},
+        fixed_delta_seconds=C.FIXED_DT,
+        substepping=dict(max_substeps=16, max_substep_delta_time=C.FIXED_DT / 16),
+        map=C.MAP_NAME,
+        target_speed_ms=C.TARGET_SPEED_MS,
+        lap_end_m=C.LAP_END_M,
+        git_sha=sha, git_dirty=dirty,
+    )
+
 
 def wilson(k, n, z=1.96):
     """Wilson score interval for a binomial proportion.
@@ -187,6 +225,18 @@ def main():
                          "frames at ~0.3 MB, so logging all 10 reps costs several GB.")
     args = ap.parse_args()
 
+    active_overrides = {k: os.environ[k] for k in OVERRIDE_VARS if os.environ.get(k)}
+    if active_overrides and not args.cell_name:
+        print("REFUSING to write a canonical ledger cell with overrides active:")
+        for k, v in active_overrides.items():
+            print(f"  {k}={v}")
+        print("A canonical cell name asserts the preset condition. Pass --cell-name with "
+              "a variant token (the overrides are then recorded in the JSON), or unset "
+              "the variables.")
+        return 2
+
+    prov = run_provenance(args.condition)
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = StudentNet(args.h, args.w,
                        channels=tuple(int(v) for v in args.channels.split(",")),
@@ -261,12 +311,14 @@ def main():
     LEDGER.mkdir(parents=True, exist_ok=True)
     cell = args.cell_name or args.student
     path = LEDGER / f"{args.condition}__{cell}__closed_loop.json"
+    import datetime
+    prov["run_finished"] = datetime.datetime.now().astimezone().isoformat(timespec="seconds")
     with open(path, "w") as fh:
         json.dump(dict(
             verdict=verdict, repetitions=n, failures=fails, failure_rate=rate,
             wilson_95=[lo, hi], student=args.student, condition=args.condition,
             exposure=C.exposure_for(args.condition),
-            cte_budget_m=C.CTE_BUDGET_M, runs=runs,
+            cte_budget_m=C.CTE_BUDGET_M, provenance=prov, runs=runs,
         ), fh, indent=2)
     print(f"\nwrote {path}")
 

@@ -170,22 +170,45 @@ def main():
     channels = tuple(int(x) for x in args.channels.split(","))
     dagger_student_dir = os.path.join(C.DATASET_DIR, args.dagger_dir)
     distill_dirs = tuple(args.distill_dirs.split(","))
-    model = load_student(args.student, args.w, args.h, device, channels=channels, fc=args.fc)
-    current = args.student
+    # Resume: rounds from earlier invocations are discovered so a long run can be
+    # executed in batches without overwriting them (which would both lose their
+    # frames and silently shrink the aggregated distillation set).
+    _prior = sorted(glob.glob(os.path.join(dagger_student_dir, "round*", "manifest.csv")))
+    _offset = (1 + max(int(os.path.basename(os.path.dirname(m))[5:]) for m in _prior)) if _prior else 0
+
+    # RESUME MUST ADVANCE THE POLICY, NOT JUST THE ROUND COUNTER (same fix as
+    # dagger.py, which measured the cost: a resume that reloads the original policy
+    # re-evaluates a checkpoint already known to fail and silently discards every
+    # completed round's improvement -- repeated behaviour cloning, trap 16).
+    # Walk DOWN from the newest round to the highest checkpoint that actually exists;
+    # an interrupted round can leave a manifest with no trained checkpoint.
+    start_from = args.student
+    if _prior:
+        for _r in range(_offset - 1, -1, -1):
+            _cand = f"{args.student}_dagger_r{_r:02d}"
+            if os.path.isfile(os.path.join(C.CHECKPOINT_DIR, f"{_cand}.pth")):
+                start_from = _cand
+                print(f"resuming from '{start_from}', the newest policy this run "
+                      f"actually trained (round {_r}); not '{args.student}'", flush=True)
+                break
+        else:
+            print(f"WARNING: no {args.student}_dagger_r*.pth from this run; falling "
+                  f"back to '{args.student}', discarding {_offset} round(s) of "
+                  f"improvement", flush=True)
+    model = load_student(start_from, args.w, args.h, device, channels=channels, fc=args.fc)
+    current = start_from
 
     client = env.connect()
     world = env.load_town04(client)
     original = env.enable_sync_mode(world)
-    vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
-    camera, img_queue = env.spawn_camera(world, vehicle)
-
+    # Spawn INSIDE the try: an exception between enable_sync_mode and the first tick
+    # would otherwise skip the finally and leave the server hung in synchronous mode
+    # with no ticking client (trap 3b).
+    vehicle = camera = img_queue = None
     history = []
     try:
-        # Resume: rounds from earlier invocations are discovered so a long run can be
-        # executed in batches without overwriting them (which would both lose their
-        # frames and silently shrink the aggregated distillation set).
-        _prior = sorted(glob.glob(os.path.join(dagger_student_dir, "round*", "manifest.csv")))
-        _offset = (1 + max(int(os.path.basename(os.path.dirname(m))[5:]) for m in _prior)) if _prior else 0
+        vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
+        camera, img_queue = env.spawn_camera(world, vehicle)
         if _offset:
             print(f"resuming: found {len(_prior)} prior student round(s), continuing at round {_offset}",
                   flush=True)
@@ -250,4 +273,13 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # One CARLA client per port. Two synchronous clients on one world interleave ticks
+    # and silently corrupt each other -- see pipeline/carla_lock.py for the run this
+    # cost. Every entry point that ticks the world takes the lock, in both directions:
+    # it refuses to start over someone else's run, and its own run is visible to them.
+    from carla_lock import carla_lock, CarlaBusy
+    try:
+        with carla_lock(owner=" ".join(sys.argv[:3])):
+            main()
+    except CarlaBusy as exc:
+        raise SystemExit(str(exc))

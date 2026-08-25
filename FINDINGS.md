@@ -852,6 +852,18 @@ Do not reach for auto-exposure.
 
 **Status: partial early answer to E8. Not conclusive — needs the depth-resolved fit (D4).**
 
+> **RETROSPECTIVE NOTE (2026-08-25, code audit).** The script behind this table,
+> `scripts/fog_isolation.py`, contained the read-modify-write weather bug this repo
+> documents in `carla_env.py`: it called `set_clear_weather()` and then immediately
+> `world.get_weather()`, which returns the PREVIOUS tick's weather — so the "clear
+> illumination held fixed" premise was never established, and the sweep plausibly ran
+> under the map's default illumination. The table below is therefore unreliable beyond
+> its own caveat. The fog behaviour that survives into the current record was
+> re-measured by clean instruments (`scripts/fog_density_sweep.py`, constructed
+> weather + settle ticks, and F46's interpolation test), and the non-monotonicity
+> claim rests on those, not on this table. The script has been deleted; it is
+> recoverable from git history at this commit's parent.
+
 `scripts/fog_isolation.py`, 20 poses, manual exposure, clear illumination held fixed
 (cloudiness 80, sun_altitude 90), only `fog_density` varied:
 
