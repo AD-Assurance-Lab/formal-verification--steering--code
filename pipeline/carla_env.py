@@ -171,6 +171,15 @@ def _lights(on):
     return carla.VehicleLightState(carla.VehicleLightState.NONE)
 
 
+def headlights_on(sun_altitude_deg):
+    """Headlights follow the SUN, not the preset name (trap 19).
+
+    Keying off the name alone would drive a swept -10 degree scene with lights off,
+    reintroducing the v1 artefact where night ran with headlights off. A pure function
+    so the rule is testable without a live simulator (conformance/test_traps.py)."""
+    return sun_altitude_deg < 0.0
+
+
 def set_weather(world, name, vehicle=None):
     """Apply a condition preset and, if a vehicle is given, the matching lights.
 
@@ -183,12 +192,10 @@ def set_weather(world, name, vehicle=None):
     w = weather_params(name)
     world.set_weather(w)
     if vehicle is not None:
-        # Headlights follow the SUN, not the preset name, so that a swept sun altitude
-        # stays physical. The presets already encode this rule -- clear 90 and shadows 15
-        # are daylight with lights off, night -25 is below the horizon with lights on -- and
-        # keying off the name alone would drive a swept -10 degree scene with lights off,
-        # reintroducing the v1 artefact this comment block exists to prevent.
-        vehicle.set_light_state(_lights(w.sun_altitude_angle < 0.0))
+        # The presets already encode the rule headlights_on states -- clear 90 and
+        # shadows 15 are daylight with lights off, night -25 is below the horizon
+        # with lights on.
+        vehicle.set_light_state(_lights(headlights_on(w.sun_altitude_angle)))
 
 
 def set_condition(world, vehicle, name, camera=None):

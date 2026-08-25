@@ -30,6 +30,14 @@ CARLA frames, against the actual outcome:
 
 `S_mixed` scores below threshold at every density and passes every density, 4/4.
 
+> **SUPERSEDED IN PART (2026-08-25, D-14).** The `S_clear` FAIL 20/20 rows above are
+> full-lap-protocol cells whose departures all originate inside the western
+> intersection (max-CTE at steps 1703–1705; 98.8% of frames in budget) — the junction
+> ODD boundary of D-09, not a fog failure. Under the amended open-road protocol
+> (F28) the same checkpoint at the same densities is clean, 0/60 departures
+> (`fog___openfog_*`). The mechanism argument below survives for the conditions that
+> genuinely fail (night, shadows); the fog rows no longer support it.
+
 **So the nominal-path model explains one of four failures.** At 25-55 the real biases reverse
 sign every 8-16 frames while the vehicle leaves the road on every run. Whatever removes it
 from the lane is not a steady pull.

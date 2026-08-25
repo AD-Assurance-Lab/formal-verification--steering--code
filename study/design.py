@@ -138,3 +138,56 @@ VACUOUS_VERIFY_CELLS = {"clear"}
 # Minimum repetitions for any closed-loop verdict. Measured: near the stability cliff a
 # single run gives the wrong answer roughly 1 in 8 times, so a single run is not evidence.
 MIN_CLOSED_LOOP_REPS = 10
+
+
+# ── The lap-scope amendment and the FINAL campaign ───────────────────────────
+# AMENDED 2026-08-13 (F28, D-09, D-14). The closed-loop protocol was changed by
+# deliberate direction ("it must be the full lap but no intersection"): the lap is
+# scored over the open road, 0-2861 m, ending BEFORE the western intersection, whose
+# junction has no lane markings and is a real ODD boundary reported separately
+# (D-07/D-09). The original full-lap cells stay in results/ledger under the canonical
+# names as the record of the superseded protocol; the campaign the paper reports lives
+# in the cells below. docs/DISPOSITIONS.md D-14 carries the evidence that every era-1
+# fog "failure" originated inside the junction (max-CTE at steps 1695-1706 with 1.2%
+# of frames over budget), which is why fog flips to PASS on the open road.
+FINAL_CLOSED_LOOP = {
+    ("clear",   "S_clear"): "clear___trunc_Sclear",
+    ("fog",     "S_clear"): "fog___trunc_Sclear",
+    ("night",   "S_clear"): "night___trunc_Sclear",
+    ("shadows", "S_clear"): "shadows___trunc_Sclear",
+    ("clear",   "S_mixed"): "clear___trunc_Smixed",
+    ("fog",     "S_mixed"): "fog___trunc_Smixed",
+    ("night",   "S_mixed"): "night___trunc_Smixed",
+    ("shadows", "S_mixed"): "shadows___trunc_Smixed",
+    # Rain was driven only under the final protocol, so its canonical names ARE final.
+    ("rain",    "S_clear"): "rain__S_clear",
+    ("rain",    "S_mixed"): "rain__S_mixed",
+}
+
+# ── The sustained-bias certificate (F34-F37, F43): the paper's instrument ─────
+# D-12: the per-frame-median `verify` cells above belong to a RETIRED instrument; the
+# instrument the paper reports had no ledger column at all, which is how the F43
+# baseline defect went unseen. These two artifacts are that column.
+#
+#   sustained_bound.json      12 canonical cells. IN-SAMPLE: computed after the
+#                             driving outcomes were known. It carries no order claim
+#                             and must never be presented as a prediction.
+#   heldout_rain_verdicts.json 4 rain cells. BLIND: committed at 89922ff before the
+#                             rain cells were driven (F47 / P-10).
+SUSTAINED_BOUND_REL = "results/calibration/sustained_bound.json"
+HELDOUT_RAIN_REL = "results/predictions/heldout_rain_verdicts.json"
+SUSTAINED_CONDITIONS = ("fog", "night", "shadows")   # rain comes from the blind file
+
+# Dispositions for certificate cells whose verdict contradicts the pre-registered
+# expectation. The certificate artifacts are aggregate measured files, so their
+# dispositions are recorded here rather than by editing the artifact:
+#   fog/S_clear CERTIFIED vs expected FALSIFIED -- D-14: S_clear is genuinely
+#     fog-robust on the open road (0/60 departures, F27); the expectation predated
+#     the junction diagnosis.
+#   rain/S_mixed NOT CERTIFIED vs expected CERTIFIED -- D-13: the pre-registration
+#     assumed mixed training generalises to unseen rain; two instruments agree it
+#     does not, and the certificate said so first.
+CERT_DISPOSITIONS = {
+    ("fog", "S_clear"): "D-14",
+    ("rain", "S_mixed"): "D-13",
+}
