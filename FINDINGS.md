@@ -2131,59 +2131,12 @@ their four independent `clear` captures agree to **3e-4 per pixel** (signed mean
 to 0). F44's +0.048 regime offset is therefore a strictly BETWEEN-session effect, now
 confirmed from the other side: within a session the capture rig is reproducible to 1e-4.
 
-## F47 -- P-10: the first held-out canonical condition, 4/4, and it corrected our own pre-registration
+## F47 -- WITHDRAWN with the rain condition (2026-08-25)
 
-Both blind reviewers named the same missing experiment: every canonical result is
-in-sample, the criterion was chosen with all twelve outcomes known, and no canonical
-condition was ever held out. Rain was pre-registered in `study/design.py` as contingent
-with an expected outcome recorded in `STUDY.md` before any of this existed, and neither
-student was trained on it. So it was available the whole time.
-
-**Protocol, in order, verifiable from git.** Captured full lap both directions, each with
-its own clear baseline in the same session (D-11). Certified with
-`scripts/certify_heldout.py`, which has no truth table by construction and cannot print
-an agreement column. Verdicts committed at `89922ff`. **Then** driven.
-
-    dir        model     bias bound (x tol)   verdict         driving      result
-    westbound  S_clear   [-6.45,  +2.66]      NOT CERTIFIED   FAIL 10/10   agree
-    westbound  S_mixed   [-1.98, +11.33]      NOT CERTIFIED   FAIL 10/10   agree
-    eastbound  S_clear   [-5.26,  +2.83]      NOT CERTIFIED   FAIL 10/10   agree
-    eastbound  S_mixed   [-2.00,  +9.31]      NOT CERTIFIED   FAIL 10/10   agree
-
-    4/4 -- every run departed, both students, both directions
-
-> **COUNT CLARIFICATION (2026-08-25).** "FAIL 10/10" in the rows above is the
-> per-STUDENT rate (ten runs, five per direction), repeated on both direction rows of
-> that student; the certificate has four cells but the driving record is twenty runs
-> total, not forty (`rain__S_*__closed_loop.json`, commit `1db3b38`). An early paper
-> draft counted forty from this table; corrected against the artifacts.
-
-**Set against this project's history, that is the headline.** Every prior blind test
-regressed to chance: P-03 14/14 -> 2/6, P-06 7/8 -> 3/7, P-07 8/8 -> 6/10, P-08b 10/10 ->
-2/4. This is the first that did not.
-
-**And it is not the criterion echoing our expectations, because it contradicted them.**
-`STUDY.md` pre-registered rain as `S_mixed` PASS / CERTIFIED. The certificate said NOT
-CERTIFIED, escaping to +11.33x, and the driving departed on all ten runs. The certificate
-was right and the study design was wrong. `S_mixed` was trained on clear, fog, night and
-shadows -- not rain -- and the mixed student's advantage evidently does not generalise to
-an unseen photometric condition, which is a result about the POLICY that the certificate
-surfaced without driving.
-
-**The failure mode is the one this criterion is for.** Mean fraction of the lap over
-budget is 57.8% (`S_clear`) and 82.3% (`S_mixed`) -- sustained, like night's 67.2%, not
-localized like the intermediate sun elevations the criterion provably misses. Rain is a
-global photometric change, so this is squarely inside the scope section 0 claims and is
-not evidence about the localized mode.
-
-**BE HONEST ABOUT WHAT 4/4 DOES NOT SHOW.** All four cells carry the same verdict and all
-four drove the same way. A criterion that answered NOT CERTIFIED to everything would also
-score 4/4 here. This test exercises SENSITIVITY -- does the certificate catch a real
-failure it has never seen -- and it says nothing about SPECIFICITY on rain, because rain
-contains no passing cell to false-alarm on. The specificity evidence remains the eight
-canonical certified cells, which are in-sample.
-
-**What would strengthen it:** a held-out condition that one student survives and the other
-does not. The natural candidate is a rain intensity low enough for `S_mixed` to hold the
-lane, found by sweeping precipitation the way fog density was swept, then held out and
-committed the same way. That is the next experiment and it is cheap.
+This entry reported a held-out rain experiment. Rain was withdrawn from the study:
+CARLA's rain rendering is temporally stochastic (two renders at one pose differ --
+see the note under F36), so the deterministic two-endpoint family cannot represent
+it, and a proper treatment needs a stochastic element in the disturbance family.
+That is future work, and reporting a rain result computed on the deterministic
+family would overclaim. The full entry and its artifacts are recoverable from git
+history at this commit's parent.

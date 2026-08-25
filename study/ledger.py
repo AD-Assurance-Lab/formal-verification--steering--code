@@ -25,9 +25,8 @@ instrument had no column):
                           per-frame-median verifier. Historical record; never edited.
   final campaign          design.FINAL_CLOSED_LOOP -> the open-road (0-2861 m)
                           closed-loop cells the paper reports (F28/D-14 amendment).
-  sustained certificate   results/calibration/sustained_bound.json (in-sample) and
-                          results/predictions/heldout_rain_verdicts.json (blind),
-                          the F34-F37 instrument.
+  sustained certificate   results/calibration/sustained_bound.json, the F34-F37
+                          instrument (in-sample: computed after the driving).
 """
 
 import argparse
@@ -41,7 +40,6 @@ from study.design import (
     CERT_DISPOSITIONS,
     CONDITIONS,
     FINAL_CLOSED_LOOP,
-    HELDOUT_RAIN_REL,
     INSTRUMENTS,
     MIN_CLOSED_LOOP_REPS,
     STUDENTS,
@@ -155,21 +153,18 @@ def unsound_cells():
 def sustained_certificates():
     """Per (condition, student): the collapsed certificate verdict and its directions.
 
-    NOT CERTIFIED (the blind file's honest vocabulary: it had no truth table, so it
-    could not claim FALSIFIED against a known outcome) maps to FALSIFIED for
+    NOT CERTIFIED (certify_heldout's vocabulary: it loads no truth table, so it
+    cannot claim FALSIFIED against a known outcome) maps to FALSIFIED for
     agreement purposes."""
     certs = {}
-    for rel, blind in ((SUSTAINED_BOUND_REL, False), (HELDOUT_RAIN_REL, True)):
-        data = _load_json(REPO / rel)
-        if data is None:
+    data = _load_json(REPO / SUSTAINED_BOUND_REL)
+    for key, cell in (data or {}).items():
+        if key.startswith("_"):
             continue
-        for key, cell in data.items():
-            if key.startswith("_"):
-                continue
-            direction, student, condition = key.split("/")
-            entry = certs.setdefault((condition, student),
-                                     dict(dirs={}, blind=blind, source=rel))
-            entry["dirs"][direction] = cell["verdict"]
+        direction, student, condition = key.split("/")
+        entry = certs.setdefault((condition, student),
+                                 dict(dirs={}, source=SUSTAINED_BOUND_REL))
+        entry["dirs"][direction] = cell["verdict"]
     for entry in certs.values():
         vs = {("FALSIFIED" if v == "NOT CERTIFIED" else v) for v in entry["dirs"].values()}
         if "FALSIFIED" in vs:
@@ -323,21 +318,10 @@ def check_order(dispositions=None):
             if not c_path.exists():
                 continue
             if not v_path.exists():
-                if cond.name == "rain":
-                    continue      # rain's verdicts are the blind held-out file, below
                 found.append(("error", f"{cond.name}/{student}: closed loop recorded "
                               f"with NO committed verdict -- order unverifiable"))
                 continue
             _order_pair(f"{cond.name}/{student}", v_path, c_path)
-
-    # The blind rain protocol: held-out verdicts must precede the rain drives.
-    rain_verdicts = REPO / HELDOUT_RAIN_REL
-    if rain_verdicts.exists():
-        for student in STUDENTS:
-            c_path = RESULTS_DIR / f"{FINAL_CLOSED_LOOP[('rain', student)]}__closed_loop.json"
-            if c_path.exists():
-                _order_pair(f"rain/{student} (blind, {HELDOUT_RAIN_REL})",
-                            rain_verdicts, c_path)
 
     # Provenance timestamps (recorded by closed_loop_ledger going forward): the verdict
     # commit must precede the RUN, not merely the result commit.
@@ -383,12 +367,11 @@ def coverage_problems():
             found.append(("error", f"UNTRACKED result file (no git anchor): "
                           f"{line[3:].strip()}"))
 
-    for rel in (SUSTAINED_BOUND_REL, HELDOUT_RAIN_REL):
-        p = REPO / rel
-        if not p.exists():
-            found.append(("error", f"certificate artifact missing: {rel}"))
-        elif _add_commit(p) is None:
-            found.append(("error", f"certificate artifact not committed: {rel}"))
+    p = REPO / SUSTAINED_BOUND_REL
+    if not p.exists():
+        found.append(("error", f"certificate artifact missing: {SUSTAINED_BOUND_REL}"))
+    elif _add_commit(p) is None:
+        found.append(("error", f"certificate artifact not committed: {SUSTAINED_BOUND_REL}"))
     return found
 
 
@@ -442,8 +425,6 @@ def render(dispositions):
             cert = certs.get((cond.name, student))
             cl = load_final(cond.name, student)
             cv = "--" if cond.name == "clear" else (cert["verdict"] if cert else "PENDING")
-            if cert and cert.get("blind"):
-                cv += " (blind)"
             dv = cl["verdict"] if cl else "PENDING"
             if cert and cl and cond.name != "clear":
                 total += 1
@@ -455,8 +436,7 @@ def render(dispositions):
         print(line)
     if total:
         print(f"\ncertificate/driving agreement: {agree}/{total} "
-              f"(sustained-failure scope only -- see STATE_OF_PLAY 0b for what the "
-              f"blind tests bound)")
+              f"(in-sample, sustained-failure scope only -- see STATE_OF_PLAY 0b)")
     all_problems += final_campaign_problems(dispositions)
     return all_problems
 

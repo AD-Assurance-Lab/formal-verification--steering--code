@@ -22,7 +22,7 @@ evidence and this is the only kind of test that is.
 The arithmetic is identical to the canonical certifier -- same bound, same statistic,
 same NSPLIT -- so a difference in outcome cannot be blamed on a difference in method.
 
-    python scripts/certify_heldout.py --condition rain
+    python scripts/certify_heldout.py --condition <held-out condition>
 """
 import sys
 import json

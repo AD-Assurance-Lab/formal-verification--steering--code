@@ -37,12 +37,17 @@ CONDITIONS = [
     Condition("night",   "road illuminance", "lux",  1e4,  10.0),
     Condition("fog",     "meteorological optical range", "m", 2000.0, 60.0),
     Condition("shadows", "solar elevation",  "deg",  60.0, 10.0),
-    Condition("rain",    "rain rate",        "mm/h", 0.0,  25.0, status="contingent"),
 ]
 
-# CARLA renders no snow. Recorded here so it is a declared scope decision rather than an
-# omission a reviewer has to notice.
-OUT_OF_SCOPE = {"snow": "CARLA renders no snow"}
+# Declared scope decisions, recorded so they are not omissions a reviewer has to notice.
+# Rain was withdrawn from the study 2026-08-25: CARLA's rain rendering is temporally
+# stochastic (drops and streaks vary frame to frame), so a deterministic two-endpoint
+# family cannot represent it; it needs a stochastic element in the disturbance family
+# and is future work. The withdrawn rain artifacts are recoverable from git history.
+OUT_OF_SCOPE = {
+    "snow": "CARLA renders no snow",
+    "rain": "temporally stochastic rendering; needs a stochastic disturbance family",
+}
 
 
 def expected(student, condition, instrument):
@@ -159,35 +164,25 @@ FINAL_CLOSED_LOOP = {
     ("fog",     "S_mixed"): "fog___trunc_Smixed",
     ("night",   "S_mixed"): "night___trunc_Smixed",
     ("shadows", "S_mixed"): "shadows___trunc_Smixed",
-    # Rain was driven only under the final protocol, so its canonical names ARE final.
-    ("rain",    "S_clear"): "rain__S_clear",
-    ("rain",    "S_mixed"): "rain__S_mixed",
 }
 
 # ── The sustained-bias certificate (F34-F37, F43): the paper's instrument ─────
 # D-12: the per-frame-median `verify` cells above belong to a RETIRED instrument; the
 # instrument the paper reports had no ledger column at all, which is how the F43
-# baseline defect went unseen. These two artifacts are that column.
+# baseline defect went unseen. This artifact is that column.
 #
 #   sustained_bound.json      12 canonical cells. IN-SAMPLE: computed after the
 #                             driving outcomes were known. It carries no order claim
 #                             and must never be presented as a prediction.
-#   heldout_rain_verdicts.json 4 rain cells. BLIND: committed at 89922ff before the
-#                             rain cells were driven (F47 / P-10).
 SUSTAINED_BOUND_REL = "results/calibration/sustained_bound.json"
-HELDOUT_RAIN_REL = "results/predictions/heldout_rain_verdicts.json"
-SUSTAINED_CONDITIONS = ("fog", "night", "shadows")   # rain comes from the blind file
+SUSTAINED_CONDITIONS = ("fog", "night", "shadows")
 
 # Dispositions for certificate cells whose verdict contradicts the pre-registered
-# expectation. The certificate artifacts are aggregate measured files, so their
+# expectation. The certificate artifact is an aggregate measured file, so its
 # dispositions are recorded here rather than by editing the artifact:
 #   fog/S_clear CERTIFIED vs expected FALSIFIED -- D-14: S_clear is genuinely
 #     fog-robust on the open road (0/60 departures, F27); the expectation predated
 #     the junction diagnosis.
-#   rain/S_mixed NOT CERTIFIED vs expected CERTIFIED -- D-13: the pre-registration
-#     assumed mixed training generalises to unseen rain; two instruments agree it
-#     does not, and the certificate said so first.
 CERT_DISPOSITIONS = {
     ("fog", "S_clear"): "D-14",
-    ("rain", "S_mixed"): "D-13",
 }

@@ -512,6 +512,8 @@ def test_expectation_table_is_pinned():
     test in the same commit, which is exactly the visibility an amendment should have."""
     from study.design import expected
 
+    # Rain was withdrawn from the design 2026-08-25 (design.OUT_OF_SCOPE: CARLA's
+    # rain rendering is temporally stochastic; future work), so the table is 16 cells.
     GOLDEN = {
         ("clear", "S_clear", "closed_loop"): "PASS",
         ("clear", "S_clear", "verify"): "CERTIFIED",
@@ -529,10 +531,6 @@ def test_expectation_table_is_pinned():
         ("shadows", "S_clear", "verify"): "FALSIFIED",
         ("shadows", "S_mixed", "closed_loop"): "PASS",
         ("shadows", "S_mixed", "verify"): "CERTIFIED",
-        ("rain", "S_clear", "closed_loop"): "FAIL",
-        ("rain", "S_clear", "verify"): "FALSIFIED",
-        ("rain", "S_mixed", "closed_loop"): "PASS",
-        ("rain", "S_mixed", "verify"): "CERTIFIED",
     }
     for (cond, student, instrument), want in GOLDEN.items():
         got = expected(student, cond, instrument)

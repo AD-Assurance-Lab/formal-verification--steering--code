@@ -79,29 +79,6 @@ def cert_figure():
     plt.close(fig)
 
 
-def rain_figure():
-    data = json.loads((REPO / "results/predictions/heldout_rain_verdicts.json").read_text())
-    tol = data["_meta"]["tolerance"]
-    ledger = REPO / "results/ledger"
-    rows = []
-    for student, sname in (("S_clear", "clear-only"), ("S_mixed", "mixed")):
-        cl = json.loads((ledger / f"rain__{student}__closed_loop.json").read_text())
-        drive = f"drives FAIL {cl['failures']}/{cl['repetitions']}"
-        for d, dtag in (("westbound", "W"), ("eastbound", "E")):
-            c = data[f"{d}/{student}/rain"]
-            rows.append((f"{sname} · rain · {dtag}", c["lo"] / tol, c["hi"] / tol,
-                         c["verdict"] == "CERTIFIED", drive))
-    fig, ax = plt.subplots(figsize=(8.6, 2.4), dpi=160)
-    _draw_cells(ax, rows)
-    _interval_axis(ax, -8.0, 13.0)
-    ax.set_title("Held-out rain (blind): verdicts committed before driving --\n"
-                 "all four bounds escape, all twenty runs depart", fontsize=10,
-                 color=INK, loc="left")
-    fig.subplots_adjust(left=0.22, right=0.86, bottom=0.24, top=0.86)
-    fig.savefig(OUT / "rain_blind.png", facecolor="white")
-    plt.close(fig)
-
-
 def trace_figure():
     traces = REPO / "results/traces"
     if not traces.exists():
@@ -148,7 +125,6 @@ def trace_figure():
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     cert_figure()
-    rain_figure()
     trace_figure()
     for p in sorted(OUT.glob("*.png")):
         print(f"wrote {p.relative_to(REPO)}  ({p.stat().st_size / 1024:.0f} KB)")

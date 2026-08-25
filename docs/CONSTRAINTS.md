@@ -40,7 +40,7 @@ Violating one silently reproduces a bug that has already cost time.
    looseness accumulates through their relaxations — but it is now an ordinary
    network-size cost rather than the dominant penalty.
 
-   **Practical consequence:** if width alone cannot carry a condition (shadows and rain are
+   **Practical consequence:** if width alone cannot carry a condition (shadows are
    the likely cases), resolution is back on the table. Confirm against the measured bound
    tightness at M5 before relying on it.
 

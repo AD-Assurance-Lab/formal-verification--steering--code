@@ -31,7 +31,6 @@ Pre-registered. Filled in as results arrive. `python -m study.ledger` checks it.
 | night | road illuminance, lux | FAIL | FALSIFIED | PASS | CERTIFIED |
 | fog | MOR, m | FAIL | FALSIFIED | PASS | CERTIFIED |
 | shadows | solar elevation, deg | FAIL | FALSIFIED | PASS | CERTIFIED |
-| rain | rain rate, mm/h | FAIL | FALSIFIED | PASS | CERTIFIED |
 
 **Rows 1-4 are the spine.** The verification column must agree with the closed-loop column
 in every cell. Any disagreement is a bug until dispositioned.
@@ -122,9 +121,10 @@ about 15 minutes. Do not block the end-to-end pipeline on this.
 
 **snow is out of scope.** CARLA renders no snow. Say so in the paper.
 
-**rain is contingent** — see `docs/DISTURBANCE_MATH.md`. Its appearance model is
-high-frequency and spatially stochastic, with no low-rank per-pixel affine form. Attempted
-only if night, fog and shadows land.
+**rain is out of scope (withdrawn 2026-08-25).** Its rendering is temporally
+stochastic — two renders at one pose differ — so the deterministic two-endpoint family
+cannot represent it (`docs/DISTURBANCE_MATH.md` has the appearance-model argument). A
+proper treatment needs a stochastic element in the disturbance family; future work.
 
 ### Parameter axes (declared before training, per the design rule in CLAUDE.md)
 
@@ -133,7 +133,6 @@ only if night, fog and shadows land.
 | night | road illuminance E | 10^4 → 10 lux | extremes only | full interval |
 | fog | meteorological optical range | 2000 → 60 m | extremes only | full interval |
 | shadows | solar elevation | 60° → 10° | extremes only | full interval |
-| rain | rain rate | 0 → 25 mm/h | extremes only | full interval |
 
 Training at the extremes and verifying over the continuum is what leaves room for the
 optional M7 finding (below).
@@ -168,10 +167,10 @@ Weakness: "it fails at dusk" is a prediction a reviewer may call obvious.
 
 ### S2. Combined disturbances (Zach, 2026-08-11)
 
-fog+night, rain+fog, rain+fog+night. Shadows are largely exclusive with the others --
-they need direct sun, which heavy precipitation's cloud removes -- though **thin fog with
-sun is physically real** and fog washing out shadow contrast is a genuine interaction
-worth one experiment.
+fog+night. Shadows are largely exclusive with the others -- they need direct sun,
+which heavy cloud removes -- though **thin fog with sun is physically real** and fog
+washing out shadow contrast is a genuine interaction worth one experiment. (This
+axis-combination programme now lives in the multi-condition study.)
 
 **Why this may be the better probe.** Train on single conditions only, verify over the
 JOINT parameter box, and ask where the combination fails. Nobody's intuition is reliable
@@ -198,8 +197,7 @@ sampling-cost comparison gets far more favourable as d grows.
    fixed, but at night the airlight is not skylight -- it is HEADLIGHT BACKSCATTER,
    spatially concentrated in the near field. Real fog at night is a bright wall in front of
    the car, not dimmed daytime fog. So fog+night needs `A(lux)`, a modelling extension
-   rather than a composition. Likewise rain+fog: streak brightness should itself be
-   attenuated by the fog at the depth each drop sits at, so the order is not arbitrary.
+   rather than a composition.
 
 **What makes it cheap to attempt:** the D3 fidelity gate applies unchanged, and it answers
 the interesting question directly -- does CARLA render the combination physically, or does
@@ -244,7 +242,7 @@ loop and the offline dataset so they cannot drift.
 *Unverified.* That auto-exposure is on is confirmed; that fixing it moves mu to ~0.31 and
 removes the night contrast inversion is M1's first measurement.
 
-**D2 — conditions and order.** night -> fog -> shadows -> rain(contingent); snow out.
+**D2 — conditions and order.** night -> fog -> shadows; rain and snow out of scope.
 Risk-ordered for execution. The paper presents them symmetrically; there is no lead
 condition.
 
