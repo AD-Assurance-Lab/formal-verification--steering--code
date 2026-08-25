@@ -1,8 +1,6 @@
 # CLAUDE.md
 
-Public artifact repo for the end-to-end steering verification paper. Keep it minimal —
-the full research record (design docs, findings, dispositions, conformance suite,
-retired instruments, era-1 results) lives in git history; do not re-grow it here.
+Public artifact repo for the end-to-end steering verification paper.
 
 Rules that still bite:
 
