@@ -1,8 +1,0 @@
-{
-  "train_pairs": 30,
-  "test_pairs": 10,
-  "held_out_roi_r2_median": 0.8320822715759277,
-  "G_mean": 0.586946964263916,
-  "G_roi_mean": 0.6788377165794373,
-  "note": "Per-pixel multiplicative night illumination field, least squares over pose-paired clear/night frames. Captures ambient dimming AND the headlight pool, which is fixed in image coordinates. Does NOT capture retroreflection off lane markings, which move between poses and average out."
-}
