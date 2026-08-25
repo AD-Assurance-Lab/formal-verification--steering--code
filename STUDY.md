@@ -38,16 +38,26 @@ in every cell. Any disagreement is a bug until dispositioned.
 
 ### How a verification sweep collapses to one verdict
 
-**Pre-registered 2026-08-11, before any verification cell was run.** A sweep returns, per
-frame, the fraction of the declared axis box resolved CERTIFIED / FALSIFIED / UNKNOWN. The
-rule that turns those into a ledger verdict lives in `study.design.verify_verdict` and is
-deliberately asymmetric:
+**Pre-registered 2026-08-11, before any verification cell was run; AMENDED 2026-08-12
+(commit `34c9d30`, F17).** A sweep returns, per frame, the fraction of the declared axis
+box resolved CERTIFIED / FALSIFIED / UNKNOWN. The rule that turns those into a ledger
+verdict lives in `study.design.verify_verdict` — which is the executable pre-registration
+and wins over this table if they ever disagree — and is deliberately asymmetric:
 
 | verdict | condition |
 |---|---|
-| FALSIFIED | the **median** frame has a nonzero falsified sub-region |
-| CERTIFIED | nothing falsified **and** median certified fraction >= 50% |
+| FALSIFIED | a violation region exists on >= 5% of the sampled frames |
+| CERTIFIED | **every** sampled frame is fully certified |
 | UNKNOWN | otherwise |
+
+The original 12-frame **median** rule was amended after it produced two unsound
+certificates (F17, P-02): a median over 12 frames cannot see a 38% violating tail on a
+~1700-frame lap. The amendment makes CERTIFIED strictly harder to earn (60 frames, all
+fully certified) and is recorded in `design.verify_verdict`'s docstring. This table
+previously still showed the superseded median rule — the human-facing and executable
+pre-registrations had silently diverged, which is exactly what
+`conformance/test_traps.py::test_expectation_table_is_pinned` now guards against on the
+expectation side.
 
 `FALSIFIED` is an existence claim backed by soundness, so it needs no coverage threshold —
 only evidence it is a property of the route rather than one frame. `CERTIFIED` is a

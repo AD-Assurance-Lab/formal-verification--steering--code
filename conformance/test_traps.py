@@ -55,14 +55,37 @@ def test_goc_refuses_rather_than_warns():
 
 # --- trap 8: sound clamp modelling --------------------------------------------------
 
-def test_two_relu_clamp_matches_numpy_clip():
+def test_pipeline_clamp_is_two_relus_and_matches_clip():
     """clamp01(v) = 1 - relu(1 - relu(v)). Omitting it makes bright additive layers look
-    linear when they are not."""
-    def relu(x):
-        return np.maximum(x, 0.0)
+    linear when they are not.
 
-    v = np.random.default_rng(2).uniform(-2.0, 3.0, size=100_000)
-    assert np.allclose(1.0 - relu(1.0 - relu(v)), np.clip(v, 0.0, 1.0))
+    This used to verify the numpy identity alone, which can never fail and did not touch
+    the pipeline -- removing the clamp from the verified maps would still have passed.
+    Assert on the actual module the pipeline uses, and that the verified maps use it.
+    """
+    import inspect
+
+    import torch
+
+    perturbations = _module("perturbations")
+    clamp = perturbations.Clamp01()
+    v = torch.from_numpy(
+        np.random.default_rng(2).uniform(-2.0, 3.0, size=100_000).astype(np.float32))
+    # atol 1e-6: `1 - relu(1 - x)` rounds at float32 (measured max 3e-8), and the
+    # default allclose atol of 1e-8 is tighter than float32 itself.
+    assert torch.allclose(clamp(v), torch.clamp(v, 0.0, 1.0), atol=1e-6), (
+        "Clamp01 does not equal clip to [0,1]"
+    )
+    # Bound propagators need ReLU-only structure, not a clamp op.
+    src = inspect.getsource(perturbations.Clamp01)
+    assert src.count("ReLU") >= 2, "Clamp01 must be expressed as two ReLUs"
+
+    vd = _module("verifiable_disturbance")
+    vd_src = inspect.getsource(vd)
+    assert "Clamp01" in vd_src, (
+        "verifiable_disturbance no longer uses Clamp01 -- saturation must live inside "
+        "the verified network (trap 8)"
+    )
 
 
 # --- trap 12: probe delta must clear uint8 quantisation ------------------------------
@@ -101,13 +124,28 @@ def test_corridor_is_centred_on_clear_steering():
     """Centring on the disturbed midpoint certifies only insensitivity to the disturbance
     parameter while permitting an arbitrary offset from what clear weather would produce --
     which is the actual hazard. This bug made night read 100% certified while failing 85%
-    of closed-loop frames."""
-    module = _module("verify_v2")
-    clear_steer = 0.30
-    lower, upper = -0.05, 0.05  # a disturbed output range offset far from clear
-    centre = module.corridor_centre(clear_steer=clear_steer, bounds=(lower, upper))
-    assert centre == pytest.approx(clear_steer), (
-        "corridor must centre on clear-weather steering, not the disturbed midpoint"
+    of closed-loop frames.
+
+    This test previously imported a module named `verify_v2` that never existed in this
+    repo, so it skipped forever while claiming coverage -- the study's headline defense
+    had no regression guard. The live corridor sits in scripts/certify_cell.py, whose
+    import cost (auto_LiRPA, CUDA) makes a behavioural test impractical here, so assert
+    the construction statically: the corridor must be built symmetrically around the
+    output of clear_steer(), and nothing may centre it on a bound midpoint."""
+    import re
+    from pathlib import Path
+
+    src = (Path(__file__).resolve().parent.parent / "scripts" /
+           "certify_cell.py").read_text()
+    assert re.search(r"\bcs\s*=\s*clear_steer\s*\(", src), (
+        "certify_cell must compute the clear-weather steering (clear_steer)"
+    )
+    assert re.search(r"corridor\s*=\s*\(\s*cs\s*-\s*tol\s*,\s*cs\s*\+\s*tol\s*\)", src), (
+        "certify_cell's corridor must be (cs - tol, cs + tol), centred on the "
+        "clear-weather steering -- not on the disturbed bound midpoint (trap 6)"
+    )
+    assert not re.search(r"corridor\s*=\s*\(\s*\(\s*lo\s*\+\s*hi\s*\)", src), (
+        "a corridor centred on (lo+hi)/2 has reintroduced trap 6"
     )
 
 
@@ -311,7 +349,11 @@ def test_no_bare_queue_get_outside_carla_env():
             continue
         for i, line in enumerate(path.read_text().splitlines(), 1):
             code = line.split("#")[0]
-            if re.search(r"_queue\.get\s*\(", code):
+            # The original pattern matched only variables literally named `*_queue`,
+            # so a queue named `q` slipped past. A `.get(timeout=...)` is the
+            # signature of a sensor-queue read regardless of the variable name;
+            # dict .get() calls never take a timeout kwarg.
+            if re.search(r"_queue\.get\s*\(|\.get\s*\(\s*timeout\s*=", code):
                 offenders.append(f"{path.name}:{i}")
     assert not offenders, (
         "use env.grab_frame() (or env.drain_frame() if the image is discarded) at: "
@@ -358,3 +400,158 @@ def test_path_defaults_do_not_point_outside_the_repo():
         )
         checked += 1
     assert checked > 0, "no output paths found in config -- has it been renamed?"
+
+
+# --- read-modify-write weather: the bug that invalidated F3 ---------------------------
+
+def test_no_get_weather_outside_carla_env():
+    """`world.get_weather()` next to a write returns the PREVIOUS tick's weather, so any
+    read-modify-write silently builds on stale state. This survived in
+    scripts/fog_isolation.py (since deleted) long after the pipeline was fixed, because
+    the old scan covered pipeline/ only and looked for env.set_weather, not the read.
+    Weather is CONSTRUCTED (env.weather_params); nothing reads it back."""
+    import re
+    from pathlib import Path
+
+    repo = Path(__file__).resolve().parent.parent
+    offenders = []
+    for path in sorted(list((repo / "pipeline").glob("*.py"))
+                       + list((repo / "scripts").glob("*.py"))):
+        if path.name == "carla_env.py":
+            continue
+        for i, line in enumerate(path.read_text().splitlines(), 1):
+            code = line.split("#")[0]
+            if re.search(r"\.get_weather\s*\(", code):
+                offenders.append(f"{path.name}:{i}")
+    assert not offenders, (
+        "construct weather with env.weather_params(); never read it back: "
+        + ", ".join(offenders)
+    )
+
+
+# --- hand-rolled sync settings: under-provisioned substepping -------------------------
+
+def test_sync_mode_is_only_configured_in_carla_env():
+    """enable_sync_mode provisions bounded substepping
+    (fixed_delta_seconds <= max_substep_delta_time * max_substeps). Two capture scripts
+    hand-rolled `settings.synchronous_mode = True` without it and ran 0.1 s of physics
+    per 0.2 s tick -- different physics than the driving pipeline, feeding verification.
+    Every entry point must go through env.enable_sync_mode."""
+    import re
+    from pathlib import Path
+
+    repo = Path(__file__).resolve().parent.parent
+    offenders = []
+    for path in sorted(list((repo / "pipeline").glob("*.py"))
+                       + list((repo / "scripts").glob("*.py"))):
+        if path.name == "carla_env.py":
+            continue
+        for i, line in enumerate(path.read_text().splitlines(), 1):
+            code = line.split("#")[0]
+            if re.search(r"\.synchronous_mode\s*=", code):
+                offenders.append(f"{path.name}:{i}")
+    assert not offenders, (
+        "use env.enable_sync_mode(world) instead of setting synchronous_mode by hand "
+        "(substepping must be provisioned with it): " + ", ".join(offenders)
+    )
+
+
+# --- every CARLA client takes the lock ------------------------------------------------
+
+def test_every_carla_entry_point_takes_the_lock():
+    """Two synchronous clients on one port interleave ticks and silently corrupt each
+    other's runs (a fake 20.69 ft departure in a ledger cell -- see carla_lock.py).
+    An advisory lock protects only if every client participates in both directions,
+    and at audit time only 3 of ~10 entry points did."""
+    import re
+    from pathlib import Path
+
+    repo = Path(__file__).resolve().parent.parent
+    # build_routes only reads the map: no sync mode, no ticking, no actors.
+    EXEMPT = {"carla_env.py", "carla_lock.py", "build_routes.py"}
+    offenders = []
+    for path in sorted(list((repo / "pipeline").glob("*.py"))
+                       + list((repo / "scripts").glob("*.py"))):
+        if path.name in EXEMPT:
+            continue
+        text = path.read_text()
+        uses_carla = re.search(r"env\.connect\s*\(|carla\.Client\s*\(", text)
+        if uses_carla and "carla_lock" not in text:
+            offenders.append(path.name)
+    assert not offenders, (
+        "these connect to CARLA without taking carla_lock: " + ", ".join(offenders)
+    )
+
+
+# --- trap 19: headlights follow the sun -----------------------------------------------
+
+def test_headlights_follow_the_sun_not_the_preset_name():
+    """v1 drove at night with headlights off, which is physically impossible and made
+    every night result an artefact of the setup. The rule is keyed off the constructed
+    sun altitude so swept angles stay physical."""
+    env = _module("carla_env")
+    assert hasattr(env, "headlights_on"), (
+        "carla_env must expose the headlight rule as a pure function"
+    )
+    for name, lit in (("clear", False), ("shadows", False), ("night", True)):
+        w = env.weather_params(name)
+        assert env.headlights_on(w.sun_altitude_angle) == lit, (
+            f"{name} (sun {w.sun_altitude_angle}) must have headlights "
+            f"{'ON' if lit else 'OFF'}"
+        )
+    # Swept angles: -10 is below the horizon regardless of the preset carrying it.
+    assert env.headlights_on(-10.0) and not env.headlights_on(+8.0)
+
+
+# --- the pre-registered expectation table is pinned -----------------------------------
+
+def test_expectation_table_is_pinned():
+    """`design.expected()` is the pre-registration. A retro-edit of one line would turn
+    a red cell green everywhere at once, and nothing checked it. This is the full
+    20-cell table as a golden constant; changing the design now requires changing this
+    test in the same commit, which is exactly the visibility an amendment should have."""
+    from study.design import expected
+
+    GOLDEN = {
+        ("clear", "S_clear", "closed_loop"): "PASS",
+        ("clear", "S_clear", "verify"): "CERTIFIED",
+        ("clear", "S_mixed", "closed_loop"): "PASS",
+        ("clear", "S_mixed", "verify"): "CERTIFIED",
+        ("night", "S_clear", "closed_loop"): "FAIL",
+        ("night", "S_clear", "verify"): "FALSIFIED",
+        ("night", "S_mixed", "closed_loop"): "PASS",
+        ("night", "S_mixed", "verify"): "CERTIFIED",
+        ("fog", "S_clear", "closed_loop"): "FAIL",
+        ("fog", "S_clear", "verify"): "FALSIFIED",
+        ("fog", "S_mixed", "closed_loop"): "PASS",
+        ("fog", "S_mixed", "verify"): "CERTIFIED",
+        ("shadows", "S_clear", "closed_loop"): "FAIL",
+        ("shadows", "S_clear", "verify"): "FALSIFIED",
+        ("shadows", "S_mixed", "closed_loop"): "PASS",
+        ("shadows", "S_mixed", "verify"): "CERTIFIED",
+        ("rain", "S_clear", "closed_loop"): "FAIL",
+        ("rain", "S_clear", "verify"): "FALSIFIED",
+        ("rain", "S_mixed", "closed_loop"): "PASS",
+        ("rain", "S_mixed", "verify"): "CERTIFIED",
+    }
+    for (cond, student, instrument), want in GOLDEN.items():
+        got = expected(student, cond, instrument)
+        assert got == want, (
+            f"expected({student}, {cond}, {instrument}) = {got!r}, pre-registered "
+            f"{want!r}. If this is a deliberate amendment, update the golden table in "
+            f"the SAME commit and record why."
+        )
+
+
+def test_final_campaign_cells_are_registered_and_distinct():
+    """FINAL_CLOSED_LOOP must cover every (condition, student) pair exactly once; a
+    missing pair silently drops a cell from the final-campaign smell test."""
+    from study.design import CONDITIONS, FINAL_CLOSED_LOOP, STUDENTS
+
+    pairs = {(c.name, s) for c in CONDITIONS if c.status != "out_of_scope"
+             for s in STUDENTS}
+    assert set(FINAL_CLOSED_LOOP) == pairs, (
+        "FINAL_CLOSED_LOOP does not cover the design's cells exactly"
+    )
+    stems = list(FINAL_CLOSED_LOOP.values())
+    assert len(stems) == len(set(stems)), "two pairs share one final cell file"

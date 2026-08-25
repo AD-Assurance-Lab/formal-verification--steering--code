@@ -949,6 +949,23 @@ forward, with the existing twelve entered as what they honestly are — in-sampl
 after the driving, and marked as such. The blind record then stays intact and the smell test
 starts covering the claim the paper actually makes.
 
+### D-12 addendum (2026-08-25) — the era-1 `S_mixed` verify cells were never blind, and the ordering says so
+
+`--check-order` flags `night/fog/shadows / S_mixed / verify` as committed AFTER their
+closed-loop counterparts. That is historically accurate, not an artifact: on 2026-08-11
+the S_clear closed-loop cells were deliberately deferred so their verification could be
+committed first (D-02), but the S_mixed drives ran before the S_mixed verification
+sweeps of the retired 12-frame-median instrument. Those verify cells were postdictions
+of a retired instrument and were never claimed as predictions — the paper reports the
+canonical certificate cells as in-sample throughout. The cells carry
+`disposition: D-12`; the ordering flag stays visible as a dispositioned warning. The
+blind record of this study is: the S_clear era-1 arm (D-02), P-03..P-10, and the
+held-out rain protocol (F47), each checkable in git.
+
+The third-instrument column described above now exists: `study.design` registers
+`sustained_bound.json` (in-sample, 12 cells) and `heldout_rain_verdicts.json` (blind,
+4 cells), and `study.ledger` renders them against the final campaign.
+
 ---
 
 ## D-13 — `rain / S_mixed / closed_loop` FAILED where PASS was pre-registered, and the certificate said so first
@@ -1001,3 +1018,54 @@ record and is not edited to match results.
 All four rain cells share one verdict and one outcome, so this establishes that the
 certificate catches an unseen sustained failure. It establishes nothing about false alarms
 on rain, because no rain cell passes. See F47.
+
+---
+
+## D-14 — the era-1/final fog contradiction is the JUNCTION, and the lap-scope amendment is the divide
+
+Recorded 2026-08-25, during the codebase audit that reconciled the ledger with the
+paper. Two records coexisted without a written bridge: the canonical
+`fog / S_clear / closed_loop` cell says FAIL 20/20 (2026-08-12, P-02), while the final
+campaign (`fog___trunc_Sclear`, 2026-08-14) and the paper say PASS 0/10 — and the
+pre-registered expectation for `fog / S_clear` is FAIL, which the final campaign
+therefore contradicts.
+
+### Candidate causes considered
+
+| candidate | ruled out? | on what evidence |
+|---|---|---|
+| the students were retrained between the campaigns | **yes** | both cells record the same checkpoint (`S_clear_84x28`); no retrain commit exists between them |
+| a fog-rendering fix changed the disturbance | **yes** | the era-1 cell postdates the constructed-preset fix; its runs drove fog_density 70 through the same `weather_params` path |
+| a genuine fog capability change | **yes** | era-1 runs held the lane for 98.8% of frames (`frac_over_budget` mean 0.012) — a policy that cannot drive fog looks like night (67.9% of frames over, failing from step ~11) |
+| **the western intersection** | **NO — this is the cause** | every era-1 fog failure has its max-CTE at steps 1695–1706, x ≈ −370..−379 — inside the junction at the end of the full lap, the exact location D-01/D-05/D-09 characterised. The same is true of the P-03 density cells (d25/d40/d55: all departures at steps 1703–1705). On the open road the same checkpoint at the same densities is clean: 0/60 departures across densities 25–100 (`fog___openfog_*`), max CTE 0.22–0.28 m |
+
+### What happened, in order
+
+1. Era-1 drove the FULL lap, whose last ~16 route indices sit inside the western
+   intersection (D-09). In fog, the policy completes the open road cleanly and departs
+   at the junction on every run — the ODD boundary (no lane markings) escalating under
+   degraded contrast, not a fog-robustness failure.
+2. The protocol was amended by deliberate direction (F28, quoted there: "it must be
+   the full lap but no intersection"): the lap is scored 0–2861 m, ending before the
+   junction, which is reported separately as a real ODD boundary (D-07/D-09
+   established the reference through it is drivable eastbound and the failure is the
+   policy's).
+3. Under the amended protocol the final campaign measured the table the paper reports:
+   `S_clear` PASS clear+fog, FAIL night+shadows 10/10; `S_mixed` PASS all four.
+
+### What is corrected
+
+The pre-registered expectation `fog / S_clear -> FAIL` (and `-> FALSIFIED` for the
+certificate) is superseded by measurement, the same shape as D-13: the design-time
+expectation "the clear-only student fails every condition it never saw" turned out
+wrong for fog specifically, for a measured physical reason — Koschmieder transmittance
+barely moves at short range, so fog darkens the far field the crop discards rather
+than the road the network sees (F27, STATE_OF_PLAY §1). The expectation is NOT edited;
+the cells carry `disposition: D-14` and stay visibly flagged as dispositioned.
+
+### What this does NOT license
+
+The era-1 cells are not deleted or overwritten — they are the record of the
+superseded protocol, and the junction finding they contain is real and reported.
+`study.design.FINAL_CLOSED_LOOP` names the final-campaign cells, and `study.ledger`
+now checks both eras and the sustained certificate side by side.
