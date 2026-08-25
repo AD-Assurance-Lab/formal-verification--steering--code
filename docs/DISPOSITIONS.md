@@ -959,65 +959,23 @@ sweeps of the retired 12-frame-median instrument. Those verify cells were postdi
 of a retired instrument and were never claimed as predictions — the paper reports the
 canonical certificate cells as in-sample throughout. The cells carry
 `disposition: D-12`; the ordering flag stays visible as a dispositioned warning. The
-blind record of this study is: the S_clear era-1 arm (D-02), P-03..P-10, and the
-held-out rain protocol (F47), each checkable in git.
+blind record of this study is: the S_clear era-1 arm (D-02) and the committed
+predictions P-03..P-09, each checkable in git.
 
 The third-instrument column described above now exists: `study.design` registers
-`sustained_bound.json` (in-sample, 12 cells) and `heldout_rain_verdicts.json` (blind,
-4 cells), and `study.ledger` renders them against the final campaign.
+`sustained_bound.json` (in-sample, 12 cells), and `study.ledger` renders it against
+the final campaign.
 
 ---
 
-## D-13 — `rain / S_mixed / closed_loop` FAILED where PASS was pre-registered, and the certificate said so first
+## D-13 -- WITHDRAWN with the rain condition (2026-08-25)
 
-Recorded 2026-08-15. The ledger flags this cell, correctly. It is disposed of here as a
-**finding rather than a bug**, and the reason is that the usual logic of a ledger
-contradiction is inverted.
-
-### Why a contradiction normally means "bug"
-
-A measurement disagreeing with its pre-registration usually means the measurement is
-wrong, because the pre-registration encoded everything believed at design time. That is
-why `CLAUDE.md` demands a written disposition before any such result is narrated.
-
-### Why this one does not
-
-**Two independent instruments agree against the expectation**, and one of them committed
-its answer before the other ran:
-
-    pre-registered (STUDY.md, design time)   S_mixed / rain : PASS, CERTIFIED
-    certificate    (committed 89922ff)       NOT CERTIFIED, bound +11.33x tolerance
-    closed loop    (driven after)            FAIL 10/10, every run departed
-
-A capture defect, a harness defect or a simulator artifact would have to corrupt the
-verification path and the driving path in the same direction, by the same amount, having
-been introduced between the design and now. Against that, the simpler reading is that the
-pre-registration was optimistic: `S_mixed` was trained on clear, fog, night and shadows,
-rain was never in its training set, and "mixed-conditions training generalises to unseen
-photometric conditions" was an assumption rather than a measurement.
-
-### Candidate causes considered
-
-| candidate | ruled out? | why |
-|---|---|---|
-| capture defect | **yes** | the capture carries its own clear baseline (D-11) and both endpoints are pose-identical; the certificate's verdict does not depend on the driving path at all |
-| driving harness defect | **yes** | the same harness produced all twelve canonical cells, including four unanimous PASS cells, on this same simulator session |
-| rain acting through vehicle dynamics rather than perception | **partly** | CARLA's `wetness` and `precipitation_deposits` are material/visual parameters and do not set tyre friction, which is configured separately and was not touched. Not fully excluded, and it would not explain the CERTIFICATE, which sees only pixels |
-| the certificate false-alarming, driving unrelated | **no** | it would have to false-alarm on all four cells AND the driving fail all forty runs independently |
-| the pre-registration being wrong | **NO -- this is the surviving explanation** | it was a design-time expectation about generalisation, never measured |
-
-### What is corrected
-
-`STUDY.md`'s rain row expected `S_mixed` PASS / CERTIFIED. The measured outcome is FAIL /
-NOT CERTIFIED, agreeing with the certificate. The design's expectation is superseded by
-measurement; the ledger cell stays flagged, because the pre-registration is a historical
-record and is not edited to match results.
-
-### What this does NOT license
-
-All four rain cells share one verdict and one outcome, so this establishes that the
-certificate catches an unseen sustained failure. It establishes nothing about false alarms
-on rain, because no rain cell passes. See F47.
+This section disposed of a rain ledger contradiction. Rain was withdrawn from the
+study: CARLA's rain rendering is temporally stochastic, the deterministic
+two-endpoint family cannot represent it, and it is future work (see
+`study/design.py` OUT_OF_SCOPE and FINDINGS F47's withdrawal note). The number
+D-13 is retired, not reused; the full text is in git history at this commit's
+parent.
 
 ---
 
@@ -1056,7 +1014,7 @@ therefore contradicts.
 ### What is corrected
 
 The pre-registered expectation `fog / S_clear -> FAIL` (and `-> FALSIFIED` for the
-certificate) is superseded by measurement, the same shape as D-13: the design-time
+certificate) is superseded by measurement, an expectation superseded by measurement: the design-time
 expectation "the clear-only student fails every condition it never saw" turned out
 wrong for fog specifically, for a measured physical reason — Koschmieder transmittance
 barely moves at short range, so fog darkens the far field the crop discards rather

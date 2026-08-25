@@ -127,9 +127,10 @@ trained on affine photometric boxes was verified against a Koschmieder fog model
 | night | road illuminance (lux) | 10^4 -> 10 | `sun_altitude_angle` below horizon + headlights |
 | fog | meteorological optical range (m) | 2000 -> 60 | `fog_density` |
 | shadows | solar elevation (deg) | 60 -> 10 | `sun_altitude_angle` above horizon |
-| rain | rain rate (mm/h) | 0 -> 25 | `precipitation` + deposits + wetness |
 
-Snow is out of scope: CARLA renders none.
+Snow is out of scope: CARLA renders none. Rain is out of scope: its rendering is
+temporally stochastic, which the two-endpoint family cannot represent (see the
+method-scope notes at the end of this file).
 
 Baseline is flat and shadowless (`cloudiness 80`, `sun_altitude 90`) rather than
 `ClearNoon`. This is deliberate: `ClearNoon`'s 45-degree sun casts shadows that made the
