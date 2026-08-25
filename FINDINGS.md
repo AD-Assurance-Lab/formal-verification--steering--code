@@ -2152,6 +2152,12 @@ an agreement column. Verdicts committed at `89922ff`. **Then** driven.
 
     4/4 -- every run departed, both students, both directions
 
+> **COUNT CLARIFICATION (2026-08-25).** "FAIL 10/10" in the rows above is the
+> per-STUDENT rate (ten runs, five per direction), repeated on both direction rows of
+> that student; the certificate has four cells but the driving record is twenty runs
+> total, not forty (`rain__S_*__closed_loop.json`, commit `1db3b38`). An early paper
+> draft counted forty from this table; corrected against the artifacts.
+
 **Set against this project's history, that is the headline.** Every prior blind test
 regressed to chance: P-03 14/14 -> 2/6, P-06 7/8 -> 3/7, P-07 8/8 -> 6/10, P-08b 10/10 ->
 2/4. This is the first that did not.

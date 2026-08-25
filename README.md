@@ -20,6 +20,18 @@ twelve canonical cells — two policies × three conditions × two directions.
     west   S_mixed   shadows   [-0.29, +0.31]       CERTIFIED      PASS  0/10
     east   (same six cells, same verdicts; see results/calibration/sustained_bound.json)
 
+![The 12 canonical cells: certified bounds vs closed-loop outcome](docs/figures/certificate_cells.png)
+
+And one **held-out** condition, with the verdicts committed to git *before* the car drove
+(commit `89922ff`, drives in `1db3b38` four minutes later): rain, which neither student was
+trained on. All four bounds escape the corridor and all twenty runs depart -- against the
+study's own pre-registered expectation that the mixed student would pass, which is what
+makes it a prediction rather than an echo.
+
+![Held-out rain, blind](docs/figures/rain_blind.png)
+
+![Night trace: clear-only departs within 35 m, mixed holds the lap](docs/figures/night_trace.png)
+
 The finding underneath it is about the **statistic, not the solver**: bounding the *peak*
 per-frame deviation does not merely give a conservative answer, it gives a **wrongly ordered**
 one — the mixed policy deviates more under shadows (0.2494) than the clear-only policy does
@@ -60,8 +72,8 @@ corrected or withdrawn — **do not cite from them directly.**
 
 ```bash
 pip install -r requirements.txt      # then torch + auto_LiRPA + CARLA: see that file
-pytest conformance/                  # 14 passed, 1 skipped
-python -m study.ledger               # the study's state (see "the ledger exits 1" below)
+pytest conformance/                  # 25 passed
+python -m study.ledger --check-order # the study's state; exits 0, warnings are explained
 ```
 
 Reproducing the headline number additionally needs the full-lap captures, which are **not in
@@ -73,21 +85,17 @@ python scripts/certify_sustained_bound.py     # writes results/calibration/susta
 
 If the system `pytest` fails on a plugin import, prefix `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`.
 
-### The ledger exits 1, and that is correct
+### The ledger prints warnings, and every one is explained
 
-`python -m study.ledger` reports four contradictions and `--check-order` reports three
-ordering violations. **This is the tool working, not the study failing.** Every one is
-dispositioned in writing:
-
-- the two closed-loop contradictions are the western intersection, an ODD boundary excluded
-  from the measured route — **D-01**, **D-05**;
-- the two `verify` contradictions and all three ordering violations belong to a **retired**
-  instrument (the 12-frame median), kept red deliberately because overwriting them would
-  place a verdict in git after the driving it is supposed to have predicted — **D-12**.
-
-**D-12 also records the real gap:** the sustained-bias certificate has no ledger cell type at
-all, so the smell test does not cover the headline claim. That is how the F43 baseline defect
-survived — the ledger was never looking at it.
+`python -m study.ledger --check-order` exits 0 and prints a block of **dispositioned
+warnings**. That is the tool working: every contradiction and ordering anomaly in the
+study's history is kept visible, tied to a written disposition in
+`docs/DISPOSITIONS.md` (D-01 through D-14), and never silenced -- only a *new*, unexplained
+problem exits nonzero. The ledger covers three instruments side by side: the era-1
+full-lap campaign (a historical record, never edited), the final open-road campaign the
+paper reports, and the sustained-bias certificate itself -- including the blind rain
+ordering, which it verifies against git ancestry. The two-era story (why the era-1 fog
+cell says FAIL where the paper says PASS: the junction, not fog) is **D-14**.
 
 ## Reproducing
 
@@ -105,9 +113,21 @@ Pairing a condition against a clear capture from a different session silently in
 sign of one fog measurement — F43/F44, disposition **D-11**. Ten of the twelve published cells
 still use a cross-session baseline; the evidence they are sound is positive but not proof.
 
-Known reproducibility gaps: `pipeline/dagger.py` and `dagger_student.py` do not seed, so
-retraining does not reproduce the checkpoints bit-for-bit; `NSPLIT` and the stride argument
-change the certificate and are not recorded in its output.
+Known reproducibility gaps: distillation now seeds every RNG it uses, but DAgger data
+*collection* is CARLA-stochastic, so retraining from scratch reproduces the checkpoints
+statistically rather than bit-for-bit. The certificate records `nsplit`, `stride`, the
+tolerance and the git commit in its `_meta` block; closed-loop cells record their full
+run provenance (constructed weather, overrides, timestep, map, git SHA, timestamps).
+
+Two provenance tools, both run in CI-style before anything is quoted:
+
+```bash
+python3 scripts/make_readme_figures.py   # the figures above, from the committed artifacts
+python -m study.ledger --check-order     # expectations, coverage, and the blind ordering
+```
+
+The companion paper's figures and prose numbers are checked against this repo's artifacts
+by a script in the paper's repository (`figures/check_data.py`).
 
 ## Method
 
