@@ -69,17 +69,17 @@ def main():
         drive = "FAIL" if fails * 2 >= n else "PASS"
         lo, hi = wilson(fails, n)
 
-        # The certificate is per direction; the cell agrees only if BOTH directions do.
-        verdicts = [cert[k]["verdict"] for k in cert
-                    if not k.startswith("_") and k.split("/")[1] == stu
-                    and k.split("/")[2] == cond]
+        # The certificate is ONE bound per (student, condition), pooled across the six
+        # sections, so its keys are "<student>/<condition>". They used to be
+        # "<direction>/<student>/<condition>" and this read k.split("/")[2], which now
+        # raises IndexError rather than reporting a mismatch.
+        key = f"{stu}/{cond}"
         if cond in D.VACUOUS_CELLS:
             cert_v, note = "CERTIFIED", "vacuous"
-        elif not verdicts:
+        elif key not in cert:
             cert_v, note = "MISSING", ""
         else:
-            cert_v = "CERTIFIED" if all(v == "CERTIFIED" for v in verdicts) else "NOT_CERTIFIED"
-            note = ""
+            cert_v, note = cert[key]["verdict"], ""
         agree = (drive, cert_v) in D.AGREES
         exp_drive, exp_cert = D.expected(stu, cond)
         rows.append(dict(cond=cond, stu=stu, drive=drive, fails=fails, n=n,
