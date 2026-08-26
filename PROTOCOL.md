@@ -98,6 +98,41 @@ Recorded now, before any result, so they are not discovered later and argued abo
 
 ---
 
+## 4a. What the certificate assumes but does not verify
+
+The bound is on `Δ_p(s) = δ_p(s) − δ_p(0)`: the change the disturbance induces,
+measured against the model's **own** clear-weather output. It never asks whether
+`δ_p(0)` is any good.
+
+Taken to its limit, a network that ignores its input and emits a constant steering
+angle has `Δ_p(s) ≡ 0` and certifies perfectly under every condition, while driving
+straight off the road. **The certificate cannot distinguish robustness from
+indifference.** Clear-weather competence is a precondition for the certificate meaning
+anything, not something the certificate establishes.
+
+This is not hypothetical here. Distillation is exactly where it can arise: a student
+without the capacity to fit its teacher's task can be uniformly wrong in a way that is
+*stable* across `s`, and stability is what this criterion rewards. The teacher driving
+the condition is no guarantee that its student does.
+
+The published study half-encodes this already, in that the clear cell is driven while
+its certificate is recorded as vacuous (`Δ_p ≡ 0` by construction), but the assumption
+is never named. Here it is a gate:
+`scripts/check_student_competence.py` drives each student over every section in clear
+weather and records the result, and `certify_town06.py` REFUSES to run without that
+record, or with a student that failed it.
+
+The check is clear weather only. Clear is the `s = 0` anchor of the disturbance family,
+not one of the disturbance conditions, so it reveals nothing about fog, night or low sun
+and does not weaken R3.
+
+**Residual limitation, unchanged:** competence in clear plus a bounded sustained
+deviation still does not exclude a disturbance that degrades the policy in a
+*zero-mean* way. That is the same failure the paper already reports as catching
+failures that last and missing failures that flicker.
+
+---
+
 ## 5. The training-leakage boundary
 
 Training requires driving, so "certify before driving" cannot mean "never drive". The

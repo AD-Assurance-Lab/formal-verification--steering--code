@@ -237,6 +237,14 @@ if ! ls "$DATA"/dagger_student_mixed_t06/manifest.csv >/dev/null 2>&1; then
         --distill-dirs dagger_mixed_t06,dagger_student_mixed_t06 || exit 1
 else say "SKIP  dagger_student_mixed"; fi
 
-say "PIPELINE COMPLETE -- students built."
+# Clear-weather competence, before anything is certified. The certificate bounds
+# deviation FROM clear, so a student that is wrong in clear -- or that ignores its input
+# -- certifies perfectly and drives off the road. Distillation is where that can arise.
+run competence python3 "$REPO/scripts/check_student_competence.py" --require || {
+    say "FATAL: a student is not competent in clear weather. Certifying it would bound"
+    say "       deviation from an output that is already wrong. Fix capacity or"
+    say "       distillation before proceeding."; exit 1; }
+
+say "PIPELINE COMPLETE -- students built and competent in clear weather."
 say "NEXT, in this order, and not before: certify (scripts/certify_sustained_bound.py),"
 say "COMMIT the certificate, then and only then run the scored closed-loop ledger."

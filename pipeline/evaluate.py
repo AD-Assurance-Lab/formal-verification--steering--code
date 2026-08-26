@@ -26,6 +26,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import config as C  # noqa: E402
 import carla_env as env  # noqa: E402
 from imaging import preprocess_for_model  # noqa: E402
+from student import student_preprocess  # noqa: E402
 from expert import pure_pursuit_steer  # noqa: E402
 from metrics import summarize_cte  # noqa: E402
 from model import CarlaSteeringNet  # noqa: E402
@@ -35,8 +36,18 @@ from route import load_route, signed_cte_route, pure_pursuit_route  # noqa: E402
 SPAWNS = C.SPAWNS
 
 
-def load_model(name, device):
-    model = CarlaSteeringNet().to(device)
+def load_model(name, device, student=False, channels=(8, 16, 16), fc=32, h=28, w=84):
+    """Load a teacher (CarlaSteeringNet) or, with student=True, a StudentNet.
+
+    The students are what the certificate actually reasons about, so being able to
+    DRIVE one here is what makes a clear-weather competence check possible without
+    duplicating the closed-loop driving code.
+    """
+    if student:
+        from student import StudentNet
+        model = StudentNet(h, w, channels=tuple(channels), fc=fc).to(device)
+    else:
+        model = CarlaSteeringNet().to(device)
     model.load_state_dict(torch.load(os.path.join(C.CHECKPOINT_DIR, f"{name}.pth"),
                                      map_location=device))
     model.eval()
@@ -65,7 +76,13 @@ def drive_nn(world, world_map, vehicle, img_queue, model, device, direction, max
         loc = tf.location
 
         # network steering from the camera frame
-        x = torch.from_numpy(preprocess_for_model(env.raw_to_bgr(image))).unsqueeze(0).to(device)
+        # A StudentNet takes 84x28, the teacher 200x66. preprocess_for_model bakes in
+        # the TEACHER size, so driving a student through it feeds the wrong tensor.
+        bgr = env.raw_to_bgr(image)
+        if hasattr(model, "in_w"):
+            x = torch.from_numpy(student_preprocess(bgr, model.in_w, model.in_h)).unsqueeze(0).to(device)
+        else:
+            x = torch.from_numpy(preprocess_for_model(bgr)).unsqueeze(0).to(device)
         with torch.no_grad():
             nn_steer = float(model(x).item())
         nn_steer = max(-1.0, min(1.0, nn_steer))
@@ -133,6 +150,12 @@ def save_and_report(name, direction, records):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="steering_bc_baseline")
+    ap.add_argument("--student", action="store_true",
+                    help="load a StudentNet instead of the PilotNet-class teacher")
+    ap.add_argument("--channels", default="8,16,16", help="student conv widths")
+    ap.add_argument("--fc", type=int, default=32, help="student FC width")
+    ap.add_argument("--in-w", type=int, default=84)
+    ap.add_argument("--in-h", type=int, default=28)
     ap.add_argument("--direction", default="both",
                     help="section name, or 'both'/'all' for every section")
     ap.add_argument("--max-steps", type=int, default=2000)
@@ -142,7 +165,9 @@ def main():
     args = ap.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = load_model(args.model, device)
+    model = load_model(args.model, device, student=args.student,
+                       channels=tuple(int(v) for v in args.channels.split(",")),
+                       fc=args.fc, h=args.in_h, w=args.in_w)
 
     client = env.connect()
     world = env.load_town04(client)
