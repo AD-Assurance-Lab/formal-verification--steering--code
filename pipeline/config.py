@@ -193,9 +193,12 @@ if STUDY_MAP != "Town04":
     SPAWN_WESTBOUND = ROUTE_META["spawns"]["westbound"]
     # Scored lap ends at the shorter of the two measured directions, so both are
     # scored over an identical distance (Town04 scores 0-2861 m in both).
-    LAP_END_M = float(min(ROUTE_META["window"]["scored_len_m"],
-                          ROUTE_META["opposing"]["scored_len_m"]))
-    LANE_WIDTH_M = float(ROUTE_META["window"]["lane_width_mean"])
+    if "scored_len_m" in ROUTE_META:                 # build_study_route.py
+        LAP_END_M = float(ROUTE_META["scored_len_m"])
+    else:                                            # legacy build_town06_routes.py
+        LAP_END_M = float(min(ROUTE_META["window"]["scored_len_m"],
+                              ROUTE_META["opposing"]["scored_len_m"]))
+    LANE_WIDTH_M = float(ROUTE_META["window"].get("lane_width_mean", 3.500))
 
 # ── Unit conversions ─────────────────────────────────────────────────────────
 M_TO_FT = 3.28084
