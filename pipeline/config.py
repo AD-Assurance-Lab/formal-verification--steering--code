@@ -8,6 +8,7 @@ silently disagree. All primitives marked [MEASURED] were verified in CARLA
 """
 import math
 import os
+import re
 
 # ── CARLA connection ─────────────────────────────────────────────────────────
 HOST = "127.0.0.1"
@@ -244,6 +245,29 @@ def steps_for(section, margin=1.0):
         return 10 ** 9
     length = SECTION_LEN_M.get(section, LAP_END_M)
     return int(length * margin / (TARGET_SPEED_MS * FIXED_DT))
+
+
+def final_student(base):
+    """The checkpoint that IS the student: the newest student-DAgger round, else base.
+
+    distill.py writes <base>.pth and dagger_student.py then writes
+    <base>_dagger_r00.pth, _r01.pth, ... The distilled checkpoint is an intermediate,
+    not the policy: measured on Town06, the base S_clear held 1 of 6 sections in clear
+    weather with a worst |CTE| of 16.50 ft, while three rounds of student DAgger took
+    the same student to 4 of 6 at 8.57 ft.
+
+    Every downstream stage named the BASE. The competence gate therefore tested a model
+    nobody intends to ship, and the certifier and ledger would have certified and driven
+    it too -- bounding and measuring a policy that is not the one under study.
+    """
+    import glob as _glob
+    rounds = _glob.glob(os.path.join(CHECKPOINT_DIR, f"{base}_dagger_r*.pth"))
+    if not rounds:
+        return base
+    def _n(p_):
+        m = re.search(r"_dagger_r(\d+)\.pth$", p_)
+        return int(m.group(1)) if m else -1
+    return os.path.basename(max(rounds, key=_n))[:-4]
 
 
 # ── Unit conversions ─────────────────────────────────────────────────────────

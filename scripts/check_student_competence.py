@@ -93,7 +93,12 @@ def main():
     print("  off the road. Competence is assumed by the certificate, so check it here.\n")
 
     report, all_ok = {}, True
-    for name, ckpt, channels, fc in STUDENTS:
+    for name, base, channels, fc in STUDENTS:
+        # The distilled checkpoint is an intermediate; the student is the newest
+        # student-DAgger round. Testing the base tested a model nobody ships.
+        ckpt = C.final_student(base)
+        if ckpt != base:
+            print(f"  {name}: using {ckpt} (student-DAgger), not the distilled {base}")
         w = Path(C.CHECKPOINT_DIR) / f"{ckpt}.pth"
         if not w.exists():
             print(f"  {name}: checkpoint missing ({w.name})")
@@ -108,7 +113,7 @@ def main():
             continue
         ok = all(v["passed"] for v in res.values())
         all_ok &= ok
-        report[name] = dict(sections=res, competent=ok)
+        report[name] = dict(checkpoint=ckpt, sections=res, competent=ok)
         worst = max((v["max_cte_ft"] or 0.0) for v in res.values())
         n_ok = sum(1 for v in res.values() if v["passed"])
         print(f"  {name}: {n_ok}/{len(res)} sections within budget, "

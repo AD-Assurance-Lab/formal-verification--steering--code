@@ -1,0 +1,67 @@
+{
+  "map": "Town06",
+  "students": {
+    "S_clear_t06": {
+      "sections": {
+        "s00": {
+          "passed": false,
+          "max_cte_ft": 11.66
+        },
+        "s01": {
+          "passed": false,
+          "max_cte_ft": 13.9
+        },
+        "s02": {
+          "passed": false,
+          "max_cte_ft": 16.5
+        },
+        "s03": {
+          "passed": false,
+          "max_cte_ft": 3.13
+        },
+        "s04": {
+          "passed": false,
+          "max_cte_ft": 8.45
+        },
+        "s05": {
+          "passed": true,
+          "max_cte_ft": 0.9
+        }
+      },
+      "competent": false
+    },
+    "S_mixed_t06": {
+      "sections": {
+        "s00": {
+          "passed": false,
+          "max_cte_ft": 10.64
+        },
+        "s01": {
+          "passed": false,
+          "max_cte_ft": 21.41
+        },
+        "s02": {
+          "passed": false,
+          "max_cte_ft": 11.58
+        },
+        "s03": {
+          "passed": false,
+          "max_cte_ft": 28.18
+        },
+        "s04": {
+          "passed": true,
+          "max_cte_ft": 0.84
+        },
+        "s05": {
+          "passed": true,
+          "max_cte_ft": 0.91
+        }
+      },
+      "competent": false
+    }
+  },
+  "all_competent": false,
+  "cte_budget_ft": 2.1916011199999996,
+  "git_commit": "6b79d280c2c19c93ff7e3b17ef0cd0008dc3b3c9",
+  "note": "clear weather only; s=0 anchor, not a disturbance cell, not a scored ledger cell"
+}
