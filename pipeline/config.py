@@ -189,16 +189,62 @@ if STUDY_MAP != "Town04":
     with open(_meta_path) as _f:
         ROUTE_META = _json.load(_f)
     ROUTES_SUBDIR = f"routes_{STUDY_MAP.lower()}"
-    SPAWN_EASTBOUND = ROUTE_META["spawns"]["eastbound"]
-    SPAWN_WESTBOUND = ROUTE_META["spawns"]["westbound"]
-    # Scored lap ends at the shorter of the two measured directions, so both are
-    # scored over an identical distance (Town04 scores 0-2861 m in both).
-    if "scored_len_m" in ROUTE_META:                 # build_study_route.py
-        LAP_END_M = float(ROUTE_META["scored_len_m"])
-    else:                                            # legacy build_town06_routes.py
-        LAP_END_M = float(min(ROUTE_META["window"]["scored_len_m"],
-                              ROUTE_META["opposing"]["scored_len_m"]))
-    LANE_WIDTH_M = float(ROUTE_META["window"].get("lane_width_mean", 3.500))
+    SECTION_BASED = "sections" in ROUTE_META
+    if SECTION_BASED:
+        # Section-based route (Town06). Town06's outer loop has no dedicated opposing
+        # carriageways, so the route is a set of disjoint clean sections rather than one
+        # lap driven both ways. "Direction" generalises to "section" throughout.
+        SECTIONS = [x["name"] for x in ROUTE_META["sections"]]
+        SPAWNS = {x["name"]: x["spawn"] for x in ROUTE_META["sections"]}
+        SECTION_LEN_M = {x["name"]: float(x["scored_len_m"])
+                         for x in ROUTE_META["sections"]}
+        TOTAL_SCORED_M = float(ROUTE_META["total_scored_m"])
+        # Kept so code that still names the two Town04 directions keeps importing.
+        SPAWN_EASTBOUND = SPAWNS[SECTIONS[0]]
+        SPAWN_WESTBOUND = SPAWNS[SECTIONS[min(1, len(SECTIONS) - 1)]]
+        LAP_END_M = float(min(SECTION_LEN_M.values()))
+    else:
+        SECTIONS = ["eastbound", "westbound"]
+        SPAWN_EASTBOUND = ROUTE_META["spawns"]["eastbound"]
+        SPAWN_WESTBOUND = ROUTE_META["spawns"]["westbound"]
+        SPAWNS = {"eastbound": SPAWN_EASTBOUND, "westbound": SPAWN_WESTBOUND}
+        SECTION_LEN_M = {}
+        if "scored_len_m" in ROUTE_META:
+            LAP_END_M = float(ROUTE_META["scored_len_m"])
+        else:
+            LAP_END_M = float(min(ROUTE_META["window"]["scored_len_m"],
+                                  ROUTE_META["opposing"]["scored_len_m"]))
+        TOTAL_SCORED_M = LAP_END_M * 2.0
+    LANE_WIDTH_M = 3.500
+
+# Section names default to the two Town04 directions; a section-based map overrides
+# them above. Every entry point iterates SECTIONS rather than hardcoding a pair.
+if STUDY_MAP == "Town04":
+    SECTION_BASED = False
+    SECTIONS = ["eastbound", "westbound"]
+    SPAWNS = {"eastbound": SPAWN_EASTBOUND, "westbound": SPAWN_WESTBOUND}
+    SECTION_LEN_M = {"eastbound": LAP_END_M, "westbound": LAP_END_M}
+    TOTAL_SCORED_M = LAP_END_M * 2.0
+
+def steps_for(section, margin=1.0):
+    """Control steps to drive exactly one section, at the fixed study speed.
+
+    Driving PAST a section's end runs the vehicle into the unclean road the section was
+    clipped to exclude, and it fails there for reasons that have nothing to do with the
+    policy. Measured: with one 520-step limit applied to all six Town06 sections, the
+    pure-pursuit oracle "failed" s03 and s04 at max|CTE| 2.08 m and 7.21 m, both in the
+    last few steps. With per-section limits every section passes at <= 0.066 m.
+
+    On Town04 this is a NO-OP by design. Its route is a closed 3042 m loop whose lap
+    ends by loop closure (~1701 steps), while LAP_END_M is the 2861 m SCORED prefix
+    (~1599 steps). Capping there would truncate the published lap and silently change
+    every Town04 number, so section-based maps get a real cap and Town04 gets infinity.
+    """
+    if not SECTION_BASED:
+        return 10 ** 9
+    length = SECTION_LEN_M.get(section, LAP_END_M)
+    return int(length * margin / (TARGET_SPEED_MS * FIXED_DT))
+
 
 # ── Unit conversions ─────────────────────────────────────────────────────────
 M_TO_FT = 3.28084

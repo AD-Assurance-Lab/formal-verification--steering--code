@@ -28,7 +28,8 @@ from metrics import summarize_cte
 from student import StudentNet, student_preprocess
 from distill import distill_student
 
-SPAWNS = {"eastbound": C.SPAWN_EASTBOUND, "westbound": C.SPAWN_WESTBOUND}
+# Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).
+SPAWNS = C.SPAWNS
 FIELDS = ["image", "weather", "direction", "step", "steer", "steer_rad", "nn_steer",
           "cte_m", "speed_mph", "x", "y", "yaw"]
 
@@ -224,22 +225,22 @@ def main():
                 # set_weather captured every condition through the PREVIOUS condition's
                 # exposure -- night through the daylight setting, silently.
                 camera, img_queue = env.set_condition(world, vehicle, weather, camera)
-                for d in ["eastbound", "westbound"]:
+                for d in C.SECTIONS:
                     if beta <= 0.0:
                         drows, st = drive_collect(world, vehicle, img_queue, model, device,
                                                   args.w, args.h, weather, d, round_dir,
-                                                  args.max_steps, beta=0.0, collect=True,
+                                                  min(args.max_steps, C.steps_for(d)), beta=0.0, collect=True,
                                                   abort_on_departure=True)
                     else:
                         # evaluate honestly under pure policy control, then collect with
                         # expert assistance so a weak policy still yields a full lap
                         _, st = drive_collect(world, vehicle, img_queue, model, device,
                                               args.w, args.h, weather, d, round_dir,
-                                              args.max_steps, beta=0.0, collect=False,
+                                              min(args.max_steps, C.steps_for(d)), beta=0.0, collect=False,
                                               abort_on_departure=True)
                         drows, _ = drive_collect(world, vehicle, img_queue, model, device,
                                                  args.w, args.h, weather, d, round_dir,
-                                                 args.max_steps, beta=beta, collect=True,
+                                                 min(args.max_steps, C.steps_for(d)), beta=beta, collect=True,
                                                  abort_on_departure=False)
                     rows += drows
                     ob = st.get("frac_over_budget", 1) * 100
