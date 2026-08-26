@@ -91,6 +91,31 @@ def main():
     args = ap.parse_args()
 
     require_locked()
+
+    # COMPETENCE PRECONDITION. The bound is on Delta_p(s) = delta_p(s) - delta_p(0),
+    # the change the disturbance induces relative to the model's OWN clear-weather
+    # output. It never asks whether delta_p(0) is any good, so a network that ignores
+    # its input and emits a constant angle has Delta_p identically zero and certifies
+    # perfectly under every condition while driving off the road. Distillation is
+    # exactly where that can arise: a student without the capacity to fit its teacher
+    # can be uniformly wrong in a way that is STABLE across s, and stability is what
+    # this criterion rewards. So refuse to certify a student whose clear-weather
+    # competence has not been recorded.
+    comp = REPO / "results" / "town06" / "competence_clear.json"
+    if not comp.exists():
+        sys.exit("REFUSING: no clear-weather competence record.\n"
+                 "  The certificate bounds deviation FROM clear and assumes the model\n"
+                 "  drives clear weather. Run scripts/check_student_competence.py first.")
+    rec = json.loads(comp.read_text())
+    if not rec.get("all_competent"):
+        bad = [k for k, v in rec.get("students", {}).items()
+               if not v.get("competent")]
+        sys.exit(f"REFUSING: not competent in clear weather: {', '.join(bad)}.\n"
+                 "  Certifying would bound deviation from an output already wrong.\n"
+                 "  Fix capacity / distillation / student-DAgger rounds first.")
+    print(f"  clear-weather competence: OK for all students "
+          f"(recorded at {rec.get('git_commit', '?')[:8]})")
+
     if C.STUDY_MAP != "Town06":
         sys.exit("run with STUDY_MAP=Town06")
     if (args.stride, args.nsplit) != (8, 16):
