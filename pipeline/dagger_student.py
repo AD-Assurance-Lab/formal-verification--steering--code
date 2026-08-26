@@ -154,6 +154,9 @@ def main():
                     help="subdir under data/ for this run's student-DAgger rounds")
     ap.add_argument("--teacher", default="steering_dagger_r02", help="teacher for re-distill labels")
     ap.add_argument("--base", default="clear", help="base BC dataset name for re-distill")
+    ap.add_argument("--balance", action="store_true",
+                    help="downsample near-straight frames on every re-distil; must match "
+                         "the initial distillation or each round undoes it")
     ap.add_argument("--distill-dirs", default="dagger,dagger_student",
                     help="DAgger subdirs folded into re-distill (teacher rounds + this student dir)")
     ap.add_argument("--channels", default="8,16,16", help="conv widths (capacity lever; must match --student)")
@@ -262,7 +265,7 @@ def main():
             print(f"  re-distilling (warm-start from '{current}') -> {new}", flush=True)
             distill_student(args.w, args.h, new, teacher_name=args.teacher, base=args.base,
                             dagger_dirs=distill_dirs, weathers=weathers, channels=channels, fc=args.fc,
-                            init_from=current, lr=args.lr, epochs=args.epochs, quiet=True)
+                            init_from=current, lr=args.lr, epochs=args.epochs, quiet=True, balance=args.balance)
             model = load_student(new, args.w, args.h, device, channels=channels, fc=args.fc)
             current = new
     finally:

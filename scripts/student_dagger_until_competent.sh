@@ -77,7 +77,7 @@ for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
             --student "$BASE" --w 84 --h 28 --rounds "$ROUNDS" \
             --weathers "$WEATHERS" --dagger-dir "$DDIR" --teacher "$TEACH" \
             --base "$DATASET" --channels "$CH" --fc "$FC" \
-            --distill-dirs "dagger_${WHICH}_t06,${DDIR}" ) \
+            --distill-dirs "dagger_${WHICH}_t06,${DDIR}" --balance ) \
           >>"$LOG_DIR/student_dagger_${WHICH}.log" 2>&1 \
           || { say "  ${WHICH} student DAgger exited nonzero; restarting CARLA"; carla_restart || exit 1; }
     done
