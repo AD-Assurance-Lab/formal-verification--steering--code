@@ -6,81 +6,81 @@
       "sections": {
         "s00": {
           "passed": true,
-          "n_pass": 3,
-          "reps": 3,
-          "max_cte_ft": 0.7
+          "n_pass": 2,
+          "reps": 2,
+          "max_cte_ft": 0.67
         },
         "s01": {
           "passed": true,
-          "n_pass": 3,
-          "reps": 3,
-          "max_cte_ft": 1.08
+          "n_pass": 2,
+          "reps": 2,
+          "max_cte_ft": 1.2
         },
         "s02": {
           "passed": true,
-          "n_pass": 3,
-          "reps": 3,
-          "max_cte_ft": 0.6
+          "n_pass": 2,
+          "reps": 2,
+          "max_cte_ft": 0.53
         },
         "s03": {
           "passed": false,
-          "n_pass": 2,
-          "reps": 3,
-          "max_cte_ft": 2.24
+          "n_pass": 1,
+          "reps": 2,
+          "max_cte_ft": 2.92
         },
         "s04": {
           "passed": true,
-          "n_pass": 3,
-          "reps": 3,
-          "max_cte_ft": 0.44
+          "n_pass": 2,
+          "reps": 2,
+          "max_cte_ft": 0.45
         },
         "s05": {
           "passed": true,
-          "n_pass": 3,
-          "reps": 3,
-          "max_cte_ft": 1.88
+          "n_pass": 2,
+          "reps": 2,
+          "max_cte_ft": 0.32
         }
       },
       "competent": false
     },
     "S_mixed_t06": {
-      "checkpoint": "S_mixed_t06_84x28_w3_dagger_r02",
+      "checkpoint": "S_mixed_t06_84x28_w3_dagger_r14",
       "sections": {
         "s00": {
           "passed": true,
-          "n_pass": 3,
-          "reps": 3,
-          "max_cte_ft": 1.38
+          "n_pass": 1,
+          "reps": 1,
+          "max_cte_ft": 0.74
         },
         "s01": {
           "passed": false,
           "n_pass": 0,
-          "reps": 3,
-          "max_cte_ft": 4.15
+          "reps": 1,
+          "max_cte_ft": 4.22
         },
         "s02": {
-          "passed": true,
-          "n_pass": 3,
-          "reps": 3,
-          "max_cte_ft": 1.39
+          "passed": false,
+          "n_pass": 0,
+          "reps": 1,
+          "max_cte_ft": 2.53
         },
         "s03": {
-          "passed": true,
-          "n_pass": 3,
-          "reps": 3,
-          "max_cte_ft": 2.14
+          "passed": false,
+          "n_pass": 0,
+          "reps": 1,
+          "max_cte_ft": 14.22
         },
         "s04": {
           "passed": true,
-          "n_pass": 3,
-          "reps": 3,
-          "max_cte_ft": 0.63
+          "n_pass": 1,
+          "reps": 1,
+          "max_cte_ft": 0.28
         },
         "s05": {
           "passed": true,
-          "n_pass": 3,
-          "reps": 3,
-          "max_cte_ft": 1.2
+          "n_pass": 1,
+          "reps": 1,
+          "max_cte_ft": 0.46
         }
       },
       "competent": false
@@ -88,7 +88,7 @@
   },
   "all_competent": false,
   "cte_budget_ft": 2.1916011199999996,
-  "git_commit": "e12bfb60b4144dd0270b2321294400d669aeb5b0",
+  "git_commit": "963eac5e60df996507eac2e8f5bdaf0d75cce706",
   "reps": 3,
   "note": "clear weather only; s=0 anchor, not a disturbance cell, not a scored ledger cell; every section must hold on every rep"
 }
