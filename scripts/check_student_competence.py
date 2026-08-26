@@ -22,6 +22,18 @@ The published Town04 study half-encodes this already -- the clear cell is driven
 its certificate is recorded as vacuous, "Delta_p = 0 by construction" -- but the
 assumption is never named. This makes it a gate.
 
+REPETITIONS
+-----------
+Standing rule 3: every closed-loop number is a RATE over repetitions, never a single
+run, because CARLA pass/fail varies run to run near the cliff. This gate broke that
+rule and paid for it -- the SAME checkpoint (S_clear ..._dagger_r02) scored 4/6
+sections on one pass and 2/6 on the next, with worst |CTE| 8.57 ft and 7.86 ft. A
+single pass per section cannot tell a marginal student from an unlucky one.
+
+So each section is driven REPS times and must hold on EVERY one. That is a deliberately
+strict bar: a student that only sometimes holds clear weather is not a competent
+student, and the published Town04 clear cell is 0/10 failures, not a coin flip.
+
 WHAT THIS IS NOT
 ----------------
 Not a scored ledger cell. It is a single evaluation pass per section in CLEAR weather,
@@ -53,7 +65,7 @@ STUDENTS = (("S_clear_t06", "S_clear_t06_84x28", "8,16,16", 32),
 
 
 def run_eval(ckpt, channels, fc):
-    """Drive the student over every section in clear weather. Returns per-section CTE."""
+    """One pass over every section in clear weather. Returns per-section CTE."""
     env = dict(os.environ, STUDY_MAP=C.STUDY_MAP, PYTHONUNBUFFERED="1")
     cmd = [sys.executable, "evaluate.py", "--model", ckpt, "--direction", "all",
            "--weather", "clear", "--max-steps", "2000",
@@ -83,6 +95,8 @@ def parse(out):
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--reps", type=int, default=3,
+                    help="passes per section; a section must hold on EVERY one")
     ap.add_argument("--require", action="store_true",
                     help="exit non-zero unless every student passes every section")
     args = ap.parse_args()
@@ -105,7 +119,21 @@ def main():
             report[name] = dict(error="checkpoint missing")
             all_ok = False
             continue
-        res = parse(run_eval(ckpt, channels, fc))
+        # Repetitions, per standing rule 3. A section must hold on every one.
+        per_rep = []
+        for _ in range(args.reps):
+            r = parse(run_eval(ckpt, channels, fc))
+            if r:
+                per_rep.append(r)
+        res = {}
+        for sec in C.SECTIONS:
+            got = [rp[sec] for rp in per_rep if sec in rp]
+            if not got:
+                continue
+            res[sec] = dict(passed=all(g["passed"] for g in got),
+                            n_pass=sum(1 for g in got if g["passed"]),
+                            reps=len(got),
+                            max_cte_ft=max((g["max_cte_ft"] or 0.0) for g in got))
         if not res:
             print(f"  {name}: evaluation produced no per-section result")
             report[name] = dict(error="no result parsed")
@@ -121,7 +149,8 @@ def main():
               f"-> {'COMPETENT' if ok else 'NOT COMPETENT'}")
         for sec, v in sorted(res.items()):
             if not v["passed"]:
-                print(f"      {sec}: FAIL max|CTE| {v['max_cte_ft']} ft")
+                print(f"      {sec}: held {v['n_pass']}/{v['reps']} reps, "
+                      f"worst max|CTE| {v['max_cte_ft']} ft")
 
     try:
         head = subprocess.check_output(["git", "-C", str(REPO), "rev-parse", "HEAD"],
@@ -133,8 +162,10 @@ def main():
                                    all_competent=all_ok,
                                    cte_budget_ft=C.CTE_BUDGET_FT,
                                    git_commit=head,
+                                   reps=args.reps,
                                    note="clear weather only; s=0 anchor, not a "
-                                        "disturbance cell, not a scored ledger cell"),
+                                        "disturbance cell, not a scored ledger cell; "
+                                        "every section must hold on every rep"),
                               indent=2))
     print(f"\n  wrote {OUT.relative_to(REPO)}")
     if not all_ok:
