@@ -35,23 +35,54 @@ python3 scripts/check_protocol_lock.py >/dev/null || {
     say "FATAL: PROTOCOL lock mismatch -- refusing to run"; exit 1; }
 say "PROTOCOL lock OK; STUDY_MAP=$STUDY_MAP CARLA_PORT=$CARLA_PORT"
 
+CARLA_ROOT=${CARLA_ROOT:-$HOME/carla}
+CARLA_LOG=$LOG_DIR/carla.log
+
 carla_up() {
-    for i in $(seq 1 60); do
+    for i in $(seq 1 "${1:-60}"); do
         ss -ltn 2>/dev/null | grep -q ":$CARLA_PORT" && return 0
         sleep 5
     done
     return 1
 }
-carla_up || { say "FATAL: no CARLA on port $CARLA_PORT"; exit 1; }
 
-run() {   # run <logname> <cmd...>
+# CARLA dies. It leaks ~10.5 GiB over 11 h, and it aborts with "Pure virtual function
+# called!" whenever a synchronous client disappears mid-tick -- which is exactly what a
+# killed or crashed stage looks like from the server's side. Over a multi-hour
+# unattended run that is a certainty, not a risk, so the driver restarts it rather than
+# losing the campaign to it.
+carla_restart() {
+    say "restarting CARLA on port $CARLA_PORT"
+    pkill -f "[C]arlaUE4-Linux-Shipping.*rpc-port=$CARLA_PORT" 2>/dev/null
+    sleep 8
+    ( cd "$CARLA_ROOT" && setsid nohup ./CarlaUE4.sh -carla-rpc-port="$CARLA_PORT" \
+        -RenderOffScreen -quality-level=Epic >>"$CARLA_LOG" 2>&1 < /dev/null & )
+    if carla_up 60; then say "CARLA back up"; sleep 10; return 0; fi
+    say "FATAL: CARLA did not come back on port $CARLA_PORT"
+    return 1
+}
+
+carla_up 12 || carla_restart || exit 1
+
+# Stale lock from a killed stage would block every subsequent one.
+rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null
+
+run() {   # run <logname> <cmd...>  -- one retry after a CARLA restart
     local name=$1; shift
-    say "START $name"
-    if "$@" >>"$LOG_DIR/$name.log" 2>&1; then
-        say "OK    $name"
-        return 0
-    fi
-    say "FAIL  $name (see $LOG_DIR/$name.log)"
+    local attempt
+    for attempt in 1 2; do
+        say "START $name (attempt $attempt)"
+        if "$@" >>"$LOG_DIR/$name.log" 2>&1; then
+            say "OK    $name"
+            return 0
+        fi
+        say "FAIL  $name attempt $attempt (see $LOG_DIR/$name.log)"
+        # A stage failure and a dead simulator are usually the same event.
+        carla_up 3 || carla_restart || return 1
+        rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null
+        sleep 5
+    done
+    say "FAIL  $name after 2 attempts -- stopping"
     return 1
 }
 
@@ -113,16 +144,24 @@ else say "SKIP  distill_mixed"; fi
 
 # ---------------------------------------------------------- student DAgger
 if ! ls "$DATA"/dagger_student_clear_t06/manifest.csv >/dev/null 2>&1; then
+    # --distill-dirs MUST be given. Its default is "dagger,dagger_student", which are
+    # TOWN04 directory names: leaving it unset re-distils the Town06 student against
+    # whatever Town04 data happens to be on disk, or silently against nothing. Either
+    # way it contaminates the deployment test with the discovery test's data.
     run dagger_student_clear python3 dagger_student.py \
         --student S_clear_t06_84x28 --w 84 --h 28 --rounds 3 --weathers clear \
-        --dagger-dir dagger_student_clear_t06 --teacher "$TC" --base clear_t06 || exit 1
+        --dagger-dir dagger_student_clear_t06 --teacher "$TC" --base clear_t06 \
+        --channels 8,16,16 --fc 32 \
+        --distill-dirs dagger_clear_t06,dagger_student_clear_t06 || exit 1
 else say "SKIP  dagger_student_clear"; fi
 
 if ! ls "$DATA"/dagger_student_mixed_t06/manifest.csv >/dev/null 2>&1; then
     run dagger_student_mixed python3 dagger_student.py \
         --student S_mixed_t06_84x28_w3 --w 84 --h 28 --rounds 3 \
         --weathers clear,fog,night,shadows \
-        --dagger-dir dagger_student_mixed_t06 --teacher "$TM" --base mixed_t06 || exit 1
+        --dagger-dir dagger_student_mixed_t06 --teacher "$TM" --base mixed_t06 \
+        --channels 24,48,48 --fc 96 \
+        --distill-dirs dagger_mixed_t06,dagger_student_mixed_t06 || exit 1
 else say "SKIP  dagger_student_mixed"; fi
 
 say "PIPELINE COMPLETE -- students built."
