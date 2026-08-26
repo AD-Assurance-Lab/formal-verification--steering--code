@@ -1,2 +1,5 @@
   [clear/eastbound lap00] start speed=19.8 mph
   [clear/westbound lap00] start speed=20.1 mph
+    loop closed at step 2217 (2218 frames)
+  [clear/eastbound lap01] start speed=19.7 mph
+  [clear/westbound lap01] start speed=19.8 mph

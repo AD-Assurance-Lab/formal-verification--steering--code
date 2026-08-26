@@ -42,3 +42,11 @@ results/trajectory/*.json
 
 # driven-frame logs (regenerable; 144 MB per run)
 results/framelog/
+
+# Town06 deployment test: captures are simulator output (~38 MB x 8) and regenerable.
+# The CERTIFICATE is not -- it is the pre-drive prediction and must be committed.
+results/town06/captures/
+results/town06_logs/
+!results/town06/
+!results/town06/certificate_town06.json
+!results/town06/ledger/
