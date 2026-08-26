@@ -14,3 +14,8 @@
 [2026-08-25 22:13:28] START collect_mixed (attempt 1)
 [2026-08-25 22:15:38] FAIL  collect_mixed attempt 1 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06_logs/collect_mixed.log)
 [2026-08-25 22:15:43] START collect_mixed (attempt 2)
+[2026-08-26 07:04:29] PROTOCOL lock OK; STUDY_MAP=Town06 CARLA_PORT=3000
+[2026-08-26 07:04:30] route fingerprint 
+[2026-08-26 07:04:30] START collect_clear (attempt 1)
+[2026-08-26 07:10:15] OK    collect_clear
+[2026-08-26 07:10:15] START train_clear_bc (attempt 1)
