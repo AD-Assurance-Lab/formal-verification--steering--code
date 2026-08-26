@@ -9,6 +9,12 @@ checkpoints/
 pipeline/checkpoints/*
 !pipeline/checkpoints/S_clear_84x28.pth
 !pipeline/checkpoints/S_mixed_84x28_w3.pth
+# ...and the Town06 deployment-test routes. These are PROTOCOL artifacts, not data:
+# the route had to be fixed, on geometry alone, before any Town06 model existed, and
+# committing it is what makes that checkable later. ~23 KB each.
+!pipeline/data/
+pipeline/data/*
+!pipeline/data/routes_town06/
 runs/
 results/**/*.png
 results/**/*.npy

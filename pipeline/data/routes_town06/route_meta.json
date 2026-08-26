@@ -1,0 +1,57 @@
+{
+  "map": "Town06",
+  "target_len_m": 2861.0,
+  "step_m": 2.0,
+  "town04_reference": {
+    "straight_frac": 0.536,
+    "kappa_mean": 0.00306,
+    "kappa_p90": 0.00682
+  },
+  "window": {
+    "start_idx": 1105,
+    "scored_len_m": 2838.161816808384,
+    "straight_frac": 0.7454545454545455,
+    "kappa_mean": 0.002996234582227168,
+    "kappa_p90": 0.01109783185967273,
+    "kappa_max": 0.03661827536724432,
+    "min_radius_m": 27.308768366915427,
+    "junction_frac": 0.23076923076923078,
+    "lane_width_mean": 3.5,
+    "lane_width_std": 0.0,
+    "lanes_per_dir_mode": 5,
+    "lane_match_frac": 0.8888888888888888,
+    "speed_kph_mode": null,
+    "speed_match_frac": 0.0
+  },
+  "opposing": {
+    "start_idx": 0,
+    "scored_len_m": 2872.7962633919283,
+    "straight_frac": 0.7888111888111888,
+    "kappa_mean": 0.003367383643158856,
+    "kappa_p90": 0.015442589906152155,
+    "kappa_max": 0.045427844660439656,
+    "min_radius_m": 22.01293078011335,
+    "junction_frac": 0.1888111888111888,
+    "lane_width_mean": 3.5,
+    "lane_width_std": 0.0,
+    "lanes_per_dir_mode": 4,
+    "lane_match_frac": 0.9583333333333334,
+    "speed_kph_mode": null,
+    "speed_match_frac": 0.0
+  },
+  "spawns": {
+    "eastbound": {
+      "x": 16.094133377075195,
+      "y": 140.33200073242188,
+      "z": 0.5,
+      "yaw": -18.6436824798584
+    },
+    "westbound": {
+      "x": -12.112296104431152,
+      "y": 139.5394744873047,
+      "z": 0.5,
+      "yaw": -220.28082275390625
+    }
+  },
+  "selection": "geometry only; no policy behaviour used"
+}
