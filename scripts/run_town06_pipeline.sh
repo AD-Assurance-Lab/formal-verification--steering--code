@@ -72,6 +72,11 @@ run() {   # run <logname> <cmd...>  -- one retry after a CARLA restart
     local attempt
     for attempt in 1 2; do
         say "START $name (attempt $attempt)"
+        # Truncate: stage logs are append-mode, so teacher_gate would otherwise read a
+        # PREVIOUS run's "without passing" and fail a stage that just succeeded. Do it
+        # here rather than by deleting the file: an unlinked log keeps being written to
+        # an inode with no path, which loses the gate's input entirely.
+        : > "$LOG_DIR/$name.log"
         if "$@" >>"$LOG_DIR/$name.log" 2>&1; then
             say "OK    $name"
             return 0
@@ -98,11 +103,20 @@ sys.path.insert(0, "pipeline")
 import config as C
 h = hashlib.sha256()
 d = os.path.join(C.DATASET_DIR, C.ROUTES_SUBDIR)
-for n in ("eastbound", "westbound"):
-    h.update(open(os.path.join(d, n + ".npy"), "rb").read())
+names = sorted(f for f in os.listdir(d) if f.endswith(".npy"))
+if not names:
+    raise SystemExit("no route .npy files in " + d)
+for n in names:
+    h.update(open(os.path.join(d, n), "rb").read())
 print(h.hexdigest()[:16])
 PY
 )
+# An EMPTY fingerprint is a broken guard, not a passing one. The first version hashed
+# two hardcoded filenames and silently produced "" once the routes became s00..s05.
+if [ -z "$ROUTE_FP" ]; then
+    say "FATAL: route fingerprint is empty -- the guard is broken, refusing to run"
+    exit 1
+fi
 say "route fingerprint $ROUTE_FP"
 
 fp_ok() {   # fp_ok <dataset-dir> -- true if it was built on THIS route

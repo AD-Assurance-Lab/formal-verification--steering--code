@@ -44,6 +44,12 @@ STUDENTS = (("S_clear_t06", "S_clear_t06_84x28", (8, 16, 16), 32),
             ("S_mixed_t06", "S_mixed_t06_84x28_w3", (24, 48, 48), 96))
 
 CAPTURES = REPO / "results" / "town06" / "captures"
+
+# One bound per (student, condition), pooling poses across all sections. The statistic
+# is the deviation SUSTAINED along the route, so it is a mean over every scored pose --
+# on Town04 that is a lap, here it is the six sections together (3874 m). Reporting a
+# separate bound per section would make six stretches of one condition look like six
+# independent measurements, which they are not.
 OUT = REPO / D.CERT_ARTIFACT
 
 
@@ -95,8 +101,8 @@ def main():
     tol = C.CLOSED_LOOP_TOLERANCE
     conds = ("fog", "night", "shadows")
 
-    need = [f"lap_{d}_{c}.npz" for d in D.DIRECTIONS for c in conds]
-    need += [f"lap_{d}_clear.npz" for d in D.DIRECTIONS]
+    need = [f"lap_{d}_{c}.npz" for d in D.SECTIONS for c in conds]
+    need += [f"lap_{d}_clear.npz" for d in D.SECTIONS]
     missing = [m for m in need if not (CAPTURES / m).exists()]
     if missing and not args.allow_missing:
         print(f"REFUSING TO RUN: {len(missing)} capture(s) absent from {CAPTURES}:",
@@ -105,46 +111,39 @@ def main():
             print(f"    {m}", file=sys.stderr)
         return 2
 
-    n_expected = len(D.DIRECTIONS) * len(conds) * len(STUDENTS)
+    n_expected = len(conds) * len(STUDENTS)
     print(f"\nTOWN06 DEPLOYMENT-TEST CERTIFICATE (blind)   tolerance {tol:.6f}")
     print(f"  stride {args.stride}, {args.nsplit}-way BaB, {n_expected} cells expected")
     print(f"  T_CLOSED_LOOP_S = {C.T_CLOSED_LOOP_S} (frozen, inherited from Town04)\n")
-    print(f"  {'dir':10s} {'model':12s} {'cond':9s} {'base':8s} {'bias bound':>22s}"
+    print(f"  {'model':12s} {'cond':9s} {'poses':>4s}  {'bias bound':>22s}"
           f" {'x tol':>14s}  verdict")
 
     out, n = {}, 0
-    for direction in D.DIRECTIONS:
-        base = CAPTURES / f"lap_{direction}_clear.npz"
-        if not base.exists():
-            continue
-        fallback = nominal(base, "clear")
-        bl = {}
+    for nm, ck, ch, fc in STUDENTS:
+        wpath = Path(C.CHECKPOINT_DIR) / f"{ck}.pth"
+        if not wpath.exists():
+            sys.exit(f"missing checkpoint {wpath}")
+        net = StudentNet(28, 84, channels=ch, fc=fc).to(dev)
+        net.load_state_dict(torch.load(wpath, map_location=dev, weights_only=True))
+        net.eval()
+        bd = cc.Bounder(1, net, dev, 28, 84, method="CROWN")
         for cond in conds:
-            p = CAPTURES / f"lap_{direction}_{cond}.npz"
-            if p.exists():
-                bl[cond] = baseline_for(p, fallback)
-        for nm, ck, ch, fc in STUDENTS:
-            wpath = Path(C.CHECKPOINT_DIR) / f"{ck}.pth"
-            if not wpath.exists():
-                sys.exit(f"missing checkpoint {wpath}")
-            net = StudentNet(28, 84, channels=ch, fc=fc).to(dev)
-            net.load_state_dict(torch.load(wpath, map_location=dev, weights_only=True))
-            net.eval()
-            bd = cc.Bounder(1, net, dev, 28, 84, method="CROWN")
-            for cond in conds:
-                p = CAPTURES / f"lap_{direction}_{cond}.npz"
-                if not p.exists():
+            los, his, per_section, origins = [], [], {}, set()
+            for sec in D.SECTIONS:
+                p = CAPTURES / f"lap_{sec}_{cond}.npz"
+                base = CAPTURES / f"lap_{sec}_clear.npz"
+                if not p.exists() or not base.exists():
                     continue
-                clr, origin = bl[cond]
+                clr, origin = baseline_for(p, nominal(base, "clear"))
+                origins.add(origin)
                 dis = nominal(p, cond)
                 if dis is None or len(dis) != len(clr):
-                    print(f"  {direction:10s} {nm:12s} {cond:9s} "
-                          f"{'LENGTH MISMATCH':>22s}")
+                    print(f"  {sec}/{nm}/{cond}: LENGTH MISMATCH, skipped")
                     continue
                 with torch.no_grad():
                     sc = net(torch.from_numpy(clr[::args.stride]).to(dev)
                              ).cpu().numpy().reshape(-1)
-                los, his = [], []
+                slo, shi = [], []
                 for i, k in enumerate(range(0, len(clr), args.stride)):
                     x0 = clr[k].reshape(-1).astype(np.float32)
                     x1 = dis[k].reshape(-1).astype(np.float32)
@@ -157,20 +156,25 @@ def main():
                                     np.array([-1.0]), np.array([1.0]))
                         lo_i.append(l_)
                         hi_i.append(u_)
-                    los.append(min(lo_i) - sc[i])
-                    his.append(max(hi_i) - sc[i])
-                blo, bhi = float(np.mean(los)), float(np.mean(his))
-                # "Safe for EVERY intensity", so any violation declines the certificate.
-                # NOT_CERTIFIED, never FALSIFIED: a sound over-approximation proves
-                # safety and cannot prove danger.
-                v = "CERTIFIED" if (bhi <= tol and blo >= -tol) else "NOT_CERTIFIED"
-                n += 1
-                out[f"{direction}/{nm}/{cond}"] = dict(
-                    lo=blo, hi=bhi, lo_x_tol=blo / tol, hi_x_tol=bhi / tol,
-                    verdict=v, baseline=origin)
-                print(f"  {direction:10s} {nm:12s} {cond:9s} {origin:8s} "
-                      f"[{blo:+.5f},{bhi:+.5f}] [{blo/tol:+6.2f},{bhi/tol:+6.2f}]"
-                      f"  {v}", flush=True)
+                    slo.append(min(lo_i) - sc[i])
+                    shi.append(max(hi_i) - sc[i])
+                per_section[sec] = dict(lo=float(np.mean(slo)), hi=float(np.mean(shi)),
+                                        poses=len(slo))
+                los += slo
+                his += shi
+            if not los:
+                print(f"  {nm:12s} {cond:9s} no captures")
+                continue
+            blo, bhi = float(np.mean(los)), float(np.mean(his))
+            v = "CERTIFIED" if (bhi <= tol and blo >= -tol) else "NOT_CERTIFIED"
+            n += 1
+            out[f"{nm}/{cond}"] = dict(lo=blo, hi=bhi, lo_x_tol=blo / tol,
+                                       hi_x_tol=bhi / tol, verdict=v,
+                                       poses=len(los), sections=per_section,
+                                       baseline="/".join(sorted(origins)))
+            print(f"  {nm:12s} {cond:9s} {len(los):>4d} poses  "
+                  f"[{blo:+.5f},{bhi:+.5f}] [{blo/tol:+6.2f},{bhi/tol:+6.2f}]  {v}",
+                  flush=True)
 
     print(f"\n  {n}/{n_expected} cells certified-or-not. NO agreement column: this is a "
           f"prediction,\n  and the closed-loop runs that test it have not happened yet.")

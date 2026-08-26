@@ -6,3 +6,5 @@ FileNotFoundError: [Errno 2] No such file or directory: '/home/za/ad-assurance--
 [2026-08-26 07:04:30] START collect_clear (attempt 1)
 [2026-08-26 07:10:15] OK    collect_clear
 [2026-08-26 07:10:15] START train_clear_bc (attempt 1)
+[2026-08-26 07:13:17] OK    train_clear_bc
+[2026-08-26 07:13:17] START dagger_clear (attempt 1)
