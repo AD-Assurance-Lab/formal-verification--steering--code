@@ -22,21 +22,23 @@ OUTDIR=$REPO/results/town06/captures
 LOGD=$REPO/results/town06_logs
 mkdir -p "$OUTDIR" "$LOGD"
 
-# 200 scored poses x stride 8 = 1600 captured poses over the scored lap.
-POSES=1600
-LAP=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(f'{C.LAP_END_M:.1f}')")
-echo "scored lap = ${LAP} m, ${POSES} poses (stride 8 -> 200)"
+# The sampling RULE is frozen (every 8th control-rate pose, PROTOCOL section 3); the
+# pose count follows from each section's length rather than being fixed at Town04's 200.
+SECTIONS=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(' '.join(C.SECTIONS))")
+echo "sections: $SECTIONS"
 
-for DIR in eastbound westbound; do
+for SEC in $SECTIONS; do
+  LEN=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(f\"{C.SECTION_LEN_M['$SEC']:.1f}\")")
+  POSES=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(C.steps_for('$SEC'))")
   for COND in clear fog night shadows; do
-    OUT="results/town06/captures/lap_${DIR}_${COND}.npz"
+    OUT="results/town06/captures/lap_${SEC}_${COND}.npz"
     if [ -f "$REPO/$OUT" ]; then echo "SKIP  $OUT"; continue; fi
-    echo "[$(date '+%F %T')] capture $DIR/$COND"
+    echo "[$(date '+%F %T')] capture $SEC/$COND  (${LEN} m, ${POSES} poses)"
     OY_OFFSETS=0.0 OY_YAWS=0.0 OY_CONDS="$COND" OY_OUT="$OUT" \
       python3 scripts/capture_offset_yaw.py \
-        --direction "$DIR" --poses "$POSES" --start-m 0 --length-m "$LAP" \
-        >>"$LOGD/capture_${DIR}_${COND}.log" 2>&1 \
-      && echo "  OK $OUT" || { echo "  FAIL $DIR/$COND (see $LOGD/capture_${DIR}_${COND}.log)"; exit 1; }
+        --direction "$SEC" --poses "$POSES" --start-m 0 --length-m "$LEN" \
+        >>"$LOGD/capture_${SEC}_${COND}.log" 2>&1 \
+      && echo "  OK $OUT" || { echo "  FAIL $SEC/$COND (see $LOGD/capture_${SEC}_${COND}.log)"; exit 1; }
   done
 done
 echo "[$(date '+%F %T')] captures complete"
