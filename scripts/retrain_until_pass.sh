@@ -61,6 +61,13 @@ for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
     if grep -q "\*\*\* PASSED at round" "$OUT"; then
         say "PASSED: $(grep -o '\*\*\* PASSED at round.*' "$OUT" | tail -1)"
         say "teacher meets budget on every section and condition"
+        # The pipeline's teacher_gate greps dagger_<which>.log. That file still holds the
+        # FAILED run's "Exhausted N rounds without passing", and the stage will be SKIPPED
+        # on the next pipeline run because the checkpoints now exist -- so the gate would
+        # read stale evidence and FATAL on a teacher that just passed. Replace it with the
+        # attempt that actually succeeded.
+        cp "$OUT" "$LOG_DIR/dagger_${WHICH}.log"
+        say "wrote the passing run to dagger_${WHICH}.log so the pipeline gate sees it"
         exit 0
     fi
     if [ $rc -ne 0 ]; then
