@@ -258,16 +258,29 @@ def steps_for(section, margin=1.0):
 # WITHIN-model (each policy against its own closed-loop behaviour) and a tool that only
 # works when two models share an architecture is not a tool.
 #
-# Town06 needs more width than Town04 at both ends. On Town04 the published pair was
-# w1/w3 and both students passed student-DAgger at round 0. On Town06 the same pair
-# plateaued ON the budget: ten rounds each, verdicts oscillating 4/6-6/6 with the SAME
-# weights, worst |CTE| 1.71-2.92 ft against a 2.19 ft budget. The straight sections
-# punish residual steering bias, which is why this route is harder for a given capacity.
+# Sizes MATCH the Town04 published pair. Widening was tried and is not the fix: the
+# Town06 plateau is a LABEL-DISTRIBUTION problem, not a capacity one.
+#
+#   fraction of the route needing |steer| <= 0.01
+#     Town04 eastbound  60.4 %      Town06 overall  83.8 %
+#     Town04 westbound  56.0 %      Town06 s02     100.0 %
+#                                   Town06 s03     100.0 %  (std 0.0000)
+#
+# Town04 curves continuously, so steering demand is always present. Town06 has two
+# sections, ~1250 m of 3874 m, whose correct steering is identically zero for their
+# whole length. A student trained on that emits ~0 with a small offset, and the straight
+# sections integrate the offset into a departure -- measured on s03, CTE -0.18 -> -1.24
+# -> -8.59 with the sign never changing, while the teacher oscillates about zero.
+#
+# The fix is distill.py --balance (straight-frame downsampling), which train.py has had
+# for the teachers since the start and which distill.py never had, so the STUDENT -- the
+# model that actually gets certified -- always trained on the raw distribution. Teachers
+# absorb the imbalance at ~107k ReLU; a 5-15k ReLU student does not.
 #
 #   (name, checkpoint stem, conv channels, FC width)
 TOWN06_STUDENTS = (
-    ("S_clear_t06", "S_clear_t06_84x28_w2",    (16, 32, 32), 64),
-    ("S_mixed_t06", "S_mixed_t06_84x28_w4",    (32, 64, 64), 128),
+    ("S_clear_t06", "S_clear_t06_84x28",    (8, 16, 16), 32),
+    ("S_mixed_t06", "S_mixed_t06_84x28_w3", (24, 48, 48), 96),
 )
 
 

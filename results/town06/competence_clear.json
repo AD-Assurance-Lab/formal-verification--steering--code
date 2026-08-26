@@ -1,0 +1,94 @@
+{
+  "map": "Town06",
+  "students": {
+    "S_clear_t06": {
+      "checkpoint": "S_clear_t06_84x28_w2",
+      "sections": {
+        "s00": {
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 0.9
+        },
+        "s01": {
+          "passed": false,
+          "n_pass": 2,
+          "reps": 3,
+          "max_cte_ft": 2.35
+        },
+        "s02": {
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 0.57
+        },
+        "s03": {
+          "passed": false,
+          "n_pass": 1,
+          "reps": 3,
+          "max_cte_ft": 4.14
+        },
+        "s04": {
+          "passed": false,
+          "n_pass": 2,
+          "reps": 3,
+          "max_cte_ft": 5.2
+        },
+        "s05": {
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 0.33
+        }
+      },
+      "competent": false
+    },
+    "S_mixed_t06": {
+      "checkpoint": "S_mixed_t06_84x28_w4",
+      "sections": {
+        "s00": {
+          "passed": false,
+          "n_pass": 0,
+          "reps": 3,
+          "max_cte_ft": 11.67
+        },
+        "s01": {
+          "passed": false,
+          "n_pass": 0,
+          "reps": 3,
+          "max_cte_ft": 6.91
+        },
+        "s02": {
+          "passed": false,
+          "n_pass": 1,
+          "reps": 3,
+          "max_cte_ft": 3.34
+        },
+        "s03": {
+          "passed": false,
+          "n_pass": 0,
+          "reps": 3,
+          "max_cte_ft": 22.44
+        },
+        "s04": {
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 0.7
+        },
+        "s05": {
+          "passed": false,
+          "n_pass": 0,
+          "reps": 3,
+          "max_cte_ft": 6.28
+        }
+      },
+      "competent": false
+    }
+  },
+  "all_competent": false,
+  "cte_budget_ft": 2.1916011199999996,
+  "git_commit": "0527b543b6f490b1b4d059f3c99cd599a3ddbdda",
+  "reps": 3,
+  "note": "clear weather only; s=0 anchor, not a disturbance cell, not a scored ledger cell; every section must hold on every rep"
+}

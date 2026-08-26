@@ -26,7 +26,7 @@ import config as C
 from model import CarlaSteeringNet
 from student import StudentNet, student_preprocess
 from imaging import preprocess_for_model
-from dataset import load_manifests, block_split, filter_conditions
+from dataset import load_manifests, block_split, balance_straight, filter_conditions
 
 
 def aggregated_manifests(base="clear", dagger_dirs=("dagger", "dagger_student")):
@@ -122,7 +122,7 @@ def distill_student(in_w, in_h, out_name, teacher_name="steering_dagger_r02",
                     base="clear", dagger_dirs=("dagger", "dagger_student"),
                     weathers=None, channels=(8, 16, 16), fc=32, init_from=None,
                     epochs=120, batch_size=64, lr=1e-3, patience=20,
-                    device=None, quiet=False):
+                    device=None, quiet=False, balance=False):
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(0)
     # Seed the augmentation RNG too: dataset._shift draws from the global `random`,
@@ -142,6 +142,21 @@ def distill_student(in_w, in_h, out_name, teacher_name="steering_dagger_r02",
             print(f"condition filter {sorted(set(weathers))}: kept {len(rows)}/{n0} frames")
     targets = teacher_targets(rows, teacher_name, device)
     tr_idx, va_idx = block_split(len(rows), val_frac=0.15, block=50, seed=0)
+    # STRAIGHT-FRAME BALANCING, off by default so Town04 is bit-identical.
+    #
+    # train.py has had this for the teachers since the start; distill.py never did, so
+    # the STUDENT -- the model that actually gets certified -- always trained on the raw
+    # label distribution. On Town04 that was survivable: 56-60 % of its route needs
+    # |steer| <= 0.01. On Town06 it is 83.8 %, and two sections are 100.0 % (std 0.0000),
+    # so a student learns to emit ~0 with a small offset and the straight sections then
+    # integrate that offset into a departure. The teachers absorb the imbalance because
+    # they have ~107k ReLU; a 5-15k ReLU student does not.
+    if balance:
+        n0 = len(tr_idx)
+        tr_idx = balance_straight(rows, tr_idx)
+        if not quiet:
+            print(f"balance: {n0} -> {len(tr_idx)} training frames "
+                  f"(near-straight downsampled)")
 
     tr = KDDataset(rows, tr_idx, targets, in_w, in_h)
     va = KDDataset(rows, va_idx, targets, in_w, in_h)
@@ -206,13 +221,15 @@ def main():
     ap.add_argument("--lr", type=float, default=1e-3,
                     help="use a reduced lr (5e-4) when warm-starting")
     ap.add_argument("--patience", type=int, default=20)
+    ap.add_argument("--balance", action="store_true",
+                    help="downsample near-straight frames in the student's training set")
     args = ap.parse_args()
     distill_student(args.in_w, args.in_h, args.out, teacher_name=args.teacher,
                     base=args.base, dagger_dirs=tuple(args.dagger_dirs.split(",")),
                     weathers=(args.weathers.split(",") if args.weathers else None),
                     channels=tuple(int(x) for x in args.channels.split(",")), fc=args.fc,
                     epochs=args.epochs, init_from=args.init_from, lr=args.lr,
-                    patience=args.patience)
+                    patience=args.patience, balance=args.balance)
 
 
 if __name__ == "__main__":
