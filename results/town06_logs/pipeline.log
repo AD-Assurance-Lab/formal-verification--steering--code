@@ -34,3 +34,36 @@
 [2026-08-26 07:47:48] START train_mixed_bc (attempt 1)
 [2026-08-26 07:56:15] OK    train_mixed_bc
 [2026-08-26 07:56:15] START dagger_mixed (attempt 1)
+[2026-08-26 10:00:44] OK    dagger_mixed
+[2026-08-26 10:00:44] GATE  dagger_mixed: teacher met budget
+[2026-08-26 10:00:44] teachers: clear=teacher_clear_t06_dagger_r05 mixed=teacher_mixed_t06_dagger_r12
+[2026-08-26 10:00:44] START distill_clear (attempt 1)
+[2026-08-26 10:05:59] OK    distill_clear
+[2026-08-26 10:05:59] START distill_mixed (attempt 1)
+[2026-08-26 10:37:39] OK    distill_mixed
+[2026-08-26 10:37:39] START dagger_student_clear (attempt 1)
+[2026-08-26 10:47:44] OK    dagger_student_clear
+[2026-08-26 10:47:44] START dagger_student_mixed (attempt 1)
+[2026-08-26 11:33:05] OK    dagger_student_mixed
+[2026-08-26 11:33:05] START competence (attempt 1)
+[2026-08-26 11:34:40] FAIL  competence attempt 1 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06_logs/competence.log)
+[2026-08-26 11:34:45] START competence (attempt 2)
+[2026-08-26 11:36:18] FAIL  competence attempt 2 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06_logs/competence.log)
+[2026-08-26 11:36:23] FAIL  competence after 2 attempts -- stopping
+[2026-08-26 11:36:23] FATAL: a student is not competent in clear weather. Certifying it would bound
+[2026-08-26 11:36:23]        deviation from an output that is already wrong. Fix capacity or
+[2026-08-26 11:36:23]        distillation before proceeding.
+[2026-08-26 11:37:20] PROTOCOL lock OK; STUDY_MAP=Town06 CARLA_PORT=3000
+[2026-08-26 11:37:20] route fingerprint 318283b349631428
+[2026-08-26 11:37:20] SKIP  collect_clear (manifest exists, fingerprint matches)
+[2026-08-26 11:37:20] SKIP  train_clear_bc
+[2026-08-26 11:37:20] SKIP  dagger_clear
+[2026-08-26 11:37:20] GATE  dagger_clear: teacher met budget
+[2026-08-26 11:37:20] SKIP  collect_mixed (fingerprint matches)
+[2026-08-26 11:37:20] SKIP  train_mixed_bc
+[2026-08-26 11:37:20] SKIP  dagger_mixed
+[2026-08-26 11:37:20] GATE  dagger_mixed: teacher met budget
+[2026-08-26 11:37:20] teachers: clear=teacher_clear_t06_dagger_r05 mixed=teacher_mixed_t06_dagger_r12
+[2026-08-26 11:37:20] SKIP  distill_clear
+[2026-08-26 11:37:20] SKIP  distill_mixed
+[2026-08-26 11:37:20] START dagger_student_clear (attempt 1)

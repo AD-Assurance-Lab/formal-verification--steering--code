@@ -51,8 +51,11 @@ declare -A SPEC=(
   [S_mixed_t06_84x28_w3]="24,48,48 96"
 )
 
-for STU in S_clear_t06_84x28 S_mixed_t06_84x28_w3; do
-  read -r CH FC <<<"${SPEC[$STU]}"
+for BASE in S_clear_t06_84x28 S_mixed_t06_84x28_w3; do
+  read -r CH FC <<<"${SPEC[$BASE]}"
+  # Drive the FINAL student (newest student-DAgger round), not the distilled base.
+  STU=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(C.final_student('$BASE'))")
+  say "student $BASE -> $STU"
   for COND in clear fog night shadows; do
     CELL="$REPO/results/town06/ledger/${COND}__${STU}__closed_loop.json"
     if [ -f "$CELL" ]; then say "SKIP  $COND/$STU (cell exists)"; continue; fi

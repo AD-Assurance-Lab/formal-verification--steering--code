@@ -216,26 +216,18 @@ if [ ! -f "$CK/S_mixed_t06_84x28_w3.pth" ]; then
 else say "SKIP  distill_mixed"; fi
 
 # ---------------------------------------------------------- student DAgger
-if ! ls "$DATA"/dagger_student_clear_t06/manifest.csv >/dev/null 2>&1; then
-    # --distill-dirs MUST be given. Its default is "dagger,dagger_student", which are
-    # TOWN04 directory names: leaving it unset re-distils the Town06 student against
-    # whatever Town04 data happens to be on disk, or silently against nothing. Either
-    # way it contaminates the deployment test with the discovery test's data.
-    run dagger_student_clear python3 dagger_student.py \
-        --student S_clear_t06_84x28 --w 84 --h 28 --rounds 3 --weathers clear \
-        --dagger-dir dagger_student_clear_t06 --teacher "$TC" --base clear_t06 \
-        --channels 8,16,16 --fc 32 \
-        --distill-dirs dagger_clear_t06,dagger_student_clear_t06 || exit 1
-else say "SKIP  dagger_student_clear"; fi
-
-if ! ls "$DATA"/dagger_student_mixed_t06/manifest.csv >/dev/null 2>&1; then
-    run dagger_student_mixed python3 dagger_student.py \
-        --student S_mixed_t06_84x28_w3 --w 84 --h 28 --rounds 3 \
-        --weathers clear,fog,night,shadows \
-        --dagger-dir dagger_student_mixed_t06 --teacher "$TM" --base mixed_t06 \
-        --channels 24,48,48 --fc 96 \
-        --distill-dirs dagger_mixed_t06,dagger_student_mixed_t06 || exit 1
-else say "SKIP  dagger_student_mixed"; fi
+# Distillation alone does not produce a usable student -- measured, the distilled
+# S_clear held 1 of 6 sections in clear weather at 16.50 ft against a 2.19 ft budget --
+# so the objective is not "run N rounds", it is "drive every section". This loops
+# student DAgger and the competence gate together until that holds.
+#
+# The old skip test looked for $DATA/dagger_student_*/manifest.csv, which
+# dagger_student.py never writes (it writes round00/, round01/, ...), so the stage
+# silently re-ran from scratch on every restart.
+run student_until_competent bash "$REPO/scripts/student_dagger_until_competent.sh" 8 4 || {
+    say "FATAL: students did not reach clear-weather competence."
+    say "       A student that cannot drive clear weather cannot be meaningfully"
+    say "       certified: the bound is on deviation FROM clear."; exit 1; }
 
 # Clear-weather competence, before anything is certified. The certificate bounds
 # deviation FROM clear, so a student that is wrong in clear -- or that ignores its input

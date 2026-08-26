@@ -144,7 +144,11 @@ def main():
           f" {'x tol':>14s}  verdict")
 
     out, n = {}, 0
-    for nm, ck, ch, fc in STUDENTS:
+    for nm, ck_base, ch, fc in STUDENTS:
+        # Certify the FINAL student -- the newest student-DAgger round -- not the
+        # distilled intermediate. Bounding the wrong checkpoint would produce a
+        # perfectly valid certificate about a policy that is not the one under study.
+        ck = C.final_student(ck_base)
         wpath = Path(C.CHECKPOINT_DIR) / f"{ck}.pth"
         if not wpath.exists():
             sys.exit(f"missing checkpoint {wpath}")
@@ -207,7 +211,8 @@ def main():
         print(f"  WARNING: {n_expected - n} cell(s) did not run.")
 
     out["_meta"] = dict(
-        map=C.STUDY_MAP, nsplit=args.nsplit, stride=args.stride, tolerance=tol,
+        map=C.STUDY_MAP,
+        checkpoints={nm: C.final_student(b) for nm, b, _, _ in STUDENTS}, nsplit=args.nsplit, stride=args.stride, tolerance=tol,
         t_closed_loop_s=C.T_CLOSED_LOOP_S, lane_width_m=C.LANE_WIDTH_M,
         cte_budget_m=C.CTE_BUDGET_M, lap_end_m=C.LAP_END_M,
         cells_expected=n_expected, cells_scored=n, git_commit=git_head(), device=dev,
