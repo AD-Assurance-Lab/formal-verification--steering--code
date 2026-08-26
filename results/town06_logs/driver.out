@@ -7,3 +7,5 @@
 [2026-08-26 07:30:02] START collect_mixed (attempt 1)
 [2026-08-26 07:47:48] OK    collect_mixed
 [2026-08-26 07:47:48] START train_mixed_bc (attempt 1)
+[2026-08-26 07:56:15] OK    train_mixed_bc
+[2026-08-26 07:56:15] START dagger_mixed (attempt 1)
