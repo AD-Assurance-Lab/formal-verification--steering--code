@@ -60,8 +60,10 @@ import config as C  # noqa: E402
 
 OUT = REPO / "results" / "town06" / "competence_clear.json"
 
-STUDENTS = (("S_clear_t06", "S_clear_t06_84x28", "8,16,16", 32),
-            ("S_mixed_t06", "S_mixed_t06_84x28_w3", "24,48,48", 96))
+# One definition, in config. Four scripts previously named checkpoints independently
+# and drifted apart.
+STUDENTS = tuple((nm, ck, ",".join(str(c) for c in ch), fc)
+                 for nm, ck, ch, fc in C.TOWN06_STUDENTS)
 
 
 def run_eval(ckpt, channels, fc):

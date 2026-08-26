@@ -42,11 +42,16 @@ carla_restart() {
     carla_up 60 && { say "CARLA back"; sleep 10; return 0; }
     say "FATAL: CARLA did not return"; return 1; }
 
-# name | base checkpoint | dagger dir | teacher | base dataset | weathers | channels | fc
-SPECS=(
-  "clear|S_clear_t06_84x28|dagger_student_clear_t06|clear_t06|clear|8,16,16|32"
-  "mixed|S_mixed_t06_84x28_w3|dagger_student_mixed_t06|mixed_t06|clear,fog,night,shadows|24,48,48|96"
-)
+# One definition, in config: which | base checkpoint | dagger dir | dataset | weathers | channels | fc
+mapfile -t SPECS < <(STUDY_MAP=Town06 python3 -c "
+import sys; sys.path.insert(0,'pipeline'); import config as C
+for nm, ck, ch, fc in C.TOWN06_STUDENTS:
+    which = 'clear' if 'clear' in nm else 'mixed'
+    ddir  = f'dagger_student_{which}_t06'
+    dset  = f'{which}_t06'
+    wx    = 'clear' if which == 'clear' else 'clear,fog,night,shadows'
+    print('|'.join([which, ck, ddir, dset, wx, ','.join(str(c) for c in ch), str(fc)]))")
+
 latest_teacher() { ls -1 "$REPO"/pipeline/checkpoints/$1*.pth 2>/dev/null \
     | sort | tail -1 | xargs -r basename | sed 's/\.pth$//'; }
 

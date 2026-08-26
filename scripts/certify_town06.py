@@ -39,9 +39,8 @@ import certify_cell as cc  # noqa: E402
 from student import StudentNet  # noqa: E402
 from study import town06_design as D  # noqa: E402
 
-# The Town06 students. Same shapes as the published pair; different weights.
-STUDENTS = (("S_clear_t06", "S_clear_t06_84x28", (8, 16, 16), 32),
-            ("S_mixed_t06", "S_mixed_t06_84x28_w3", (24, 48, 48), 96))
+# One definition, in config.
+STUDENTS = C.TOWN06_STUDENTS
 
 CAPTURES = REPO / "results" / "town06" / "captures"
 
@@ -212,7 +211,10 @@ def main():
 
     out["_meta"] = dict(
         map=C.STUDY_MAP,
-        checkpoints={nm: C.final_student(b) for nm, b, _, _ in STUDENTS}, nsplit=args.nsplit, stride=args.stride, tolerance=tol,
+        checkpoints={nm: C.final_student(b) for nm, b, _, _ in STUDENTS},
+        # 4ac6002: report ReLU count next to every certified rate, so bound looseness
+        # from a larger model stays visible rather than being engineered away.
+        relu={nm: C.relu_count(ch, fc) for nm, _, ch, fc in STUDENTS}, nsplit=args.nsplit, stride=args.stride, tolerance=tol,
         t_closed_loop_s=C.T_CLOSED_LOOP_S, lane_width_m=C.LANE_WIDTH_M,
         cte_budget_m=C.CTE_BUDGET_M, lap_end_m=C.LAP_END_M,
         cells_expected=n_expected, cells_scored=n, git_commit=git_head(), device=dev,

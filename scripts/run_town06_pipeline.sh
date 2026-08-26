@@ -25,7 +25,7 @@ export PYTHONUNBUFFERED=1
 
 LOG_DIR=$REPO/results/town06_logs
 mkdir -p "$LOG_DIR"
-CK=$REPO/pipeline/checkpoints
+CK_DIR=$REPO/pipeline/checkpoints
 DATA=$REPO/pipeline/data
 
 say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/pipeline.log"; }
@@ -163,12 +163,12 @@ if [ ! -f "$DATA/clear_t06/manifest.csv" ]; then
     fp_stamp "$DATA/clear_t06"
 else say "SKIP  collect_clear (manifest exists, fingerprint matches)"; fi
 
-if [ ! -f "$CK/teacher_clear_t06_bc.pth" ]; then
+if [ ! -f "$CK_DIR/teacher_clear_t06_bc.pth" ]; then
     run train_clear_bc python3 train.py --dataset clear_t06 --epochs 120 \
         --out teacher_clear_t06_bc || exit 1
 else say "SKIP  train_clear_bc"; fi
 
-if ! ls "$CK"/teacher_clear_t06_dagger_r*.pth >/dev/null 2>&1; then
+if ! ls "$CK_DIR"/teacher_clear_t06_dagger_r*.pth >/dev/null 2>&1; then
     run dagger_clear python3 dagger.py --base clear_t06 \
         --init teacher_clear_t06_bc --rounds 12 --weathers clear \
         --dagger-dir dagger_clear_t06 --out-prefix teacher_clear_t06_dagger || exit 1
@@ -183,12 +183,12 @@ if [ ! -f "$DATA/mixed_t06/manifest.csv" ]; then
     fp_stamp "$DATA/mixed_t06"
 else say "SKIP  collect_mixed (fingerprint matches)"; fi
 
-if [ ! -f "$CK/teacher_mixed_t06_bc.pth" ]; then
+if [ ! -f "$CK_DIR/teacher_mixed_t06_bc.pth" ]; then
     run train_mixed_bc python3 train.py --dataset mixed_t06 --epochs 120 \
         --out teacher_mixed_t06_bc || exit 1
 else say "SKIP  train_mixed_bc"; fi
 
-if ! ls "$CK"/teacher_mixed_t06_dagger_r*.pth >/dev/null 2>&1; then
+if ! ls "$CK_DIR"/teacher_mixed_t06_dagger_r*.pth >/dev/null 2>&1; then
     run dagger_mixed python3 dagger.py --base mixed_t06 \
         --init teacher_mixed_t06_bc --rounds 14 --weathers clear,fog,night,shadows \
         --dagger-dir dagger_mixed_t06 --out-prefix teacher_mixed_t06_dagger || exit 1
@@ -196,24 +196,34 @@ if ! ls "$CK"/teacher_mixed_t06_dagger_r*.pth >/dev/null 2>&1; then
 else say "SKIP  dagger_mixed"; teacher_gate dagger_mixed || exit 1; fi
 
 # ---------------------------------------------------------------- distillation
-latest() { ls -1 "$CK"/$1*.pth 2>/dev/null | sort | tail -1 | xargs -r basename | sed 's/\.pth$//'; }
+latest() { ls -1 "$CK_DIR"/$1*.pth 2>/dev/null | sort | tail -1 | xargs -r basename | sed 's/\.pth$//'; }
 
 TC=$(latest teacher_clear_t06_dagger_r)
 TM=$(latest teacher_mixed_t06_dagger_r)
 say "teachers: clear=$TC mixed=$TM"
 [ -n "$TC" ] && [ -n "$TM" ] || { say "FATAL: a DAgger teacher is missing"; exit 1; }
 
-if [ ! -f "$CK/S_clear_t06_84x28.pth" ]; then
-    run distill_clear python3 distill.py --in-w 84 --in-h 28 \
-        --out S_clear_t06_84x28 --teacher "$TC" --base clear_t06 \
-        --dagger-dirs dagger_clear_t06 --channels 8,16,16 --fc 32 || exit 1
-else say "SKIP  distill_clear"; fi
+# Distil at the widths the registry declares. Town06 needs more than Town04's pair:
+# w1/w3 there plateaued ON the budget here, so each student is sized to its own task
+# (4ac6002), which is the rule this lab settled rather than identical architecture.
+mapfile -t ROWS < <(STUDY_MAP=Town06 python3 -c "
+import sys; sys.path.insert(0,'$REPO/pipeline'); import config as C
+for nm, ck, ch, fc in C.TOWN06_STUDENTS:
+    print(nm, ck, ','.join(str(c) for c in ch), fc, C.relu_count(ch, fc))")
 
-if [ ! -f "$CK/S_mixed_t06_84x28_w3.pth" ]; then
-    run distill_mixed python3 distill.py --in-w 84 --in-h 28 \
-        --out S_mixed_t06_84x28_w3 --teacher "$TM" --base mixed_t06 \
-        --dagger-dirs dagger_mixed_t06 --channels 24,48,48 --fc 96 || exit 1
-else say "SKIP  distill_mixed"; fi
+for ROW in "${ROWS[@]}"; do
+    read -r NM CK CH FC RELU <<<"$ROW"
+    case "$NM" in
+        S_clear_t06) TEACH=$TC; DSET=clear_t06; DDIR=dagger_clear_t06 ;;
+        *)           TEACH=$TM; DSET=mixed_t06; DDIR=dagger_mixed_t06 ;;
+    esac
+    if [ ! -f "$CK_DIR/$CK.pth" ]; then
+        say "distil $NM -> $CK ($RELU ReLU) from $TEACH"
+        run "distill_$NM" python3 distill.py --in-w 84 --in-h 28 \
+            --out "$CK" --teacher "$TEACH" --base "$DSET" \
+            --dagger-dirs "$DDIR" --channels "$CH" --fc "$FC" || exit 1
+    else say "SKIP  distil $NM ($CK exists)"; fi
+done
 
 # ---------------------------------------------------------- student DAgger
 # Distillation alone does not produce a usable student -- measured, the distilled
