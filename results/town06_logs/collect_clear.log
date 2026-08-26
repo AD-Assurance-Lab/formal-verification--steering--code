@@ -3,3 +3,8 @@
     loop closed at step 2217 (2218 frames)
   [clear/eastbound lap01] start speed=19.7 mph
   [clear/westbound lap01] start speed=19.8 mph
+    loop closed at step 2217 (2218 frames)
+
+Collected 9436 frames -> /home/za/ad-assurance--workspace/formal-verification--steering--code/pipeline/data/clear_t06/manifest.csv
+  straight (|steer|<=0.01): 7530 (80%) | left: 520 | right: 1386
+  steer range: [-0.409, 0.508]

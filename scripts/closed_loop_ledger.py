@@ -33,7 +33,11 @@ import config as C  # noqa: E402
 from route import load_route, signed_cte_route, pure_pursuit_route  # noqa: E402
 from student import StudentNet, student_preprocess  # noqa: E402
 
-LEDGER = REPO / "results" / "ledger"
+# Map-scoped: Town04 keeps results/ledger; the Town06 deployment test writes to
+# results/town06/ledger, so a deployment-test cell can never be mistaken for, or
+# overwrite, a published discovery-test cell.
+LEDGER = (REPO / "results" / "town06" / "ledger" if C.STUDY_MAP != "Town04"
+          else REPO / "results" / "ledger")
 SPAWNS = {"eastbound": C.SPAWN_EASTBOUND, "westbound": C.SPAWN_WESTBOUND}
 
 # Env vars that silently change what a run measures. A leftover export in the shell
@@ -234,6 +238,15 @@ def main():
               "a variant token (the overrides are then recorded in the JSON), or unset "
               "the variables.")
         return 2
+
+    # PROTOCOL R1. On the deployment test the certificate must already be committed
+    # before a scored cell is driven -- that ordering is the entire difference between
+    # this experiment and the Town04 discovery test, so it is enforced here rather than
+    # left to whoever remembers to run the checker afterwards.
+    if C.STUDY_MAP != "Town04":
+        sys.path.insert(0, str(REPO / "scripts"))
+        from check_order_town06 import require_certificate_committed
+        require_certificate_committed()
 
     prov = run_provenance(args.condition)
 
