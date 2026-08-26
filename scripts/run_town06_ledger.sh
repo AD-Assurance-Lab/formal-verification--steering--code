@@ -5,7 +5,9 @@
 # (PROTOCOL R1). closed_loop_ledger.py enforces that itself and will refuse, so the
 # check below is a clearer early failure, not the guard.
 #
-# Eight scored cells: 2 students x 4 conditions, >= 10 reps each, both directions.
+# Eight cells (2 students x 4 conditions), six of them scored -- the same six as Town04.
+# Sections are REPETITIONS inside a cell, exactly as Town04's two directions are: 6
+# sections x 2 reps = 12 runs per cell, over the >= 10 floor.
 #
 #   bash scripts/run_town06_ledger.sh
 set -uo pipefail
@@ -58,7 +60,7 @@ for STU in S_clear_t06_84x28 S_mixed_t06_84x28_w3; do
     rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null
     say "START $COND/$STU"
     if python3 scripts/closed_loop_ledger.py --student "$STU" --condition "$COND" \
-         --reps 5 --channels "$CH" --fc "$FC" \
+         --reps 2 --channels "$CH" --fc "$FC" \
          >>"$LOG_DIR/ledger_${COND}_${STU}.log" 2>&1; then
         say "OK    $COND/$STU"
     else

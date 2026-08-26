@@ -38,7 +38,8 @@ from student import StudentNet, student_preprocess  # noqa: E402
 # overwrite, a published discovery-test cell.
 LEDGER = (REPO / "results" / "town06" / "ledger" if C.STUDY_MAP != "Town04"
           else REPO / "results" / "ledger")
-SPAWNS = {"eastbound": C.SPAWN_EASTBOUND, "westbound": C.SPAWN_WESTBOUND}
+# Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).
+SPAWNS = C.SPAWNS
 
 # Env vars that silently change what a run measures. A leftover export in the shell
 # would otherwise overwrite a canonical cell with a different disturbance and leave
@@ -269,16 +270,18 @@ def main():
         print(f"{args.student} under '{args.condition}' "
               f"(exposure shutter={C.exposure_for(args.condition)['shutter']:.0f})")
         print(f"budget {C.CTE_BUDGET_M:.3f} m ({C.CTE_BUDGET_FT:.2f} ft), "
-              f"{args.reps} reps x 2 directions\n")
+              f"{args.reps} reps x {len(C.SECTIONS)} sections "
+              f"= {args.reps * len(C.SECTIONS)} runs\n")
 
         for rep in range(args.reps):
-            for d in ("eastbound", "westbound"):
+            for d in C.SECTIONS:
                 ldir = None
                 if args.log_frames and rep < args.log_frames_reps:
                     ldir = (Path(args.log_frames) /
                             f"{args.condition}_{d}_rep{rep:02d}")
                 mx, frac, departed, where = drive_once(world, vehicle, cam_queue, model,
-                                                device, d, args.max_steps, log_dir=ldir)
+                                                device, d, min(args.max_steps, C.steps_for(d)),
+                                                log_dir=ldir)
                 if ldir is not None:
                     n = len(list((ldir / "frames").glob("*.png"))) if (ldir/"frames").exists() else 0
                     print(f"    logged {n} frames -> {ldir}")
