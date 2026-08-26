@@ -272,15 +272,21 @@ def steps_for(section, margin=1.0):
 # sections integrate the offset into a departure -- measured on s03, CTE -0.18 -> -1.24
 # -> -8.59 with the sign never changing, while the teacher oscillates about zero.
 #
-# The fix is distill.py --balance (straight-frame downsampling), which train.py has had
-# for the teachers since the start and which distill.py never had, so the STUDENT -- the
-# model that actually gets certified -- always trained on the raw distribution. Teachers
-# absorb the imbalance at ~107k ReLU; a 5-15k ReLU student does not.
+# BALANCING WAS TRIED AND IS REFUTED. distill.py --balance (straight-frame downsampling)
+# made the clear student WORSE, 5-6/6 sections down to 0-2/6, worst |CTE| 23.08 ft. On a
+# route that genuinely IS 84 % straight, downsampling straight frames trains the student
+# for a distribution it will not meet. The flag stays in distill.py (train.py has always
+# had it for teachers) but is OFF.
+#
+# So the clear student keeps Town04's size, and only the MIXED student is widened -- the
+# lever Town04 itself established (4b2ad73: w1 failed all four conditions, w2 failed
+# night 10/10, w3 passed everything) and the one Zach identified as justified, since the
+# mixed student needs capacity for the disturbances rather than for the route.
 #
 #   (name, checkpoint stem, conv channels, FC width)
 TOWN06_STUDENTS = (
     ("S_clear_t06", "S_clear_t06_84x28",    (8, 16, 16), 32),
-    ("S_mixed_t06", "S_mixed_t06_84x28_w3", (24, 48, 48), 96),
+    ("S_mixed_t06", "S_mixed_t06_84x28_w4", (32, 64, 64), 128),
 )
 
 

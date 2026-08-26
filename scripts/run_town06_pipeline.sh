@@ -221,7 +221,7 @@ for ROW in "${ROWS[@]}"; do
         say "distil $NM -> $CK ($RELU ReLU) from $TEACH"
         run "distill_$NM" python3 distill.py --in-w 84 --in-h 28 \
             --out "$CK" --teacher "$TEACH" --base "$DSET" \
-            --dagger-dirs "$DDIR" --channels "$CH" --fc "$FC" --balance || exit 1
+            --dagger-dirs "$DDIR" --channels "$CH" --fc "$FC"|| exit 1
     else say "SKIP  distil $NM ($CK exists)"; fi
 done
 
