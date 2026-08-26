@@ -33,7 +33,22 @@ DERIVED_FROM_MAP = ("LANE_WIDTH_M", "CTE_BUDGET_M", "CLOSED_LOOP_TOLERANCE")
 
 STUDENTS = ("S_clear_t06", "S_mixed_t06")
 CONDITIONS = ("clear", "fog", "night", "shadows")
-DIRECTIONS = ("eastbound", "westbound")
+
+# Town06's outer loop has no dedicated opposing carriageways -- it is a ring whose lanes
+# wrap, so "the opposing carriageway" is a LOCAL property and requiring both directions
+# over one stretch caps usable road at 430 m. The route is therefore a set of disjoint
+# clean SECTIONS instead of one lap driven both ways. Read from the committed route
+# artifact so this module and the route cannot disagree.
+def _sections():
+    import json, os
+    here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    meta = os.path.join(here, "pipeline", "data", "routes_town06", "route_meta.json")
+    with open(meta) as f:
+        return tuple(x["name"] for x in json.load(f)["sections"])
+
+
+SECTIONS = _sections()
+DIRECTIONS = SECTIONS          # name kept so existing call sites keep working
 
 # Verdict vocabularies and the agreement map are inherited unchanged.
 AGREES = {("PASS", "CERTIFIED"), ("FAIL", "NOT_CERTIFIED")}
@@ -62,11 +77,21 @@ def expected(student, condition):
 
 
 def cells():
-    """Every scored cell, in display order. 2 students x 4 conditions x 2 directions."""
+    """Every cell: (condition, student). Sections are REPETITIONS WITHIN a cell.
+
+    This mirrors Town04 exactly. There, a cell is (condition, student) and the two
+    driven directions are repetitions inside it -- 5 per direction, 10 total. Here the
+    six sections play the same role, 2 reps each for 12 total, comfortably over the
+    MIN_CLOSED_LOOP_REPS floor.
+
+    The alternative -- one cell per (condition, student, section) -- would give 36
+    scored cells and 360 closed-loop runs for no extra information, and would also
+    misreport precision: six sections of one condition are not six independent
+    conditions, any more than Town04's two directions are.
+    """
     for cond in CONDITIONS:
         for student in STUDENTS:
-            for direction in DIRECTIONS:
-                yield (cond, student, direction)
+            yield (cond, student)
 
 
 def scored_cells():
@@ -74,10 +99,14 @@ def scored_cells():
     return [c for c in cells() if c[0] not in VACUOUS_CELLS]
 
 
+# Repetitions per cell: each section driven this many times. 6 sections x 2 = 12 >= 10.
+REPS_PER_SECTION = 2
+
+
 # ── The risk that this experiment is uninformative, declared in advance ─────
-# Town06's best-matching window is 74-79 % straight against Town04's 51-56 %. A
-# straighter route is easier to hold, so it is possible every cell passes and every
-# cell certifies.
+# The Town06 sections total 3874 m against Town04's 5722 m, and several are far
+# straighter (max steering demand 0.000-0.064 against Town04's 0.047). An easier route
+# is easier to hold, so it is possible every cell passes and every cell certifies.
 #
 # If that happens the experiment has measured SENSITIVITY ONLY and not specificity,
 # exactly as the withdrawn rain condition did (4/4, but all four cells shared a
