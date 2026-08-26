@@ -79,19 +79,40 @@ I flagged that Town04's westbound scored lap traverses the signalised junction
 `LAP_END_M` excludes. **It is never scored**: warmup travels 404.7 m before recording
 begins and the junction spans the first 14 m. The published study is fine.
 
+### Every map, measured
+
+| map | verdict |
+|---|---|
+| **Town06** | 7.55 % / 4.46 % of vertices **unmarked**; 13–14 on signal-controlled lanes. Disqualified, and this explains the training failure. |
+| **Town05** | 7,777 windows meet geometry; **0** free of signal-controlled lanes |
+| **Town03, Town07, Town10HD** | 0 windows meet the steering-demand cap (too tight/curvy) |
+| **Town12** | 3 admissible windows, but CARLA **segfaults** on it — twice, once on teleport, once on a plain spawn-and-drive. RAM was fine (5/62 GB); it is the large-map streaming path. |
+| **Town04, disjoint route** | impossible: **every** admissible window overlaps the published study route by ≥ 40.6 % (median 43.8 %, none below 20 %) |
+
+The criterion itself is validated: run on Town04 it finds 5,340 admissible windows and
+picks one scoring 0.91 with **0.00 %** unmarked and smax 0.0396 against the reference
+0.0467. It selects Town04-like road when Town04-like road exists. It does not exist on
+the other small maps.
+
 ### The decision for Zach
 
-1. **Town12 (or another large map)** — the only candidate. Needs its streaming
-   determinism and throughput proven first; a test is running.
-2. **Relax "new map" to "new route + new models"** on Town04 itself. Weaker, but the
-   certificate would still face models and road it was never tuned on.
-3. **Build a route** rather than find one (CARLA supports custom OpenDRIVE).
-4. **Accept a different ODD** and declare it — e.g. an unlit highway, which would make
-   night a *stronger* disturbance and help produce the FAIL cells.
+**On this machine and CARLA build, no second map provides a Town04-equivalent route.**
+That is the finding. Four ways forward, in my order of preference:
 
-My recommendation is (1) if Town12 proves stable, else (2), because it keeps the ODD
-identical and the honest weakening is easy to state. But this changes what the
-experiment is, so it is your call rather than mine.
+1. **New models, same route.** The deployment test's core question is whether the frozen
+   criterion predicts for policies it was never tuned on. Fresh teachers and students on
+   the Town04 route answer exactly that, with no map problem at all. It is clean, it is
+   fast (the pipeline already runs), and it is weaker only in that the route is not new.
+   Everything built tonight applies unchanged.
+2. **Town04 partial-overlap route** (≈ 59 % new road) plus new models. Adds route
+   novelty; the overlap has to be declared.
+3. **Fix Town12.** Lower quality level, a CARLA build with better large-map handling, or
+   more VRAM. Unknown effort; two segfaults so far.
+4. **Author a route** as custom OpenDRIVE. Most control, most work, and the rendered
+   world would no longer be a stock CARLA town.
+
+(1) is what I would run next, because it tests the actual claim and can start
+immediately. But it changes what the experiment demonstrates, so it is your call.
 
 ## The order, and where we are
 
