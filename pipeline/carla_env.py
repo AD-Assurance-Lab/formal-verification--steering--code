@@ -30,14 +30,22 @@ def connect():
     return client
 
 
-def load_town04(client, fresh=True):
-    """Return a Town04 world. With fresh=True (default) the world is reloaded on
-    every connect, clearing any accumulated actors/state from prior runs on a
-    long-lived CARLA server (which can silently corrupt closed-loop results)."""
+def load_study_map(client, fresh=True):
+    """Return a world for config.MAP_NAME (STUDY_MAP; default Town04).
+
+    With fresh=True (default) the world is reloaded on every connect, clearing any
+    accumulated actors/state from prior runs on a long-lived CARLA server (which can
+    silently corrupt closed-loop results).
+    """
     world = client.get_world()
     if world.get_map().name.split("/")[-1] != MAP_NAME:
         return client.load_world(MAP_NAME)      # loads a fresh map
-    return client.reload_world() if fresh else world  # already Town04 -> reload fresh
+    return client.reload_world() if fresh else world  # already right map -> reload fresh
+
+
+# Name kept so existing entry points and the published study read unchanged. It now
+# honours STUDY_MAP, which is the whole point: one pipeline, two maps.
+load_town04 = load_study_map
 
 
 def enable_sync_mode(world):

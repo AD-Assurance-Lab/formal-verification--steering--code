@@ -22,7 +22,16 @@ CLIENT_TIMEOUT_S = 120.0
 CARLA_ROOT = os.environ.get("CARLA_ROOT", os.path.expanduser("~/carla"))
 
 # ── Map ──────────────────────────────────────────────────────────────────────
-MAP_NAME = "Town04"
+# The study map is selectable so the Town06 DEPLOYMENT TEST can reuse this pipeline
+# unchanged. Default is Town04, and with STUDY_MAP unset every value below is
+# bit-identical to the published study -- that property is deliberate and is what
+# lets the same code produce both.
+#
+# Town06 values are LOADED FROM THE COMMITTED ROUTE ARTIFACT, never hardcoded here:
+# the route was fixed on geometry alone before any Town06 model existed (PROTOCOL.md
+# section 6), and reading it back from that file is what keeps the two in step.
+STUDY_MAP = os.environ.get("STUDY_MAP", "Town04")
+MAP_NAME = STUDY_MAP
 
 # ── Vehicle (Tesla Model 3, as instantiated in CARLA) ────────────────────────
 VEHICLE_BLUEPRINT = "vehicle.tesla.model3"
@@ -136,7 +145,11 @@ SIM_HZ = 1.0 / FIXED_DT      # 5 Hz
 LOOKAHEAD_M = 5.0
 
 # ── Road geometry ────────────────────────────────────────────────────────────
-LANE_WIDTH_M = 3.500         # [MEASURED] constant on Town04 highway, both dirs
+# [MEASURED] constant on the Town04 highway, both dirs. Town06's chosen window
+# measures the SAME 3.500 m (std 0.0000), so the derived CTE budget and tolerance are
+# numerically unchanged between the two maps. That is a fact about the maps, not a
+# choice, and PROTOCOL.md section 3 requires it be recomputed rather than assumed.
+LANE_WIDTH_M = 3.500
 
 # Where the measured route ends. NOT a round number for tidiness: the western traffic-light
 # intersection past this point is a real ODD boundary, not a route artifact (D-07 withdrawn,
@@ -155,6 +168,34 @@ STUDENTS = (("S_clear", "S_clear_84x28", (8, 16, 16), 32),
 # ── Spawn points (start just after the western intersection) ─────────────────
 SPAWN_EASTBOUND = {"x": -357.1, "y": 30.0, "z": 0.5, "yaw": 0.0}
 SPAWN_WESTBOUND = {"x": -396.8, "y": 12.8, "z": 0.5, "yaw": 180.0}
+
+# ── Map-scoped overrides (Town06 deployment test) ────────────────────────────
+# Applied only when STUDY_MAP != Town04, and sourced entirely from the committed
+# route artifact so the code cannot drift from the pre-registered route.
+ROUTES_SUBDIR = "routes"
+
+if STUDY_MAP != "Town04":
+    import json as _json
+    _rd = os.path.join(DATASET_DIR if "DATASET_DIR" in dir() else
+                       os.path.join(_BASE if "_BASE" in dir() else
+                                    os.path.dirname(os.path.abspath(__file__)), "data"),
+                       f"routes_{STUDY_MAP.lower()}")
+    _meta_path = os.path.join(_rd, "route_meta.json")
+    if not os.path.exists(_meta_path):
+        raise RuntimeError(
+            f"STUDY_MAP={STUDY_MAP} but {_meta_path} is missing. The route is a PROTOCOL\n"
+            f"artifact and must be built and committed before anything runs on this map:\n"
+            f"    CARLA_PORT=$PORT python3 scripts/build_{STUDY_MAP.lower()}_routes.py")
+    with open(_meta_path) as _f:
+        ROUTE_META = _json.load(_f)
+    ROUTES_SUBDIR = f"routes_{STUDY_MAP.lower()}"
+    SPAWN_EASTBOUND = ROUTE_META["spawns"]["eastbound"]
+    SPAWN_WESTBOUND = ROUTE_META["spawns"]["westbound"]
+    # Scored lap ends at the shorter of the two measured directions, so both are
+    # scored over an identical distance (Town04 scores 0-2861 m in both).
+    LAP_END_M = float(min(ROUTE_META["window"]["scored_len_m"],
+                          ROUTE_META["opposing"]["scored_len_m"]))
+    LANE_WIDTH_M = float(ROUTE_META["window"]["lane_width_mean"])
 
 # ── Unit conversions ─────────────────────────────────────────────────────────
 M_TO_FT = 3.28084
