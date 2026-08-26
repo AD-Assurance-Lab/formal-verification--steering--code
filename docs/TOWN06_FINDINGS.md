@@ -1,0 +1,87 @@
+# Town06 deployment test — findings log
+
+Written as the work happened. Measurements, not conclusions, except where labelled.
+
+## T06-F1  The route is valid; the students are not
+
+The pure-pursuit oracle drives all six sections at max|CTE| 0.001–0.066 m against a
+0.668 m budget, 0.0 % over. Both teachers pass: clear 6/6 sections, mixed 24/24
+section-conditions (round 13). The distilled students do not, and every plausible cause
+below has been measured rather than assumed.
+
+## T06-F2  More student-DAgger is not the fix  (REFUTED)
+
+Ten-plus rounds each. The clear student reached 5/6–6/6 and the mixed 4/6–5/6, then
+both oscillated without trend. Repeats the error F7 (`5be6862`) made on Town04, which
+M3 (`4b2ad73`) corrected.
+
+## T06-F3  The verdict itself was noise  (METHOD ERROR, FIXED)
+
+The SAME checkpoint `S_clear_t06_84x28_dagger_r08` scored 5/6, then 6/6, then 5/6 on
+three consecutive gate runs, worst |CTE| 1.71–2.92 ft against a 2.19 ft budget. The
+gate was driving each section ONCE, violating standing rule 3. Now 3 reps, every rep
+must hold. A student sitting on the budget cannot be told from an unlucky one.
+
+## T06-F4  Label imbalance is real; balancing makes it worse  (REFUTED)
+
+    fraction of route needing |steer| <= 0.01
+      Town04 eastbound  60.4 %     Town06 overall  83.8 %
+      Town04 westbound  56.0 %     Town06 s02     100.0 %
+                                   Town06 s03     100.0 %  (std 0.0000)
+
+Town04 curves continuously; Town06 has ~1250 m of 3874 m whose correct steering is
+identically zero. But `distill.py --balance` (straight-frame downsampling, which
+`train.py` has always had for teachers and `distill.py` never had) took the clear
+student from 5–6/6 down to **0–2/6**, worst |CTE| 23.08 ft. On a route that genuinely
+IS 84 % straight, downsampling straight frames trains for a distribution the policy
+will not meet. Flag retained, off.
+
+## T06-F5  No route overrun  (REFUTED)
+
+Warmup travels 101 m along the route. Warmup plus the scored drive uses 591 m of s05's
+792 m stored route, so pure pursuit never wraps at the seam. (An earlier 404.7 m figure
+was a misread straight-line measurement.)
+
+## T06-F6  The Town04 crop transfers  (REFUTED)
+
+Semantic segmentation, road rows in frame:
+
+    Town04 eastbound  231–479   91.2 % occupancy in the student's [240:450] crop
+    Town06 s00        242–479   87.5 %
+    Town06 s01        242–479   90.1 %
+
+`ROAD_ROI_ROWS`, measured on Town04, is fine on Town06.
+
+## T06-F7  Distillation fidelity is not the discriminator  (REFUTED, and the useful one)
+
+Same diagnostic on both maps, teacher vs student on identical frames:
+
+    Town04 published clear pair (WORKS)     bias -0.00159   RMS 0.0582 = 4.84x tolerance
+    Town06 clear pair          (MARGINAL)   bias -0.00049   RMS 0.0309 = 2.57x tolerance
+
+The Town06 student tracks its teacher BETTER -- half the RMS error, a third of the bias
+-- and drives worse. A student can be a poor copy and still drive; these are good copies
+that do not.
+
+## T06-F8  Working hypothesis: the straight sections are the substrate problem
+
+What is left after F2 and F4–F7 is the route's closed-loop character, not the model.
+On a continuously curving road a steering error meets constant corrective signal; on a
+dead-straight one it integrates unopposed. Measured on s03 (steering demand 0.0000):
+
+    student  CTE -0.18 -> -1.24 -> -8.59, sign never changing, departs at step 47
+    teacher  CTE -0.01 -> +0.05 -> -0.21, oscillating about zero
+
+This is the paper's own thesis appearing in a new setting: a small persistent bias walks
+the vehicle out of its lane while a large oscillating one integrates to nothing.
+
+The awkwardness worth stating: s02 and s03 are simultaneously the MOST diagnostic
+sections -- they expose bias mercilessly -- and the ones defeating the students.
+Dropping them would remove the most discriminating road, and PROTOCOL section 6 forbids
+re-selecting a route on policy behaviour in any case.
+
+## Open
+
+Capacity for the mixed student (w3 -> w4, 15,456 -> 20,608 ReLU) is the one lever Town04
+evidence supports and is under test. The clear student stays at Town04's 5,152 ReLU:
+widening it was tried, then reverted, because nothing measured implicates its capacity.
