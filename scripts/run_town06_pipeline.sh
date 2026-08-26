@@ -145,7 +145,7 @@ cd "$REPO/pipeline"
 fp_guard "$DATA/clear_t06" clear_t06 || exit 1
 if [ ! -f "$DATA/clear_t06/manifest.csv" ]; then
     run collect_clear python3 collect_data.py --dataset clear_t06 \
-        --weathers clear --laps 4 --direction both || exit 1
+        --weathers clear --laps 4 --direction all || exit 1
     fp_stamp "$DATA/clear_t06"
 else say "SKIP  collect_clear (manifest exists, fingerprint matches)"; fi
 
@@ -165,7 +165,7 @@ else say "SKIP  dagger_clear"; teacher_gate dagger_clear || exit 1; fi
 fp_guard "$DATA/mixed_t06" mixed_t06 || exit 1
 if [ ! -f "$DATA/mixed_t06/manifest.csv" ]; then
     run collect_mixed python3 collect_data.py --dataset mixed_t06 \
-        --weathers clear,fog,night,shadows --laps 3 --direction both || exit 1
+        --weathers clear,fog,night,shadows --laps 3 --direction all || exit 1
     fp_stamp "$DATA/mixed_t06"
 else say "SKIP  collect_mixed (fingerprint matches)"; fi
 
