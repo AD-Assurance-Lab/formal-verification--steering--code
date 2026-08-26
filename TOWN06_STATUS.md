@@ -16,65 +16,82 @@ first, certificate committed before the drive, then drive.
 
 ---
 
-## STOPPED — the route was wrong, and the map may be too
+## STOPPED — Town06 is disqualified, and a map decision is needed
 
-**Read this section first.** The pipeline is halted. Nothing is contaminated: no
-certificate was computed and nothing was driven.
+**Read this first.** The pipeline is halted. Nothing is contaminated: no certificate was
+computed and nothing was driven. Every guard and every downstream stage is built, tested
+and pushed. What is missing is a usable map.
 
-### What happened
+### The trigger
 
-The clear-only teacher failed **all six** DAgger rounds on the chosen Town06 route
-(max|CTE| 24–101 ft against a 2.19 ft gate) while the pure-pursuit oracle drives the
-same route at 0.43 ft. So the route is drivable; the learned policy could not fit it.
+The clear-only teacher failed **all six** DAgger rounds on the Town06 route (max|CTE|
+24–101 ft against a 2.19 ft gate) while the pure-pursuit oracle drives the same route at
+0.43 ft. The route is drivable; the learned policy could not fit it.
 
-### Why — a route-selection error
+### Why: three independent measurements, all saying the same thing
 
-The selection criterion matched *mean* curvature and straight-fraction. Two windows can
-match on both while their distributions are opposite shapes, and that is what happened:
-
-| | Town04 | first Town06 route |
+| test | Town04 scored lap | Town06 window |
 |---|---|---|
 | median curvature | 0.00091 | **0.00000** |
-| p99 curvature | 0.019 | 0.029–0.035 |
 | max steering demand | 0.047 | **0.111** |
+| vertices on a signal-controlled lane | **0 of 1424** | **13–14**, 5 lights per direction |
+| vertices with **no lane marking either side** | **0.00 % / 0.77 %** | **7.55 % / 4.46 %** |
 
-Town04 is a continuously curving highway. The chosen window is dead straight for over
-half its length with sharp corners, so training sees ~92 % near-zero steering labels and
-must then produce 0.111 at rare tight corners. All **23,553** Town06 windows have median
-curvature 0.00000: the map has no continuously curving highway anywhere.
+The last row is the physical one, and it explains the training failure directly: on 7.5 %
+of the route the policy has no lane marking to see. `config.py` gives that as the actual
+reason Town04 excludes its one intersection ("the lane centreline is undefined through
+it") — the signal was never the point.
 
-### And a second, larger problem with Town06
+Town06's outer loop is a signalised arterial, not a grade-separated highway. Lighting,
+lane count and lane width all matched; those are not what distinguishes the road.
 
-Distance to a traffic light is the wrong test — Town04's own scored lap passes within
-**11 m** of one. The right test is whether the route *drives through* a signalised
-junction, which is what `LAP_END_M` excludes. Measured:
+### Every other small map, measured
 
-| route | junctions traversed | **signalised** |
-|---|---|---|
-| Town04 eastbound (scored) | 11 | **0** |
-| Town04 westbound (scored) | 12 | **1** |
-| Town06 window, each direction | 14 | **6** |
+| map | result |
+|---|---|
+| Town05 | 7,777 windows meet geometry; **0** free of signal-controlled lanes |
+| Town03, Town07, Town10HD | 0 windows even meet the steering-demand cap |
+| Town12 | 3 usable windows — but it is a LARGE streaming map and **crashed the server** on first use |
 
-Town06's outer "highway" loop is signal-controlled. That is a different ODD from the
-Town04 study, and no distance threshold would have revealed it.
+CARLA's small maps appear not to contain a second grade-separated, unsignalised,
+lane-marked highway of Town04's character.
 
-### Also corrected
+### A caution about how I got here
 
-Two of my own calibration errors, both from inventing thresholds instead of measuring
-Town04: a 50 m traffic-light exclusion **rejects Town04's own route**, and a lighting
-figure was reported twice from inconsistent world states (380 vs 2415 street lights).
-Both are now measured for every map in one code path.
+I relaxed the selection criterion several times: mean curvature → distribution →
+Town04-measured envelope → signal-controlled lanes → lane markings. Each relaxation was
+justified, but the pattern is the one to watch for, since successively widening a
+criterion until something passes is how a null result gets talked into a positive one.
+What makes me confident it did not happen here: every relaxation **still disqualified
+Town06**, on a new and more physical ground each time. The criterion moved; the verdict
+did not.
 
-### Open question for Zach
+### Two of my own errors, corrected
 
-Is "a fair analogue of the Town04 route" (§6) too strong? The deployment test needs a
-new map, the same ODD, models trainable to budget, and both PASS and FAIL cells. An
-exact curvature twin may not be required. Town12 is the only map with admissible
-windows so far, but it is CARLA's large streaming map (determinism risk) and its
-candidates are far gentler than Town04 (s90 0.0021 vs 0.0168), which risks losing the
-FAIL cells.
+- A 50 m traffic-light exclusion **rejects Town04's own route** (its scored lap passes
+  within 11 m of a light). Invented thresholds, replaced by Town04's measured envelope.
+- I reported Town04 lighting twice from inconsistent world states (380 vs 2415 street
+  lights). Both maps are now measured in one code path.
 
----
+### Retracted
+
+I flagged that Town04's westbound scored lap traverses the signalised junction
+`LAP_END_M` excludes. **It is never scored**: warmup travels 404.7 m before recording
+begins and the junction spans the first 14 m. The published study is fine.
+
+### The decision for Zach
+
+1. **Town12 (or another large map)** — the only candidate. Needs its streaming
+   determinism and throughput proven first; a test is running.
+2. **Relax "new map" to "new route + new models"** on Town04 itself. Weaker, but the
+   certificate would still face models and road it was never tuned on.
+3. **Build a route** rather than find one (CARLA supports custom OpenDRIVE).
+4. **Accept a different ODD** and declare it — e.g. an unlit highway, which would make
+   night a *stronger* disturbance and help produce the FAIL cells.
+
+My recommendation is (1) if Town12 proves stable, else (2), because it keeps the ODD
+identical and the honest weakening is easy to state. But this changes what the
+experiment is, so it is your call rather than mine.
 
 ## The order, and where we are
 
