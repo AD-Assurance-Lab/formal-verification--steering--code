@@ -86,6 +86,41 @@ run() {   # run <logname> <cmd...>  -- one retry after a CARLA restart
     return 1
 }
 
+# ROUTE FINGERPRINT. Every stage below is skipped when its output exists, which is
+# what makes the pipeline resumable -- and which silently reuses data collected on a
+# DIFFERENT route if the route is ever re-selected. That is not hypothetical: the first
+# Town06 route was invalidated after its teacher failed, and without this guard the
+# rerun would have skipped collection and trained on the old route's frames while
+# reporting success. A dataset is only reusable if it was built on the current route.
+ROUTE_FP=$(python3 - <<'PY'
+import hashlib, os, sys
+sys.path.insert(0, "pipeline")
+import config as C
+h = hashlib.sha256()
+d = os.path.join(C.DATASET_DIR, C.ROUTES_SUBDIR)
+for n in ("eastbound", "westbound"):
+    h.update(open(os.path.join(d, n + ".npy"), "rb").read())
+print(h.hexdigest()[:16])
+PY
+)
+say "route fingerprint $ROUTE_FP"
+
+fp_ok() {   # fp_ok <dataset-dir> -- true if it was built on THIS route
+    local f="$1/.route_fingerprint"
+    [ -f "$f" ] && [ "$(cat "$f")" = "$ROUTE_FP" ]
+}
+fp_stamp() { echo "$ROUTE_FP" > "$1/.route_fingerprint"; }
+
+fp_guard() {  # fp_guard <dataset-dir> <label> -- refuse a foreign-route dataset
+    if [ -d "$1" ] && ! fp_ok "$1"; then
+        say "FATAL: $2 exists but was built on a DIFFERENT route."
+        say "       Reusing it would train on the wrong map. Remove it and rerun:"
+        say "         rm -rf $1"
+        return 1
+    fi
+    return 0
+}
+
 # dagger.py EXITS 0 EVEN WHEN THE TEACHER NEVER MEETS BUDGET. It prints
 # "Exhausted N rounds without passing" and returns success, so the driver happily
 # distilled an undrivable teacher and carried on. Measured on the first Town06 route:
@@ -107,10 +142,12 @@ teacher_gate() {   # teacher_gate <logname>
 cd "$REPO/pipeline"
 
 # ---------------------------------------------------------------- clear policy
+fp_guard "$DATA/clear_t06" clear_t06 || exit 1
 if [ ! -f "$DATA/clear_t06/manifest.csv" ]; then
     run collect_clear python3 collect_data.py --dataset clear_t06 \
-        --weathers clear --laps 2 --direction both || exit 1
-else say "SKIP  collect_clear (manifest exists)"; fi
+        --weathers clear --laps 4 --direction both || exit 1
+    fp_stamp "$DATA/clear_t06"
+else say "SKIP  collect_clear (manifest exists, fingerprint matches)"; fi
 
 if [ ! -f "$CK/teacher_clear_t06_bc.pth" ]; then
     run train_clear_bc python3 train.py --dataset clear_t06 --epochs 120 \
@@ -119,16 +156,18 @@ else say "SKIP  train_clear_bc"; fi
 
 if ! ls "$CK"/teacher_clear_t06_dagger_r*.pth >/dev/null 2>&1; then
     run dagger_clear python3 dagger.py --base clear_t06 \
-        --init teacher_clear_t06_bc --rounds 6 --weathers clear \
+        --init teacher_clear_t06_bc --rounds 12 --weathers clear \
         --dagger-dir dagger_clear_t06 --out-prefix teacher_clear_t06_dagger || exit 1
     teacher_gate dagger_clear || exit 1
 else say "SKIP  dagger_clear"; teacher_gate dagger_clear || exit 1; fi
 
 # ---------------------------------------------------------------- mixed policy
+fp_guard "$DATA/mixed_t06" mixed_t06 || exit 1
 if [ ! -f "$DATA/mixed_t06/manifest.csv" ]; then
     run collect_mixed python3 collect_data.py --dataset mixed_t06 \
-        --weathers clear,fog,night,shadows --laps 2 --direction both || exit 1
-else say "SKIP  collect_mixed"; fi
+        --weathers clear,fog,night,shadows --laps 3 --direction both || exit 1
+    fp_stamp "$DATA/mixed_t06"
+else say "SKIP  collect_mixed (fingerprint matches)"; fi
 
 if [ ! -f "$CK/teacher_mixed_t06_bc.pth" ]; then
     run train_mixed_bc python3 train.py --dataset mixed_t06 --epochs 120 \
@@ -137,7 +176,7 @@ else say "SKIP  train_mixed_bc"; fi
 
 if ! ls "$CK"/teacher_mixed_t06_dagger_r*.pth >/dev/null 2>&1; then
     run dagger_mixed python3 dagger.py --base mixed_t06 \
-        --init teacher_mixed_t06_bc --rounds 8 --weathers clear,fog,night,shadows \
+        --init teacher_mixed_t06_bc --rounds 14 --weathers clear,fog,night,shadows \
         --dagger-dir dagger_mixed_t06 --out-prefix teacher_mixed_t06_dagger || exit 1
     teacher_gate dagger_mixed || exit 1
 else say "SKIP  dagger_mixed"; teacher_gate dagger_mixed || exit 1; fi
