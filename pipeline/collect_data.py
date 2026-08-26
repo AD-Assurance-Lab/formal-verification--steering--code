@@ -25,7 +25,8 @@ import config as C  # noqa: E402
 import carla_env as env  # noqa: E402
 from route import load_route, signed_cte_route, pure_pursuit_route  # noqa: E402
 
-SPAWNS = {"eastbound": C.SPAWN_EASTBOUND, "westbound": C.SPAWN_WESTBOUND}
+# Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).
+SPAWNS = C.SPAWNS
 FIELDS = ["image", "weather", "direction", "lap", "step", "steer", "steer_rad",
           "cte_m", "speed_mph", "x", "y", "yaw"]
 
@@ -87,7 +88,8 @@ def main():
     ap.add_argument("--weathers", default="clear",
                     help="comma-separated weather presets to collect (clear,fog,rain,night)")
     ap.add_argument("--laps", type=int, default=2)
-    ap.add_argument("--direction", default="both", choices=["eastbound", "westbound", "both"])
+    ap.add_argument("--direction", default="both",
+                    help="section name, or 'both'/'all' for every section")
     ap.add_argument("--max-steps", type=int, default=2500)
     args = ap.parse_args()
 
@@ -103,7 +105,7 @@ def main():
     # Spawn INSIDE the try: a failure here would otherwise skip the finally and leave
     # the server hung in synchronous mode with no ticking client (trap 3b).
     vehicle = camera = img_queue = None
-    dirs = ["eastbound", "westbound"] if args.direction == "both" else [args.direction]
+    dirs = list(C.SECTIONS) if args.direction in ("both", "all") else [args.direction]
     all_rows = []
     try:
         vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
@@ -115,7 +117,7 @@ def main():
             for lap in range(args.laps):
                 for d in dirs:
                     all_rows += collect_lap(world, world_map, vehicle, img_queue,
-                                            weather, d, lap, out_dir, args.max_steps)
+                                            weather, d, lap, out_dir, min(args.max_steps, C.steps_for(d)))
     finally:
         env.cleanup([camera, vehicle], world, original)
 

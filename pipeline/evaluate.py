@@ -31,7 +31,8 @@ from metrics import summarize_cte  # noqa: E402
 from model import CarlaSteeringNet  # noqa: E402
 from route import load_route, signed_cte_route, pure_pursuit_route  # noqa: E402
 
-SPAWNS = {"eastbound": C.SPAWN_EASTBOUND, "westbound": C.SPAWN_WESTBOUND}
+# Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).
+SPAWNS = C.SPAWNS
 
 
 def load_model(name, device):
@@ -132,7 +133,8 @@ def save_and_report(name, direction, records):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="steering_bc_baseline")
-    ap.add_argument("--direction", default="both", choices=["eastbound", "westbound", "both"])
+    ap.add_argument("--direction", default="both",
+                    help="section name, or 'both'/'all' for every section")
     ap.add_argument("--max-steps", type=int, default=2000)
     ap.add_argument("--weather", default="clear",
                     choices=["clear", "fog", "rain", "night", "shadows"],
@@ -149,7 +151,7 @@ def main():
     # Spawn INSIDE the try: a failure here would otherwise skip the finally and leave
     # the server hung in synchronous mode with no ticking client (trap 3b).
     vehicle = camera = img_queue = None
-    dirs = ["eastbound", "westbound"] if args.direction == "both" else [args.direction]
+    dirs = list(C.SECTIONS) if args.direction in ("both", "all") else [args.direction]
     results = {}
     try:
         vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
@@ -157,7 +159,7 @@ def main():
         # after spawn: lights need the vehicle, and exposure is declared per condition
         camera, img_queue = env.set_condition(world, vehicle, args.weather, camera)
         for d in dirs:
-            recs = drive_nn(world, world_map, vehicle, img_queue, model, device, d, args.max_steps)
+            recs = drive_nn(world, world_map, vehicle, img_queue, model, device, d, min(args.max_steps, C.steps_for(d)))
             results[d] = save_and_report(args.model, d, recs)
     finally:
         env.cleanup([camera, vehicle], world, original)
