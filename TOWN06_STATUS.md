@@ -16,103 +16,84 @@ first, certificate committed before the drive, then drive.
 
 ---
 
-## STOPPED — Town06 is disqualified, and a map decision is needed
+## PAUSED — students are marginal, and a capacity decision is needed
 
-**Read this first.** The pipeline is halted. Nothing is contaminated: no certificate was
-computed and nothing was driven. Every guard and every downstream stage is built, tested
-and pushed. What is missing is a usable map.
+Nothing is contaminated: no certificate exists and nothing has been driven as a scored
+cell. Everything upstream is built and verified.
 
-### The trigger
+### Where it stopped
 
-The clear-only teacher failed **all six** DAgger rounds on the Town06 route (max|CTE|
-24–101 ft against a 2.19 ft gate) while the pure-pursuit oracle drives the same route at
-0.43 ft. The route is drivable; the learned policy could not fit it.
+Both Town06 students hover ON the CTE budget rather than inside it, and the competence
+gate's verdict is therefore not repeatable. The SAME checkpoint
+`S_clear_t06_84x28_dagger_r08` scored **5/6, then 6/6, then 5/6** on three consecutive
+gate runs with nothing changed between them. Worst |CTE| ranged 1.71 to 2.92 ft against
+a 2.19 ft budget: precisely the cliff where standing rule 3 says pass/fail is a coin
+flip.
 
-### Why: three independent measurements, all saying the same thing
+Ten student-DAgger rounds each produced no margin:
 
-| test | Town04 scored lap | Town06 window |
-|---|---|---|
-| median curvature | 0.00091 | **0.00000** |
-| max steering demand | 0.047 | **0.111** |
-| vertices on a signal-controlled lane | **0 of 1424** | **13–14**, 5 lights per direction |
-| vertices with **no lane marking either side** | **0.00 % / 0.77 %** | **7.55 % / 4.46 %** |
+| student | ReLU | conditions | trajectory over ~10 rounds |
+|---|---|---|---|
+| `S_clear_t06` | 5,152 | 1 | 4/6, 5/6, 6/6, 5/6 — flat, noisy |
+| `S_mixed_t06` | 15,456 | 4 | 4/6, 4/6, 5/6, 4/6, 3/6 — flat, noisy |
 
-The last row is the physical one, and it explains the training failure directly: on 7.5 %
-of the route the policy has no lane marking to see. `config.py` gives that as the actual
-reason Town04 excludes its one intersection ("the lane centreline is undefined through
-it") — the signal was never the point.
+### What a competent student looks like
 
-Town06's outer loop is a signalised arterial, not a grade-separated highway. Lighting,
-lane count and lane width all matched; those are not what distinguishes the road.
+Town04's published mixed student passed at student-DAgger **round 0**, needing no
+rounds at all (commit `4b2ad73`):
 
-### Every other small map, measured
-
-| map | result |
+| condition | max \|CTE\| both directions |
 |---|---|
-| Town05 | 7,777 windows meet geometry; **0** free of signal-controlled lanes |
-| Town03, Town07, Town10HD | 0 windows even meet the steering-demand cap |
-| Town12 | 3 usable windows — but it is a LARGE streaming map and **crashed the server** on first use |
+| clear | 1.27 / 0.53 ft |
+| fog | 0.64 / 1.36 ft |
+| night | 0.62 / 0.98 ft |
+| low sun | — / 1.61 ft |
 
-CARLA's small maps appear not to contain a second grade-separated, unsignalised,
-lane-marked highway of Town04's character.
+Comfortably inside the same 2.19 ft budget, 0 % over. The verdict was never in question.
+That is the bar, and Town06's students are not at it.
 
-### A caution about how I got here
+### Why not just add rounds or reps
 
-I relaxed the selection criterion several times: mean curvature → distribution →
-Town04-measured envelope → signal-controlled lanes → lane markings. Each relaxation was
-justified, but the pattern is the one to watch for, since successively widening a
-criterion until something passes is how a null result gets talked into a positive one.
-What makes me confident it did not happen here: every relaxation **still disqualified
-Town06**, on a new and more physical ground each time. The criterion moved; the verdict
-did not.
+Both are ways of shopping for a verdict rather than earning one:
 
-### Two of my own errors, corrected
+* **More rounds** repeats F7 (`5be6862`), which blamed student-DAgger for a gap that
+  M3 (`4b2ad73`) then showed was capacity: w1 failed all four conditions, w2 failed
+  night 10/10, w3 passed everything.
+* **More reps** would eventually stabilise the verdict, but a student that needs ten
+  repetitions to prove it can hold clear weather is not one worth certifying.
 
-- A 50 m traffic-light exclusion **rejects Town04's own route** (its scored lap passes
-  within 11 m of a light). Invented thresholds, replaced by Town04's measured envelope.
-- I reported Town04 lighting twice from inconsistent world states (380 vs 2415 street
-  lights). Both maps are now measured in one code path.
+### Why Town06 is harder for the same architectures
 
-### Retracted
+The straight sections punish residual bias. On s03 (dead straight, steering demand
+0.0000) the student's CTE runs -0.18 → -1.24 → -8.59 with the sign never changing: a
+constant steering bias integrating into departure. The teacher on the same section
+oscillates about zero (-0.01 → +0.05 → -0.21). On curved sections the commanded
+steering is large enough that the same bias is proportionally invisible.
 
-I flagged that Town04's westbound scored lap traverses the signalised junction
-`LAP_END_M` excludes. **It is never scored**: warmup travels 404.7 m before recording
-begins and the junction spans the first 14 m. The published study is fine.
+Incidentally this reproduces the paper's own thesis in a new setting: a small persistent
+bias walks the vehicle out of its lane while a large oscillating one integrates to
+nothing.
 
-### Every map, measured
+### The decision
 
-| map | verdict |
-|---|---|
-| **Town06** | 7.55 % / 4.46 % of vertices **unmarked**; 13–14 on signal-controlled lanes. Disqualified, and this explains the training failure. |
-| **Town05** | 7,777 windows meet geometry; **0** free of signal-controlled lanes |
-| **Town03, Town07, Town10HD** | 0 windows meet the steering-demand cap (too tight/curvy) |
-| **Town12** | 3 admissible windows, but CARLA **segfaults** on it — twice, once on teleport, once on a plain spawn-and-drive. RAM was fine (5/62 GB); it is the large-map streaming path. |
-| **Town04, disjoint route** | impossible: **every** admissible window overlaps the published study route by ≥ 40.6 % (median 43.8 %, none below 20 %) |
+Widening needs **no protocol amendment** — capacity is a property of the model under
+test, not of the criterion, and PROTOCOL section 3 does not freeze it. F12 (`387f62e`)
+shows it is close to free for verifiability: 5,152 ReLU gives 0.78 % UNKNOWN, 15,456
+gives 2.5 %, against ~11 % where certification stops being useful, because what binds
+is input dimension and ours is one-dimensional.
 
-The criterion itself is validated: run on Town04 it finds 5,340 admissible windows and
-picks one scoring 0.91 with **0.00 %** unmarked and smax 0.0396 against the reference
-0.0467. It selects Town04-like road when Town04-like road exists. It does not exist on
-the other small maps.
+Options, for Zach:
 
-### The decision for Zach
+1. **Widen both** (clear to w2, mixed to w4), re-distil, re-run. Costs hours; gives
+   students with margin, which every downstream number depends on.
+2. **Widen the mixed student only**, accept a marginal clear student.
+3. **Collect more base data first** — 4 laps x 6 sections may be thin for a route with
+   this much straight.
 
-**On this machine and CARLA build, no second map provides a Town04-equivalent route.**
-That is the finding. Four ways forward, in my order of preference:
-
-1. **New models, same route.** The deployment test's core question is whether the frozen
-   criterion predicts for policies it was never tuned on. Fresh teachers and students on
-   the Town04 route answer exactly that, with no map problem at all. It is clean, it is
-   fast (the pipeline already runs), and it is weaker only in that the route is not new.
-   Everything built tonight applies unchanged.
-2. **Town04 partial-overlap route** (≈ 59 % new road) plus new models. Adds route
-   novelty; the overlap has to be declared.
-3. **Fix Town12.** Lower quality level, a CARLA build with better large-map handling, or
-   more VRAM. Unknown effort; two segfaults so far.
-4. **Author a route** as custom OpenDRIVE. Most control, most work, and the rendered
-   world would no longer be a stock CARLA town.
-
-(1) is what I would run next, because it tests the actual claim and can start
-immediately. But it changes what the experiment demonstrates, so it is your call.
+Recommendation: (1). A marginal student makes the ledger, the certificate and the
+comparison all noisy. But it is a larger departure from the published pair than option
+2, and the paper reports the mixed student as 3x width, so whichever is chosen becomes
+a declared difference.
 
 ## The order, and where we are
 
