@@ -11,31 +11,49 @@ characterized in CARLA. **AD Assurance Lab, Western Michigan University.** Compa
 code for the paper *Proving End-to-End Steering in Poor Visibility* (preprint in
 preparation).
 
-Two steering networks — one trained on clear weather, one on clear + fog + night +
-low sun — drive a full Town04 highway lap in both directions, then are certified
-with α-CROWN over the disturbance family between the rendered endpoints, without
-driving. The certificate agrees with closed-loop testing in all twelve cells.
+Two driving experts are trained, one on clear weather and one on clear + fog + night
++ low sun, and each is distilled into a steering network small enough to verify. The
+students are certified with α-CROWN over the disturbance family between the rendered
+endpoints, without driving, and the certificate agrees with closed-loop testing in all
+twelve cells.
+
+**The setup.** A full Town04 highway lap, driven in both directions, with a Tesla
+Model 3 ego vehicle.
 
 <p align="center">
   <img src="figures/route_map.png" width="330" alt="Town04 highway loop, both driven directions">
   <img src="figures/vehicle.png" width="440" alt="The ego vehicle on the route">
 </p>
 
-<p align="center">
-  <img src="figures/night_comparison.gif" width="780" alt="Night: the clear-only student departs within 35 m; the mixed student holds the lane">
-</p>
+**What the certificate says.** Certified bounds for all twelve cells, computed from
+the network weights alone with no simulator in the loop. A cell is certified when the
+whole bias interval stays inside the tolerance corridor: the clear-only student clears
+clear weather and fog and is not certified under night or low sun, while the mixed
+student clears all four.
 
 <p align="center">
   <img src="figures/cert_bounds.png" width="540" alt="Certified bounds vs closed-loop outcome, all twelve cells">
 </p>
 
+**What the vehicle does.** Driving the same cells in CARLA reproduces every verdict.
+Under night the clear-only student leaves the lane within 35 m and departs on all ten
+runs, while the mixed student holds the lane for the full lap.
+
+<p align="center">
+  <img src="figures/night_comparison.gif" width="780" alt="Night: the clear-only student departs within 35 m; the mixed student holds the lane">
+</p>
+
+**Why the statistic matters.** Cross-track error over the lap, the quantity the
+tolerance is defined against. The certificate detects failures that persist along the
+route; the peak statistic provably cannot, because it misorders the two networks.
+
 <p align="center">
   <img src="figures/cte_lap.png" width="540" alt="Cross-track error over the lap">
 </p>
 
-The certificate detects failures that persist along the route; the peak statistic
-provably cannot (it misorders the two networks). Scope, caveats, and the fitted
-tolerance horizon are in the paper.
+The twelve-cell agreement is in-sample: the tolerance horizon is fitted to the driven
+outcomes, so it shows the sustained statistic is sensitive to what matters rather than
+that it predicts. Scope, caveats, and the fitted horizon are in the paper.
 
 ## Layout
 
