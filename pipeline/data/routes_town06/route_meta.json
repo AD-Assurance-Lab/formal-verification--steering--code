@@ -35,7 +35,7 @@
     "lane_width_mean": 3.5,
     "lane_width_std": 0.0,
     "lanes_per_dir_mode": 4,
-    "lane_match_frac": 0.9583333333333334,
+    "lane_match_frac": 0.7014925373134329,
     "speed_kph_mode": null,
     "speed_match_frac": 0.0
   },
@@ -52,6 +52,10 @@
       "z": 0.5,
       "yaw": -220.28082275390625
     }
+  },
+  "stored_loop_len_m": {
+    "eastbound": 8313.957985546498,
+    "westbound": 3981.225828572122
   },
   "selection": "geometry only; no policy behaviour used"
 }

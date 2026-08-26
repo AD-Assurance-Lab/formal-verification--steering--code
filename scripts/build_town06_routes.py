@@ -13,9 +13,17 @@ Method
    Town04's grade-separated loop).
 2. Slide a TARGET_LEN_M window along it and keep the window whose curvature profile is
    closest to Town04's.
-3. Find the opposing carriageway at the chosen start and trace the same length back, so
-   the two directions cover the same physical road, as they do on Town04.
-4. Write eastbound/westbound .npy files under a map-scoped routes directory.
+3. Find the opposing carriageway at the chosen start and trace it the same way.
+4. Store the FULL closed loop for each direction, rotated to begin at the chosen window,
+   and score only the first TARGET_LEN_M of it.
+
+Point 4 matters and is not cosmetic. Town04's cached routes are closed loops (3042 m)
+whose scored lap is a 2861 m prefix, and pure_pursuit_route() indexes the route with
+`(i + lookahead) % n`. Store an OPEN 2861 m segment instead and that modulo wraps the
+lookahead target from the end of the segment back to its start, which is geometrically
+meaningless: the oracle drives the lap correctly and then hurls itself off the road at
+the seam. Measured, before this was fixed: eastbound max|CTE| 4.58 m, westbound 15.98 m,
+both at the very end of an otherwise clean lap.
 
 Usage:
     CARLA_PORT=3000 python3 scripts/build_town06_routes.py
@@ -242,12 +250,15 @@ def main():
         print(f"    {'Town04 straight%':<18} {T04['straight_frac']:.5f}   "
               f"kappa_mean {T04['kappa_mean']:.5f}  kappa_p90 {T04['kappa_p90']:.5f}")
 
-        eb = route[i0:i0 + n_win].copy()
+        # Roll the closed loop so the scored window starts at index 0, and keep the
+        # WHOLE loop: the scored prefix is LAP_END_M, the rest exists so pure pursuit's
+        # modulo lookahead stays on real road at the seam.
+        eb = np.roll(route, -i0, axis=0)
 
         wb_full, wb_j, wb_lw = trace(wmap, ow, max_pts=6000)
         if len(wb_full) < n_win:
             sys.exit(f"opposing trace too short: {len(wb_full)} < {n_win}")
-        wb = wb_full[:n_win].copy()
+        wb = wb_full.copy()
         wp = window_profile(wb_full, wb_j, wb_lw, 0, n_win)
         wp.update(highway_profile(wmap, wb))
         print(f"\nopposing carriageway: road {ow.road_id}/lane {ow.lane_id}")
@@ -257,7 +268,7 @@ def main():
             print(f"    {k:<20} {wp[k]}")
 
         out = {}
-        for name, arr in (("eastbound", eb), ("westbound", wb)):
+        for name, arr in (("eastbound", eb[:n_win]), ("westbound", wb[:n_win])):
             if len(sl):
                 d = np.hypot(sl[:, 0][None, :] - arr[:, 0][:, None],
                              sl[:, 1][None, :] - arr[:, 1][:, None]).min(axis=1)
@@ -276,8 +287,22 @@ def main():
         os.makedirs(ROUTES_DIR, exist_ok=True)
         np.save(os.path.join(ROUTES_DIR, "eastbound.npy"), eb)
         np.save(os.path.join(ROUTES_DIR, "westbound.npy"), wb)
+        def _closed(a):
+            return bool(math.hypot(a[-1, 0] - a[0, 0], a[-1, 1] - a[0, 1]) < 12.0)
+
+        def _len(a):
+            d = np.diff(a, axis=0)
+            return float(np.hypot(d[:, 0], d[:, 1]).sum())
+
+        print(f"\nstored eastbound: {len(eb)} pts, {_len(eb):.0f} m, closed={_closed(eb)}")
+        print(f"stored westbound: {len(wb)} pts, {_len(wb):.0f} m, closed={_closed(wb)}")
+        if not (_closed(eb) and _closed(wb)):
+            sys.exit("a stored route is not a closed loop; pure pursuit would wrap "
+                     "the lookahead across a discontinuity at the seam")
+
         meta = dict(map=MAP, target_len_m=TARGET_LEN_M, step_m=STEP_M,
                     town04_reference=T04, window=p, opposing=wp, spawns=out,
+                    stored_loop_len_m=dict(eastbound=_len(eb), westbound=_len(wb)),
                     selection="geometry only; no policy behaviour used")
         with open(os.path.join(ROUTES_DIR, "route_meta.json"), "w") as f:
             json.dump(meta, f, indent=2)
