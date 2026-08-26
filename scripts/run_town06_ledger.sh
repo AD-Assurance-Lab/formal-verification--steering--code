@@ -46,13 +46,14 @@ carla_up 12 || carla_restart || exit 1
 
 # CARLA leaks ~10.5 GiB over 11 h and drifts near the stability cliff. A fresh server
 # per cell costs ~40 s and removes accumulated state as an explanation for any result.
-declare -A SPEC=(
-  [S_clear_t06_84x28]="8,16,16 32"
-  [S_mixed_t06_84x28_w3]="24,48,48 96"
-)
+# One definition, in config: name | channels | fc
+mapfile -t STUDENT_ROWS < <(STUDY_MAP=Town06 python3 -c "
+import sys; sys.path.insert(0,'pipeline'); import config as C
+for nm, ck, ch, fc in C.TOWN06_STUDENTS:
+    print(ck, ','.join(str(c) for c in ch), fc)")
 
-for BASE in S_clear_t06_84x28 S_mixed_t06_84x28_w3; do
-  read -r CH FC <<<"${SPEC[$BASE]}"
+for ROW in "${STUDENT_ROWS[@]}"; do
+  read -r BASE CH FC <<<"$ROW"
   # Drive the FINAL student (newest student-DAgger round), not the distilled base.
   STU=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(C.final_student('$BASE'))")
   say "student $BASE -> $STU"

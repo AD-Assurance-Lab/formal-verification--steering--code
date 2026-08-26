@@ -247,6 +247,43 @@ def steps_for(section, margin=1.0):
     return int(length * margin / (TARGET_SPEED_MS * FIXED_DT))
 
 
+# ── Town06 student registry ──────────────────────────────────────────────────
+# ONE definition, read by the pipeline, the competence gate, the certifier and the
+# ledger. They previously each named checkpoints independently and drifted apart: all
+# four pointed at the distilled base while student-DAgger was writing <base>_dagger_rNN,
+# so the gate tested, and the certifier would have certified, a model nobody ships.
+#
+# Sizes follow the rule this lab already settled in 4ac6002 -- "size each student to its
+# own task", identical architecture explicitly REJECTED because the study's claim is
+# WITHIN-model (each policy against its own closed-loop behaviour) and a tool that only
+# works when two models share an architecture is not a tool.
+#
+# Town06 needs more width than Town04 at both ends. On Town04 the published pair was
+# w1/w3 and both students passed student-DAgger at round 0. On Town06 the same pair
+# plateaued ON the budget: ten rounds each, verdicts oscillating 4/6-6/6 with the SAME
+# weights, worst |CTE| 1.71-2.92 ft against a 2.19 ft budget. The straight sections
+# punish residual steering bias, which is why this route is harder for a given capacity.
+#
+#   (name, checkpoint stem, conv channels, FC width)
+TOWN06_STUDENTS = (
+    ("S_clear_t06", "S_clear_t06_84x28_w2",    (16, 32, 32), 64),
+    ("S_mixed_t06", "S_mixed_t06_84x28_w4",    (32, 64, 64), 128),
+)
+
+
+def relu_count(channels, fc, in_h=28, in_w=84):
+    """ReLU neurons, so it can be reported next to every certified rate (4ac6002:
+    a larger model has looser bounds, and that must stay visible rather than be
+    engineered away)."""
+    h, w = in_h, in_w
+    n = 0
+    for c, k in zip(channels, (5, 5, 3)):          # StudentNet: 5x5 s2, 5x5 s2, 3x3 s2
+        h = (h - k) // 2 + 1
+        w = (w - k) // 2 + 1
+        n += c * h * w
+    return n + fc
+
+
 def final_student(base):
     """The checkpoint that IS the student: the newest student-DAgger round, else base.
 
