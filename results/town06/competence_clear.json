@@ -2,31 +2,43 @@
   "map": "Town06",
   "students": {
     "S_clear_t06": {
-      "checkpoint": "S_clear_t06_84x28_dagger_r02",
+      "checkpoint": "S_clear_t06_84x28_dagger_r08",
       "sections": {
         "s00": {
-          "passed": false,
-          "max_cte_ft": 5.52
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 0.7
         },
         "s01": {
-          "passed": false,
-          "max_cte_ft": 3.11
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 1.08
         },
         "s02": {
-          "passed": false,
-          "max_cte_ft": 7.86
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 0.6
         },
         "s03": {
-          "passed": true,
-          "max_cte_ft": 1.86
+          "passed": false,
+          "n_pass": 2,
+          "reps": 3,
+          "max_cte_ft": 2.24
         },
         "s04": {
-          "passed": false,
-          "max_cte_ft": 2.29
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 0.44
         },
         "s05": {
           "passed": true,
-          "max_cte_ft": 0.63
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 1.88
         }
       },
       "competent": false
@@ -36,27 +48,39 @@
       "sections": {
         "s00": {
           "passed": true,
-          "max_cte_ft": 1.37
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 1.38
         },
         "s01": {
           "passed": false,
-          "max_cte_ft": 3.73
+          "n_pass": 0,
+          "reps": 3,
+          "max_cte_ft": 4.15
         },
         "s02": {
           "passed": true,
-          "max_cte_ft": 1.5
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 1.39
         },
         "s03": {
-          "passed": false,
-          "max_cte_ft": 2.72
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 2.14
         },
         "s04": {
           "passed": true,
-          "max_cte_ft": 0.6
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 0.63
         },
         "s05": {
           "passed": true,
-          "max_cte_ft": 1.01
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 1.2
         }
       },
       "competent": false
@@ -64,6 +88,7 @@
   },
   "all_competent": false,
   "cte_budget_ft": 2.1916011199999996,
-  "git_commit": "d937110e70610450fb552a094557c7dabff73935",
-  "note": "clear weather only; s=0 anchor, not a disturbance cell, not a scored ledger cell"
+  "git_commit": "e12bfb60b4144dd0270b2321294400d669aeb5b0",
+  "reps": 3,
+  "note": "clear weather only; s=0 anchor, not a disturbance cell, not a scored ledger cell; every section must hold on every rep"
 }
