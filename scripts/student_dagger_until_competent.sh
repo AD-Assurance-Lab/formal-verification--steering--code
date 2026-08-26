@@ -79,6 +79,19 @@ for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
 done
 
 say "STOPPING after $MAX_ATTEMPTS attempts without both students competent."
-say "This is a plateau, not a budget to widen. Next levers: student capacity (width),"
-say "then input resolution, then more base data."
+say "This is a plateau, not a budget to widen."
+say ""
+say "NEXT LEVER IS WIDTH, and that is evidence, not a guess. Town04 commit 4b2ad73:"
+say "  w1 failed all four conditions; w2 failed night 10/10; w3 passed everything."
+say "  w3 was the MINIMUM that worked there, and both Town04 students then passed"
+say "  student-DAgger at round 0 -- so on that map capacity, not DAgger rounds, was"
+say "  the binding constraint. F7 (5be6862) had blamed DAgger and was wrong."
+say ""
+say "  Town06 currently uses the same pair: clear (8,16,16)/fc32 = 5,152 ReLU,"
+say "  mixed (24,48,48)/fc96 = 15,456 ReLU. If DAgger has plateaued, re-distil the"
+say "  MIXED student wider (w4: 32,64,64 / fc 128) before adding more rounds."
+say ""
+say "  Student capacity is NOT frozen by PROTOCOL section 3 -- it is a property of the"
+say "  model under test, not of the criterion -- so widening needs no amendment. It"
+say "  does need declaring, since the paper reports the mixed student as 3x width."
 exit 1
