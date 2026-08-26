@@ -4,3 +4,7 @@
 [2026-08-25 22:04:55] SKIP  collect_clear (manifest exists)
 [2026-08-25 22:04:55] SKIP  train_clear_bc
 [2026-08-25 22:04:55] START dagger_clear (attempt 1)
+[2026-08-25 22:13:28] OK    dagger_clear
+[2026-08-25 22:13:28] START collect_mixed (attempt 1)
+[2026-08-25 22:15:38] FAIL  collect_mixed attempt 1 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06_logs/collect_mixed.log)
+[2026-08-25 22:15:43] START collect_mixed (attempt 2)

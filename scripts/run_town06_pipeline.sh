@@ -86,6 +86,24 @@ run() {   # run <logname> <cmd...>  -- one retry after a CARLA restart
     return 1
 }
 
+# dagger.py EXITS 0 EVEN WHEN THE TEACHER NEVER MEETS BUDGET. It prints
+# "Exhausted N rounds without passing" and returns success, so the driver happily
+# distilled an undrivable teacher and carried on. Measured on the first Town06 route:
+# all 6 rounds FAIL, max|CTE| 24-101 ft against a 2.19 ft gate, and the pipeline
+# treated it as OK. A teacher that cannot drive clear weather is a precondition
+# failure, not a stage to continue past.
+teacher_gate() {   # teacher_gate <logname>
+    local log="$LOG_DIR/$1.log"
+    if grep -q "without passing" "$log" 2>/dev/null; then
+        say "FATAL: $1 exhausted its rounds WITHOUT the teacher meeting budget."
+        say "       A teacher that cannot drive clear weather invalidates everything"
+        say "       downstream. Refusing to distil. See $log"
+        return 1
+    fi
+    say "GATE  $1: teacher met budget"
+    return 0
+}
+
 cd "$REPO/pipeline"
 
 # ---------------------------------------------------------------- clear policy
@@ -103,7 +121,8 @@ if ! ls "$CK"/teacher_clear_t06_dagger_r*.pth >/dev/null 2>&1; then
     run dagger_clear python3 dagger.py --base clear_t06 \
         --init teacher_clear_t06_bc --rounds 6 --weathers clear \
         --dagger-dir dagger_clear_t06 --out-prefix teacher_clear_t06_dagger || exit 1
-else say "SKIP  dagger_clear"; fi
+    teacher_gate dagger_clear || exit 1
+else say "SKIP  dagger_clear"; teacher_gate dagger_clear || exit 1; fi
 
 # ---------------------------------------------------------------- mixed policy
 if [ ! -f "$DATA/mixed_t06/manifest.csv" ]; then
@@ -120,7 +139,8 @@ if ! ls "$CK"/teacher_mixed_t06_dagger_r*.pth >/dev/null 2>&1; then
     run dagger_mixed python3 dagger.py --base mixed_t06 \
         --init teacher_mixed_t06_bc --rounds 8 --weathers clear,fog,night,shadows \
         --dagger-dir dagger_mixed_t06 --out-prefix teacher_mixed_t06_dagger || exit 1
-else say "SKIP  dagger_mixed"; fi
+    teacher_gate dagger_mixed || exit 1
+else say "SKIP  dagger_mixed"; teacher_gate dagger_mixed || exit 1; fi
 
 # ---------------------------------------------------------------- distillation
 latest() { ls -1 "$CK"/$1*.pth 2>/dev/null | sort | tail -1 | xargs -r basename | sed 's/\.pth$//'; }
