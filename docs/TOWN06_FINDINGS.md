@@ -160,8 +160,54 @@ This does not overturn F11 on Town04, whose longest straight is 258 m and where 
 sub-pixel regime is never entered. It says the conclusion is route-dependent and the
 aspect ratio was the confound.
 
+## T06-F12  The verifier is tractable at 21,408 ReLU, and CARLA must be down to run it
+
+Cost probe on synthetic input (no capture, no disturbance, so nothing leaks into the
+blind protocol). Bounds are finite at every size; the question was only cost.
+
+    config       ReLU     s/pose (CPU)   finite
+    84x28  w1   5,152        0.72         yes
+    84x28  w3  15,456        1.25         yes
+    168x28 w2  21,408        2.55         yes
+
+Cost grows about linearly in ReLU count, not explosively, so 21,408 needs no relief.
+
+Two operational facts came out of it, both of which would have cost a night:
+
+1. **CARLA must be stopped before certifying.** It holds ~10.25 GiB of the 12 GiB card
+   after a long run (the documented leak). alpha-CROWN then OOMs outright on a batched
+   graph and, unbatched, runs launch-bound at 1.43 s/pose on GPU against 2.55 on CPU --
+   a 12 GiB GPU buying 1.8x. Certification needs no simulator, so the simulator goes
+   down first. At 9,600 poses (6 sections x 200 x 4 conditions x 2 students) that is
+   the difference between hours and a long night.
+
+2. **The 16 sub-intervals can be batched, and the reformulation is exact.** Because
+   `half = 0.5*(b-a) = 1/32` for every sub-interval, W is IDENTICAL across all 16 and
+   only the bias moves. The whole split is therefore a box on the parameter itself:
+
+       frozen loop:  W_j = half*(x1-x0), b_j = x0 + mid_j*(x1-x0), s in [-1,1]
+       equivalent:   W   = (x1-x0),      b   = x0,                 t in [a_j,b_j]
+
+   Both give x = x0 + t*(x1-x0) with t confined to the same sub-interval, so this
+   changes the parameterisation of the box and not the box, nsplit, or stride.
+   Verified numerically: max per-sub-interval difference 2.2e-08, which is float32
+   epsilon. NOT adopted -- on CPU it is 0.7x, i.e. slower, since CPU is compute-bound
+   rather than launch-bound, and the GPU comparison could not be run with CARLA
+   resident. Recorded because the equivalence is proven and the option is now cheap to
+   take if certification time ever becomes the constraint.
+
 ## Open
 
-Capacity for the mixed student (w3 -> w4, 15,456 -> 20,608 ReLU) is the one lever Town04
-evidence supports and is under test. The clear student stays at Town04's 5,152 ReLU:
-widening it was tried, then reverted, because nothing measured implicates its capacity.
+The student architecture question is CLOSED by T06-F11: both students are 168x28 w2,
+21,408 ReLU, and the repeated-drive confirmation holds all six sections on every rep.
+
+What is still open is whether the MIXED student needs more than w2. Town04 needed its
+mixed student at 3x the clear student's width to carry four conditions; here both are
+w2, and horizontal resolution may have absorbed some of that. Its clear-weather
+competence gate is the first evidence either way, and it is running. Widening is a
+declared change, not an amendment: student capacity is a property of the model under
+test, not of the criterion, so PROTOCOL section 3 does not freeze it.
+
+Superseded: the previous note here proposed widening the mixed student w3 -> w4 at
+84x28 and keeping the clear student at 5,152 ReLU. Both halves are obsolete -- the
+binding constraint was horizontal resolution, not width, and it bound BOTH students.
