@@ -208,4 +208,36 @@ Town06 result calls it and refuses to run on a mismatch.
 
 ### Amendments
 
-*(none)*
+#### A-1. Explore phase 2: the blind ordering rule R1 is SUSPENDED
+
+**Date:** 2026-08-27. **Requested by:** Zach, after the first Town06 deployment test.
+
+**What changed.** R1 -- certificate committed before the corresponding closed-loop run --
+is suspended for the work that follows this amendment. Closed-loop simulation may be run
+freely, in any order, on any model, including before or without certifying it.
+
+**Why.** The first Town06 deployment test returned 5/6 agreement, and its three
+contradictions are all model-building failures rather than verification failures. The
+clearest is night: the mixed student was TRAINED on night and fails it 9/12, while its
+teacher passes all 24 teacher-gate cells. The certificate AGREED with that failure, so
+verification did its job -- but the criterion is designed to bound the effect of a
+DISTURBANCE on a competent policy, and it is not designed to detect a policy that was
+built wrong. Testing a criterion for disturbance sensitivity against a model that cannot
+drive measures the wrong thing. The blind constraint exists to stop verdicts being tuned
+to known outcomes; while the object under study is the TRAINING PIPELINE rather than the
+criterion, it costs iteration speed and protects nothing.
+
+**What it invalidates.** Nothing already recorded. The Town06 deployment test
+(certificate e0a461f, result T06-F16) was completed under R1 in full and stands as a
+blind result. This amendment applies only to work done after it.
+
+**What it does NOT relax.** Standing rule 3 still holds: every closed-loop number is a
+rate over at least 10 repetitions, never a single run. Section 3's frozen constants are
+untouched -- the criterion, the tolerance, the stride and the BaB split are unchanged, so
+a later blind test remains comparable to this one and to the published Town04 study.
+
+**Re-entry condition.** R1 resumes when a mixed student drives every condition, and any
+future blind claim must be produced under a fresh certificate committed before its drives.
+NO result produced while this amendment is in force may be presented as a blind
+prediction, in the paper or anywhere else. Results from this phase are exploratory by
+construction and must be labelled as such.
