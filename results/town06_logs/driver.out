@@ -1,21 +1,14 @@
-[2026-08-26 18:39:52] PROTOCOL lock OK; STUDY_MAP=Town06 CARLA_PORT=3000
-[2026-08-26 18:39:52] route fingerprint 318283b349631428
-[2026-08-26 18:39:52] SKIP  collect_clear (manifest exists, fingerprint matches)
-[2026-08-26 18:39:52] SKIP  train_clear_bc
-[2026-08-26 18:39:52] SKIP  dagger_clear
-[2026-08-26 18:39:52] GATE  dagger_clear: teacher met budget
-[2026-08-26 18:39:52] SKIP  collect_mixed (fingerprint matches)
-[2026-08-26 18:39:52] SKIP  train_mixed_bc
-[2026-08-26 18:39:52] SKIP  dagger_mixed
-[2026-08-26 18:39:52] GATE  dagger_mixed: teacher met budget
-[2026-08-26 18:39:52] teachers: clear=teacher_clear_t06_dagger_r05 mixed=teacher_mixed_t06_dagger_r12
-[2026-08-26 18:39:52] distil S_clear_t06 -> S_clear_t06_84x28 (5152 ReLU) from teacher_clear_t06_dagger_r05
-[2026-08-26 18:39:52] START distill_S_clear_t06 (attempt 1)
-[2026-08-26 18:42:25] OK    distill_S_clear_t06
-[2026-08-26 18:42:25] distil S_mixed_t06 -> S_mixed_t06_84x28_w4 (20608 ReLU) from teacher_mixed_t06_dagger_r12
-[2026-08-26 18:42:25] START distill_S_mixed_t06 (attempt 1)
-[2026-08-26 18:50:45] OK    distill_S_mixed_t06
-[2026-08-26 18:50:45] START student_until_competent (attempt 1)
-Terminated
-[2026-08-26 20:06:04] FAIL  student_until_competent attempt 1 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06_logs/student_until_competent.log)
-[2026-08-26 20:06:09] START student_until_competent (attempt 2)
+[chain] old-resolution artifacts cleared; launching pipeline at 168x28
+[2026-08-26 21:20:11] PROTOCOL lock OK; STUDY_MAP=Town06 CARLA_PORT=3000
+[2026-08-26 21:20:11] route fingerprint 318283b349631428
+[2026-08-26 21:20:11] SKIP  collect_clear (manifest exists, fingerprint matches)
+[2026-08-26 21:20:11] SKIP  train_clear_bc
+[2026-08-26 21:20:11] SKIP  dagger_clear
+[2026-08-26 21:20:11] GATE  dagger_clear: teacher met budget
+[2026-08-26 21:20:11] SKIP  collect_mixed (fingerprint matches)
+[2026-08-26 21:20:11] SKIP  train_mixed_bc
+[2026-08-26 21:20:11] SKIP  dagger_mixed
+[2026-08-26 21:20:11] GATE  dagger_mixed: teacher met budget
+[2026-08-26 21:20:11] teachers: clear=teacher_clear_t06_dagger_r05 mixed=teacher_mixed_t06_dagger_r12
+[2026-08-26 21:20:11] distil S_clear_t06 -> S_clear_t06_168x28_w2 (168x28, 21408 ReLU) from teacher_clear_t06_dagger_r05
+[2026-08-26 21:20:11] START distill_S_clear_t06 (attempt 1)
