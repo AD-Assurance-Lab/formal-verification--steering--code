@@ -145,3 +145,21 @@
 [2026-08-26 21:40:57] START student_until_competent (attempt 1)
 [2026-08-26 23:01:57] FAIL  student_until_competent attempt 1 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06_logs/student_until_competent.log)
 [2026-08-26 23:02:02] START student_until_competent (attempt 2)
+[2026-08-26 23:05:53] PROTOCOL lock OK; STUDY_MAP=Town06 CARLA_PORT=3000
+[2026-08-26 23:05:53] route fingerprint 318283b349631428
+[2026-08-26 23:05:53] SKIP  collect_clear (manifest exists, fingerprint matches)
+[2026-08-26 23:05:53] SKIP  train_clear_bc
+[2026-08-26 23:05:53] SKIP  dagger_clear
+[2026-08-26 23:05:53] GATE  dagger_clear: teacher met budget
+[2026-08-26 23:05:53] SKIP  collect_mixed (fingerprint matches)
+[2026-08-26 23:05:53] SKIP  train_mixed_bc
+[2026-08-26 23:05:53] SKIP  dagger_mixed
+[2026-08-26 23:05:53] GATE  dagger_mixed: teacher met budget
+[2026-08-26 23:05:53] teachers: clear=teacher_clear_t06_dagger_r05 mixed=teacher_mixed_t06_dagger_r12
+[2026-08-26 23:05:53] SKIP  distil S_clear_t06 (S_clear_t06_168x28_w2 exists)
+[2026-08-26 23:05:53] distil S_mixed_t06 -> S_mixed_t06_168x28_w3 (168x28, 32112 ReLU) from teacher_mixed_t06_dagger_r12
+[2026-08-26 23:05:53] START distill_S_mixed_t06 (attempt 1)
+[2026-08-26 23:07:45] FAIL  distill_S_mixed_t06 attempt 1 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06_logs/distill_S_mixed_t06.log)
+[2026-08-26 23:07:50] START distill_S_mixed_t06 (attempt 2)
+[2026-08-26 23:20:22] OK    distill_S_mixed_t06
+[2026-08-26 23:20:22] START student_until_competent (attempt 1)

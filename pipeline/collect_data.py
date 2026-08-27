@@ -12,6 +12,7 @@ manifest CSV. Usage:
     python collect_data.py --dataset clear --laps 2 --direction both
 """
 import os
+from pathlib import Path
 import sys
 import csv
 import argparse
@@ -114,7 +115,21 @@ def main():
             # Respawn the camera: exposure is declared per condition and is a
             # blueprint attribute, so it cannot be changed on a live sensor.
             camera, img_queue = env.set_condition(world, vehicle, weather, camera)
-            for lap in range(args.laps):
+            # Lap indices continue after whatever this weather already has on disk.
+            # `range(args.laps)` always restarted at 0, so a SECOND collection for the
+            # same weather rewrote lap00.. with new images while the manifest kept the
+            # old rows pointing at those same paths -- old labels, new pixels, no error.
+            # Appending is only safe across weathers, which get distinct directories.
+            base_lap = 0
+            for d in dirs:
+                existing = sorted(Path(out_dir).glob(f"{weather}_{d}_lap*"))
+                if existing:
+                    base_lap = max(base_lap,
+                                   max(int(x.name.rsplit("lap", 1)[1]) for x in existing) + 1)
+            if base_lap:
+                print(f"  {weather}: {base_lap} lap(s) already on disk, "
+                      f"collecting lap{base_lap:02d}..lap{base_lap + args.laps - 1:02d}")
+            for lap in range(base_lap, base_lap + args.laps):
                 for d in dirs:
                     all_rows += collect_lap(world, world_map, vehicle, img_queue,
                                             weather, d, lap, out_dir, min(args.max_steps, C.steps_for(d)))
