@@ -2,15 +2,93 @@
   "map": "Town06",
   "students": {
     "S_clear_t06": {
-      "error": "no result parsed"
+      "checkpoint": "S_clear_t06_168x28_w2",
+      "sections": {
+        "s00": {
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 0.36
+        },
+        "s01": {
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 0.67
+        },
+        "s02": {
+          "passed": false,
+          "n_pass": 1,
+          "reps": 3,
+          "max_cte_ft": 10.36
+        },
+        "s03": {
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 0.68
+        },
+        "s04": {
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 0.64
+        },
+        "s05": {
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 0.58
+        }
+      },
+      "competent": false
     },
     "S_mixed_t06": {
-      "error": "no result parsed"
+      "checkpoint": "S_mixed_t06_168x28_w2",
+      "sections": {
+        "s00": {
+          "passed": false,
+          "n_pass": 0,
+          "reps": 3,
+          "max_cte_ft": 42.54
+        },
+        "s01": {
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 0.69
+        },
+        "s02": {
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 1.81
+        },
+        "s03": {
+          "passed": false,
+          "n_pass": 2,
+          "reps": 3,
+          "max_cte_ft": 4.53
+        },
+        "s04": {
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 0.94
+        },
+        "s05": {
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 1.22
+        }
+      },
+      "competent": false
     }
   },
   "all_competent": false,
   "cte_budget_ft": 2.1916011199999996,
-  "git_commit": "c6da960a9e0a016756209b782a85bf658cf353c7",
+  "git_commit": "5868404c641336d67594d4fb90cee06ebb87ec46",
   "reps": 3,
   "note": "clear weather only; s=0 anchor, not a disturbance cell, not a scored ledger cell; every section must hold on every rep"
 }
