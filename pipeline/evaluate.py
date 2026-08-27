@@ -12,6 +12,7 @@ condition as data collection); the network then drives the evaluated loop.
 """
 import os
 import sys
+from pathlib import Path
 import csv
 import argparse
 
@@ -84,7 +85,7 @@ def drive_nn(world, world_map, vehicle, img_queue, model, device, direction, max
     arc = np.concatenate([[0.0], np.cumsum(seg_len)])
     scored_m = C.SECTION_LEN_M.get(direction) if getattr(C, "SECTION_BASED", False) else None
 
-    arc_start = None
+    prev_hint, travelled_m = None, 0.0
     records, left, stalled, offroad = [], False, 0, 0
     for step in range(max_steps):
         env.update_spectator(world, vehicle)
@@ -119,18 +120,25 @@ def drive_nn(world, world_map, vehicle, img_queue, model, device, direction, max
             speed_mph=env.speed_mph(vehicle), x=loc.x, y=loc.y, yaw=tf.rotation.yaw,
         ))
 
-        # Distance travelled FROM HANDOVER, not absolute arc position. Comparing the
-        # absolute position assumed every section's spawn sits at route index 0. Where it
-        # does not, the very first sample already exceeded the section length and the run
-        # stopped immediately: s05 ran FIVE steps and reported 0.06 ft as a PASS.
+        # PROGRESS ALONG THE ROUTE, accumulated from UNWRAPPED index deltas.
+        #
+        # Two earlier attempts at this were wrong and both failed the same way -- the run
+        # stopped after a handful of steps and reported a tiny |CTE| as a PASS:
+        #   1. comparing ABSOLUTE arc position assumed every spawn sits at route index 0;
+        #   2. subtracting a start offset then "correcting" a negative result by one lap
+        #      turned a one-index backward wobble near the seam into a full lap of credit.
+        # Accumulating per-step deltas, each unwrapped to the shorter way round, is immune
+        # to both: a wobble contributes its own small negative and cancels itself.
         if scored_m is not None and hint is not None:
-            here = arc[min(hint, len(arc) - 1)]
-            if arc_start is None:
-                arc_start = here
-            travelled = here - arc_start
-            if travelled < -0.5 * arc[-1]:          # wrapped past the closed loop's seam
-                travelled += arc[-1]
-            if travelled >= scored_m:
+            if prev_hint is not None:
+                d_idx = hint - prev_hint
+                if d_idx > len(route) // 2:
+                    d_idx -= len(route)
+                elif d_idx < -len(route) // 2:
+                    d_idx += len(route)
+                travelled_m += d_idx * float(np.mean(seg_len))
+            prev_hint = hint
+            if travelled_m >= scored_m:
                 print(f"  reached the section's scored end ({scored_m:.0f} m) at step {step}")
                 break
 
@@ -216,6 +224,16 @@ def main():
         camera, img_queue = env.spawn_camera(world, vehicle)
         # after spawn: lights need the vehicle, and exposure is declared per condition
         camera, img_queue = env.set_condition(world, vehicle, args.weather, camera)
+        # Confirm from a RENDERED FRAME that the requested condition is what is actually
+        # being drawn. set_condition already reads the weather struct back, but the
+        # struct is what we asked for, not what the camera sees -- exposure, headlights
+        # and the sensor all sit between them. One frame, and it costs a few ticks.
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+        from condition_signature import assert_condition  # noqa: E402
+        for _ in range(6):
+            f_ = world.tick()
+        _img = env.grab_frame(img_queue, f_)
+        assert_condition(student_preprocess(env.raw_to_bgr(_img), 168, 28), args.weather)
         for d in dirs:
             recs = drive_nn(world, world_map, vehicle, img_queue, model, device, d, min(args.max_steps, C.steps_for(d)))
             results[d] = save_and_report(args.model, d, recs)

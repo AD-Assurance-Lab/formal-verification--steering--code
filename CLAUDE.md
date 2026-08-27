@@ -19,3 +19,46 @@ Rules that still bite:
   parameterized. No SDP-CROWN (needs an L2 ball; vacuous here).
 - `closed_loop_ledger.py` refuses canonical cell names while `FOG_DENSITY_OVERRIDE`/
   `SUN_ALTITUDE_OVERRIDE`/`ROUTE_ROLL` are set, and records full run provenance.
+
+## SIMULATOR HYGIENE — non-negotiable, and re-derived the hard way
+
+A CARLA server degrades SILENTLY. It keeps answering, keeps reporting plausible vehicle
+velocities, and stops advancing physics correctly. Measured on a degraded server:
+
+    sections drove 14-62% of their length at 1.3-5.6 m/s while speed_mph reported 20.0
+    throughout; one run flung the car 190 m in 18 steps; a random section per pass hit
+    6-10 ft while the others sat at 0.5 ft
+
+Restarted, the same code and the same checkpoint drove every section end to end and
+scored 0/6 with max |CTE| 1.02 ft. NOTHING in a result reveals which server you were on.
+An entire night was spent theorising about marginal stability, covariate shift and
+per-section difficulty on top of corrupted runs.
+
+**R-SIM-1. Restart CARLA before every measurement run.** Not when it looks wrong --
+before. `bash scripts/carla_restart.sh`. It costs about 30 s. Parsing bad data costs a
+night, and you cannot tell from the data that you are doing it.
+
+**R-SIM-2. Never `kill -9` a CARLA client.** SIGKILL skips `env.cleanup`, which leaves
+the world in synchronous mode with nothing ticking -- that is how the server gets wedged.
+SIGTERM, wait, and only then SIGKILL. `carla_restart.sh` does this in the right order.
+
+**R-SIM-3. One client at a time.** In synchronous mode ANY connected client's `tick()`
+advances the world, so two processes ticking the same server corrupt each other's runs
+while both appear to work. Never run a sweep in the background and drive manually against
+the same port.
+
+**R-SIM-4. Verify the rendered condition from a FRAME, every run.** `set_condition`
+checks the weather struct, but the struct is what was asked for, not what the camera
+sees. `scripts/condition_signature.py` identifies the condition from one frame and
+`evaluate.py` asserts it. This is the Town04 fog-into-night failure, where fog leaked
+into the night cells and no result could reveal it. Validated 24/24 on held-out captures.
+
+**R-SIM-5. Do not drive the oracle as a routine health check.** It costs a full section
+and keeps the server up longer, which is the exposure being avoided. Restart instead.
+`scripts/carla_health_check.py` exists as a DIAGNOSTIC for when something is already
+suspected, not as routine hygiene.
+
+**R-SIM-6. A run that ends in a handful of steps is a BUG, not a pass.** Three separate
+attempts at the section-end distance cap each terminated runs after 3-5 steps and
+reported a tiny |CTE| as a PASS. Any cell whose step count is far below `steps_for` is
+void. Check step counts before reading verdicts.
