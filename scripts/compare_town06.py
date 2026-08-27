@@ -29,7 +29,15 @@ CERT = REPO / D.CERT_ARTIFACT
 LEDGER = REPO / D.LEDGER_SUBDIR
 
 # Ledger student name -> design student name
-STU = {"S_clear_t06_84x28": "S_clear_t06", "S_mixed_t06_84x28_w3": "S_mixed_t06"}
+# Built from the REGISTRY, not hardcoded. This was a literal map of the 84x28
+# checkpoint names; once the students moved to 168x28 nothing matched, every cell
+# reported its certificate as MISSING, and the summary announced "agreement 0/6" with
+# six CONTRADICTS -- a broken join wearing the costume of a catastrophic result.
+import config as C  # noqa: E402
+STU = {}
+for _nm, _ck, _, _ in C.TOWN06_STUDENTS:
+    STU[_ck] = _nm
+    STU[C.final_student(_ck)] = _nm
 COND_LABEL = {"shadows": "low sun"}
 
 
@@ -77,7 +85,13 @@ def main():
         if cond in D.VACUOUS_CELLS:
             cert_v, note = "CERTIFIED", "vacuous"
         elif key not in cert:
-            cert_v, note = "MISSING", ""
+            # A missing entry means the join is broken, not that the prediction was
+            # wrong. Reporting it as a disagreement invents a finding out of a bug.
+            sys.exit(f"FATAL: no certificate entry for '{key}'.\n"
+                     f"  certificate has: {sorted(k for k in cert if not k.startswith('_'))}\n"
+                     f"  ledger file gave student '{stu_ck}' -> '{stu}'\n"
+                     f"  This is a key mismatch between the certificate and the ledger, "
+                     f"not a disagreement between prediction and outcome.")
         else:
             cert_v, note = cert[key]["verdict"], ""
         agree = (drive, cert_v) in D.AGREES
