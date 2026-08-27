@@ -1,0 +1,16 @@
+{
+  "map": "Town06",
+  "students": {
+    "S_clear_t06": {
+      "error": "no result parsed"
+    },
+    "S_mixed_t06": {
+      "error": "no result parsed"
+    }
+  },
+  "all_competent": false,
+  "cte_budget_ft": 2.1916011199999996,
+  "git_commit": "c6da960a9e0a016756209b782a85bf658cf353c7",
+  "reps": 3,
+  "note": "clear weather only; s=0 anchor, not a disturbance cell, not a scored ledger cell; every section must hold on every rep"
+}

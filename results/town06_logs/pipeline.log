@@ -163,3 +163,48 @@
 [2026-08-26 23:07:50] START distill_S_mixed_t06 (attempt 2)
 [2026-08-26 23:20:22] OK    distill_S_mixed_t06
 [2026-08-26 23:20:22] START student_until_competent (attempt 1)
+[2026-08-27 14:17:01] PROTOCOL lock OK; STUDY_MAP=Town06 CARLA_PORT=3000
+[2026-08-27 14:17:01] route fingerprint 706db50636cbd6c9
+[2026-08-27 14:17:01] START collect_clear (attempt 1)
+[2026-08-27 14:22:22] OK    collect_clear
+[2026-08-27 14:22:22] START train_clear_bc (attempt 1)
+[2026-08-27 14:25:38] OK    train_clear_bc
+[2026-08-27 14:25:38] START dagger_clear (attempt 1)
+[2026-08-27 14:40:02] OK    dagger_clear
+[2026-08-27 14:40:02] GATE  dagger_clear: teacher met budget
+[2026-08-27 14:40:02] START collect_mixed (attempt 1)
+[2026-08-27 14:56:15] OK    collect_mixed
+[2026-08-27 14:56:15] START train_mixed_bc (attempt 1)
+[2026-08-27 15:04:13] OK    train_mixed_bc
+[2026-08-27 15:04:13] START dagger_mixed (attempt 1)
+[2026-08-27 16:02:01] OK    dagger_mixed
+[2026-08-27 16:02:01] GATE  dagger_mixed: teacher met budget
+[2026-08-27 16:02:01] teachers: clear=teacher_clear_t06_dagger_r04 mixed=teacher_mixed_t06_dagger_r05
+[2026-08-27 16:02:01] distil S_clear_t06 -> S_clear_t06_168x28_w2 (168x28, 21408 ReLU) from teacher_clear_t06_dagger_r04
+[2026-08-27 16:02:01] START distill_S_clear_t06 (attempt 1)
+[2026-08-27 16:07:20] OK    distill_S_clear_t06
+[2026-08-27 16:07:20] distil S_mixed_t06 -> S_mixed_t06_168x28_w2 (168x28, 21408 ReLU) from teacher_mixed_t06_dagger_r05
+[2026-08-27 16:07:20] START distill_S_mixed_t06 (attempt 1)
+[2026-08-27 16:29:23] OK    distill_S_mixed_t06
+[2026-08-27 16:29:23] START competence (attempt 1)
+[2026-08-27 16:34:09] PROTOCOL lock OK; STUDY_MAP=Town06 CARLA_PORT=3000
+[2026-08-27 16:34:09] route fingerprint 706db50636cbd6c9
+[2026-08-27 16:34:09] SKIP  collect_clear (manifest exists, fingerprint matches)
+[2026-08-27 16:34:09] SKIP  train_clear_bc
+[2026-08-27 16:34:09] SKIP  dagger_clear
+[2026-08-27 16:34:09] GATE  dagger_clear: teacher met budget
+[2026-08-27 16:34:09] SKIP  collect_mixed (fingerprint matches)
+[2026-08-27 16:34:09] SKIP  train_mixed_bc
+[2026-08-27 16:34:09] SKIP  dagger_mixed
+[2026-08-27 16:34:09] GATE  dagger_mixed: teacher met budget
+[2026-08-27 16:34:09] teachers: clear=teacher_clear_t06_dagger_r04 mixed=teacher_mixed_t06_dagger_r05
+[2026-08-27 16:34:09] SKIP  distil S_clear_t06 (S_clear_t06_168x28_w2 exists)
+[2026-08-27 16:34:09] SKIP  distil S_mixed_t06 (S_mixed_t06_168x28_w2 exists)
+[2026-08-27 16:34:09] START competence (attempt 1)
+[2026-08-27 16:46:42] FAIL  competence attempt 1 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06_logs/competence.log)
+[2026-08-27 16:46:47] START competence (attempt 2)
+[2026-08-27 16:49:16] FAIL  competence attempt 2 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06_logs/competence.log)
+[2026-08-27 16:49:21] FAIL  competence after 2 attempts -- stopping
+[2026-08-27 16:49:21] FATAL: a student is not competent in clear weather. Certifying it would bound
+[2026-08-27 16:49:21]        deviation from an output that is already wrong. Fix capacity or
+[2026-08-27 16:49:21]        distillation before proceeding.
