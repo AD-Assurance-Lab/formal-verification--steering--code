@@ -55,10 +55,20 @@ CONDS = ["clear", "fog", "night", "shadows"]
 # risk with no regulariser, and the KD RMSE column is the tell: if a rung's best epoch
 # arrives very early AND its RMSE is worse than the smaller rung's, that is overfitting,
 # not a capacity limit. w4 peaked at epoch 19 and did exactly that.
+# ROUND 2. Round 1 measured 224x64 w2 at 15/48 and 320x64 w3 at 5/48 -- a real break,
+# but the jump changed TWO things at once, input width AND channels, so it does not say
+# which bought the improvement. These two isolate them:
+#
+#   320x64 w2  115,232 ReLU  490k params  -> input width, channels held at w2
+#   224x64 w3  119,856 ReLU  770k params  -> channels, input held at 224x64
+#
+# Near-identical ReLU counts, so this is also close to cost-matched, the design that
+# settled F11. 448x64 w3 is NOT rerun: it failed to train at all, val MSE flat at 4.80e-3
+# from epoch 1 to 20, i.e. the network collapsed to a constant. That is an optimisation
+# failure at that size and LR, not evidence about size.
 CONFIGS = [
-    ("224x64_w2", 224, 64, "16,32,32", 64, 0.0),    # ~ the teacher's own 200x66
-    ("320x64_w3", 320, 64, "24,48,48", 96, 0.0),    # bigger both ways, 172,848 ReLU
-    ("448x64_w3", 448, 64, "24,48,48", 96, 0.0),    # 243,504 ReLU, near the 325k ceiling
+    ("320x64_w2", 320, 64, "16,32,32", 64, 0.0),
+    ("224x64_w3", 224, 64, "24,48,48", 96, 0.0),
 ]
 TEACHER = "teacher_mixed_t06_dagger_r12"
 
