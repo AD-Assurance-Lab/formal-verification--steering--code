@@ -69,8 +69,24 @@ for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
     say "attempt $attempt/$MAX_ATTEMPTS: not competent yet"
     grep -E "sections within budget" "$LOG_DIR/competence_attempt${attempt}.log" | tee -a "$LOG"
 
+    # Only DAgger the students that FAILED. Running it on a competent student is not
+    # neutral: T06-F13 measured the mixed student going from clear 6/6 at 1.11 ft to
+    # clear 4/6 at 23.00 ft over four rounds, because its DAgger spans four weathers and
+    # at w2 it could not absorb off-nominal states across all of them without losing the
+    # straight-line cue. The gate is per-student, so this loop should be too.
+    NEEDY=$(python3 -c "
+import json
+d = json.load(open('results/town06/competence_clear.json'))
+print(' '.join('clear' if 'clear' in k else 'mixed'
+               for k, v in d['students'].items() if not v.get('competent')))" 2>/dev/null)
+    say "  students needing work: ${NEEDY:-<none parsed>}"
+
     for spec in "${SPECS[@]}"; do
         IFS='|' read -r WHICH BASE DDIR DATASET WEATHERS CH FC IN_W IN_H <<<"$spec"
+        if [ -n "$NEEDY" ] && [[ " $NEEDY " != *" $WHICH "* ]]; then
+            say "  SKIP $WHICH student DAgger -- it already passed the gate"
+            continue
+        fi
         TEACH=$(latest_teacher "teacher_${WHICH}_t06_dagger_r")
         [ -n "$TEACH" ] || { say "FATAL: no ${WHICH} teacher"; exit 1; }
         say "  +$ROUNDS student-DAgger rounds for $WHICH (teacher $TEACH)"
@@ -85,19 +101,20 @@ for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
 done
 
 say "STOPPING after $MAX_ATTEMPTS attempts without both students competent."
-say "This is a plateau, not a budget to widen."
+say "This is a plateau. Read T06-F11 and T06-F13 before reaching for a lever."
 say ""
-say "NEXT LEVER IS WIDTH, and that is evidence, not a guess. Town04 commit 4b2ad73:"
-say "  w1 failed all four conditions; w2 failed night 10/10; w3 passed everything."
-say "  w3 was the MINIMUM that worked there, and both Town04 students then passed"
-say "  student-DAgger at round 0 -- so on that map capacity, not DAgger rounds, was"
-say "  the binding constraint. F7 (5be6862) had blamed DAgger and was wrong."
+say "  Resolution buys STRAIGHTS: the lateral cue on a 620 m straight is sub-pixel at"
+say "  84 px width, and only horizontal resolution addresses it. Width buys CONDITIONS."
+say "  Both students are already at 168x28; clear is w2 (21,408 ReLU) and mixed is w3"
+say "  (32,112), which is the pairing those two findings imply."
 say ""
-say "  Town06 currently uses the same pair: clear (8,16,16)/fc32 = 5,152 ReLU,"
-say "  mixed (24,48,48)/fc96 = 15,456 ReLU. If DAgger has plateaued, re-distil the"
-say "  MIXED student wider (w4: 32,64,64 / fc 128) before adding more rounds."
+say "  If the MIXED student is the one stuck, check whether its clear-weather numbers"
+say "  DEGRADE across rounds. If they do, that is T06-F13 again and the answer is"
+say "  capacity or no DAgger at all for it, NOT more rounds."
 say ""
-say "  Student capacity is NOT frozen by PROTOCOL section 3 -- it is a property of the"
-say "  model under test, not of the criterion -- so widening needs no amendment. It"
-say "  does need declaring, since the paper reports the mixed student as 3x width."
+say "  If the CLEAR student is stuck, it is more likely data: it trains on 18,623"
+say "  samples against the mixed student's 121,925, and distillation seed variance alone"
+say "  moved it across the gate (KD RMSE 0.0489 -> 6/6, 0.0553 -> 5/6, same data, same"
+say "  120 epochs). Collect more clear laps. Do NOT re-roll seeds until one passes --"
+say "  that turns a precondition into a selection step."
 exit 1
