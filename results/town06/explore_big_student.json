@@ -1,0 +1,35 @@
+{
+  "168x28_w2_aug": {
+    "checkpoint": "S_mixed_t06_168x28_w2_aug",
+    "in_w": 168,
+    "in_h": 28,
+    "channels": "16,32,32",
+    "fc": 64,
+    "augment": 0.3,
+    "relu": 21408,
+    "conditions": {
+      "clear": {
+        "fails": 3,
+        "n": 12,
+        "worst_cte_ft": 5.57
+      },
+      "fog": {
+        "fails": 7,
+        "n": 12,
+        "worst_cte_ft": 19.6
+      },
+      "night": {
+        "fails": 8,
+        "n": 12,
+        "worst_cte_ft": 19.57
+      },
+      "shadows": {
+        "fails": 2,
+        "n": 12,
+        "worst_cte_ft": 5.87
+      }
+    },
+    "total_fails": 20,
+    "total_n": 48
+  }
+}

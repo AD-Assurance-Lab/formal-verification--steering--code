@@ -41,10 +41,24 @@ LOGD = REPO / "results" / "town06_logs"
 CONDS = ["clear", "fog", "night", "shadows"]
 
 # (label, in_w, in_h, channels, fc, augment)
+# AUGMENTATION IS OFF, on measurement. At the current architecture, jitter 0.3 gave
+# clear 3/12, fog 7/12, night 8/12, shadows 2/12 = 20/48, against 14/48 without it:
+# worse in clear and fog, and NO change at night, the condition it was aimed at.
+#
+# Why it could not have worked is already in T06-F17. The jitter is a gain and an offset,
+# a*x + b, which models BRIGHTNESS. Night is not a brightness shift -- shadows is DARKER
+# and drives fine -- it is high contrast with 13.8% of pixels clipped to black. Linear
+# jitter cannot reproduce information that clipping destroyed, so it taught nothing about
+# night while making every other condition harder to fit.
+#
+# The remaining rungs therefore test INPUT SIZE, unaugmented. Overfitting stays a live
+# risk with no regulariser, and the KD RMSE column is the tell: if a rung's best epoch
+# arrives very early AND its RMSE is worse than the smaller rung's, that is overfitting,
+# not a capacity limit. w4 peaked at epoch 19 and did exactly that.
 CONFIGS = [
-    ("168x28_w2_aug", 168, 28, "16,32,32", 64, 0.30),   # isolates AUGMENTATION alone
-    ("224x64_w2_aug", 224, 64, "16,32,32", 64, 0.30),   # ~ the teacher's own 200x66
-    ("320x64_w3_aug", 320, 64, "24,48,48", 96, 0.30),   # bigger both ways
+    ("224x64_w2", 224, 64, "16,32,32", 64, 0.0),    # ~ the teacher's own 200x66
+    ("320x64_w3", 320, 64, "24,48,48", 96, 0.0),    # bigger both ways, 172,848 ReLU
+    ("448x64_w3", 448, 64, "24,48,48", 96, 0.0),    # 243,504 ReLU, near the 325k ceiling
 ]
 TEACHER = "teacher_mixed_t06_dagger_r12"
 
