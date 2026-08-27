@@ -33,9 +33,19 @@ pkill -f "[C]arlaUE4-Linux-Shipping.*rpc-port=$PORT" 2>/dev/null
 sleep 10
 rm -f "/tmp/carla-locks/carla-$PORT.lock" 2>/dev/null
 
-( cd "$CARLA_ROOT" && setsid nohup ./CarlaUE4.sh -carla-rpc-port="$PORT" \
-    -RenderOffScreen -quality-level=Epic >>"$REPO/results/town06_logs/carla.log" 2>&1 \
-    < /dev/null & )
+# CARLA_WINDOWED=1 launches with a visible window on DISPLAY so runs can be WATCHED.
+# The spectator chase camera (carla_env.update_spectator) follows the ego automatically;
+# it only needs a window to draw into. Headless is the default for unattended sweeps.
+if [ "${CARLA_WINDOWED:-0}" = "1" ]; then
+    echo "  launching CARLA WINDOWED on DISPLAY=${DISPLAY:-:0}"
+    ( cd "$CARLA_ROOT" && DISPLAY="${DISPLAY:-:0}" setsid nohup ./CarlaUE4.sh \
+        -carla-rpc-port="$PORT" -quality-level=Epic -windowed -ResX=1280 -ResY=720 \
+        >>"$REPO/results/town06_logs/carla.log" 2>&1 < /dev/null & )
+else
+    ( cd "$CARLA_ROOT" && setsid nohup ./CarlaUE4.sh -carla-rpc-port="$PORT" \
+        -RenderOffScreen -quality-level=Epic >>"$REPO/results/town06_logs/carla.log" 2>&1 \
+        < /dev/null & )
+fi
 
 CARLA_PORT=$PORT python3 "$REPO/scripts/wait_carla_ready.py" --timeout 240 || {
     echo "FATAL: CARLA did not come back on $PORT"; exit 1; }

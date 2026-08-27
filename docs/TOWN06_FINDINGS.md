@@ -603,7 +603,82 @@ its ODD" resting on 3/12 is within the letter of the criterion and arguably not 
 spirit. Flagged for Zach rather than resolved here, because changing a scoring rule after
 seeing the scores is exactly what must not happen unilaterally.
 
+## T06-F20  Low sun is defined by its RENDERED OUTCOME, not its sun angle. Town06 moves to 5 degrees.
+
+Under PROTOCOL amendment A-1. The condition definition is NOT in the frozen section, so
+this needs no amendment; the criterion, tolerance, stride and BaB split are untouched.
+
+Zach, watching a run, said the Town06 low-sun condition looked almost like clear with
+shadows on one stretch, and remembered Town04's low sun as "night without headlights".
+Both halves of that turned out to matter, and one of his other recollections was wrong,
+so it was worth checking all of it against the published artifact rather than either
+memory.
+
+### What the published Town04 artifact actually does (v1.0.0)
+
+    CONDITION_DELTAS   low sun 15 deg, night -25 deg          -- identical to Town06
+    CONDITION_EXPOSURE night at 4x daylight (shutter 200/800)  -- ALREADY in Town04
+
+So night exposure was NOT introduced for Town06. Zach believed Town04 used no exposure
+modification; it did, and v1.0.0 shows it. Worth stating plainly because the rest of his
+recollection was right and it would be easy to discount all of it together.
+
+### Measured brightness, from lap captures, of the network's own input
+
+                        Town04 (published)   Town06 at 15 deg   Town06 at 5 deg
+    clear                    0.2411               0.2963              --
+    fog                      0.2641               0.2551              --
+    night                    0.2075               0.2058              --
+    low sun                  0.1117               0.1841             0.1215
+    night MINUS low sun      0.0958               0.0217             0.0843
+
+**Night IS brighter than low sun, on both maps.** Zach remembered that correctly, and it
+is the physically right ordering: night has headlights and 4x exposure, low sun has
+neither.
+
+**But at 15 degrees Town06's low sun is 65% brighter than Town04's**, and sits only 0.022
+below night -- a seventh of Town04's separation. The illumination axis the study depends
+on being ORDERED had effectively collapsed at one end.
+
+**The cause is terrain, which is what Zach guessed.** Identical sun angle, identical
+exposure, identical code: Town04's terrain puts the whole road in shadow at 15 degrees
+and Town06's does not. The paper's own justification says so -- "we call the 15 degree
+case low sun rather than shadows because the whole road is in shadow at that elevation,
+not just part of it" -- and that sentence is a statement about TOWN04'S TERRAIN, not
+about 15 degrees.
+
+### Sweep, and the choice
+
+s00, 16 poses, what the network sees:
+
+    sun alt    mean    pose CV%   vs Town04   night - low sun
+      15      0.1809     6.81      +0.0692        0.0249
+      10      0.1634     5.08      +0.0517        0.0424
+       6      0.1335     3.55      +0.0218        0.0723
+       5      0.1194     3.29      +0.0077        0.0864
+       4      0.0996     3.09      -0.0121        0.1062
+       3      0.0721     3.24      -0.0396        0.1337
+
+5 degrees, validated on all six sections: means 0.1194 to 0.1253, route mean 0.1215
+against Town04's 0.1117 (within 9%), worst pose CV 3.29% against 6.81% at 15 degrees.
+Town04's own low sun has CV 0.32%, so Town06 will never be as uniform -- its darkness
+comes from sun angle rather than terrain occlusion -- but the gap narrows by half.
+
+Headlights key off angle < 0, so 5 degrees stays lights-off low sun and does not drift
+toward night.
+
+### ACTION and its cost
+
+`_LOW_SUN_DEG = {"Town06": 5.0}`, applied in CONDITION_DELTAS. **The angle is map-specific
+and the CONDITION is what is held fixed.** Town04 keeps 15 degrees exactly: the constant
+is shared by both maps, and changing it globally would have silently altered the published
+study while every file still looked correct.
+
+This invalidates every Town06 low-sun frame collected so far -- training data, captures
+and results. Teachers and students both need rebuilding, which was already required.
+
 ## Open
+
 
 
  dispositions -- three cells contradict the pre-registration
