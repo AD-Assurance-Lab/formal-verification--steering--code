@@ -219,7 +219,42 @@ def set_condition(world, vehicle, name, camera=None):
     set_weather(world, name, vehicle)
     if camera is not None:
         camera.destroy()
-    return spawn_camera(world, vehicle, condition=name)
+    cam, q = spawn_camera(world, vehicle, condition=name)
+    verify_condition(world, name)
+    return cam, q
+
+
+def verify_condition(world, name, tick=True):
+    """Read the weather BACK and confirm it is the one that was asked for.
+
+    world.set_weather() applies on the NEXT TICK, and nothing errors if a caller reads or
+    renders before that tick. In the Town04 generation a fog run followed by a night run
+    left fog in the night frames, so the "night" cells were really fog+night. Nothing in
+    the results can reveal that -- the numbers are simply wrong and look fine.
+
+    So the condition is not trusted, it is checked: tick once so the write lands, read
+    the weather back, and compare the fields that DEFINE the conditions this study uses.
+    A mismatch raises rather than warns, because a warning in a long unattended run is a
+    warning nobody reads.
+    """
+    if tick:
+        world.tick()
+    want, got = weather_params(name), world.get_weather()
+    fields = ("fog_density", "sun_altitude_angle", "precipitation",
+              "precipitation_deposits", "cloudiness", "fog_distance", "wetness")
+    bad = []
+    for f in fields:
+        w_, g_ = getattr(want, f, None), getattr(got, f, None)
+        if w_ is None or g_ is None:
+            continue
+        if abs(float(w_) - float(g_)) > 1e-3:
+            bad.append(f"{f}: asked {float(w_):.3f}, got {float(g_):.3f}")
+    if bad:
+        raise RuntimeError(
+            f"CONDITION MISMATCH for '{name}' -- the simulator is not rendering what was "
+            f"requested, so every frame from here is mislabelled:\n    "
+            + "\n    ".join(bad))
+    return got
 
 
 # ── Spawning ─────────────────────────────────────────────────────────────────
