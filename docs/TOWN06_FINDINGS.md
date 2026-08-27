@@ -196,18 +196,72 @@ Two operational facts came out of it, both of which would have cost a night:
    resident. Recorded because the equivalence is proven and the option is now cheap to
    take if certification time ever becomes the constraint.
 
+## T06-F13  Student DAgger is not harmful; the MIXED student lacks capacity for four conditions
+
+Student DAgger took the mixed student from clear 6/6 to clear 4/6, and the first reading
+of that was "DAgger is destroying the student". That reading was wrong, and the control
+that refutes it was already in hand.
+
+Mixed student (168x28 w2, 21,408 ReLU), CLEAR weather only, by round. Its DAgger spans
+four weathers:
+
+    round        held   s01/558m   s03/620m
+    0 (base)     6/6      1.11       0.93
+    1            5/6      1.02       3.09
+    2            4/6      5.01      11.38
+    3            4/6     23.00      23.04
+    4            4/6     11.10       1.16
+
+Clear student (168x28 w2, same 21,408 ReLU), CLEAR weather. Its DAgger is clear-only:
+
+    round 0 (base)  4/6, worst 4.36     round 2  5/6, worst 11.00 (s00)
+    round 1         6/6, worst 1.72     round 3  6/6, worst 1.97   PASSED
+
+Same mechanism, same architecture, same code path, opposite outcome. What differs is
+the weather span of the aggregated data, so the cause is not DAgger.
+
+RULED OUT, in order, before this was written (standing rule 2):
+
+- *Section-skewed collection.* Frame counts per section are flat across rounds and
+  proportional to section length (s00 1,996 : s05 1,096 against 894 m : 490 m). The
+  failing sections are not over-collected, so there is no departure feedback loop.
+- *Preprocessing mismatch.* dagger_student.py and evaluate.py both call
+  `student_preprocess(bgr, model.in_w, model.in_h)`. Same function, same crop.
+- *Resolution mismatch.* --w 168 --h 28 is threaded from the registry into every driver.
+- *Wrong checkpoint evaluated.* `final_student` returns the highest round index; the
+  round checkpoints it selected were the ones the log names.
+- *Disagreeing evaluations.* DAgger's own round-0 clear numbers (6/6, worst 0.93 ft)
+  match the competence gate's independent run (6/6, worst 1.18 ft). They agree.
+
+WHAT IT ACTUALLY IS. The base distillation set is TEACHER-visited states, which sit near
+lane centre. Student DAgger adds STUDENT-visited states, which include departures, and
+for the mixed student three quarters of those are fog, night or shadows. At w2 the
+network cannot absorb off-nominal states across four conditions and keep the
+straight-line cue, and the straight-line cue is what goes first -- s01 and s03, the two
+longest straights, exactly the capability T06-F11 bought with horizontal resolution and
+exactly the one that rests on a sub-pixel signal.
+
+So Town04's finding and F11 are BOTH true, and they are about different things:
+
+    horizontal resolution -> straights   (the lateral cue is sub-pixel)
+    width                 -> conditions  (capacity to carry four of them)
+
+Town04 needed its mixed student at 3x the clear student's width and reached that
+conclusion through night failures; the same constraint arrives here through clear-weather
+straights after DAgger. ACTION: mixed re-distilled at 168x28 w3, 32,112 ReLU. The clear
+student stays at w2, 21,408 ReLU, where its own DAgger passes.
+
+This is a clear-weather competence decision. Clear is the s=0 anchor of the disturbance
+family, not one of the disturbance conditions, so it does not weaken the blind protocol
+(PROTOCOL R3). Student capacity is a property of the model under test rather than of the
+criterion, so widening is declared, not amended.
+
 ## Open
 
-The student architecture question is CLOSED by T06-F11: both students are 168x28 w2,
-21,408 ReLU, and the repeated-drive confirmation holds all six sections on every rep.
+Whether the mixed student at w3 survives its own DAgger. If it degrades in clear again
+at 32,112 ReLU, then two independent width points say the mixed student should not be
+DAgger-ed at all at this resolution, and the base checkpoint is the one to ship. That
+would be a real result rather than a workaround, but it needs the second point first.
 
-What is still open is whether the MIXED student needs more than w2. Town04 needed its
-mixed student at 3x the clear student's width to carry four conditions; here both are
-w2, and horizontal resolution may have absorbed some of that. Its clear-weather
-competence gate is the first evidence either way, and it is running. Widening is a
-declared change, not an amendment: student capacity is a property of the model under
-test, not of the criterion, so PROTOCOL section 3 does not freeze it.
-
-Superseded: the previous note here proposed widening the mixed student w3 -> w4 at
-84x28 and keeping the clear student at 5,152 ReLU. Both halves are obsolete -- the
-binding constraint was horizontal resolution, not width, and it bound BOTH students.
+Verifier cost at 32,112 ReLU follows T06-F12's roughly linear trend, so about 3.8 s/pose
+on CPU with CARLA down. Watched, not assumed.

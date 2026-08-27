@@ -1,0 +1,94 @@
+{
+  "map": "Town06",
+  "students": {
+    "S_clear_t06": {
+      "checkpoint": "S_clear_t06_168x28_w2_dagger_r00",
+      "sections": {
+        "s00": {
+          "passed": false,
+          "n_pass": 0,
+          "reps": 3,
+          "max_cte_ft": 11.15
+        },
+        "s01": {
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 1.57
+        },
+        "s02": {
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 2.01
+        },
+        "s03": {
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 1.61
+        },
+        "s04": {
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 0.24
+        },
+        "s05": {
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 0.25
+        }
+      },
+      "competent": false
+    },
+    "S_mixed_t06": {
+      "checkpoint": "S_mixed_t06_168x28_w2_dagger_r03",
+      "sections": {
+        "s00": {
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 0.99
+        },
+        "s01": {
+          "passed": false,
+          "n_pass": 0,
+          "reps": 3,
+          "max_cte_ft": 11.35
+        },
+        "s02": {
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 1.13
+        },
+        "s03": {
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 1.06
+        },
+        "s04": {
+          "passed": false,
+          "n_pass": 0,
+          "reps": 3,
+          "max_cte_ft": 18.16
+        },
+        "s05": {
+          "passed": true,
+          "n_pass": 3,
+          "reps": 3,
+          "max_cte_ft": 0.32
+        }
+      },
+      "competent": false
+    }
+  },
+  "all_competent": false,
+  "cte_budget_ft": 2.1916011199999996,
+  "git_commit": "94285909dcb553baee3e6395485e68846af03f33",
+  "reps": 3,
+  "note": "clear weather only; s=0 anchor, not a disturbance cell, not a scored ledger cell; every section must hold on every rep"
+}
