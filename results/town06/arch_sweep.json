@@ -1,0 +1,38 @@
+{
+  "84x28_w1": {
+    "in_w": 84,
+    "in_h": 28,
+    "channels": "8,16,16",
+    "fc": 32,
+    "sections": {
+      "s00": {
+        "passed": false,
+        "max_cte_ft": 12.86
+      },
+      "s01": {
+        "passed": false,
+        "max_cte_ft": 16.71
+      },
+      "s02": {
+        "passed": false,
+        "max_cte_ft": 15.2
+      },
+      "s03": {
+        "passed": false,
+        "max_cte_ft": 5.84
+      },
+      "s04": {
+        "passed": false,
+        "max_cte_ft": 4.29
+      },
+      "s05": {
+        "passed": true,
+        "max_cte_ft": 1.92
+      }
+    },
+    "n_pass": 1,
+    "n": 6,
+    "worst_cte_ft": 16.71,
+    "minutes": 2.7
+  }
+}

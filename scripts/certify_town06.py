@@ -151,10 +151,10 @@ def main():
         wpath = Path(C.CHECKPOINT_DIR) / f"{ck}.pth"
         if not wpath.exists():
             sys.exit(f"missing checkpoint {wpath}")
-        net = StudentNet(28, 84, channels=ch, fc=fc).to(dev)
+        net = StudentNet(C.TOWN06_INPUT_H, C.TOWN06_INPUT_W, channels=ch, fc=fc).to(dev)
         net.load_state_dict(torch.load(wpath, map_location=dev, weights_only=True))
         net.eval()
-        bd = cc.Bounder(1, net, dev, 28, 84, method="CROWN")
+        bd = cc.Bounder(1, net, dev, C.TOWN06_INPUT_H, C.TOWN06_INPUT_W, method="CROWN")
         for cond in conds:
             los, his, per_section, origins = [], [], {}, set()
             for sec in D.SECTIONS:
@@ -214,7 +214,9 @@ def main():
         checkpoints={nm: C.final_student(b) for nm, b, _, _ in STUDENTS},
         # 4ac6002: report ReLU count next to every certified rate, so bound looseness
         # from a larger model stays visible rather than being engineered away.
-        relu={nm: C.relu_count(ch, fc) for nm, _, ch, fc in STUDENTS}, nsplit=args.nsplit, stride=args.stride, tolerance=tol,
+        input_size=[C.TOWN06_INPUT_W, C.TOWN06_INPUT_H],
+        relu={nm: C.relu_count(ch, fc, C.TOWN06_INPUT_H, C.TOWN06_INPUT_W)
+              for nm, _, ch, fc in STUDENTS}, nsplit=args.nsplit, stride=args.stride, tolerance=tol,
         t_closed_loop_s=C.T_CLOSED_LOOP_S, lane_width_m=C.LANE_WIDTH_M,
         cte_budget_m=C.CTE_BUDGET_M, lap_end_m=C.LAP_END_M,
         cells_expected=n_expected, cells_scored=n, git_commit=git_head(), device=dev,
