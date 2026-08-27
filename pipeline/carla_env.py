@@ -105,12 +105,34 @@ CLEAR_BASELINE = dict(
 )
 
 # Each condition moves exactly ONE physical axis off the clear baseline.
+# LOW SUN IS DECLARED BY ITS RENDERED OUTCOME, NOT BY ITS SUN ANGLE.
+#
+# The condition is "the whole road uniformly in shadow, still daylight, headlights off".
+# On Town04 that is what 15 degrees produces, because the terrain shadows the road at
+# that elevation. Town06's terrain does not, so the SAME 15 degrees renders a materially
+# different condition. Measured from lap captures, mean brightness of the network's input:
+#
+#                     Town04 (published)   Town06 at 15 deg   Town06 at 5 deg
+#     clear                 0.2411              0.2963              --
+#     night                 0.2075              0.2058              --
+#     low sun               0.1117              0.1841             0.1215
+#     night - low sun       0.0958              0.0217             0.0843
+#
+# At 15 degrees Town06's low sun is 65% brighter than Town04's and nearly indistinguishable
+# from night, which collapses an axis the study depends on being ordered. At 5 degrees it
+# matches Town04 to within 9% and restores the gap. Per-section uniformity improves too:
+# worst pose-to-pose CV 6.81% -> 3.29%, against Town04's 0.32%.
+#
+# So the angle is MAP-SPECIFIC and the CONDITION is what is held fixed. Town04 keeps 15
+# degrees exactly, or the published study stops reproducing.
+_LOW_SUN_DEG = {"Town06": 5.0}
+
 CONDITION_DELTAS = {
     "clear":   {},
     "fog":     dict(fog_density=70.0, fog_distance=10.0, fog_falloff=0.2),
     "rain":    dict(precipitation=85.0, precipitation_deposits=70.0, wetness=80.0),
     "night":   dict(sun_altitude_angle=-25.0),
-    "shadows": dict(sun_altitude_angle=15.0),
+    "shadows": dict(sun_altitude_angle=_LOW_SUN_DEG.get(C.STUDY_MAP, 15.0)),
 }
 
 
