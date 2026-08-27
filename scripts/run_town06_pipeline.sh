@@ -227,19 +227,19 @@ for ROW in "${ROWS[@]}"; do
     else say "SKIP  distil $NM ($CK exists)"; fi
 done
 
-# ---------------------------------------------------------- student DAgger
-# Distillation alone does not produce a usable student -- measured, the distilled
-# S_clear held 1 of 6 sections in clear weather at 16.50 ft against a 2.19 ft budget --
-# so the objective is not "run N rounds", it is "drive every section". This loops
-# student DAgger and the competence gate together until that holds.
+# ---------------------------------------------------------- NO student DAgger
+# T06-F14 removed this stage. It ran student DAgger until the students drove, which was
+# the right call at 84x28 -- the distilled student held 1 of 6 sections at 16.50 ft, so
+# DAgger was rescuing an incompetent policy. At 168x28 distillation alone is already
+# competent and DAgger only takes capability away. Measured, 3 reps, clear weather,
+# architecture held fixed and only the procedure varied:
 #
-# The old skip test looked for $DATA/dagger_student_*/manifest.csv, which
-# dagger_student.py never writes (it writes round00/, round01/, ...), so the stage
-# silently re-ran from scratch on every restart.
-run student_until_competent bash "$REPO/scripts/student_dagger_until_competent.sh" 8 4 || {
-    say "FATAL: students did not reach clear-weather competence."
-    say "       A student that cannot drive clear weather cannot be meaningfully"
-    say "       certified: the bound is on deviation FROM clear."; exit 1; }
+#     mixed w2  distilled only  6/6      after 4 DAgger rounds  3/6
+#     clear w2  distilled only  4/6      after 3 DAgger rounds  4/6, and its worst
+#                                        section went 1/3 at 3.45 ft to 0/3 at 11.97 ft
+#
+# No comparison showed it helping. If a student is not competent now, the lever is data
+# or capacity, and the gate below says so rather than grinding rounds.
 
 # Clear-weather competence, before anything is certified. The certificate bounds
 # deviation FROM clear, so a student that is wrong in clear -- or that ignores its input
