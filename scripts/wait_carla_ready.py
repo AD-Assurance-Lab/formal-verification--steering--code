@@ -31,14 +31,27 @@ def main():
     args = ap.parse_args()
 
     import carla
+    import config as C
+    want = getattr(C, "MAP_NAME", None) or C.STUDY_MAP
     t0 = time.time()
     last = None
     while time.time() - t0 < args.timeout:
         try:
             c = carla.Client("127.0.0.1", args.port)
-            c.set_timeout(10.0)
+            c.set_timeout(30.0)
             w = c.get_world()
             m = w.get_map().name
+            # LOAD THE STUDY MAP HERE, not in the first measurement run. A fresh server
+            # serves its default map, and switching to Town06 is heavy enough to blow the
+            # 120 s client timeout inside evaluate.py -- which surfaces as
+            # "time-out of 120000ms while waiting for the simulator" and is then recorded
+            # as a student producing no result. Paying that cost once, here, means the
+            # first timed run finds the map already loaded.
+            if want and want.lower() not in m.lower():
+                print(f"loading {want} (server is on {m})", flush=True)
+                c.set_timeout(180.0)
+                w = c.load_world(want)
+                m = w.get_map().name
             print(f"CARLA ready on {args.port} after {time.time() - t0:.0f}s (map {m})")
             return 0
         except Exception as e:
