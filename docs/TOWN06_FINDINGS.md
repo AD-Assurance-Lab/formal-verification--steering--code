@@ -112,6 +112,40 @@ that was never the right comparison.
 within 19-25 steps at 22-53 ft. This is visual non-transfer across maps, already known
 to the lab, and it separates nothing. Recorded so the CARLA time is not spent again.
 
+## T06-F11  Horizontal resolution is the lever on straights, and F11's rejection used the wrong aspect ratio
+
+Width x input-resolution sweep, distilled from the same clear teacher, scored CLOSED
+LOOP over all six sections (single run each; a repeated-drive confirmation follows).
+
+    config       ReLU   px per 0.668 m   held   worst_ft   s01/558m   s03/620m
+    84x28  w1   5,152        1.79        1/6      16.71      16.71       5.84
+    84x28  w2  10,304        1.79        2/6      18.65       7.89       3.19
+    168x28 w1  10,704        3.57        2/6      22.60      22.60       1.76
+    84x28  w3  15,456        1.79        4/6      11.05      11.05       2.61
+    224x28 w1  14,400        4.76        5/6      12.24      12.24       1.59
+    112x38 w2  21,504        2.38        4/6      12.97      12.97       2.69
+    168x28 w2  21,408        3.57        6/6       0.97       0.75       0.97
+
+THE CONTROLLED COMPARISON. 112x38 w2 and 168x28 w2 cost the SAME -- 21,504 against
+21,408 ReLU -- and differ only in how the pixels are spent. Splitting the budget across
+both axes holds 4/6 at 12.97 ft; spending it all horizontally holds 6/6 at 0.97 ft,
+inside the 2.19 ft budget with 2.3x margin, and with NO student-DAgger at all. That is
+the same condition in which Town04's students passed at round 0 (0.53-1.61 ft).
+
+WHY. The control error is LATERAL, so it is horizontal resolution that carries it.
+Vertical resolution buys nothing for lane-keeping and F11 (4badcfa) spent half its
+budget there, which is why "resolution loses on both axes" was the honest reading of
+what it measured. Widening ONE axis also costs ReLU linearly rather than k^2.
+
+NEITHER LEVER ALONE SUFFICES. At 84 px, tripling width takes s03 only from 5.84 to
+2.61 and still misses budget. At w1, doubling resolution fixes s03 (1.76) but leaves
+s01 at 22.60. Only the combination holds both. s01 was not a counterexample to the
+mechanism -- it needed both.
+
+This does not overturn F11 on Town04, whose longest straight is 258 m and where the
+sub-pixel regime is never entered. It says the conclusion is route-dependent and the
+aspect ratio was the confound.
+
 ## Open
 
 Capacity for the mixed student (w3 -> w4, 15,456 -> 20,608 ReLU) is the one lever Town04
