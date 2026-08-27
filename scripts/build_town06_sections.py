@@ -12,12 +12,29 @@ clean road. Direction pairing is not a requirement, so this builds a SET of disj
 clean sections totalling the target distance instead.
 
 A section is contiguous road that is:
-  - lane-marked on at least one side      (what a lane keeper follows; the first Town06
-                                           route failed here, 7.55 % unmarked, and its
-                                           teacher failed all six DAgger rounds while the
-                                           oracle drove the same route at 0.43 ft)
+  - lane-marked on BOTH sides             (the policy steers off its two lane lines. The
+                                           original test rejected a waypoint only when
+                                           BOTH markings were absent, so road keeping one
+                                           line and losing the other passed as clean --
+                                           s02 ran 385 m of its 628 m, 61%, with only one
+                                           line, and s04 lost one for 33 m at its spawn)
+  - in the SECOND LANE FROM THE LEFT      (so both references are dashed lane lines and
+                                           on-ramps and off-ramps, which join and leave
+                                           on the right, never touch them. Measured on
+                                           the first selection: only s03 of six sections
+                                           was here. Four were RIGHTMOST, where the right
+                                           reference is a road edge and ramps merge into
+                                           exactly the marking the policy depends on, and
+                                           s01 was a single-lane road with no dashed
+                                           context at all)
   - not on a signal-controlled lane
   - lane width 3.500 m                    (the CTE budget is derived from it)
+
+Junctions are NOT excluded as such. CARLA's is_junction covers on-ramps, off-ramps and
+merges as well as crossroads, and ramps are legitimate highway road: 505 m of the first
+selection was flagged is_junction while only 73 m was true crossing-traffic intersection.
+What matters is whether the EGO LANE keeps its two markings, which the marking test above
+decides directly and without having to classify junction geometry.
 
 Sections are de-duplicated geometrically: adjacent lanes of the same carriageway trace
 almost the same line, and counting them separately would inflate the distance without
@@ -46,9 +63,24 @@ from build_study_route import controlled_waypoints, dstats, REF, LANE_W, LANE_W_
 MAP = "Town06"
 NONE_MARK = carla.LaneMarkingType.NONE
 MIN_SECTION_M = 350.0
+# Second lane from the left. Both references are then dashed lane lines, and
+# ramps joining or leaving on the right never disturb them.
+EGO_LANE_FROM_LEFT = 1
 TAIL_M = 300.0            # stored past the scored end so pure pursuit never wraps
 DEDUP_M = 25.0            # two sections closer than this along their length are the same road
 ROUTES_DIR = os.path.join(C.DATASET_DIR, f"routes_{MAP.lower()}")
+
+
+def lanes_from_left(wp):
+    """How many same-direction driving lanes lie to the left of this one. 0 = leftmost."""
+    n, w = 0, wp
+    while True:
+        nxt = w.get_left_lane()
+        if (nxt is None or nxt.lane_type != carla.LaneType.Driving
+                or (nxt.lane_id > 0) != (wp.lane_id > 0)):
+            return n
+        n += 1
+        w = nxt
 
 
 def clean_mask(wmap, r, CTL):
@@ -58,7 +90,13 @@ def clean_mask(wmap, r, CTL):
                                project_to_road=True, lane_type=carla.LaneType.Driving)
         lm = wp.left_lane_marking.type if wp.left_lane_marking else NONE_MARK
         rm = wp.right_lane_marking.type if wp.right_lane_marking else NONE_MARK
-        if (lm == NONE_MARK and rm == NONE_MARK) or abs(wp.lane_width - LANE_W) > LANE_W_TOL:
+        # BOTH markings, not either: the policy steers off two lines and losing one is
+        # exactly the case the previous test let through.
+        if lm == NONE_MARK or rm == NONE_MARK:
+            ok[i] = False
+        elif abs(wp.lane_width - LANE_W) > LANE_W_TOL:
+            ok[i] = False
+        elif lanes_from_left(wp) != EGO_LANE_FROM_LEFT:
             ok[i] = False
     if len(CTL):
         d = np.hypot(CTL[:, 0][None, :] - r[:, 0][:, None],
@@ -105,7 +143,8 @@ def main():
         sl = np.array([[l.location.x, l.location.y]
                        for l in world.get_lightmanager().get_all_lights(carla.LightGroup.Street)])
 
-        seeds = [w for w in wmap.generate_waypoints(40.0) if not w.is_junction]
+        seeds = [w for w in wmap.generate_waypoints(40.0)
+                 if not w.is_junction and lanes_from_left(w) == EGO_LANE_FROM_LEFT]
         seen, found = set(), []
         for sd in seeds:
             key = (sd.road_id, sd.lane_id)
