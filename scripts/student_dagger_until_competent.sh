@@ -50,7 +50,8 @@ for nm, ck, ch, fc in C.TOWN06_STUDENTS:
     ddir  = f'dagger_student_{which}_t06'
     dset  = f'{which}_t06'
     wx    = 'clear' if which == 'clear' else 'clear,fog,night,shadows'
-    print('|'.join([which, ck, ddir, dset, wx, ','.join(str(c) for c in ch), str(fc)]))")
+    print('|'.join([which, ck, ddir, dset, wx, ','.join(str(c) for c in ch), str(fc),
+                    str(C.TOWN06_INPUT_W), str(C.TOWN06_INPUT_H)]))")
 
 latest_teacher() { ls -1 "$REPO"/pipeline/checkpoints/$1*.pth 2>/dev/null \
     | sort | tail -1 | xargs -r basename | sed 's/\.pth$//'; }
@@ -69,12 +70,12 @@ for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
     grep -E "sections within budget" "$LOG_DIR/competence_attempt${attempt}.log" | tee -a "$LOG"
 
     for spec in "${SPECS[@]}"; do
-        IFS='|' read -r WHICH BASE DDIR DATASET WEATHERS CH FC <<<"$spec"
+        IFS='|' read -r WHICH BASE DDIR DATASET WEATHERS CH FC IN_W IN_H <<<"$spec"
         TEACH=$(latest_teacher "teacher_${WHICH}_t06_dagger_r")
         [ -n "$TEACH" ] || { say "FATAL: no ${WHICH} teacher"; exit 1; }
         say "  +$ROUNDS student-DAgger rounds for $WHICH (teacher $TEACH)"
         ( cd "$REPO/pipeline" && python3 dagger_student.py \
-            --student "$BASE" --w 84 --h 28 --rounds "$ROUNDS" \
+            --student "$BASE" --w "$IN_W" --h "$IN_H" --rounds "$ROUNDS" \
             --weathers "$WEATHERS" --dagger-dir "$DDIR" --teacher "$TEACH" \
             --base "$DATASET" --channels "$CH" --fc "$FC" \
             --distill-dirs "dagger_${WHICH}_t06,${DDIR}") \
