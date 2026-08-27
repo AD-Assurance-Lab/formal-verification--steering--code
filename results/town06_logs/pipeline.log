@@ -123,3 +123,5 @@
 [2026-08-26 18:42:25] START distill_S_mixed_t06 (attempt 1)
 [2026-08-26 18:50:45] OK    distill_S_mixed_t06
 [2026-08-26 18:50:45] START student_until_competent (attempt 1)
+[2026-08-26 20:06:04] FAIL  student_until_competent attempt 1 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06_logs/student_until_competent.log)
+[2026-08-26 20:06:09] START student_until_competent (attempt 2)

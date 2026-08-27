@@ -80,6 +80,38 @@ sections -- they expose bias mercilessly -- and the ones defeating the students.
 Dropping them would remove the most discriminating road, and PROTOCOL section 6 forbids
 re-selecting a route on policy behaviour in any case.
 
+## T06-F9  The route is NOT a fair analogue: my selection dropped the curvature match
+
+Longest unbroken dead-straight run (|kappa| < 1e-5):
+
+    Town04 eastbound   258 m        Town06 s03   620 m   (of a 622 m section)
+    Town04 westbound   200 m        Town06 s01   558 m
+                                    Town06 s02   404 m
+                                    Town06 s04   264 m
+                                    Town06 s05   232 m
+                                    Town06 s00   166 m
+
+Town04 is continuously curving: nothing in it exceeds 258 m without curvature to
+correct against. FOUR of the six Town06 sections contain straights longer than
+anything in the reference study, and s03 is a single 620 m straight line.
+
+This is a selection error of mine, not a property of Town06. The FIRST route criterion
+did match Town04's curvature distribution. When selection was rewritten around "longest
+clean run" after the lane-marking discovery (T06-F6's sibling), the curvature match was
+dropped entirely -- optimised for clean road, stopped checking it was Town04-LIKE road.
+
+So the students have been failing on a substrate with 2-3x longer unbroken straights
+than the reference ever contained, which is precisely the geometry in which a small
+steering bias integrates unopposed (T06-F8). The plateau in T06-F2 and the
+capacity/balance/crop/fidelity refutations in F4-F7 were all measured against a route
+that was never the right comparison.
+
+## T06-F10  Town04 students do not transfer to Town06  (EXPECTED, no information)
+
+`S_clear_84x28`, which drives Town04 at 0/10 failures, departs every Town06 section
+within 19-25 steps at 22-53 ft. This is visual non-transfer across maps, already known
+to the lab, and it separates nothing. Recorded so the CARLA time is not spent again.
+
 ## Open
 
 Capacity for the mixed student (w3 -> w4, 15,456 -> 20,608 ReLU) is the one lever Town04
