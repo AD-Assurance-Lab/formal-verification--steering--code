@@ -291,13 +291,19 @@ def steps_for(section, margin=1.0):
 # resolution -- at 84 px the whole 0.668 m CTE budget spans 1.79 px of image shift at
 # 20 m lookahead, and a 0.1 m error spans 0.27 px, so on a 620 m straight the only cue
 # is sub-pixel. scripts/sweep_student_arch.py measures this closed-loop.
-TOWN06_INPUT_W, TOWN06_INPUT_H = (int(os.environ.get("T06_IN_W", "84")),
+# MEASURED (T06-F11): 168x28. The control error is LATERAL, so horizontal resolution
+# carries it and vertical buys nothing. At matched cost, 112x38 w2 (21,504 ReLU) holds
+# 4/6 sections at 12.97 ft while 168x28 w2 (21,408) holds 6/6 at 0.97 ft -- inside the
+# 2.19 ft budget with 2.3x margin, on all 3 reps, with NO student-DAgger. Town04's F11
+# rejected resolution having tested only 112x38, which spends half the budget on the
+# axis that does not help.
+TOWN06_INPUT_W, TOWN06_INPUT_H = (int(os.environ.get("T06_IN_W", "168")),
                                   int(os.environ.get("T06_IN_H", "28")))
 
 #   (name, checkpoint stem, conv channels, FC width)
 TOWN06_STUDENTS = (
-    ("S_clear_t06", "S_clear_t06_84x28",    (8, 16, 16), 32),
-    ("S_mixed_t06", "S_mixed_t06_84x28_w4", (32, 64, 64), 128),
+    ("S_clear_t06", "S_clear_t06_168x28_w2", (16, 32, 32), 64),
+    ("S_mixed_t06", "S_mixed_t06_168x28_w2", (16, 32, 32), 64),
 )
 
 
