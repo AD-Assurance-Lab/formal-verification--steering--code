@@ -130,5 +130,71 @@
     },
     "total_fails": 48,
     "total_n": 48
+  },
+  "320x64_w2": {
+    "checkpoint": "S_mixed_t06_320x64_w2",
+    "in_w": 320,
+    "in_h": 64,
+    "channels": "16,32,32",
+    "fc": 64,
+    "augment": 0.0,
+    "relu": 115232,
+    "conditions": {
+      "clear": {
+        "fails": 6,
+        "n": 12,
+        "worst_cte_ft": 10.67
+      },
+      "fog": {
+        "fails": 7,
+        "n": 12,
+        "worst_cte_ft": 15.53
+      },
+      "night": {
+        "fails": 6,
+        "n": 12,
+        "worst_cte_ft": 26.88
+      },
+      "shadows": {
+        "fails": 6,
+        "n": 12,
+        "worst_cte_ft": 7.3
+      }
+    },
+    "total_fails": 25,
+    "total_n": 48
+  },
+  "224x64_w3": {
+    "checkpoint": "S_mixed_t06_224x64_w3",
+    "in_w": 224,
+    "in_h": 64,
+    "channels": "24,48,48",
+    "fc": 96,
+    "augment": 0.0,
+    "relu": 119856,
+    "conditions": {
+      "clear": {
+        "fails": 3,
+        "n": 12,
+        "worst_cte_ft": 13.46
+      },
+      "fog": {
+        "fails": 6,
+        "n": 12,
+        "worst_cte_ft": 33.11
+      },
+      "night": {
+        "fails": 8,
+        "n": 12,
+        "worst_cte_ft": 22.51
+      },
+      "shadows": {
+        "fails": 0,
+        "n": 12,
+        "worst_cte_ft": 1.2
+      }
+    },
+    "total_fails": 17,
+    "total_n": 48
   }
 }

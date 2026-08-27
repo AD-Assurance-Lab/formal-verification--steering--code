@@ -18,6 +18,7 @@ import argparse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import torch  # noqa: E402
+import numpy as np
 import carla  # noqa: E402
 import matplotlib  # noqa: E402
 matplotlib.use("Agg")
@@ -67,6 +68,22 @@ def drive_nn(world, world_map, vehicle, img_queue, model, device, direction, max
     start = carla.Location(x=spawn["x"], y=spawn["y"], z=spawn["z"])
     print(f"\n=== {direction.upper()} (network in control) ===")
 
+    # STOP AT THE SECTION'S END, MEASURED ALONG THE ROUTE.
+    #
+    # steps_for() caps STEPS, computed as length / (TARGET_SPEED * dt). That bounds
+    # distance only if the vehicle holds target speed exactly. It runs slightly hot, so
+    # runs overshot: fog failures on s02 peaked at 639 m and 634 m of a 628 m section,
+    # 101-102% through, and night peaked at 94-101% on four sections. Past the boundary
+    # the car is in the unclean road the section was CLIPPED TO EXCLUDE, and the
+    # excursion it finds there was being recorded as that section's max |CTE|.
+    #
+    # steps_for's own docstring already names this failure mode -- "it fails there for
+    # reasons that have nothing to do with the policy" -- and fixes it with a step cap.
+    # A step cap is the wrong instrument for a distance bound. This is the right one.
+    seg_len = np.linalg.norm(np.diff(route, axis=0), axis=1)
+    arc = np.concatenate([[0.0], np.cumsum(seg_len)])
+    scored_m = C.SECTION_LEN_M.get(direction) if getattr(C, "SECTION_BASED", False) else None
+
     records, left, stalled, offroad = [], False, 0, 0
     for step in range(max_steps):
         env.update_spectator(world, vehicle)
@@ -100,6 +117,10 @@ def drive_nn(world, world_map, vehicle, img_queue, model, device, direction, max
             cte_m=cte, cte_ft=(cte * C.M_TO_FT if cte is not None else None),
             speed_mph=env.speed_mph(vehicle), x=loc.x, y=loc.y, yaw=tf.rotation.yaw,
         ))
+
+        if scored_m is not None and hint is not None and arc[min(hint, len(arc) - 1)] >= scored_m:
+            print(f"  reached the section's scored end ({scored_m:.0f} m) at step {step}")
+            break
 
         d0 = loc.distance(start)
         if d0 > 50.0:
