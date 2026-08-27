@@ -242,7 +242,11 @@ def main():
 
     print("\n" + "=" * 60)
     for d, s in results.items():
+        # steps= belongs on the SUMMARY line too, not only the progress line: callers
+        # parse this one, and R-SIM-6 says a run that ends far short of steps_for is void
+        # rather than a pass. Without the step count they cannot tell.
         print(f"{d:10s}: {'PASS' if s.get('passed') else 'FAIL'} "
+              f"steps={s.get('n', 0)} "
               f"max|CTE|={s.get('max_abs_cte_m', 0)*C.M_TO_FT:.2f}ft "
               f"over-budget={s.get('frac_over_budget', 1)*100:.1f}%")
 

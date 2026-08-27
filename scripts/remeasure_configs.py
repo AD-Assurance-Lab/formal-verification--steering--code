@@ -48,8 +48,21 @@ def parse(out):
                         cte = float(t.split("max|CTE|=")[1].split("ft")[0])
                     except Exception:
                         pass
-                res[sec] = dict(passed="PASS" in t, max_cte_ft=cte)
+                steps = None
+                if "steps=" in t:
+                    try:
+                        steps = int(t.split("steps=")[1].split()[0])
+                    except Exception:
+                        pass
+                res[sec] = dict(passed="PASS" in t, max_cte_ft=cte, steps=steps)
     return res
+
+
+def restart_carla():
+    """R-SIM-1: fresh server before every cell. R-SIM-2: SIGTERM before SIGKILL."""
+    subprocess.run(["bash", str(REPO / "scripts" / "carla_restart.sh")],
+                   capture_output=True, text=True,
+                   env=dict(os.environ, CARLA_PORT=os.environ.get("CARLA_PORT", "3000")))
 
 
 def main():
@@ -72,8 +85,9 @@ def main():
               flush=True)
         per = {}
         for cond in CONDS:
-            runs, worst = [], 0.0
+            runs, worst, short = [], 0.0, 0
             for _ in range(reps):
+                restart_carla()          # R-SIM-1, every single run
                 cmd = [sys.executable, "evaluate.py", "--model", ck,
                        "--direction", "all", "--weather", cond, "--max-steps", "2000"]
                 if is_student:
@@ -90,8 +104,14 @@ def main():
                     continue
                 runs += [v["passed"] for v in r.values()]
                 worst = max(worst, max((v["max_cte_ft"] or 0.0) for v in r.values()))
+                short += sum(1 for s, v in r.items()
+                             if v.get("steps") is not None
+                             and v["steps"] < 0.8 * C.steps_for(s))
             per[cond] = dict(fails=sum(1 for x in runs if not x), n=len(runs),
-                             worst_cte_ft=worst)
+                             worst_cte_ft=worst, short_runs=short)
+            if short:
+                print(f"  !! {cond}: {short} run(s) ended far short of steps_for -- "
+                      f"VOID, not a pass (R-SIM-6)", flush=True)
             print(f"  {cond:9s} {per[cond]['fails']:2d}/{per[cond]['n']:2d} failures, "
                   f"worst |CTE| {worst:6.2f} ft", flush=True)
         results[label] = dict(checkpoint=ck, relu=relu, conditions=per,
