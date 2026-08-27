@@ -325,26 +325,35 @@ def relu_count(channels, fc, in_h=28, in_w=84):
 
 
 def final_student(base):
-    """The checkpoint that IS the student: the newest student-DAgger round, else base.
+    """The checkpoint that IS the student. Since T06-F14 that is the DISTILLED one.
 
-    distill.py writes <base>.pth and dagger_student.py then writes
-    <base>_dagger_r00.pth, _r01.pth, ... The distilled checkpoint is an intermediate,
-    not the policy: measured on Town06, the base S_clear held 1 of 6 sections in clear
-    weather with a worst |CTE| of 16.50 ft, while three rounds of student DAgger took
-    the same student to 4 of 6 at 8.57 ft.
+    This function used to return the newest <base>_dagger_rNN, because student DAgger
+    was part of the procedure and every downstream stage was naming the distilled
+    intermediate -- the gate, the certifier and the ledger would each have used a model
+    nobody intended to ship.
 
-    Every downstream stage named the BASE. The competence gate therefore tested a model
-    nobody intends to ship, and the certifier and ledger would have certified and driven
-    it too -- bounding and measuring a policy that is not the one under study.
+    T06-F14 removed student DAgger: at 168x28 it is harmful, not merely unnecessary
+    (mixed 6/6 -> 3/6 on a 3-rep clear gate). So the distilled checkpoint IS the policy
+    and the old preference is exactly backwards -- it now selects the artefact of a
+    procedure that is no longer run. That is not hypothetical: it happened. A gate run
+    reported the mixed student at 3/6 and the clear student at 5/6, both NOT COMPETENT,
+    while the freshly distilled checkpoints sat unread beside them, and the 3/6 matched
+    the DAgger'd model's measured score exactly.
+
+    Stale rounds are therefore a hard error rather than a warning. They are only ever
+    left behind by a procedure this study has abandoned, and silently preferring either
+    checkpoint is how the wrong model gets certified.
     """
     import glob as _glob
-    rounds = _glob.glob(os.path.join(CHECKPOINT_DIR, f"{base}_dagger_r*.pth"))
-    if not rounds:
-        return base
-    def _n(p_):
-        m = re.search(r"_dagger_r(\d+)\.pth$", p_)
-        return int(m.group(1)) if m else -1
-    return os.path.basename(max(rounds, key=_n))[:-4]
+    stale = _glob.glob(os.path.join(CHECKPOINT_DIR, f"{base}_dagger_r*.pth"))
+    if stale:
+        raise RuntimeError(
+            f"{len(stale)} student-DAgger checkpoint(s) for '{base}' are still in "
+            f"{CHECKPOINT_DIR}. Student DAgger was removed by T06-F14 and these are "
+            f"stale artefacts of it; leaving them there is how the wrong model gets "
+            f"certified. Move them to checkpoints/_superseded_student_dagger/ "
+            f"(they are kept, not deleted) and re-run.")
+    return base
 
 
 # ── Unit conversions ─────────────────────────────────────────────────────────
