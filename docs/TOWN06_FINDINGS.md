@@ -340,7 +340,70 @@ directory names. It was never safe across repeated runs of the same weather, and
 a dataset is exactly when that happens. Lap indices now continue past whatever is on
 disk (`clear: 4 lap(s) already on disk, collecting lap04..lap19`).
 
+## T06-F16  DEPLOYMENT TEST RESULT: the certificate agreed with driving on 5 of 6 cells
+
+The certificate was computed blind and committed at e0a461f BEFORE any scored drive.
+check_order_town06.py verifies that ordering independently of the script that ran it.
+245 poses per cell, stride 8, 16-way BaB, both students 168x28 w2 at 21,408 ReLU.
+
+    condition  student       driving              certificate      agree
+    ------------------------------------------------------------------------
+    clear      S_clear_t06   PASS  0/12 [ 0, 24]%  CERTIFIED        vacuous
+    clear      S_mixed_t06   PASS  0/12 [ 0, 24]%  CERTIFIED        vacuous
+    fog        S_clear_t06   FAIL 12/12 [76,100]%  NOT_CERTIFIED    yes
+    fog        S_mixed_t06   PASS  3/12 [ 9, 53]%  NOT_CERTIFIED    NO
+    night      S_clear_t06   FAIL 12/12 [76,100]%  NOT_CERTIFIED    yes
+    night      S_mixed_t06   FAIL  9/12 [47, 91]%  NOT_CERTIFIED    yes
+    low sun    S_clear_t06   FAIL 12/12 [76,100]%  NOT_CERTIFIED    yes
+    low sun    S_mixed_t06   PASS  0/12 [ 0, 24]%  CERTIFIED        yes
+
+    agreement on scored cells: 5/6 (clear excluded, vacuous by construction)
+
+The single disagreement, mixed/fog, is in the CONSERVATIVE direction: the certificate
+declined to certify a cell that then drove clean. That is the direction a sound bound is
+allowed to be wrong in, and it was flagged before the drives as the near-miss -- its
+bound was [-0.62, +1.67] x tolerance, failing on one side only. An unsound bound would
+have certified a cell that then failed, and none did.
+
+This is the deployment test, not the discovery test: new map, new teachers, new students,
+criterion frozen by PROTOCOL section 3 and unchanged from the published Town04 study.
+
+## Open dispositions -- three cells contradict the pre-registration
+
+Standing rule 2: each is a BUG until a written disposition rules out the candidate
+causes. None of these is a finding yet, and none should be written up as one.
+
+**D-T06-1  fog/S_clear_t06 drove FAIL 12/12; expected PASS.**
+The pre-registration carried Town04 disposition D-14 forward, which established that the
+clear-only student is genuinely robust in fog on open road. It did not transfer. Candidate
+causes not yet ruled out: Town06 fog renders differently against this geometry; the
+Town06 clear student is a different model trained on different data, including the
+borrowed off-nominal frames of T06-F14; D-14 may itself have been map-specific and was
+carried over without re-derivation.
+
+**D-T06-2  fog/S_mixed_t06 drove PASS but was NOT_CERTIFIED; expected CERTIFIED.**
+This is the 5/6 disagreement. Candidate causes: bound looseness at 21,408 ReLU rather
+than real behaviour, since it misses on one side by 1.67x; the pooled route-mean over 245
+poses may be dominated by a few sections. Check the per-section bounds already recorded
+in the certificate before concluding anything about the criterion.
+
+**D-T06-3  night/S_mixed_t06 drove FAIL 9/12; expected PASS.**
+The mixed student was TRAINED on night and still fails it. This is the one that matters
+most, because it is a competence claim rather than a certificate claim, and the
+certificate agreed with the failure. Candidate causes: the mixed student at w2 lacks the
+capacity for night on this map (Town04 needed 3x the clear student's width and this one
+is the SAME width as its clear counterpart -- see T06-F14, where w3 measured worse in
+CLEAR weather, which is not evidence about night); the clear-weather competence gate says
+nothing about night by construction; night on Town06's unlit sections may be materially
+harder than Town04's lit highway.
+
+Note for D-T06-3: the clear-weather gate passed the clear student at 2.17 ft against a
+2.19 ft budget, a 1% margin on s03, while every other section sat at 15-48%. That student
+is competent by the declared criterion and barely so. It is not implicated in the night
+cells, but any future reading of these results should know it.
+
 ## Open
+
 
 Whether more clear data makes the clear student clear the 3-rep gate reliably rather than
 by seed. 16 additional clear laps are being collected, taking the base set from 8,652 to
