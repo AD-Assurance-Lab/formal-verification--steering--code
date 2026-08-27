@@ -283,6 +283,17 @@ def steps_for(section, margin=1.0):
 # night 10/10, w3 passed everything) and the one Zach identified as justified, since the
 # mixed student needs capacity for the disturbances rather than for the route.
 #
+# Input size is SHARED by both students, deliberately: the verification captures are
+# projected to the model input at capture time, so two different input sizes would mean
+# two capture sets (24 npz files each). Only channel width differs per student.
+#
+# 84x28 is the published Town04 size. Town06's long straights may need more HORIZONTAL
+# resolution -- at 84 px the whole 0.668 m CTE budget spans 1.79 px of image shift at
+# 20 m lookahead, and a 0.1 m error spans 0.27 px, so on a 620 m straight the only cue
+# is sub-pixel. scripts/sweep_student_arch.py measures this closed-loop.
+TOWN06_INPUT_W, TOWN06_INPUT_H = (int(os.environ.get("T06_IN_W", "84")),
+                                  int(os.environ.get("T06_IN_H", "28")))
+
 #   (name, checkpoint stem, conv channels, FC width)
 TOWN06_STUDENTS = (
     ("S_clear_t06", "S_clear_t06_84x28",    (8, 16, 16), 32),

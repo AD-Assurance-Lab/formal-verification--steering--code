@@ -71,7 +71,8 @@ def run_eval(ckpt, channels, fc):
     env = dict(os.environ, STUDY_MAP=C.STUDY_MAP, PYTHONUNBUFFERED="1")
     cmd = [sys.executable, "evaluate.py", "--model", ckpt, "--direction", "all",
            "--weather", "clear", "--max-steps", "2000",
-           "--channels", channels, "--fc", str(fc), "--student"]
+           "--channels", channels, "--fc", str(fc), "--student",
+           "--in-w", str(C.TOWN06_INPUT_W), "--in-h", str(C.TOWN06_INPUT_H)]
     p = subprocess.run(cmd, cwd=str(REPO / "pipeline"), env=env,
                        capture_output=True, text=True)
     return p.stdout + p.stderr

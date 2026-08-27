@@ -54,6 +54,11 @@ YAWS = np.array([float(x) for x in os.environ.get(
     "OY_YAWS", "-6.0,-3.0,0.0,3.0,6.0").split(",")])   # degrees of heading error
 CONDS = os.environ.get("OY_CONDS", "clear,fog,night,shadows").split(",")
 OUT = REPO / os.environ.get("OY_OUT", "results/calibration/offset_yaw.npz")
+# Model input size. Defaults to the published 84x28, so Town04 captures are unchanged.
+# It is read here rather than hardcoded because the captures ARE the verifier's input:
+# a student at a different resolution needs its own capture set.
+IN_W = int(os.environ.get("OY_IN_W", "84"))
+IN_H = int(os.environ.get("OY_IN_H", "28"))
 
 
 def main():
@@ -77,7 +82,7 @@ def main():
     poses = [rows[i] for i in idx]
 
     n = len(CONDS) * len(poses) * len(OFFSETS) * len(YAWS)
-    frames = np.zeros((len(CONDS), len(poses), len(OFFSETS), len(YAWS), 3, 28, 84),
+    frames = np.zeros((len(CONDS), len(poses), len(OFFSETS), len(YAWS), 3, IN_H, IN_W),
                       np.float32)
     print(f"capturing {n} frames: {len(CONDS)} cond x {len(poses)} poses x "
           f"{len(OFFSETS)} offsets x {len(YAWS)} yaws")
@@ -214,7 +219,7 @@ def main():
                                 except Exception:
                                     pass
                             frames[ci, pi, oi, yi] = vd._project(
-                                img.astype(np.float32) / 255.0, 84, 28).reshape(3, 28, 84)
+                                img.astype(np.float32) / 255.0, IN_W, IN_H).reshape(3, IN_H, IN_W)
                 print(f"  {cond}: {len(poses)*len(OFFSETS)*len(YAWS)} frames", flush=True)
         finally:
             try:
