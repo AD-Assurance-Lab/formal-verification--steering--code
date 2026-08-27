@@ -536,7 +536,75 @@ a measured ceiling near 325k ReLU where MEMORY -- not wall clock, not bound loos
 is the limit. 508k OOMs at 12 GB. So the working student sits comfortably inside the
 envelope with room above it.
 
+## T06-F19  HARNESS BUG: runs overshot each section's clean window. Prior numbers superseded.
+
+Under PROTOCOL amendment A-1. Nothing here is a blind prediction.
+
+`steps_for()` caps STEPS, computed as `length / (TARGET_SPEED * dt)`. That bounds distance
+only if the vehicle holds target speed exactly. It runs slightly hot, so runs overshot,
+and the excursion found in the road each section was CLIPPED TO EXCLUDE was recorded as
+that section's max |CTE|.
+
+Found by asking WHERE failures peak rather than how large they were:
+
+    fog  s02   639 m and 634 m of a 628 m section   101-102% through
+    night s03  101%,  s00 100%,  s01 99%,  s05 97% and 94%
+
+steps_for's own docstring already names this failure mode -- "it fails there for reasons
+that have nothing to do with the policy" -- and fixes it with a step cap. A step cap is
+the wrong instrument for a distance bound. evaluate.py now stops at the scored end
+measured ALONG THE ROUTE. Town04 is unaffected: SECTION_BASED is False, so no cap applies.
+
+### Everything re-measured. These supersede T06-F17 and T06-F18.
+
+12 runs per condition, 6 sections x 2 reps, all on the FIXED harness and therefore
+mutually comparable. The old figures are NOT comparable and appear only to size the
+correction.
+
+    policy                    ReLU   clear   fog   night  shadows  total   (old)
+    teacher_mixed_..._r12      ---    0/12   2/12   2/12    0/12    4/48    2/48
+    S_mixed 320x64 w3      172,848    0/12   3/12   1/12    0/12    4/48    5-6/48
+    S_mixed 168x28 w2       21,408    0/12   6/12   4/12    0/12   10/48   14/48
+    S_mixed 224x64 w2       79,904    2/12   2/12   6/12    3/12   13/48   15/48
+
+### What survives, and what does not
+
+**Survives, at half the claimed size.** The 320x64 w3 student reaches TEACHER PARITY at
+4/48, and is better than its teacher at night (1/12 against 2/12). But night improved
+4/12 -> 1/12, not 8/12 -> 1/12: half of the baseline's night failures were the harness.
+
+**Does not survive.** Three separate teacher ceilings were reported in one session --
+0/24, then 2/48, then 4/48 -- each stated as settled. The real figure is 4/48, and 2/48
+against 4/48 is well inside sampling noise at these counts. Any claim resting on "the
+teacher is perfect" is void; it fails 4-8% of runs.
+
+**Does not survive.** The "14/48 floor" that motivated the covariate-shift hypothesis was
+10/48, partly harness artifact.
+
+**Retracted.** From ONE s02 run going 25.00 ft -> 2.29 ft this log concluded "roughly 90%
+of that failure was the harness". In aggregate fog barely moved, 5/12 -> 6/12. That was
+extrapolation from n=1, the same error the log had already flagged twice that night.
+
+**Bigger input is NOT monotone.** 224x64 w2 is WORSE than the 168x28 baseline, 13/48
+against 10/48, on 4x the input pixels. So "a bigger input fixes night" is too coarse:
+320x64 w3 works and 224x64 w2 does not, and those differ in BOTH input width and channel
+count. That is still unresolved.
+
+### Consequence for the study narrative
+
+Under the ledger's cell rule -- FAIL when failures >= half the runs -- the 320x64 w3
+student now PASSES all four ODD conditions, as does the teacher. That is the precondition
+for the revised framing (build, test the ODD, then verify the continuum): verification
+only has something non-redundant to say once closed-loop ODD testing has already passed.
+
+NOTE FOR THAT NARRATIVE: the rule marks 3/12, a 25% failure rate, as PASS. Town04's cells
+were 0/10 or 10/10, so the rule was never stressed. Here it decides an outcome. "Passes
+its ODD" resting on 3/12 is within the letter of the criterion and arguably not its
+spirit. Flagged for Zach rather than resolved here, because changing a scoring rule after
+seeing the scores is exactly what must not happen unilaterally.
+
 ## Open
+
 
  dispositions -- three cells contradict the pre-registration
 
