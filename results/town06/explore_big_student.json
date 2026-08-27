@@ -31,5 +31,38 @@
     },
     "total_fails": 20,
     "total_n": 48
+  },
+  "224x64_w2": {
+    "checkpoint": "S_mixed_t06_224x64_w2",
+    "in_w": 224,
+    "in_h": 64,
+    "channels": "16,32,32",
+    "fc": 64,
+    "augment": 0.0,
+    "relu": 79904,
+    "conditions": {
+      "clear": {
+        "fails": 2,
+        "n": 12,
+        "worst_cte_ft": 9.02
+      },
+      "fog": {
+        "fails": 1,
+        "n": 12,
+        "worst_cte_ft": 14.17
+      },
+      "night": {
+        "fails": 6,
+        "n": 12,
+        "worst_cte_ft": 32.16
+      },
+      "shadows": {
+        "fails": 6,
+        "n": 12,
+        "worst_cte_ft": 52.92
+      }
+    },
+    "total_fails": 15,
+    "total_n": 48
   }
 }
