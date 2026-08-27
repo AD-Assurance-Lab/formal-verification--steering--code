@@ -181,6 +181,18 @@ Two operational facts came out of it, both of which would have cost a night:
    down first. At 9,600 poses (6 sections x 200 x 4 conditions x 2 students) that is
    the difference between hours and a long night.
 
+   MEASURED AGAIN, the hard way: with CARLA resident at 10.65 GiB, distilling the w3
+   mixed student died with `torch.AcceleratorError: CUDA error: out of memory` at
+   `StudentNet(...).to(device)` -- allocating a 62k-parameter model, with ~30 MiB free.
+   So this is not only a certification concern; ANY GPU stage that shares the machine
+   with a long-lived CARLA is exposed, and the simulator does not have to be in use to
+   break it. Stopping CARLA took the card from 11,247 MiB to 517 MiB and the same
+   command then ran.
+
+   Partly self-healing already: dagger_student.py re-distils once per round, and if that
+   OOMs it exits nonzero, which makes student_dagger_until_competent.sh restart CARLA
+   before the next attempt. That costs one attempt rather than the run.
+
 2. **The 16 sub-intervals can be batched, and the reformulation is exact.** Because
    `half = 0.5*(b-a) = 1/32` for every sub-interval, W is IDENTICAL across all 16 and
    only the bias moves. The whole split is therefore a box on the parameter itself:
