@@ -38,8 +38,12 @@ carla_start() {
     say "starting CARLA on $CARLA_PORT"
     ( cd "$CARLA_ROOT" && setsid nohup ./CarlaUE4.sh -carla-rpc-port="$CARLA_PORT" \
         -RenderOffScreen -quality-level=Epic >>"$LOG_DIR/carla.log" 2>&1 < /dev/null & )
-    carla_up 60 && { say "CARLA up"; sleep 10; return 0; }
-    say "FATAL: CARLA did not come up"; return 1; }
+    # A bound port is not a ready simulator: it binds well before it can serve, and a
+    # gate once drove for 12 minutes against a listening-but-unready server, recording
+    # the failure as if the students had failed. Readiness is a successful get_world().
+    if python3 scripts/wait_carla_ready.py --port "$CARLA_PORT" --timeout 240; then
+        say "CARLA ready"; return 0; fi
+    say "FATAL: CARLA did not become ready"; return 1; }
 
 # ---------------------------------------------------------------- preconditions
 python3 scripts/check_protocol_lock.py >/dev/null || { say "FATAL: PROTOCOL lock"; exit 1; }

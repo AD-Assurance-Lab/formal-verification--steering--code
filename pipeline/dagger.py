@@ -171,6 +171,10 @@ def main():
                          "--base clear,mixed")
     ap.add_argument("--init", default="steering_bc_baseline", help="initial policy checkpoint")
     ap.add_argument("--rounds", type=int, default=6, help="max DAgger retrains")
+    ap.add_argument("--min-rounds", type=int, default=0,
+                    help="keep collecting through this round even once the teacher "
+                         "passes; the DAgger set is an input to distillation, not just "
+                         "a means of fixing the teacher")
     ap.add_argument("--epochs", type=int, default=120)
     ap.add_argument("--lr", type=float, default=5e-4,
                     help="LR for warm-start retrains (gentle fine-tune from prior round)")
@@ -312,9 +316,20 @@ def main():
             mpath = write_manifest(round_dir, rows)
             history.append((r, current, passed))
 
-            if passed:
+            if passed and r >= args.min_rounds:
                 print(f"\n*** PASSED at round {r} with policy '{current}' ***")
                 break
+            if passed:
+                # Keep going purely to COLLECT. A teacher that passes early leaves a thin
+                # DAgger set behind, and the student distilled from it inherits that gap:
+                # the clear teacher passed at round 5 with 13,271 frames while the mixed
+                # teacher took 12 rounds and left 117,469, and the clear student is the
+                # one that cannot hold the 620 m straight. These frames are OFF-NOMINAL
+                # recovery states, which is what teaches fine lateral correction --
+                # exactly the s03 failure mode. Labels come from the expert, not from the
+                # policy, so they stay correct however the policy drifts.
+                print(f"\n*** passed at round {r}, but --min-rounds {args.min_rounds} "
+                      f"means collection continues ***")
             if r == args.rounds:
                 print(f"\nExhausted {args.rounds} rounds without passing "
                       f"(last policy '{current}').")

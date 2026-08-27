@@ -125,9 +125,19 @@ def main():
         # Repetitions, per standing rule 3. A section must hold on every one.
         per_rep = []
         for _ in range(args.reps):
-            r = parse(run_eval(ckpt, channels, fc))
+            out = run_eval(ckpt, channels, fc)
+            r = parse(out)
             if r:
                 per_rep.append(r)
+            else:
+                # An empty run is a FAILED run, not a failing student. This once
+                # recorded "evaluation produced no per-section result" for both
+                # students after 12 minutes of driving against a CARLA that was
+                # listening but not yet serving, which reads as a verdict on the
+                # models. Show what actually happened.
+                print("      !! no per-section output; last lines of that run:")
+                for ln in out.strip().splitlines()[-5:]:
+                    print(f"         {ln}")
         res = {}
         for sec in C.SECTIONS:
             got = [rp[sec] for rp in per_rep if sec in rp]
