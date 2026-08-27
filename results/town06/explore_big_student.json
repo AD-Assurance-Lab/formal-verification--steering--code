@@ -97,5 +97,38 @@
     },
     "total_fails": 5,
     "total_n": 48
+  },
+  "448x64_w3": {
+    "checkpoint": "S_mixed_t06_448x64_w3",
+    "in_w": 448,
+    "in_h": 64,
+    "channels": "24,48,48",
+    "fc": 96,
+    "augment": 0.0,
+    "relu": 243504,
+    "conditions": {
+      "clear": {
+        "fails": 12,
+        "n": 12,
+        "worst_cte_ft": 28.16
+      },
+      "fog": {
+        "fails": 12,
+        "n": 12,
+        "worst_cte_ft": 28.16
+      },
+      "night": {
+        "fails": 12,
+        "n": 12,
+        "worst_cte_ft": 28.16
+      },
+      "shadows": {
+        "fails": 12,
+        "n": 12,
+        "worst_cte_ft": 28.16
+      }
+    },
+    "total_fails": 48,
+    "total_n": 48
   }
 }

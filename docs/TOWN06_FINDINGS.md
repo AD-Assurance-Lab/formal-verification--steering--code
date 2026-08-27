@@ -460,7 +460,84 @@ Cost-matched, mirroring the design that settled F11:
 Both are small enough to train properly under the current recipe, so this pair is free of
 the confound above. The larger vertical configs are not, and must be read with it in mind.
 
+## T06-F18  A bigger INPUT fixes night; and the teacher ceiling is 2/48, not 0/24
+
+Under PROTOCOL amendment A-1 (R1 suspended). Nothing here is a blind prediction.
+Every number is 12 runs per condition, 6 sections x 2 reps (standing rule 3).
+
+    policy                        ReLU    clear   fog   night  shadows   total
+    teacher_mixed_t06_dagger_r12   ---     0/12   1/12   1/12    0/12     2/48
+    S_mixed 320x64 w3          172,848     0/12   4/12   1/12    0/12     5/48
+      (confirmation run)                   0/12   5/12   1/12    0/12     6/48
+    S_mixed 224x64 w2           79,904     2/12   1/12   6/12    6/12    15/48
+    S_mixed 168x28 w3           32,112     2/12   4/12   5/12    4/12    15/48
+    S_mixed 168x28 w2           21,408     0/12   5/12   8/12    1/12    14/48
+    S_mixed 168x28 w2 +jitter   21,408     3/12   7/12   8/12    2/12    20/48
+    S_mixed 168x28 w4           42,816     6/12  11/12   8/12    8/12    33/48
+
+### 1. Input size is what night needed
+
+Night goes 8/12 -> 1/12, reproduced exactly on a second independent run, and that is
+teacher parity: the teacher is also 1/12 at night. Zach called this: high contrast with
+headlights argues for a bigger input, vertically and horizontally. It is not capacity --
+w3 and w4 at 168x28 changed nothing and w4 made everything worse.
+
+### 2. THE TEACHER IS NOT PERFECT, and much of tonight was written as though it were
+
+The teacher gate reported 0/24 on ONE pass per cell. Under 12 runs per condition it is
+2/48, failing fog once and night once. So "the teacher passes everything, therefore the
+entire gap is distillation" -- which this log asserted repeatedly, and on which the
+covariate-shift hypothesis was built -- was overstated. Part of the apparent gap was the
+ceiling being under-measured.
+
+That is the FOURTH single-pass number to mislead a conclusion in this study
+(competence gate, DAgger rounds, arch sweep, and now the teacher ceiling). The gate
+should be re-run at repetition before any future claim rests on it.
+
+Consequence for the deployment test: a 0/48 student is probably not reachable, because
+the TEACHER is not 0/48. At 5/48 the mixed student would still likely take a FAIL verdict
+on fog -- but so would its teacher.
+
+### 3. My floor hypothesis was wrong
+
+Three architectures landed at 14, 15, 15 and this log concluded that 14/48 was a
+distillation floor, that the failure mode was covariate shift from behaviour-cloning
+teacher-visited states, and that only on-policy data could break it. The next
+architecture broke it to 5/48. Three points are not a floor, and the reasoning ran ahead
+of the evidence.
+
+The covariate-shift story is not disproved -- it may still explain the residual fog gap,
+4-5/12 against the teacher's 1/12 -- but it was not the binding constraint.
+
+### 4. Photometric augmentation: REFUTED
+
+Jitter 0.3 at 168x28 w2 gave 20/48 against 14/48 without it. Worse in clear and fog, NO
+change at night, the condition it was built for. It could not have worked: the jitter is
+a*x+b, which models BRIGHTNESS, and night is not a brightness shift -- SHADOWS IS DARKER
+(mean 0.184 vs 0.200) and drives fine. Night is high contrast, sigma 0.138 against
+0.056-0.064, with 13.8% of pixels clipped to black. Linear jitter cannot reproduce
+information that clipping destroyed. The --augment flag stays, off by default.
+
+### 5. An accidental empirical instance of the vacuous certificate
+
+448x64 w3 failed to train: val MSE flat at 4.80e-3 from epoch 1 to 20, the network
+collapsed to a constant. It then failed 48/48 with max|CTE| of EXACTLY 28.16 ft in all
+four conditions -- byte-identical, because the trajectory does not depend on the input.
+
+This is the model the competence gate was written to exclude, produced by accident. It
+ignores its input, so Delta_p(s) = 0 identically, so it would certify PERFECTLY under
+every condition while driving off the road in all of them. The study has only ever argued
+that case hypothetically. Keep the checkpoint.
+
+### Verifiability
+
+172,848 ReLU certifies in about 0.85 h at 3.5 GB with bound width 0.2x tolerance, against
+a measured ceiling near 325k ReLU where MEMORY -- not wall clock, not bound looseness --
+is the limit. 508k OOMs at 12 GB. So the working student sits comfortably inside the
+envelope with room above it.
+
 ## Open
+
  dispositions -- three cells contradict the pre-registration
 
 Standing rule 2: each is a BUG until a written disposition rules out the candidate
