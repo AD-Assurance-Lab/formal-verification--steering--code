@@ -57,8 +57,14 @@ OUT = REPO / os.environ.get("OY_OUT", "results/calibration/offset_yaw.npz")
 # Model input size. Defaults to the published 84x28, so Town04 captures are unchanged.
 # It is read here rather than hardcoded because the captures ARE the verifier's input:
 # a student at a different resolution needs its own capture set.
-IN_W = int(os.environ.get("OY_IN_W", "84"))
-IN_H = int(os.environ.get("OY_IN_H", "28"))
+# Default to the REGISTRY, not to Town04's 84x28. These captures ARE the verifier's
+# input, so a stale default silently certifies a different network than the one that
+# drives: this produced 84-wide frames while the registry was at 168, and nothing
+# errored -- the arrays are simply the wrong shape for the student.
+IN_W = int(os.environ.get("OY_IN_W", str(getattr(C, "TOWN06_INPUT_W", 84))
+                          if getattr(C, "SECTION_BASED", False) else "84"))
+IN_H = int(os.environ.get("OY_IN_H", str(getattr(C, "TOWN06_INPUT_H", 28))
+                          if getattr(C, "SECTION_BASED", False) else "28"))
 
 
 def main():
@@ -66,16 +72,34 @@ def main():
     ap.add_argument("--poses", type=int, default=40)
     ap.add_argument("--start-m", type=float, default=0.0)
     ap.add_argument("--length-m", type=float, default=160.0)
-    ap.add_argument("--direction", default="westbound",
-                    choices=["westbound", "eastbound"],
+    # Town04 has two directions; Town06 has six named sections. Hardcoding the Town04
+    # pair here made every Town06 capture die at argparse with "invalid choice: 's00'".
+    ap.add_argument("--direction", default=C.SECTIONS[0],
+                    choices=list(C.SECTIONS),
                     help="several sun-altitude failures are direction-specific: the sun's\n                          azimuth is fixed, so travelling east or west puts it ahead or\n                          behind. Verification measured in one direction cannot see a\n                          failure that only occurs in the other.")
     args = ap.parse_args()
 
-    base = REPO / "pipeline" / "data" / "live_pairs"
-    with open(base / "manifest.csv") as fh:
-        rows = [r for r in csv.DictReader(fh)
-                if r["weather"] == "clear" and r["direction"] == args.direction]
-    xy = np.array([[float(r["x"]), float(r["y"])] for r in rows])
+    if getattr(C, "SECTION_BASED", False):
+        # Section-based maps have no live_pairs manifest -- that dataset is Town04's, and
+        # filtering it for direction "s00" returned nothing, which surfaced as an
+        # AxisError deep in the arc-length maths rather than as "no poses". The ROUTE is
+        # the pose source here, and it is the same geometry the closed-loop runs follow,
+        # so capture poses and driving agree by construction rather than by coincidence.
+        from route import load_route
+        rt = np.asarray(load_route(args.direction), dtype=float)
+        dx = np.diff(rt[:, 0], append=rt[0, 0])
+        dy = np.diff(rt[:, 1], append=rt[0, 1])
+        yaw_deg = np.degrees(np.arctan2(dy, dx))
+        rows = [dict(x=rt[i, 0], y=rt[i, 1], yaw=yaw_deg[i]) for i in range(len(rt))]
+        xy = rt
+    else:
+        base = REPO / "pipeline" / "data" / "live_pairs"
+        with open(base / "manifest.csv") as fh:
+            rows = [r for r in csv.DictReader(fh)
+                    if r["weather"] == "clear" and r["direction"] == args.direction]
+        xy = np.array([[float(r["x"]), float(r["y"])] for r in rows])
+    if len(xy) < 2:
+        sys.exit(f"no poses for direction '{args.direction}' -- refusing to capture")
     d = np.concatenate([[0], np.cumsum(np.linalg.norm(np.diff(xy, axis=0), axis=1))])
     want = np.linspace(args.start_m, args.start_m + args.length_m, args.poses)
     idx = sorted({int(np.argmin(np.abs(d - w))) for w in want})
@@ -104,8 +128,12 @@ def main():
         orig = env.enable_sync_mode(world)
         v = cam = None
         try:
-            v = env.spawn_vehicle(world, C.SPAWN_WESTBOUND if args.direction ==
-                                  "westbound" else C.SPAWN_EASTBOUND)
+            # SPAWNS is keyed by section on a section-based map; the westbound /
+            # eastbound pair is the Town04 special case.
+            _spawn = (C.SPAWNS[args.direction] if getattr(C, "SECTION_BASED", False)
+                      else (C.SPAWN_WESTBOUND if args.direction == "westbound"
+                            else C.SPAWN_EASTBOUND))
+            v = env.spawn_vehicle(world, _spawn)
             v.apply_control(carla.VehicleControl(brake=1.0))
             for _ in range(40):
                 world.tick()
