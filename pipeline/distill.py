@@ -84,9 +84,30 @@ def _kd_decode(args):
 
 
 class KDDataset(Dataset):
-    def __init__(self, rows, indices, targets, in_w, in_h, preload=True):
+    """Distillation frames. Optionally with PHOTOMETRIC augmentation.
+
+    KD had no augmentation at all -- dataset._shift belongs to SteeringDataset, which
+    trains the TEACHER. Distillation fed raw frames, and that is why capacity stopped
+    helping: the w4 student (246k params on 122k frames) reached its best validation at
+    epoch 19 and then overfit, so its KD RMSE came out WORSE than a model half its size.
+    That reads like "capacity is harmful" and is really "no regulariser".
+
+    The jitter is a gain and an offset, x -> clip(a*x + b), which is what changes between
+    illumination conditions. It is applied to the STUDENT input only; the KD target stays
+    the teacher's output on the unjittered frame, so the student is asked to give the same
+    steering under photometric variation.
+
+    NOTE, and it belongs in the write-up: the disturbance family this study certifies IS
+    photometric, so training for photometric invariance deliberately reduces the very
+    Delta the certificate bounds. That is legitimate -- build the property, then verify
+    it -- but it changes the claim from "we certified a model that happened to be robust"
+    to "we built for robustness and verified we got it". Off by default.
+    """
+
+    def __init__(self, rows, indices, targets, in_w, in_h, preload=True, augment=0.0):
         self.rows, self.indices, self.targets = rows, indices, targets
         self.in_w, self.in_h = in_w, in_h
+        self.augment = float(augment)
         self.cache = None
         if preload:
             # Trap 17, second instance. dataset.SteeringDataset was parallelised and this
@@ -105,6 +126,10 @@ class KDDataset(Dataset):
         i = self.indices[k]
         x = self.cache[k] if self.cache is not None else \
             student_preprocess(cv2.imread(self.rows[i]["image"]), self.in_w, self.in_h)
+        if self.augment > 0.0:
+            a = 1.0 + self.augment * np.random.uniform(-1.0, 1.0)      # gain
+            b = 0.25 * self.augment * np.random.uniform(-1.0, 1.0)     # offset
+            x = np.clip(a * x + b, 0.0, 1.0).astype(np.float32)
         return torch.from_numpy(x), torch.tensor([self.targets[self.rows[i]["image"]]],
                                                  dtype=torch.float32)
 
@@ -122,7 +147,7 @@ def distill_student(in_w, in_h, out_name, teacher_name="steering_dagger_r02",
                     base="clear", dagger_dirs=("dagger", "dagger_student"),
                     weathers=None, channels=(8, 16, 16), fc=32, init_from=None,
                     epochs=120, batch_size=64, lr=1e-3, patience=20,
-                    device=None, quiet=False, balance=False):
+                    device=None, quiet=False, balance=False, augment=0.0):
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(0)
     # Seed the augmentation RNG too: dataset._shift draws from the global `random`,
@@ -158,7 +183,9 @@ def distill_student(in_w, in_h, out_name, teacher_name="steering_dagger_r02",
             print(f"balance: {n0} -> {len(tr_idx)} training frames "
                   f"(near-straight downsampled)")
 
-    tr = KDDataset(rows, tr_idx, targets, in_w, in_h)
+    # Train augments, validation NEVER does: augmenting val would move the metric with
+    # the knob and make runs at different augment strengths incomparable.
+    tr = KDDataset(rows, tr_idx, targets, in_w, in_h, augment=augment)
     va = KDDataset(rows, va_idx, targets, in_w, in_h)
     tl = DataLoader(tr, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
     vl = DataLoader(va, batch_size=256, shuffle=False, num_workers=0, pin_memory=True)
@@ -213,6 +240,11 @@ def main():
                     help="conv channel widths (capacity lever at fixed resolution)")
     ap.add_argument("--fc", type=int, default=32, help="FC hidden width")
     ap.add_argument("--epochs", type=int, default=120)
+    ap.add_argument("--augment", type=float, default=0.0,
+                    help="photometric jitter strength on the STUDENT input, 0 = off. "
+                         "0.3 is a sensible start. See KDDataset for why this is not "
+                         "a neutral choice for a study certifying photometric "
+                         "disturbances.")
     # These existed as function parameters but were never reachable from the CLI, so the
     # documented fix for multi-condition instability could not actually be applied.
     ap.add_argument("--init-from", default=None,
@@ -229,6 +261,7 @@ def main():
                     weathers=(args.weathers.split(",") if args.weathers else None),
                     channels=tuple(int(x) for x in args.channels.split(",")), fc=args.fc,
                     epochs=args.epochs, init_from=args.init_from, lr=args.lr,
+                    augment=args.augment,
                     patience=args.patience, balance=args.balance)
 
 
