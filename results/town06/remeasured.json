@@ -114,5 +114,34 @@
     "total_fails": 13,
     "total_n": 48,
     "prior_figure": "15/48"
+  },
+  "168x28_w3": {
+    "checkpoint": "S_mixed_t06_168x28_w3",
+    "relu": 32112,
+    "conditions": {
+      "clear": {
+        "fails": 2,
+        "n": 12,
+        "worst_cte_ft": 5.14
+      },
+      "fog": {
+        "fails": 3,
+        "n": 12,
+        "worst_cte_ft": 29.96
+      },
+      "night": {
+        "fails": 4,
+        "n": 12,
+        "worst_cte_ft": 11.83
+      },
+      "shadows": {
+        "fails": 5,
+        "n": 12,
+        "worst_cte_ft": 47.18
+      }
+    },
+    "total_fails": 14,
+    "total_n": 48,
+    "prior_figure": "15/48"
   }
 }
