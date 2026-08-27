@@ -260,20 +260,93 @@ So Town04's finding and F11 are BOTH true, and they are about different things:
 
 Town04 needed its mixed student at 3x the clear student's width and reached that
 conclusion through night failures; the same constraint arrives here through clear-weather
-straights after DAgger. ACTION: mixed re-distilled at 168x28 w3, 32,112 ReLU. The clear
-student stays at w2, 21,408 ReLU, where its own DAgger passes.
+straights after DAgger.
+
+**CORRECTED BY T06-F14. Do not act on this finding.** Its diagnosis rested on
+single-pass drives, and repetitions reversed both halves. Mixed at w3 holds 4/6 against
+w2's 6/6, so the widening was wrong. And the clear student's DAgger, which this finding
+cites as the control PROVING the cause is weather dilution, does not actually improve it
+on 3 reps -- so the control does not hold and the weather-dilution explanation with it.
+What survives is the ruled-out list above, which is still correct.
 
 This is a clear-weather competence decision. Clear is the s=0 anchor of the disturbance
 family, not one of the disturbance conditions, so it does not weaken the blind protocol
 (PROTOCOL R3). Student capacity is a property of the model under test rather than of the
 criterion, so widening is declared, not amended.
 
+## T06-F14  Student DAgger is harmful at 168x28, w2 beats w3, and the clear student is seed-marginal
+
+Six checkpoints, one CARLA session, three repetitions each, clear weather. A section
+counts as held only if it holds on EVERY rep (standing rule 3). Budget 2.19 ft.
+
+    candidate               ReLU   held    s03/620m   s01/558m   s02/404m   s00/166m
+    clear w2 base         21,408   4/6     2.23(2/3)  0.87(3/3)  0.80(3/3)  3.45(1/3)
+    clear w2 +DAgger      21,408   4/6     1.66(3/3)  1.27(3/3)  4.38(1/3) 11.97(0/3)
+    mixed w2 base         21,408   6/6     1.11(3/3)  0.83(3/3)  0.73(3/3)  0.46(3/3)
+    mixed w2 +DAgger      21,408   3/6    17.27(2/3) 11.37(0/3)  0.91(3/3)  1.06(3/3)
+    mixed w3 base         32,112   4/6     1.26(3/3)  5.44(0/3)  0.85(3/3)  0.34(3/3)
+    clear w2 (sweep seed) 21,408   6/6     1.42(3/3)  1.29(3/3)  0.59(3/3)  0.72(3/3)
+
+THREE RESULTS, two of which overturn a decision taken earlier the same night.
+
+1. **Student DAgger is harmful here.** Both paired comparisons hold architecture fixed
+   and vary only the procedure: mixed goes 6/6 -> 3/6, and clear stays 4/6 while its
+   worst section goes 1/3 at 3.45 ft to 0/3 at 11.97 ft. There is no comparison in which
+   DAgger helps.
+
+   This INVERTS the Town04 procedure, where student DAgger was essential, and the reason
+   is visible in the numbers rather than mysterious. At 84x28 the distilled student held
+   1 of 6 sections at 16.50 ft: DAgger was rescuing an incompetent policy, and almost
+   anything helps from there. At 168x28 distillation alone already produces a competent
+   one, and DAgger's contribution -- student-visited off-nominal states, labelled by the
+   teacher -- then buys nothing and costs the marginal capability, which T06-F11 showed
+   is the sub-pixel straight-line cue.
+
+2. **w3 is worse than w2 for the mixed student**, 4/6 against 6/6, with 50% more ReLU.
+   The T06-F13 widening was decided on single-pass drives and is withdrawn. Cheaper AND
+   better, so nothing is being traded away.
+
+3. **Two clear students, identical architecture, identical data, identical 120 epochs,
+   differ 4/6 from 6/6 on distillation seed alone** (KD RMSE 0.0553 against 0.0489). The
+   clear student sits close enough to the boundary that initialisation decides it.
+
+WHY THE CLEAR STUDENT AND NOT THE MIXED ONE. Clear trains on 21,923 frames (8,652 base
+plus 13,271 teacher-DAgger); mixed trains on 143,425 (25,956 plus 117,469). The gap is
+mostly teacher DAgger: the clear teacher passed at round 5 and the mixed teacher took 12,
+so the mixed student inherited far more data. More teacher DAgger rounds cannot close it
+-- dagger.py breaks as soon as the teacher passes, and the clear teacher already does.
+
+ACTION: both students at 168x28 w2, 21,408 ReLU, distilled only, NO student DAgger. The
+mixed student is done and holds 6/6. For the clear student, collect more clear laps and
+re-distil, which attacks the variance at its source.
+
+NOT DONE, deliberately: shipping `sweep_168x28_w2` because it passes. It differs from
+the pipeline's clear student only by seed. Choosing the seed that clears a gate turns a
+precondition into a selection step, and the gate's whole purpose is to be a precondition
+the model meets rather than one the model is picked to satisfy. It is in the table for
+the variance record, not as a candidate.
+
+## T06-F15  collect_data.py silently corrupted a dataset re-collected for the same weather
+
+Found before it was run, not after. Frames are written to
+`{weather}_{direction}_lap{NN}/frames/{step:05d}.png` and the lap loop was
+`range(args.laps)`, always starting at 0, while the manifest APPENDS. A second collection
+for a weather already on disk therefore rewrote lap00.. with new images while the old
+manifest rows kept pointing at those same paths: old labels, new pixels, no error
+anywhere.
+
+The append behaviour is documented and correct across WEATHERS, which get distinct
+directory names. It was never safe across repeated runs of the same weather, and growing
+a dataset is exactly when that happens. Lap indices now continue past whatever is on
+disk (`clear: 4 lap(s) already on disk, collecting lap04..lap19`).
+
 ## Open
 
-Whether the mixed student at w3 survives its own DAgger. If it degrades in clear again
-at 32,112 ReLU, then two independent width points say the mixed student should not be
-DAgger-ed at all at this resolution, and the base checkpoint is the one to ship. That
-would be a real result rather than a workaround, but it needs the second point first.
+Whether more clear data makes the clear student clear the 3-rep gate reliably rather than
+by seed. 16 additional clear laps are being collected, taking the base set from 8,652 to
+roughly 43,000 frames. The prediction to check it against: the mixed student, on 6.5x the
+data, passed its gate first try at 6/6 with every section at or under 1.11 ft.
 
-Verifier cost at 32,112 ReLU follows T06-F12's roughly linear trend, so about 3.8 s/pose
-on CPU with CARLA down. Watched, not assumed.
+If it does not close, the next lever is more teacher-DAgger data for clear, which needs
+dagger.py to keep collecting after the teacher passes rather than breaking -- a change to
+data collection, not to any criterion.
