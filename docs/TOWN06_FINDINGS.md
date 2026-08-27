@@ -368,7 +368,100 @@ have certified a cell that then failed, and none did.
 This is the deployment test, not the discovery test: new map, new teachers, new students,
 criterion frozen by PROTOCOL section 3 and unchanged from the published Town04 study.
 
-## Open dispositions -- three cells contradict the pre-registration
+## T06-F17  EXPLORE PHASE 2: night is a CONTRAST problem, and the width sweep is confounded by under-training
+
+Under PROTOCOL amendment A-1 (R1 suspended). None of this is a blind prediction.
+
+**The teacher is not the problem.** teacher_mixed_t06_dagger_r12 passes all 24 teacher-gate
+cells -- four conditions x six sections. The entire gap is distillation.
+
+**Where the student diverges, split by condition** (no CARLA; teacher outputs are cached
+so only the student runs):
+
+    condition   KD RMSE   x tolerance   teacher |steer|   student |steer|
+    clear        0.0116      0.97           0.0207            0.0197
+    shadows      0.0203      1.69           0.0236            0.0223
+    fog          0.0227      1.89           0.0267            0.0242
+    night        0.0344      2.86           0.0525            0.0483
+
+Night error is nearly 3x the whole steering tolerance, and the teacher steers 2.5x harder
+there -- a larger-magnitude function to imitate. The student under-predicts that
+magnitude, i.e. it UNDER-STEERS exactly where the teacher works hardest. The pooled KD
+RMSE of 0.0370 hid all of it.
+
+**Not a sampling problem.** The training set is clear 25.3%, fog 25.3%, shadows 25.3%,
+night 24.1%.
+
+**Not a brightness problem, which kills the obvious fix.** Image statistics over the
+training set:
+
+    condition   mean     sigma    p01     p99     frac < 0.05
+    clear       0.3039   0.0636   0.0471  0.4118     1.0%
+    fog         0.2803   0.0601   0.1804  0.4549     0.0%
+    night       0.2002   0.1380   0.0000  0.5176    13.8%
+    shadows     0.1842   0.0559   0.0157  0.3333     2.8%
+
+SHADOWS IS DARKER THAN NIGHT and drives 1/12 against night's 8/12. So a mean-subtraction
+front end -- which is linear, exactly verifiable, and adds no ReLUs -- would have bought
+nothing, and this table refuted it before it cost any CARLA time. What separates night is
+CONTRAST: sigma more than double every other condition, 13.8% of pixels crushed near
+black, and the highest p99. It is high-dynamic-range, not dim.
+
+**Camera exposure is NOT implicated.** The night exposure is a declared function of
+condition, set deliberately (config.py, 2026-08-11), and the measured 13.8% clipping
+matches its recorded ~12% expectation for the genuinely unlit far field beyond the
+headlight throw. Not touched.
+
+**The failure mode is lane drift, not departure.** Every night run has departed=False
+while exceeding budget by 21-35 ft. On a 4-5 lane highway the student wanders across
+lanes and stays on the road. It also fails 5 of 6 sections, with no relation to straight
+length -- unlike the clear-weather s03 failure of F11.
+
+### The width sweep, and why it settles less than it appears to
+
+    config    ReLU   KD RMSE   clear    fog    night  shadows   total
+    w2      21,408    0.0370   0/12    5/12    8/12    1/12     14/48
+    w3      32,112    0.0387   2/12    4/12    5/12    4/12     15/48
+    w4      42,816    0.0405   6/12   11/12    8/12    8/12     33/48
+
+Read carelessly this says "capacity is harmful". It does not. KD RMSE rises MONOTONICALLY
+with capacity under a fixed recipe of 120 epochs at lr 1e-3, and driving failures track
+it exactly. A larger network can always represent what a smaller one represents, so a
+worse fit to the TRAINING objective is under-training, not a capacity limit. The recipe
+was tuned for w2.
+
+So capacity has not actually been tested. The clean experiment is to re-distil w3 on a
+longer schedule and check whether its KD RMSE falls below w2's 0.0370; only then is
+driving it informative. Recorded because the earlier w3 withdrawal (T06-F14) rested on
+the same untested assumption, and repeating it would be the same error twice.
+
+One useful by-product: within this sweep KD RMSE ORDERS the driving results correctly
+(0.0370 -> 14, 0.0387 -> 15, 0.0405 -> 33), so it is a legitimate cheap screen HERE. That
+does not overturn F7, which was about width at fixed resolution and fixed fit quality.
+
+### Under test now: does night need VERTICAL resolution?
+
+student_preprocess crops 210 rows x 640 columns into 28 x 168 -- vertical downsampled
+7.5x against horizontal's 3.8x, twice as hard. The teacher, which passes night 6/6 through
+the identical camera, keeps 66 rows to the student's 28. Night's usable signal is the
+headlight-lit near field, a horizontal BAND low in the crop, which is what aggressive
+vertical downsampling destroys. That is the opposite of clear weather, where F11 found
+horizontal resolution was the lever because the error is lateral and sub-pixel.
+
+If clear wants width and night wants height, then ANY architecture chosen on the
+clear-weather competence gate is wrong for night by construction -- and that gate is
+exactly how this student was sized.
+
+Cost-matched, mirroring the design that settled F11:
+
+    168x28 w2 = 21,408 ReLU (budget on WIDTH)
+    168x56 w1 = 25,472 ReLU (budget on HEIGHT)
+
+Both are small enough to train properly under the current recipe, so this pair is free of
+the confound above. The larger vertical configs are not, and must be read with it in mind.
+
+## Open
+ dispositions -- three cells contradict the pre-registration
 
 Standing rule 2: each is a BUG until a written disposition rules out the candidate
 causes. None of these is a finding yet, and none should be written up as one.
