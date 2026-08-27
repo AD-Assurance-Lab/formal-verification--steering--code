@@ -1,0 +1,48 @@
+{
+  "168x28_w2": {
+    "in_w": 168,
+    "in_h": 28,
+    "channels": "16,32,32",
+    "fc": 64,
+    "sections": {
+      "s00": {
+        "held": 3,
+        "reps": 3,
+        "worst_cte_ft": 0.55,
+        "straight_m": 166
+      },
+      "s01": {
+        "held": 3,
+        "reps": 3,
+        "worst_cte_ft": 1.62,
+        "straight_m": 558
+      },
+      "s02": {
+        "held": 3,
+        "reps": 3,
+        "worst_cte_ft": 0.58,
+        "straight_m": 404
+      },
+      "s03": {
+        "held": 3,
+        "reps": 3,
+        "worst_cte_ft": 1.45,
+        "straight_m": 620
+      },
+      "s04": {
+        "held": 3,
+        "reps": 3,
+        "worst_cte_ft": 0.4,
+        "straight_m": 264
+      },
+      "s05": {
+        "held": 3,
+        "reps": 3,
+        "worst_cte_ft": 0.3,
+        "straight_m": 232
+      }
+    },
+    "all_held": 6,
+    "n": 6
+  }
+}
