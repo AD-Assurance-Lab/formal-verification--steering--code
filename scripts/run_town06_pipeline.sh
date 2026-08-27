@@ -250,5 +250,7 @@ run competence python3 "$REPO/scripts/check_student_competence.py" --require || 
     say "       distillation before proceeding."; exit 1; }
 
 say "PIPELINE COMPLETE -- students built and competent in clear weather."
-say "NEXT, in this order, and not before: certify (scripts/certify_sustained_bound.py),"
-say "COMMIT the certificate, then and only then run the scored closed-loop ledger."
+say "NEXT: bash scripts/finish_town06_deployment.sh"
+say "  It captures at the students' resolution, stops CARLA, certifies blind, COMMITS"
+say "  the certificate, and only then drives the scored ledger. That order is PROTOCOL"
+say "  R1 and check_order_town06.py enforces it independently."
