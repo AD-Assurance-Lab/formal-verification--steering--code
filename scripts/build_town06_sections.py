@@ -18,14 +18,24 @@ A section is contiguous road that is:
                                            line and losing the other passed as clean --
                                            s02 ran 385 m of its 628 m, 61%, with only one
                                            line, and s04 lost one for 33 m at its spawn)
-  - in the SECOND LANE FROM THE LEFT      (so both references are dashed lane lines and
-                                           on-ramps and off-ramps, which join and leave
-                                           on the right, never touch them. Measured on
-                                           the first selection: only s03 of six sections
-                                           was here. Four were RIGHTMOST, where the right
-                                           reference is a road edge and ramps merge into
-                                           exactly the marking the policy depends on, and
-                                           s01 was a single-lane road with no dashed
+  - on a MULTI-LANE carriageway           (highway, not a ramp connector. Ramps beside
+                                           the route are fine; driving one is not.
+                                           Excluding every junction-flagged waypoint was
+                                           too blunt and left 1,116 m, because ramp
+                                           junction areas span the highway lanes too.
+                                           Dashed markings alone were too weak: connector
+                                           lanes carry them, and five of six sections then
+                                           started inside a junction, three on single-lane
+                                           connectors. Lane count separates them: a
+                                           connector is 1, this highway is 3-6)
+  - DASHED on both sides                  (the policy learns to follow two dashed lane
+                                           lines and nothing else. Only an INTERIOR lane
+                                           has dashed on both sides -- the rightmost has
+                                           a solid edge line, the leftmost a solid
+                                           centreline -- so this also keeps the ego out
+                                           of the rightmost lane, where ramps merge and
+                                           where four of the six first sections had put
+                                           it. s01 was a single-lane road with no dashed
                                            context at all)
   - not on a signal-controlled lane
   - lane width 3.500 m                    (the CTE budget is derived from it)
@@ -63,12 +73,35 @@ from build_study_route import controlled_waypoints, dstats, REF, LANE_W, LANE_W_
 MAP = "Town06"
 NONE_MARK = carla.LaneMarkingType.NONE
 MIN_SECTION_M = 350.0
-# Second lane from the left. Both references are then dashed lane lines, and
-# ramps joining or leaving on the right never disturb them.
-EGO_LANE_FROM_LEFT = 1
+# Dashed on both sides is the requirement. Only an interior lane can have it, so this
+# also keeps the ego out of the rightmost lane where ramps merge.
+DASHED_MARKS = {carla.LaneMarkingType.Broken, carla.LaneMarkingType.BrokenBroken}
+MIN_CARRIAGEWAY_LANES = 3   # a ramp connector is 1; Town06's highway is 3-6
 TAIL_M = 300.0            # stored past the scored end so pure pursuit never wraps
 DEDUP_M = 25.0            # two sections closer than this along their length are the same road
 ROUTES_DIR = os.path.join(C.DATASET_DIR, f"routes_{MAP.lower()}")
+
+
+def same_direction_lanes(wp):
+    """Total driving lanes of the carriageway this waypoint belongs to."""
+    n = 1
+    w = wp
+    while True:
+        nxt = w.get_left_lane()
+        if (nxt is None or nxt.lane_type != carla.LaneType.Driving
+                or (nxt.lane_id > 0) != (wp.lane_id > 0)):
+            break
+        n += 1
+        w = nxt
+    w = wp
+    while True:
+        nxt = w.get_right_lane()
+        if (nxt is None or nxt.lane_type != carla.LaneType.Driving
+                or (nxt.lane_id > 0) != (wp.lane_id > 0)):
+            break
+        n += 1
+        w = nxt
+    return n
 
 
 def lanes_from_left(wp):
@@ -90,13 +123,32 @@ def clean_mask(wmap, r, CTL):
                                project_to_road=True, lane_type=carla.LaneType.Driving)
         lm = wp.left_lane_marking.type if wp.left_lane_marking else NONE_MARK
         rm = wp.right_lane_marking.type if wp.right_lane_marking else NONE_MARK
-        # BOTH markings, not either: the policy steers off two lines and losing one is
-        # exactly the case the previous test let through.
-        if lm == NONE_MARK or rm == NONE_MARK:
+        # DASHED on BOTH sides. This is the whole requirement: the policy learns to
+        # follow two dashed lane lines and nothing else, so every other variable is kept
+        # off the road rather than trained around.
+        #
+        # It subsumes the lane-position rule it replaces. A dashed line on both sides can
+        # only occur on an INTERIOR lane -- the rightmost lane has a solid edge line and
+        # the leftmost a solid centreline -- so requiring dashed automatically excludes
+        # the rightmost lane, which is where ramps merge and where four of the six first
+        # sections had put the ego. Pinning the index instead was a proxy for this, and a
+        # worse one: it cut the available road to 2,020 m after de-duplication, while the
+        # dashed test leaves 196 runs of 350 m or more, the longest 896 m.
+        # A MULTI-LANE CARRIAGEWAY, not a connector. This is the highway-versus-ramp
+        # distinction, and it is the one that matters: ramps joining and leaving beside
+        # the route are ordinary highway furniture, but the ego must not be DRIVING one.
+        #
+        # Excluding every junction-flagged waypoint was too blunt -- Town06's ring is
+        # punctuated by ramp junctions whose areas span the highway lanes themselves, so
+        # it fragmented the highway and left 1,116 m. Requiring dashed markings alone was
+        # too weak -- connector lanes carry Broken markings, and five of six sections then
+        # started inside a junction, three on single-lane connectors. Lane COUNT separates
+        # them cleanly: a connector is one lane, the highway is three to six.
+        if same_direction_lanes(wp) < MIN_CARRIAGEWAY_LANES:
+            ok[i] = False
+        elif lm not in DASHED_MARKS or rm not in DASHED_MARKS:
             ok[i] = False
         elif abs(wp.lane_width - LANE_W) > LANE_W_TOL:
-            ok[i] = False
-        elif lanes_from_left(wp) != EGO_LANE_FROM_LEFT:
             ok[i] = False
     if len(CTL):
         d = np.hypot(CTL[:, 0][None, :] - r[:, 0][:, None],
@@ -143,8 +195,7 @@ def main():
         sl = np.array([[l.location.x, l.location.y]
                        for l in world.get_lightmanager().get_all_lights(carla.LightGroup.Street)])
 
-        seeds = [w for w in wmap.generate_waypoints(40.0)
-                 if not w.is_junction and lanes_from_left(w) == EGO_LANE_FROM_LEFT]
+        seeds = [w for w in wmap.generate_waypoints(40.0) if not w.is_junction]
         seen, found = set(), []
         for sd in seeds:
             key = (sd.road_id, sd.lane_id)
