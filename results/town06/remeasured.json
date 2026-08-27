@@ -1,0 +1,118 @@
+{
+  "teacher": {
+    "checkpoint": "teacher_mixed_t06_dagger_r12",
+    "relu": null,
+    "conditions": {
+      "clear": {
+        "fails": 0,
+        "n": 12,
+        "worst_cte_ft": 0.5
+      },
+      "fog": {
+        "fails": 2,
+        "n": 12,
+        "worst_cte_ft": 14.81
+      },
+      "night": {
+        "fails": 2,
+        "n": 12,
+        "worst_cte_ft": 11.65
+      },
+      "shadows": {
+        "fails": 0,
+        "n": 12,
+        "worst_cte_ft": 0.45
+      }
+    },
+    "total_fails": 4,
+    "total_n": 48,
+    "prior_figure": "2/48"
+  },
+  "168x28_w2": {
+    "checkpoint": "S_mixed_t06_168x28_w2",
+    "relu": 21408,
+    "conditions": {
+      "clear": {
+        "fails": 0,
+        "n": 12,
+        "worst_cte_ft": 1.03
+      },
+      "fog": {
+        "fails": 6,
+        "n": 12,
+        "worst_cte_ft": 42.73
+      },
+      "night": {
+        "fails": 4,
+        "n": 12,
+        "worst_cte_ft": 11.57
+      },
+      "shadows": {
+        "fails": 0,
+        "n": 12,
+        "worst_cte_ft": 1.51
+      }
+    },
+    "total_fails": 10,
+    "total_n": 48,
+    "prior_figure": "14/48"
+  },
+  "320x64_w3": {
+    "checkpoint": "S_mixed_t06_320x64_w3",
+    "relu": 172848,
+    "conditions": {
+      "clear": {
+        "fails": 0,
+        "n": 12,
+        "worst_cte_ft": 1.53
+      },
+      "fog": {
+        "fails": 3,
+        "n": 12,
+        "worst_cte_ft": 10.53
+      },
+      "night": {
+        "fails": 1,
+        "n": 12,
+        "worst_cte_ft": 4.35
+      },
+      "shadows": {
+        "fails": 0,
+        "n": 12,
+        "worst_cte_ft": 0.47
+      }
+    },
+    "total_fails": 4,
+    "total_n": 48,
+    "prior_figure": "5-6/48"
+  },
+  "224x64_w2": {
+    "checkpoint": "S_mixed_t06_224x64_w2",
+    "relu": 79904,
+    "conditions": {
+      "clear": {
+        "fails": 2,
+        "n": 12,
+        "worst_cte_ft": 24.61
+      },
+      "fog": {
+        "fails": 2,
+        "n": 12,
+        "worst_cte_ft": 10.56
+      },
+      "night": {
+        "fails": 6,
+        "n": 12,
+        "worst_cte_ft": 30.64
+      },
+      "shadows": {
+        "fails": 3,
+        "n": 12,
+        "worst_cte_ft": 13.63
+      }
+    },
+    "total_fails": 13,
+    "total_n": 48,
+    "prior_figure": "15/48"
+  }
+}
