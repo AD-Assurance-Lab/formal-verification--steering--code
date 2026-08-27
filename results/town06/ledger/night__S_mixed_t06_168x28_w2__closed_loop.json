@@ -1,0 +1,252 @@
+{
+  "verdict": "FAIL",
+  "repetitions": 12,
+  "failures": 9,
+  "failure_rate": 0.75,
+  "wilson_95": [
+    0.46768966087934005,
+    0.9110599603710386
+  ],
+  "student": "S_mixed_t06_168x28_w2",
+  "condition": "night",
+  "exposure": {
+    "shutter": 200.0,
+    "iso": 100.0,
+    "fstop": 2.8,
+    "gamma": 2.2
+  },
+  "cte_budget_m": 0.6679999999999999,
+  "provenance": {
+    "run_started": "2026-08-27T03:10:39-04:00",
+    "weather": {
+      "cloudiness": 80.0,
+      "dust_storm": 0.0,
+      "fog_density": 0.0,
+      "fog_distance": 0.0,
+      "fog_falloff": 0.0,
+      "mie_scattering_scale": 0.0,
+      "precipitation": 0.0,
+      "precipitation_deposits": 0.0,
+      "scattering_intensity": 0.0,
+      "sun_altitude_angle": -25.0,
+      "sun_azimuth_angle": 0.0,
+      "wetness": 0.0,
+      "wind_intensity": 0.0
+    },
+    "env_overrides": {},
+    "fixed_delta_seconds": 0.2,
+    "substepping": {
+      "max_substeps": 16,
+      "max_substep_delta_time": 0.0125
+    },
+    "map": "Town06",
+    "target_speed_ms": 8.9408,
+    "lap_end_m": 490.0,
+    "git_sha": "e0a461f7027c7d978c6e52ebeaa6aaee1cd0365f",
+    "git_dirty": false,
+    "run_finished": "2026-08-27T03:12:44-04:00"
+  },
+  "runs": [
+    {
+      "rep": 0,
+      "direction": "s00",
+      "max_cte_m": 0.8772635687128226,
+      "frac_over_budget": 0.006012024048096192,
+      "departed": false,
+      "passed": false,
+      "max_cte_at": {
+        "step": 309,
+        "x": -350.9937438964844,
+        "y": 232.55416870117188,
+        "onset": {
+          "step": 308,
+          "x": -352.31903076171875,
+          "y": 231.42034912109375
+        }
+      }
+    },
+    {
+      "rep": 0,
+      "direction": "s01",
+      "max_cte_m": 0.43915079157846787,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 337,
+        "x": 631.5249633789062,
+        "y": 239.64768981933594
+      }
+    },
+    {
+      "rep": 0,
+      "direction": "s02",
+      "max_cte_m": 10.722725573059163,
+      "frac_over_budget": 0.20512820512820512,
+      "departed": false,
+      "passed": false,
+      "max_cte_at": {
+        "step": 297,
+        "x": 550.36962890625,
+        "y": 37.985843658447266,
+        "onset": {
+          "step": 72,
+          "x": 153.2155303955078,
+          "y": 49.45704650878906
+        }
+      }
+    },
+    {
+      "rep": 0,
+      "direction": "s03",
+      "max_cte_m": 6.40493445180008,
+      "frac_over_budget": 0.04610951008645533,
+      "departed": false,
+      "passed": false,
+      "max_cte_at": {
+        "step": 346,
+        "x": 648.8877563476562,
+        "y": 148.3738250732422,
+        "onset": {
+          "step": 331,
+          "x": 622.765869140625,
+          "y": 142.69810485839844
+        }
+      }
+    },
+    {
+      "rep": 0,
+      "direction": "s04",
+      "max_cte_m": 0.1421752181868422,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 52,
+        "x": 628.5208740234375,
+        "y": -21.378629684448242
+      }
+    },
+    {
+      "rep": 0,
+      "direction": "s05",
+      "max_cte_m": 2.4684036905677273,
+      "frac_over_budget": 0.08759124087591241,
+      "departed": false,
+      "passed": false,
+      "max_cte_at": {
+        "step": 262,
+        "x": -172.14620971679688,
+        "y": 50.00043487548828,
+        "onset": {
+          "step": 245,
+          "x": -202.430908203125,
+          "y": 51.79436492919922
+        }
+      }
+    },
+    {
+      "rep": 1,
+      "direction": "s00",
+      "max_cte_m": 7.481956152430564,
+      "frac_over_budget": 0.050100200400801605,
+      "departed": false,
+      "passed": false,
+      "max_cte_at": {
+        "step": 493,
+        "x": -25.473764419555664,
+        "y": 254.0598602294922,
+        "onset": {
+          "step": 474,
+          "x": -58.44389343261719,
+          "y": 247.494384765625
+        }
+      }
+    },
+    {
+      "rep": 1,
+      "direction": "s01",
+      "max_cte_m": 0.8810910062861169,
+      "frac_over_budget": 0.013020833333333334,
+      "departed": false,
+      "passed": false,
+      "max_cte_at": {
+        "step": 376,
+        "x": 663.734375,
+        "y": 185.44723510742188,
+        "onset": {
+          "step": 374,
+          "x": 663.8959350585938,
+          "y": 189.02142333984375
+        }
+      }
+    },
+    {
+      "rep": 1,
+      "direction": "s02",
+      "max_cte_m": 1.6090696524083834,
+      "frac_over_budget": 0.042735042735042736,
+      "departed": false,
+      "passed": false,
+      "max_cte_at": {
+        "step": 281,
+        "x": 528.2559814453125,
+        "y": 50.328407287597656,
+        "onset": {
+          "step": 70,
+          "x": 151.2477569580078,
+          "y": 49.46866226196289
+        }
+      }
+    },
+    {
+      "rep": 1,
+      "direction": "s03",
+      "max_cte_m": 1.1782464247149307,
+      "frac_over_budget": 0.02881844380403458,
+      "departed": false,
+      "passed": false,
+      "max_cte_at": {
+        "step": 274,
+        "x": 518.4681396484375,
+        "y": 142.73202514648438,
+        "onset": {
+          "step": 270,
+          "x": 511.3951721191406,
+          "y": 142.19471740722656
+        }
+      }
+    },
+    {
+      "rep": 1,
+      "direction": "s04",
+      "max_cte_m": 0.13923103576205884,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 51,
+        "x": 628.4969482421875,
+        "y": -21.388139724731445
+      }
+    },
+    {
+      "rep": 1,
+      "direction": "s05",
+      "max_cte_m": 0.968455899611799,
+      "frac_over_budget": 0.021897810218978103,
+      "departed": false,
+      "passed": false,
+      "max_cte_at": {
+        "step": 252,
+        "x": -188.88031005859375,
+        "y": 53.44405746459961,
+        "onset": {
+          "step": 250,
+          "x": -192.4440155029297,
+          "y": 53.33460235595703
+        }
+      }
+    }
+  ]
+}

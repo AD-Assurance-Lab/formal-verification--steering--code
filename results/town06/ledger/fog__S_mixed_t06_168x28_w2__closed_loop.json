@@ -1,0 +1,222 @@
+{
+  "verdict": "FAIL",
+  "repetitions": 12,
+  "failures": 3,
+  "failure_rate": 0.25,
+  "wilson_95": [
+    0.08894003962896138,
+    0.53231033912066
+  ],
+  "student": "S_mixed_t06_168x28_w2",
+  "condition": "fog",
+  "exposure": {
+    "shutter": 800.0,
+    "iso": 100.0,
+    "fstop": 2.8,
+    "gamma": 2.2
+  },
+  "cte_budget_m": 0.6679999999999999,
+  "provenance": {
+    "run_started": "2026-08-27T03:08:44-04:00",
+    "weather": {
+      "cloudiness": 80.0,
+      "dust_storm": 0.0,
+      "fog_density": 70.0,
+      "fog_distance": 10.0,
+      "fog_falloff": 0.20000000298023224,
+      "mie_scattering_scale": 0.0,
+      "precipitation": 0.0,
+      "precipitation_deposits": 0.0,
+      "scattering_intensity": 0.0,
+      "sun_altitude_angle": 90.0,
+      "sun_azimuth_angle": 0.0,
+      "wetness": 0.0,
+      "wind_intensity": 0.0
+    },
+    "env_overrides": {},
+    "fixed_delta_seconds": 0.2,
+    "substepping": {
+      "max_substeps": 16,
+      "max_substep_delta_time": 0.0125
+    },
+    "map": "Town06",
+    "target_speed_ms": 8.9408,
+    "lap_end_m": 490.0,
+    "git_sha": "e0a461f7027c7d978c6e52ebeaa6aaee1cd0365f",
+    "git_dirty": false,
+    "run_finished": "2026-08-27T03:10:07-04:00"
+  },
+  "runs": [
+    {
+      "rep": 0,
+      "direction": "s00",
+      "max_cte_m": 0.36730974441265757,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 208,
+        "x": -365.77764892578125,
+        "y": 57.05440139770508
+      }
+    },
+    {
+      "rep": 0,
+      "direction": "s01",
+      "max_cte_m": 0.29446661108669514,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 345,
+        "x": 643.6318359375,
+        "y": 233.578369140625
+      }
+    },
+    {
+      "rep": 0,
+      "direction": "s02",
+      "max_cte_m": 7.619398943209598,
+      "frac_over_budget": 0.18803418803418803,
+      "departed": false,
+      "passed": false,
+      "max_cte_at": {
+        "step": 350,
+        "x": 651.5203247070312,
+        "y": 40.18724060058594,
+        "onset": {
+          "step": 285,
+          "x": 536.3623046875,
+          "y": 47.91694259643555
+        }
+      }
+    },
+    {
+      "rep": 0,
+      "direction": "s03",
+      "max_cte_m": 0.36637120465222134,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 346,
+        "x": 649.7106323242188,
+        "y": 141.44937133789062
+      }
+    },
+    {
+      "rep": 0,
+      "direction": "s04",
+      "max_cte_m": 0.16699811314554552,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 26,
+        "x": 661.0716552734375,
+        "y": 7.31898832321167
+      }
+    },
+    {
+      "rep": 0,
+      "direction": "s05",
+      "max_cte_m": 0.37573438271708004,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 217,
+        "x": -251.33059692382812,
+        "y": 54.04523849487305
+      }
+    },
+    {
+      "rep": 1,
+      "direction": "s00",
+      "max_cte_m": 0.29636195217545014,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 498,
+        "x": -17.252920150756836,
+        "y": 246.2495880126953
+      }
+    },
+    {
+      "rep": 1,
+      "direction": "s01",
+      "max_cte_m": 3.843623510581168,
+      "frac_over_budget": 0.1171875,
+      "departed": false,
+      "passed": false,
+      "max_cte_at": {
+        "step": 36,
+        "x": 94.73299407958984,
+        "y": 240.7143096923828,
+        "onset": {
+          "step": 9,
+          "x": 46.77804946899414,
+          "y": 243.73843383789062
+        }
+      }
+    },
+    {
+      "rep": 1,
+      "direction": "s02",
+      "max_cte_m": 7.339465751619132,
+      "frac_over_budget": 0.18518518518518517,
+      "departed": false,
+      "passed": false,
+      "max_cte_at": {
+        "step": 350,
+        "x": 649.1260375976562,
+        "y": 41.29024887084961,
+        "onset": {
+          "step": 286,
+          "x": 535.6263427734375,
+          "y": 48.029090881347656
+        }
+      }
+    },
+    {
+      "rep": 1,
+      "direction": "s03",
+      "max_cte_m": 0.5184651225593426,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 346,
+        "x": 649.6907348632812,
+        "y": 141.29498291015625
+      }
+    },
+    {
+      "rep": 1,
+      "direction": "s04",
+      "max_cte_m": 0.15110142892000872,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 60,
+        "x": 614.7154541015625,
+        "y": -23.68000602722168
+      }
+    },
+    {
+      "rep": 1,
+      "direction": "s05",
+      "max_cte_m": 0.37755094810136447,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 218,
+        "x": -251.36558532714844,
+        "y": 54.04536437988281
+      }
+    }
+  ]
+}
