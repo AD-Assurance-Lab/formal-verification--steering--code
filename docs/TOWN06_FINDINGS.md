@@ -126,6 +126,20 @@ LOOP over all six sections (single run each; a repeated-drive confirmation follo
     112x38 w2  21,504        2.38        4/6      12.97      12.97       2.69
     168x28 w2  21,408        3.57        6/6       0.97       0.75       0.97
 
+CONFIRMED OVER REPETITIONS. Re-driven 3x per section; a section counts as held only if
+it holds on EVERY rep (worst |CTE| ft over reps, budget 2.19 ft):
+
+    config       ReLU  held   s03/620m   s01/558m   s02/404m   s04/264m  s05/232m  s00/166m
+    168x28 w2  21,408  6/6    1.45(3/3)  1.62(3/3)  0.58(3/3)  0.40(3/3) 0.30(3/3) 0.55(3/3)
+    224x28 w1  14,400  5/6    0.87(3/3) 12.32(0/3)  0.83(3/3)  0.83(3/3) 0.54(3/3) 0.83(3/3)
+    84x28  w3  15,456  3/6    3.32(0/3) 11.25(0/3)  4.30(2/3)  0.34(3/3) 0.36(3/3) 0.95(3/3)
+    112x38 w2  21,504  3/6    4.17(0/3) 12.57(2/3) 11.73(0/3)  0.46(3/3) 0.47(3/3) 0.91(3/3)
+
+Repetition sharpens both conclusions. 112x38 w2 falls to 3/6 with three sections failing
+EVERY rep. And s01 is the discriminator: resolution alone (224x28 w1) nails s03 at
+0.87 ft yet fails s01 on 0 of 3 reps, width alone fails both, and only the combination
+holds everything. In the single-run data s01 looked like noise; it is not.
+
 THE CONTROLLED COMPARISON. 112x38 w2 and 168x28 w2 cost the SAME -- 21,504 against
 21,408 ReLU -- and differ only in how the pixels are spent. Splitting the budget across
 both axes holds 4/6 at 12.97 ft; spending it all horizontally holds 6/6 at 0.97 ft,
