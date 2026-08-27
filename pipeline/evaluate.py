@@ -84,6 +84,7 @@ def drive_nn(world, world_map, vehicle, img_queue, model, device, direction, max
     arc = np.concatenate([[0.0], np.cumsum(seg_len)])
     scored_m = C.SECTION_LEN_M.get(direction) if getattr(C, "SECTION_BASED", False) else None
 
+    arc_start = None
     records, left, stalled, offroad = [], False, 0, 0
     for step in range(max_steps):
         env.update_spectator(world, vehicle)
@@ -118,9 +119,20 @@ def drive_nn(world, world_map, vehicle, img_queue, model, device, direction, max
             speed_mph=env.speed_mph(vehicle), x=loc.x, y=loc.y, yaw=tf.rotation.yaw,
         ))
 
-        if scored_m is not None and hint is not None and arc[min(hint, len(arc) - 1)] >= scored_m:
-            print(f"  reached the section's scored end ({scored_m:.0f} m) at step {step}")
-            break
+        # Distance travelled FROM HANDOVER, not absolute arc position. Comparing the
+        # absolute position assumed every section's spawn sits at route index 0. Where it
+        # does not, the very first sample already exceeded the section length and the run
+        # stopped immediately: s05 ran FIVE steps and reported 0.06 ft as a PASS.
+        if scored_m is not None and hint is not None:
+            here = arc[min(hint, len(arc) - 1)]
+            if arc_start is None:
+                arc_start = here
+            travelled = here - arc_start
+            if travelled < -0.5 * arc[-1]:          # wrapped past the closed loop's seam
+                travelled += arc[-1]
+            if travelled >= scored_m:
+                print(f"  reached the section's scored end ({scored_m:.0f} m) at step {step}")
+                break
 
         d0 = loc.distance(start)
         if d0 > 50.0:
