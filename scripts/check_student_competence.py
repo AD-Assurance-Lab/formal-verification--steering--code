@@ -66,8 +66,26 @@ STUDENTS = tuple((nm, ck, ",".join(str(c) for c in ch), fc)
                  for nm, ck, ch, fc in C.TOWN06_STUDENTS)
 
 
+def restart_carla():
+    """R-SIM-1: a fresh server before every measurement run.
+
+    This gate drives 36 times (2 students x 3 reps x 6 sections) and used to do it all
+    against ONE long-lived CARLA. Measured cost of that: mixed/s00 scored 42.54 ft inside
+    the gate and 2.74 ft with full step count on a freshly restarted server, one run at a
+    time. The gate was reporting simulator degradation as a student departing the lane.
+    Every other measurement script in this study already restarts; this one did not.
+    """
+    subprocess.run(["bash", str(REPO / "scripts" / "carla_restart.sh")],
+                   capture_output=True, text=True,
+                   env=dict(os.environ, CARLA_PORT=os.environ.get("CARLA_PORT", "3000")))
+    subprocess.run([sys.executable, str(REPO / "scripts" / "wait_carla_ready.py"),
+                    "--timeout", "260"], capture_output=True, text=True,
+                   env=dict(os.environ, CARLA_PORT=os.environ.get("CARLA_PORT", "3000")))
+
+
 def run_eval(ckpt, channels, fc):
     """One pass over every section in clear weather. Returns per-section CTE."""
+    restart_carla()
     env = dict(os.environ, STUDY_MAP=C.STUDY_MAP, PYTHONUNBUFFERED="1")
     cmd = [sys.executable, "evaluate.py", "--model", ckpt, "--direction", "all",
            "--weather", "clear", "--max-steps", "2000",
