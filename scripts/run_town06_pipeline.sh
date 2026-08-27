@@ -209,17 +209,19 @@ say "teachers: clear=$TC mixed=$TM"
 mapfile -t ROWS < <(STUDY_MAP=Town06 python3 -c "
 import sys; sys.path.insert(0,'$REPO/pipeline'); import config as C
 for nm, ck, ch, fc in C.TOWN06_STUDENTS:
-    print(nm, ck, ','.join(str(c) for c in ch), fc, C.relu_count(ch, fc))")
+    print(nm, ck, ','.join(str(c) for c in ch), fc,
+          C.relu_count(ch, fc, C.TOWN06_INPUT_H, C.TOWN06_INPUT_W),
+          C.TOWN06_INPUT_W, C.TOWN06_INPUT_H)")
 
 for ROW in "${ROWS[@]}"; do
-    read -r NM CK CH FC RELU <<<"$ROW"
+    read -r NM CK CH FC RELU IN_W IN_H <<<"$ROW"
     case "$NM" in
         S_clear_t06) TEACH=$TC; DSET=clear_t06; DDIR=dagger_clear_t06 ;;
         *)           TEACH=$TM; DSET=mixed_t06; DDIR=dagger_mixed_t06 ;;
     esac
     if [ ! -f "$CK_DIR/$CK.pth" ]; then
-        say "distil $NM -> $CK ($RELU ReLU) from $TEACH"
-        run "distill_$NM" python3 distill.py --in-w 84 --in-h 28 \
+        say "distil $NM -> $CK (${IN_W}x${IN_H}, $RELU ReLU) from $TEACH"
+        run "distill_$NM" python3 distill.py --in-w "$IN_W" --in-h "$IN_H" \
             --out "$CK" --teacher "$TEACH" --base "$DSET" \
             --dagger-dirs "$DDIR" --channels "$CH" --fc "$FC"|| exit 1
     else say "SKIP  distil $NM ($CK exists)"; fi
