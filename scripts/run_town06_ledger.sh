@@ -50,10 +50,10 @@ carla_up 12 || carla_restart || exit 1
 mapfile -t STUDENT_ROWS < <(STUDY_MAP=Town06 python3 -c "
 import sys; sys.path.insert(0,'pipeline'); import config as C
 for nm, ck, ch, fc in C.TOWN06_STUDENTS:
-    print(ck, ','.join(str(c) for c in ch), fc)")
+    print(ck, ','.join(str(c) for c in ch), fc, C.TOWN06_INPUT_W, C.TOWN06_INPUT_H)")
 
 for ROW in "${STUDENT_ROWS[@]}"; do
-  read -r BASE CH FC <<<"$ROW"
+  read -r BASE CH FC IN_W IN_H <<<"$ROW"
   # Drive the FINAL student (newest student-DAgger round), not the distilled base.
   STU=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(C.final_student('$BASE'))")
   say "student $BASE -> $STU"
@@ -64,7 +64,7 @@ for ROW in "${STUDENT_ROWS[@]}"; do
     rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null
     say "START $COND/$STU"
     if python3 scripts/closed_loop_ledger.py --student "$STU" --condition "$COND" \
-         --reps 2 --channels "$CH" --fc "$FC" \
+         --reps 2 --channels "$CH" --fc "$FC" --w "$IN_W" --h "$IN_H" \
          >>"$LOG_DIR/ledger_${COND}_${STU}.log" 2>&1; then
         say "OK    $COND/$STU"
     else
