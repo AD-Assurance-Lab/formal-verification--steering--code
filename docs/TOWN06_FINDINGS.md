@@ -1003,3 +1003,34 @@ regressed, and it costs two oracle runs to find out rather than a night of theor
 
 Oracle competence on the corrected harness, for the record: PASS on all six sections,
 max|CTE| 0.01-0.34 ft against a 2.19 ft budget.
+
+### T06-F22 addendum 2: the conditions survive the harness change; 5-degree low sun holds
+
+PROTOCOL A-2 required the Town06 low-sun angle to be re-derived under the corrected
+harness before the mixed policy is collected, because T06-F20 chose 5 degrees from
+brightness measured on captures taken under the old one. Re-measured at all six section
+spawns:
+
+    condition     s00     s01     s02     s03     s04     s05     CV%
+    clear      0.2963  0.2963  0.2969  0.2929  0.3056  0.3018    1.40
+    fog        0.2542  0.2723  0.2702  0.2698  0.2352  0.2690    5.08
+    night      0.2060  0.1983  0.2385  0.1907  0.1819  0.2596   12.96
+    shadows    0.1222  0.1178  0.1179  0.1163  0.1233  0.1249    2.65
+
+Low sun means 0.1204 against Town04's published 0.1117 -- 7.8% away, inside the 9% T06-F20
+accepted, where the inherited 15 degrees was 65% away and read as night. The night-minus-low-sun
+gap is 0.0921 against Town04's 0.0958, so the lighting axis stays ordered, which is the
+property the study depends on. Per-section uniformity improved slightly, 3.29% -> 2.65%.
+
+**5 degrees holds and A-2 needs no clause.**
+
+Also checked, and the reason this ran before the rebuild rather than during it: all four
+conditions still classify as themselves under `condition_signature.identify()`, whose
+thresholds were fitted on old-harness captures. `evaluate.py` raises on a mismatch, so a
+threshold crossing would have aborted every run of the affected condition hours into an
+unattended campaign. Margins are healthy on every discriminator.
+
+One stale artefact worth naming: the reference table in `condition_signature.py`'s
+docstring still lists shadows at mean 0.1842. That is the pre-T06-F20 15-degree value,
+not a drift caused by the harness change. The thresholds themselves are unaffected,
+because shadows is identified by falling below clear's 0.250, not by matching 0.1842.
