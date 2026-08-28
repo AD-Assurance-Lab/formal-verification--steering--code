@@ -1,5 +1,12 @@
 # CLAUDE.md
 
+
+> **PENDING — CARLA harness defect.** Read `CARLA_DETERMINISM_PENDING.md` before
+> running or re-measuring anything here. Two defects found on 2026-08-28 affect
+> every CARLA study in the lab. The published results are NOT invalidated — they
+> are already rates over repetitions — but the harness is superseded. The rework is
+> queued behind Town06 and must not be started without talking to Zach.
+
 Public artifact repo for the end-to-end steering verification paper.
 
 Rules that still bite:
