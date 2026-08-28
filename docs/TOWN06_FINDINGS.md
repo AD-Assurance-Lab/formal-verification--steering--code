@@ -677,7 +677,111 @@ study while every file still looked correct.
 This invalidates every Town06 low-sun frame collected so far -- training data, captures
 and results. Teachers and students both need rebuilding, which was already required.
 
+## T06-F21  HANDOFF: run-to-run reproducibility is UNRESOLVED and may affect Town04
+
+Written at the end of a session that lost a night and most of a day to infrastructure
+faults. This section is the state of play, what is trusted, what is not, and what to do
+next. Read it before running anything.
+
+### The open question, and why it matters beyond Town06
+
+Zach asked the right question: if CARLA is deterministic in synchronous mode -- and this
+study pins the timestep, substepping, spawn, weather and camera exposure -- how can a
+competence gate report "held 2/3"? A deterministic process cannot produce that.
+
+Measured so far, and the two measurements DISAGREE:
+
+    A. same section driven ALONE, 3x, fresh server each
+       -> reported bit-identical, 348 steps, 6.74 ft
+       -> BUT THIS PROBE IS SUSPECT. scripts/determinism_probe.py reads
+          pipeline/results/eval_<ckpt>_<section>.csv, which every run OVERWRITES IN
+          PLACE. If a run did not rewrite it, the probe compared the file with itself
+          and "IDENTICAL" means nothing. The probe must be fixed to copy each run's CSV
+          to a per-rep path BEFORE the next run, then compare those copies.
+
+    B. the gate's own pattern, --direction all, 3 reps, fresh server each
+       (results/town06_logs/seq_det.log, parsed from STDOUT so not subject to the same
+       flaw)
+         rep 0: s00=0.36 s01=0.71 s02=10.28 s03=0.62 s04=0.62 s05=0.60
+         rep 1: s00=0.35 s01=0.54 s02= 9.53 s03=0.43 s04=0.57 s05=0.40
+       EVERY section differs, including s00, the FIRST one driven.
+
+B is the more trustworthy of the two and says runs are NOT reproducible. A said the
+opposite and has a known defect. Do not treat either as settled.
+
+**Why this reaches Town04.** The published study drives its lap in two directions inside
+one process, the same pattern as `--direction all`, and reports cells as rates over ten
+runs. If runs are not reproducible, those rates are rates over something real and the
+published numbers stand as rates -- but the STUDY has never characterised the source of
+that variation, and a 0/10 versus 10/10 split is only as meaningful as the process
+generating it. If runs ARE reproducible and the variation is an artefact of our harness,
+then "10 repetitions" was measuring the harness. Either way it needs resolving before the
+next blind claim, and it is the first thing to settle.
+
+### What to do first, in order
+
+1. **Fix determinism_probe.py** so each rep's CSV is copied to its own path before the
+   next run overwrites it. Re-run A. This is cheap and decides everything below.
+2. If runs ARE reproducible in isolation but NOT in sequence, the carried state is the
+   target: `teleport` zeroes linear and angular velocity and sets the transform, but does
+   not touch suspension, wheel or drivetrain state, and CARLA applies transforms on the
+   NEXT tick. Instrument the first 20 steps of each section for pose, velocity and
+   steering and diff them across reps.
+3. If runs are not reproducible even in isolation, find the entropy source before
+   trusting any closed-loop number. Candidates in order of likelihood: renderer
+   nondeterminism reaching the camera, sensor delivery ordering, physics substep
+   scheduling.
+4. Only then return to the competence gate. A "held 2/3" is not interpretable until this
+   is settled.
+
+### What IS trusted, and can be built on
+
+  - **The corrected routes.** 6 sections, 3,834 m, independently verified: 100% both lane
+    markings present with no gap >= 10 m, 100% DASHED on both sides, 3-5 lanes throughout,
+    never a single-lane connector. Route fingerprint 706db50636cbd6c9.
+  - **The low-sun correction.** Town06 at 5 degrees renders 0.1250 mean against Town04's
+    0.1117; at the inherited 15 degrees it was 0.1841 and nearly indistinguishable from
+    night. Fog and night are unchanged to four decimal places, verified old-vs-new.
+  - **Both teachers.** clear 6/6 at 0.92 ft; mixed 24/24 at 1.31 ft, and the mixed teacher
+    converged in 6 DAgger rounds against 12 on the contaminated routes.
+  - **Both students distilled.** clear KD RMSE 0.0300 (was 0.0489-0.0553 on the old
+    routes, on MORE frames), mixed 0.0480.
+
+### What is NOT trusted
+
+  - Every closed-loop student number from this session. The competence gates ran on
+    degraded or un-restarted servers, and the one clean-looking gate is subject to the
+    open question above.
+  - T06-F14's "student DAgger is harmful at 168x28". Measured on the contaminated
+    sections; never re-tested on the corrected ones. The chain is set up to re-test it.
+  - Any per-section claim. s02 looks like the hard section for both students, but s02 also
+    read 6.74 ft alone and 9.53-10.28 ft in sequence.
+
+### Infrastructure faults found and fixed this session
+
+  1. Runs overshot each section's clean window; the excursion in excluded road was scored
+     as the section's max |CTE|. Fixed: stop at the scored end by unwrapped route index.
+  2. A degraded CARLA silently stops advancing physics while reporting plausible
+     velocities: sections drove 14-62% of their length at 1.3-5.6 m/s while speed_mph read
+     20.0. Fixed: restart before every measurement run, plus six hygiene rules in
+     CLAUDE.md.
+  3. `subprocess.run(capture_output=True)` on a script that daemonises CARLA hangs
+     forever on the inherited pipe. THIS is what cost the night: 12h52m at 0% CPU. Same
+     script takes 57 s standalone. Fixed by redirecting to a log file.
+  4. wait_carla_ready declared the server ready on the default map; the first run then
+     paid a Town06 load that blew evaluate.py's 120 s client timeout. Fixed: the probe
+     loads the study map, capped by its own deadline.
+  5. Condition leakage (Zach's Town04 fog-into-night). Fixed: the rendered condition is
+     identified from a real frame and mismatches RAISE. Validated 24/24 on captures.
+  6. Three separate bugs in the section-end distance cap, each ending runs after 3-5 steps
+     and reporting the tiny |CTE| as a PASS.
+
+Common thread, and the reason for R-SIM-6: **an infrastructure fault reliably looks like a
+model result.** Five times this session a broken pipeline produced a plausible number.
+Treat any surprising closed-loop value as suspect until it reproduces on a fresh server.
+
 ## Open
+
 
 
 
