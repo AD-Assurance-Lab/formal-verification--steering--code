@@ -111,7 +111,7 @@ def drive_nn(world, world_map, vehicle, img_queue, model, device, direction, max
         exp_steer, _, _ = pure_pursuit_route(route, tf, hint)
 
         thr, brk = speed_ctrl.control(vehicle)
-        vehicle.apply_control(carla.VehicleControl(throttle=thr, brake=brk, steer=nn_steer))
+        env.apply_control(vehicle, carla.VehicleControl(throttle=thr, brake=brk, steer=nn_steer))
 
         records.append(dict(
             step=step, time_sec=round(step * C.FIXED_DT, 2),
@@ -213,6 +213,19 @@ def main():
     client = env.connect()
     world = env.load_town04(client)
     original = env.enable_sync_mode(world)
+
+    # DETERMINISM PREFLIGHT (Town06 only). The launch flags that matter most -- texture
+    # streaming and quality level -- are invisible over RPC, so a server someone started
+    # by hand looks completely normal and quietly produces noisier results. This reads
+    # the server's real command line and refuses rather than warns.
+    #
+    # Town04 is excluded deliberately: it is the published artifact and must keep
+    # reproducing exactly until its own re-measurement is authorised.
+    if C.STUDY_MAP == "Town06":
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+        from check_carla_determinism import require_deterministic  # noqa: E402
+        require_deterministic(world)
+
     world_map = world.get_map()
     # Spawn INSIDE the try: a failure here would otherwise skip the finally and leave
     # the server hung in synchronous mode with no ticking client (trap 3b).

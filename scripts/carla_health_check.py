@@ -73,7 +73,7 @@ def main():
             cte, hint = signed_cte_route(route, loc.x, loc.y, hint)
             st, _, _ = pure_pursuit_route(route, tf, hint)
             th, br = sc.control(v)
-            v.apply_control(carla.VehicleControl(throttle=th, brake=br, steer=st))
+            env.apply_control(v, carla.VehicleControl(throttle=th, brake=br, steer=st))
             path += math.dist((prev.x, prev.y), (loc.x, loc.y))
             prev = loc
             mx = max(mx, abs(cte))

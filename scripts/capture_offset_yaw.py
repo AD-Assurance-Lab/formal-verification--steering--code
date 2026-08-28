@@ -134,7 +134,7 @@ def main():
                       else (C.SPAWN_WESTBOUND if args.direction == "westbound"
                             else C.SPAWN_EASTBOUND))
             v = env.spawn_vehicle(world, _spawn)
-            v.apply_control(carla.VehicleControl(brake=1.0))
+            env.apply_control(v, carla.VehicleControl(brake=1.0))
             for _ in range(40):
                 world.tick()
             z0 = v.get_transform().location.z
@@ -165,7 +165,7 @@ def main():
                     carla.Rotation(yaw=yaw)))
                 v.set_target_velocity(carla.Vector3D(0, 0, 0))
                 v.set_target_angular_velocity(carla.Vector3D(0, 0, 0))
-                v.apply_control(carla.VehicleControl(brake=1.0))
+                env.apply_control(v, carla.VehicleControl(brake=1.0))
                 for _ in range(ticks):
                     world.tick()
                 t = v.get_transform()

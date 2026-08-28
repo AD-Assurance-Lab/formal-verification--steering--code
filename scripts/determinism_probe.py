@@ -19,6 +19,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -26,24 +27,49 @@ sys.path.insert(0, str(REPO / "pipeline"))
 import config as C  # noqa: E402
 
 
-def one_run(ck, ch, fc, iw, ih, sec, cond, restart):
+def one_run(ck, ch, fc, iw, ih, sec, cond, restart, rep_ix):
     if restart:
         logp = REPO / "results" / "town06_logs" / "restart_inline.log"
         with open(logp, "a") as fh:
             subprocess.run(["bash", str(REPO / "scripts" / "carla_restart.sh")],
                            stdout=fh, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
                            timeout=300, env=dict(os.environ))
+    t0 = time.time()
     p = subprocess.run(
         [sys.executable, "evaluate.py", "--model", ck, "--student", "--channels", ch,
          "--fc", str(fc), "--in-w", str(iw), "--in-h", str(ih), "--direction", sec,
          "--weather", cond, "--max-steps", "2000"],
         cwd=str(REPO / "pipeline"), capture_output=True, text=True,
         env=dict(os.environ, STUDY_MAP="Town06", PYTHONUNBUFFERED="1"))
-    src = REPO / "pipeline" / C.RESULTS_SUBDIR / f"eval_{ck}_{sec}.csv" \
-        if hasattr(C, "RESULTS_SUBDIR") else Path(C.RESULTS_DIR) / f"eval_{ck}_{sec}.csv"
+    src = Path(C.RESULTS_DIR) / f"eval_{ck}_{sec}.csv"
+
+    # THE DEFECT THIS PROBE SHIPPED WITH, and why it reported a false IDENTICAL.
+    #
+    # The return code was captured into `p` and never looked at. evaluate.py OVERWRITES
+    # this CSV in place, so a rep that CRASHED -- lock contention, a client timeout, a
+    # condition mismatch -- left the PREVIOUS rep's file on disk and the probe read it
+    # again. Three failed reps compare one stale file against itself and print
+    # "IDENTICAL", which is the strongest possible claim and was pure artefact.
+    #
+    # Three guards, because any one of them alone still lets a stale read through:
+    #   1. the run must have exited 0;
+    #   2. the CSV must be NEWER than the moment the run started;
+    #   3. it is copied to a per-rep path immediately, so nothing can overwrite it.
+    if p.returncode != 0:
+        raise RuntimeError(
+            f"rep failed (rc={p.returncode}); refusing to compare a stale CSV.\n"
+            f"--- stdout tail ---\n{p.stdout[-1500:]}\n"
+            f"--- stderr tail ---\n{p.stderr[-1500:]}")
     if not src.exists():
-        src = Path(C.RESULTS_DIR) / f"eval_{ck}_{sec}.csv"
-    rows = list(csv.DictReader(open(src))) if src.exists() else []
+        raise RuntimeError(f"run exited 0 but wrote no {src}")
+    if src.stat().st_mtime < t0:
+        raise RuntimeError(
+            f"{src} was not rewritten by this run (mtime {src.stat().st_mtime} < "
+            f"start {t0}). It is the PREVIOUS rep's file; comparing it proves nothing.")
+
+    dst = Path(C.RESULTS_DIR) / f"determinism_{ck}_{sec}_rep{rep_ix:02d}.csv"
+    shutil.copy2(src, dst)
+    rows = list(csv.DictReader(open(dst)))
     return rows, (p.stdout + p.stderr)
 
 
@@ -63,7 +89,7 @@ def main():
     traces = []
     for i in range(args.reps):
         rows, _ = one_run(args.ck, args.channels, args.fc, args.in_w, args.in_h,
-                          args.section, args.cond, not args.no_restart)
+                          args.section, args.cond, not args.no_restart, i)
         traces.append(rows)
         mx = max((abs(float(r["cte_ft"])) for r in rows), default=float("nan"))
         print(f"  rep {i}: {len(rows):4d} steps, max|CTE| {mx:6.2f} ft", flush=True)

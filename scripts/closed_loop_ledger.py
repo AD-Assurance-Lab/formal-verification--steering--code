@@ -178,7 +178,7 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps,
                                  speed_mph=float(env.speed_mph(vehicle))))
 
         thr, brk = speed_ctrl.control(vehicle)
-        vehicle.apply_control(carla.VehicleControl(throttle=thr, brake=brk, steer=steer))
+        env.apply_control(vehicle, carla.VehicleControl(throttle=thr, brake=brk, steer=steer))
 
         d0 = loc.distance(start)
         if d0 > 50.0:

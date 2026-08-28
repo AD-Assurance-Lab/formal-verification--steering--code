@@ -1,0 +1,16 @@
+{
+  "label": "baseline_sameserver",
+  "n_steps": 200,
+  "n_reps": 3,
+  "physics_identical": false,
+  "render_identical": false,
+  "preproc_identical": false,
+  "nn_identical": false,
+  "first_pose_divergence": 30,
+  "max_pose_delta": 58.87567710876465,
+  "first_raw_divergence": 0,
+  "raw_diff_steps": 200,
+  "first_pre_divergence": 0,
+  "pre_diff_steps": 196,
+  "max_nn_steer_delta": 0.4746297001838684
+}

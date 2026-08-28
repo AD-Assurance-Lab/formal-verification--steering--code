@@ -34,6 +34,29 @@ CARLA_ROOT = os.environ.get("CARLA_ROOT", os.path.expanduser("~/carla"))
 STUDY_MAP = os.environ.get("STUDY_MAP", "Town04")
 MAP_NAME = STUDY_MAP
 
+# ── Determinism ──────────────────────────────────────────────────────────────
+# DETERMINISTIC_CONTROL routes every vehicle command through an ACKNOWLEDGED batch
+# command instead of the fire-and-forget `vehicle.apply_control()` RPC.
+#
+# Measured, open loop, with the feedback cut and the command sequence a pure function
+# of the step index (scripts/determinism_tier1_openloop.py):
+#
+#     vehicle.apply_control()   physics diverges the first time the command CHANGES;
+#                               the applied-control READBACK differs between reps at
+#                               the same step. Max divergence over 200 steps: ~60 m.
+#     apply_batch_sync()        pose, velocity, gear and applied control bit-identical
+#                               for every step of every rep.
+#
+# The race is invisible while a command is unchanged, because a late arrival re-applies
+# the same value -- which is exactly why it went unnoticed and why divergence always
+# appeared to start mid-run for no reason.
+#
+# DEFAULT IS TOWN06 ONLY. Town04 is the published artifact and must keep reproducing
+# byte-for-byte until its own re-measurement is authorised, so with STUDY_MAP unset
+# this is off and the code path is the original one.
+DETERMINISTIC_CONTROL = os.environ.get(
+    "DETERMINISTIC_CONTROL", "1" if STUDY_MAP == "Town06" else "0") == "1"
+
 # ── Vehicle (Tesla Model 3, as instantiated in CARLA) ────────────────────────
 VEHICLE_BLUEPRINT = "vehicle.tesla.model3"
 WHEELBASE_M = 3.005          # [MEASURED] from CARLA wheel positions (spec is 2.87)
