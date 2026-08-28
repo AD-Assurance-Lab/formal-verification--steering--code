@@ -24,6 +24,17 @@ rate over >=10 reps — now justified by measurement, with the noise 168x smalle
 **Town04 is untouched and stays that way.** `DETERMINISTIC_CONTROL` is off there,
 `-notexturestreaming` is Town06-only, the preflight runs on the Town06 path only.
 
+## Harness self-check, before trusting anything
+
+Drive the oracle twice and compare. It never reads the camera, so under the corrected
+harness it is bit-identical, and anything else means the harness has regressed:
+
+    bash scripts/carla_restart.sh > /tmp/r.log 2>&1     # never pipe this; it daemonises
+    cd pipeline && python3 drive_expert.py --direction all
+    # copy results/oracle_s0*.csv, restart, repeat, then cmp
+
+Verified 2026-08-28: all six sections bit-identical across fresh servers.
+
 ## Do this next
 
 1. **The capacity decision, still open and still addressed to Zach**

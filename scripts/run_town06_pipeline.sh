@@ -35,6 +35,13 @@ python3 scripts/check_protocol_lock.py >/dev/null || {
     say "FATAL: PROTOCOL lock mismatch -- refusing to run"; exit 1; }
 say "PROTOCOL lock OK; STUDY_MAP=$STUDY_MAP CARLA_PORT=$CARLA_PORT"
 
+# DETERMINISM gate, alongside the PROTOCOL gate and for the same reason: a campaign
+# built on a non-compliant simulator is not slightly worse, it is unusable (D-11), and
+# nothing in the resulting data reveals which server produced it.
+python3 -m carla_determinism --lock-only >/dev/null || {
+    say "FATAL: carla-determinism rules lock mismatch -- refusing to run"; exit 1; }
+say "carla-determinism rules lock OK"
+
 CARLA_ROOT=${CARLA_ROOT:-$HOME/carla}
 CARLA_LOG=$LOG_DIR/carla.log
 
@@ -55,14 +62,30 @@ carla_restart() {
     say "restarting CARLA on port $CARLA_PORT"
     pkill -f "[C]arlaUE4-Linux-Shipping.*rpc-port=$CARLA_PORT" 2>/dev/null
     sleep 8
+    # -notexturestreaming is REQUIRED (carla-determinism D-3) and this inline restart
+    # is a second launcher, so it can drift from scripts/carla_restart.sh. It already
+    # did: this line lacked the flag, which would have relaunched a non-compliant server
+    # part-way through an unattended multi-hour campaign and silently made every stage
+    # after the first restart noisier than the ones before it. Exactly the failure the
+    # preflight exists to catch, arriving from inside our own driver.
     ( cd "$CARLA_ROOT" && setsid nohup ./CarlaUE4.sh -carla-rpc-port="$CARLA_PORT" \
-        -RenderOffScreen -quality-level=Epic >>"$CARLA_LOG" 2>&1 < /dev/null & )
+        -RenderOffScreen -quality-level=Epic -notexturestreaming \
+        >>"$CARLA_LOG" 2>&1 < /dev/null & )
     if carla_up 60; then say "CARLA back up"; sleep 10; return 0; fi
     say "FATAL: CARLA did not come back on port $CARLA_PORT"
     return 1
 }
 
 carla_up 12 || carla_restart || exit 1
+
+# Now that a server exists, check HOW it was launched. carla_up only proves something is
+# listening; D-3 and D-5 are launch flags and invisible over RPC, so a server someone
+# started by hand answers perfectly and quietly poisons the whole campaign.
+python3 -m carla_determinism --port "$CARLA_PORT" >>"$LOG_DIR/pipeline.log" 2>&1 || {
+    say "FATAL: the server on $CARLA_PORT violates the determinism rules."
+    say "       Relaunch it with: bash scripts/carla_restart.sh"
+    say "       (see $LOG_DIR/pipeline.log for which rule)"; exit 1; }
+say "determinism preflight OK on the live server"
 
 # Stale lock from a killed stage would block every subsequent one.
 rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null

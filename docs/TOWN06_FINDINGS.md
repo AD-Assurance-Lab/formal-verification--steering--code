@@ -977,3 +977,29 @@ The rules are extracted into the lab-wide `carla-determinism` package (repo
 `carla_determinism.require_deterministic()`, which reads the server's real command line
 from `/proc` (the launch flags that matter are invisible over RPC) and refuses to let a
 measurement run on a misconfigured simulator.
+
+### T06-F22 addendum: the oracle is now bit-identical, which localises the residual exactly
+
+The pure-pursuit oracle steers from route geometry and the vehicle pose. **It never reads
+the camera.** So under the corrected harness it should be perfectly reproducible, and it
+is: all six sections, two runs, a fresh server between them.
+
+    s00 s01 s02 s03 s04 s05 -- BIT-IDENTICAL, whole per-step CSV, byte for byte
+
+That is worth more than the open-loop probe, because it is the real pipeline — the real
+`drive_expert.py`, the real route code, the real speed controller, a real full-length
+section — rather than an instrument built to prove a point. It establishes three things
+at once:
+
+  1. the `apply_control` fix works in production code, not only in the probe;
+  2. physics, route indexing, the speed controller and the section-end cap are all
+     fully deterministic;
+  3. **the entire remaining entropy is the camera path**, since the only difference
+     between this and a student run is where the steering comes from.
+
+It also gives the study a cheap standing regression test for the harness: drive the
+oracle twice and `cmp` the CSVs. Anything other than bit-identical means the harness has
+regressed, and it costs two oracle runs to find out rather than a night of theorising.
+
+Oracle competence on the corrected harness, for the record: PASS on all six sections,
+max|CTE| 0.01-0.34 ft against a 2.19 ft budget.
