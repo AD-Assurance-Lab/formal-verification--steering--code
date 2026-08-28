@@ -830,3 +830,149 @@ data, passed its gate first try at 6/6 with every section at or under 1.11 ft.
 If it does not close, the next lever is more teacher-DAgger data for clear, which needs
 dagger.py to keep collecting after the teacher passes rather than breaking -- a change to
 data collection, not to any criterion.
+
+---
+
+## T06-F22  RESOLVED: run-to-run reproducibility. Two causes, both found, one fixed and one bounded.
+
+Answers T06-F21, and it answers Zach's question directly: CARLA in synchronous mode with
+a fixed timestep is **not** sufficient for reproducibility, and the study's protections
+were all real but all aimed at the wrong layer.
+
+### Method: the closed-loop probe could never have found this
+
+T06-F21 proposed re-running the closed-loop probe. That would have failed again, because
+a closed-loop probe measures physics, rendering and feedback amplification at once and
+every candidate cause produces the same symptom — a trajectory that drifts apart. The
+diagnosis needed the feedback **cut**: a scripted command sequence that is a pure
+function of the step index, with pose, a hash of the raw camera buffer, and the model's
+steering **computed but not applied** all recorded per step. Three streams, three
+questions, separable. `scripts/determinism_tier1_openloop.py`.
+
+Tier 0 first, with the simulator switched off (`determinism_tier0_model.py`): the
+inference path is bit-exact within and across processes — weights load, preprocessing,
+and both batched and batch-1 forwards. torch, cuDNN and OpenCV are ruled out. (Aside,
+recorded because it will matter to offline analysis: batch-N and batch-1 forwards of the
+same frames differ by 2.2e-6. The closed loop is always batch-1.)
+
+### Cause 1 — `apply_control` loses a race with `tick`. FIXED.
+
+`vehicle.apply_control()` is fire-and-forget: it returns once the message is written, and
+whether the server registers it before it processes `world.tick()` is a wall-clock race.
+**Synchronous mode synchronises the tick, not the command queue feeding it.**
+
+The race is invisible while a command is unchanged, because a late arrival re-applies the
+same value. So it only ever bites on a step where the command *changes* — which in a
+closed-loop run is every step, and which is why divergence always appeared to begin
+mid-run for no reason.
+
+Measured, open loop, identical scripted commands, three reps:
+
+    vehicle.apply_control()   pose bit-identical until the first command CHANGE, then
+                              splits; the APPLIED-CONTROL READBACK differs between reps
+                              at the same step; up to 60 m apart over 200 steps
+    apply_batch_sync()        pose, velocity, gear and applied control bit-identical at
+                              every step of every rep
+
+Controls that make the diagnosis stick: with the camera removed entirely, physics still
+diverged, so the renderer was not causing it; with the command held constant, physics was
+bit-identical for 200 steps, so physics itself was never the problem.
+
+Fixed via `env.apply_control()`, one choke point every driving loop now goes through,
+gated on `config.DETERMINISTIC_CONTROL` — **on for Town06, off for Town04**, so the
+published artifact keeps reproducing exactly.
+
+### Cause 2 — texture streaming. FIXED, 168x.
+
+With physics pinned bit-exact, the renderer was still nondeterministic. UE4 streams
+texture mips in asynchronously, so which mip is resident when a frame renders depends on
+load timing rather than on world state. Launching with `-notexturestreaming`:
+
+    injected steering noise   3.9e-3  ->  2.4e-5     (168x)
+    cold-server outlier       rep0 disagreed with reps 1..N  ->  gone
+
+It also explains a pattern that had been read as random: the FIRST run after a restart
+disagreed with every later run, because it alone rendered while textures were still
+resident-loading.
+
+Negative results, kept because each was a plausible fix that measurement rejected:
+
+  - `enable_postprocess_effects=False` made it **2000x WORSE** (4.8e-2). Manual exposure
+    lives inside the postprocess chain, so disabling postprocessing silently un-pins the
+    exposure this study depends on.
+  - `-quality-level=High` was catastrophic (5.2e-1). Epic is a determinism result here,
+    not a visual preference.
+  - Zeroing motion blur, bloom and lens flare: no material effect.
+  - Removing the spectator chase camera: no material effect.
+  - A 100-tick warmup helped; a 300-tick settle did not converge the residual further.
+
+### The residual, and why it cannot be argued away
+
+On a scene where **nothing moves at all** — vehicle held on the brake with zero
+displacement to full float precision, camera rigid, weather fixed, exposure manual —
+frames at the same index across repetitions are never bit-identical. The floor is
+~30 pixels of 307,200 differing by at most 13 levels, ~7 of them inside the student's
+ROI. A longer settle does not converge it, so it is generated per frame rather than
+inherited history. `scripts/determinism_static_scene.py`.
+
+An earlier version of that probe compared frame N to frame N+1 *within* one run and found
+40 distinct frames of 40. That is temporal accumulation — TAA, screen-space reflections
+and volumetric fog all evolve on a static scene — and it is not a determinism result.
+Only frame N of run A against frame N of run B is, and the corrected probe does that.
+
+### Consequence: the closed loop is a six-order-of-magnitude amplifier
+
+With Cause 1 fixed and only the render floor left, the real closed loop over section s02,
+349 steps, three reps on fresh servers:
+
+    diverges at step 0 from dsteer 2.6e-06
+    grows to  max dCTE 4.2-7.6 ft
+    max|CTE|  7.97 / 4.47 / 11.83 ft
+
+**So standing rule 3 survives, and is now justified by measurement rather than by
+folklore.** Every closed-loop number remains a RATE over at least 10 repetitions with a
+Wilson interval. What has changed is that the noise is 168x smaller, its source is named,
+and the residual is bounded and documented.
+
+### The reframing that matters for the paper
+
+That amplification is a property of the **policy**, not of the simulator. A contractive,
+competent policy suppresses a 2.6e-6 perturbation; a marginal one grows it to feet. So
+run-to-run spread is a *measurement of closed-loop stability margin*, and a checkpoint
+whose verdict flips between repetitions is reporting its own marginality rather than
+being unluckily sampled.
+
+This says the Town06 "held 5/6, then 6/6, then 5/6" was never purely an instrumentation
+artefact: instrumentation contributed the perturbation, and the student's own lack of
+margin contributed the amplification. **The capacity decision in `TOWN06_STATUS.md` is
+therefore still open and still necessary** — the determinism fix does not make a marginal
+student competent, and it was never going to.
+
+Incidentally this is the paper's own thesis appearing a third time: a small persistent
+bias walks the vehicle out of its lane, and a small transient one does too when the
+policy has no margin to absorb it.
+
+### Effect on Town04 — none, and deliberately so
+
+Nothing in this finding touches Town04. `DETERMINISTIC_CONTROL` defaults off there,
+`-notexturestreaming` is applied only when `STUDY_MAP=Town06`, and the preflight is
+called only on the Town06 path. The published rates stand as rates. Whether they should
+be re-measured under the corrected harness is a real question and a separate decision;
+Town04 stays frozen until the Town06 work is finished.
+
+### What was ALSO wrong: the probe that said the opposite
+
+`determinism_probe.py` reported "bit-identical" and contradicted the true measurement.
+The handoff blamed in-place CSV overwriting, which was not quite it: the probe read each
+CSV into memory immediately after its run. The actual defect was that the subprocess
+**return code was captured and never checked**, so a crashed rep left the previous rep's
+file on disk and the probe compared it with itself. Now guarded three ways — non-zero
+exit raises, the CSV must be newer than the run's start, and each rep's file is copied to
+its own path before the next runs.
+
+### Standing outcome
+
+The rules are written up as a lab-wide, hash-locked standard in `CARLA_DETERMINISM.md`,
+enforced by `scripts/check_carla_determinism.py`, which reads the server's real command
+line from `/proc` (the launch flags that matter are invisible over RPC) and refuses to
+let a measurement run on a misconfigured simulator.

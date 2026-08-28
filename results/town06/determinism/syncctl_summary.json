@@ -1,0 +1,18 @@
+{
+  "label": "syncctl",
+  "n_steps": 200,
+  "n_reps": 3,
+  "physics_identical": true,
+  "render_identical": false,
+  "preproc_identical": false,
+  "nn_identical": false,
+  "control_identical": true,
+  "first_control_divergence": null,
+  "first_pose_divergence": null,
+  "max_pose_delta": 0.0,
+  "first_raw_divergence": 0,
+  "raw_diff_steps": 200,
+  "first_pre_divergence": 0,
+  "pre_diff_steps": 200,
+  "max_nn_steer_delta": 0.004007503390312195
+}

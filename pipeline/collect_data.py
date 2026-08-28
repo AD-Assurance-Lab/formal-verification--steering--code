@@ -67,7 +67,7 @@ def collect_lap(world, world_map, vehicle, img_queue, weather, direction, lap, o
             speed_mph=env.speed_mph(vehicle), x=loc.x, y=loc.y, yaw=tf.rotation.yaw,
         ))
 
-        vehicle.apply_control(carla.VehicleControl(*_ctrl(speed_ctrl, vehicle, steer)))
+        env.apply_control(vehicle, carla.VehicleControl(*_ctrl(speed_ctrl, vehicle, steer)))
 
         d0 = loc.distance(start)
         if d0 > 50.0:

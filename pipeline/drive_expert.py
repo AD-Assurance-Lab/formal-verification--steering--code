@@ -55,7 +55,7 @@ def drive_one(world, world_map, vehicle, img_queue, direction, max_steps):
         cte, hint = signed_cte_route(route, loc.x, loc.y, hint)
         steer, steer_rad, _ = pure_pursuit_route(route, tf, hint)
         thr, brk = speed_ctrl.control(vehicle)
-        vehicle.apply_control(carla.VehicleControl(throttle=thr, brake=brk, steer=steer))
+        env.apply_control(vehicle, carla.VehicleControl(throttle=thr, brake=brk, steer=steer))
 
         spd = env.speed_mph(vehicle)
         records.append(dict(

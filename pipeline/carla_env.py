@@ -24,10 +24,46 @@ from imaging import raw_to_bgr, preprocess_for_model  # noqa: F401
 
 # ── Connection / world ───────────────────────────────────────────────────────
 
+# The client of the most recent connect(). apply_control needs it to issue an
+# acknowledged batch command, and threading a client argument through every driving
+# loop in the study would touch far more code than the fix itself -- including the
+# published Town04 paths, which must not change. One client per port is already a hard
+# invariant (carla_lock, R-SIM-3), so a single module-level handle cannot be ambiguous.
+_CLIENT = None
+
+
 def connect():
+    global _CLIENT
     client = carla.Client(HOST, PORT)
     client.set_timeout(CLIENT_TIMEOUT_S)
+    _CLIENT = client
     return client
+
+
+def apply_control(vehicle, control):
+    """Apply a vehicle command. THE choke point -- every driving loop goes through here.
+
+    `vehicle.apply_control()` is fire-and-forget: it returns once the message is
+    written, and whether the server has registered it before it processes the next
+    `world.tick()` is a timing race. Synchronous mode does not close this, because it
+    synchronises the TICK, not the command queue feeding it.
+
+    The race is silent while a command is unchanged -- a late arrival re-applies the
+    same value -- so it only ever bites on the step where the command CHANGES, which is
+    every step of a closed-loop run. Measured open loop with the feedback cut and an
+    identical scripted command sequence, it moved the vehicle up to 60 m apart across
+    three repetitions of the same run, and the applied-control readback differed
+    between reps at the same step. With the acknowledged batch command, pose, velocity,
+    gear and applied control are bit-identical for every step.
+
+    Gated by C.DETERMINISTIC_CONTROL, which is off for Town04 so the published artifact
+    keeps reproducing exactly.
+    """
+    if C.DETERMINISTIC_CONTROL and _CLIENT is not None:
+        _CLIENT.apply_batch_sync(
+            [carla.command.ApplyVehicleControl(vehicle.id, control)], False)
+    else:
+        vehicle.apply_control(control)
 
 
 def load_study_map(client, fresh=True):
@@ -436,14 +472,14 @@ def warmup_to_speed(world, vehicle, img_queue, speed_ctrl, steer_fn=None,
     """
     speed_ctrl.reset()
     for _ in range(settle_ticks):
-        vehicle.apply_control(carla.VehicleControl(throttle=0.0, brake=1.0, steer=0.0))
+        apply_control(vehicle, carla.VehicleControl(throttle=0.0, brake=1.0, steer=0.0))
         update_spectator(world, vehicle)   # else the view freezes for the whole warmup
         world.tick()
         _drain(img_queue)
     for _ in range(max_accel_ticks):
         steer = steer_fn(vehicle) if steer_fn else 0.0
         thr, brk = speed_ctrl.control(vehicle)
-        vehicle.apply_control(carla.VehicleControl(throttle=thr, brake=brk, steer=steer))
+        apply_control(vehicle, carla.VehicleControl(throttle=thr, brake=brk, steer=steer))
         update_spectator(world, vehicle)
         world.tick()
         _drain(img_queue)

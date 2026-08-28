@@ -92,7 +92,7 @@ def drive_collect(world, vehicle, img_queue, model, device, w, h, weather, direc
         # generating useful states. The recorded LABEL is unaffected.
         applied = (1.0 - beta) * nn_steer + beta * exp_steer
         thr, brk = sc.control(vehicle)
-        vehicle.apply_control(carla.VehicleControl(throttle=thr, brake=brk,
+        env.apply_control(vehicle, carla.VehicleControl(throttle=thr, brake=brk,
                                                    steer=float(applied)))
 
         d0 = loc.distance(start)

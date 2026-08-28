@@ -15,6 +15,30 @@ cd "$(dirname "$0")/.."
 REPO=$PWD
 PORT=${CARLA_PORT:-3000}
 CARLA_ROOT=${CARLA_ROOT:-$HOME/carla}
+# CARLA_QUALITY defaults to Epic, so every existing caller and the published Town04
+# reproduction are byte-for-byte unaffected. It is a variable only because the
+# determinism campaign has to SWEEP it: temporal AA and the postprocess chain are
+# quality-gated, and they are prime suspects for the render-path entropy.
+QUALITY=${CARLA_QUALITY:-Epic}
+# CARLA_EXTRA_ARGS passes UE4 flags through. Empty by default, so nothing existing
+# changes. The determinism campaign needs -notexturestreaming: UE4 streams textures in
+# asynchronously, so which mip is resident when a frame is rendered depends on load
+# timing rather than on world state, and that is a render difference no camera
+# attribute can pin.
+# -notexturestreaming is DEFAULT ON FOR TOWN06 and off elsewhere, so Town04 relaunches
+# exactly as the published study did. UE4 streams texture mips in asynchronously, so
+# which mip is resident when a frame is rendered depends on load timing rather than on
+# world state. Measured open loop with physics pinned bit-identical, over four repeats
+# of one scripted run: it was the DOMINANT render entropy source, and disabling it cut
+# the steering difference the renderer injects from 3.9e-3 to 2.4e-5, a 168x reduction,
+# and removed the cold-server first-run outlier entirely.
+if [ -n "${CARLA_EXTRA_ARGS:-}" ]; then
+    EXTRA=$CARLA_EXTRA_ARGS
+elif [ "${STUDY_MAP:-}" = "Town06" ]; then
+    EXTRA="-notexturestreaming"
+else
+    EXTRA=""
+fi
 
 # SIGTERM first, never SIGKILL: a client killed with -9 skips env.cleanup and leaves the
 # world in synchronous mode with nothing ticking, which is how the server gets wedged in
@@ -39,11 +63,11 @@ rm -f "/tmp/carla-locks/carla-$PORT.lock" 2>/dev/null
 if [ "${CARLA_WINDOWED:-0}" = "1" ]; then
     echo "  launching CARLA WINDOWED on DISPLAY=${DISPLAY:-:0}"
     ( cd "$CARLA_ROOT" && DISPLAY="${DISPLAY:-:0}" setsid nohup ./CarlaUE4.sh \
-        -carla-rpc-port="$PORT" -quality-level=Epic -windowed -ResX=1280 -ResY=720 \
+        -carla-rpc-port="$PORT" -quality-level="$QUALITY" $EXTRA -windowed -ResX=1280 -ResY=720 \
         >>"$REPO/results/town06_logs/carla.log" 2>&1 < /dev/null & )
 else
     ( cd "$CARLA_ROOT" && setsid nohup ./CarlaUE4.sh -carla-rpc-port="$PORT" \
-        -RenderOffScreen -quality-level=Epic >>"$REPO/results/town06_logs/carla.log" 2>&1 \
+        -RenderOffScreen -quality-level="$QUALITY" $EXTRA >>"$REPO/results/town06_logs/carla.log" 2>&1 \
         < /dev/null & )
 fi
 

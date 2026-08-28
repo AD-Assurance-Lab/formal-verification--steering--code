@@ -50,3 +50,9 @@ results/town06_logs/
 !results/town06/
 !results/town06/certificate_town06.json
 !results/town06/ledger/
+
+# Determinism campaign (T06-F22). The SUMMARIES are the result and are committed; the
+# per-rep traces and raw frame dumps are bulk evidence, regenerable from the probes in
+# scripts/determinism_*.py, and raw frames are large binaries.
+results/town06/determinism/*_rep*.json
+results/town06/determinism/frames/

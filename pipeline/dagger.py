@@ -109,7 +109,7 @@ def drive_collect(world, vehicle, img_queue, model, device, weather, direction,
         # useful states; the recorded LABEL is always the pure expert action.
         applied = (1.0 - beta) * nn_steer + beta * exp_steer
         thr, brk = speed_ctrl.control(vehicle)
-        vehicle.apply_control(carla.VehicleControl(throttle=thr, brake=brk,
+        env.apply_control(vehicle, carla.VehicleControl(throttle=thr, brake=brk,
                                                    steer=float(applied)))
 
         d0 = loc.distance(start)
