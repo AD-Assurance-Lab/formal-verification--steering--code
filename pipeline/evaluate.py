@@ -222,9 +222,9 @@ def main():
     # Town04 is excluded deliberately: it is the published artifact and must keep
     # reproducing exactly until its own re-measurement is authorised.
     if C.STUDY_MAP == "Town06":
-        sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
-        from check_carla_determinism import require_deterministic  # noqa: E402
-        require_deterministic(world)
+        import carla_determinism as cd  # noqa: E402
+        cd.require_deterministic(C.PORT, world, fixed_dt=C.FIXED_DT,
+                                 deterministic_control=C.DETERMINISTIC_CONTROL)
 
     world_map = world.get_map()
     # Spawn INSIDE the try: a failure here would otherwise skip the finally and leave

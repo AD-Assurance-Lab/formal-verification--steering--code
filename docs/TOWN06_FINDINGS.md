@@ -972,7 +972,8 @@ its own path before the next runs.
 
 ### Standing outcome
 
-The rules are written up as a lab-wide, hash-locked standard in `CARLA_DETERMINISM.md`,
-enforced by `scripts/check_carla_determinism.py`, which reads the server's real command
-line from `/proc` (the launch flags that matter are invisible over RPC) and refuses to
-let a measurement run on a misconfigured simulator.
+The rules are extracted into the lab-wide `carla-determinism` package (repo
+`carla-determinism--simulation--package`), hash-locked, and enforced by
+`carla_determinism.require_deterministic()`, which reads the server's real command line
+from `/proc` (the launch flags that matter are invisible over RPC) and refuses to let a
+measurement run on a misconfigured simulator.

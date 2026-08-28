@@ -24,19 +24,20 @@ from imaging import raw_to_bgr, preprocess_for_model  # noqa: F401
 
 # ── Connection / world ───────────────────────────────────────────────────────
 
-# The client of the most recent connect(). apply_control needs it to issue an
-# acknowledged batch command, and threading a client argument through every driving
-# loop in the study would touch far more code than the fix itself -- including the
-# published Town04 paths, which must not change. One client per port is already a hard
-# invariant (carla_lock, R-SIM-3), so a single module-level handle cannot be ambiguous.
-_CLIENT = None
+# Determinism rules and their enforcement live in the `carla-determinism` package, so
+# every study in the lab shares one copy rather than each vendoring its own that drifts.
+# See its RULES.md (D-1..D-11); the two that bite here are D-2 (acknowledged commands)
+# and D-3 (-notexturestreaming, applied by scripts/carla_restart.sh).
+import carla_determinism as cd
 
 
 def connect():
-    global _CLIENT
     client = carla.Client(HOST, PORT)
     client.set_timeout(CLIENT_TIMEOUT_S)
-    _CLIENT = client
+    # Register the client for acknowledged vehicle commands (D-2). One client per port
+    # is already a hard invariant here (carla_lock, R-SIM-3), so this cannot be
+    # ambiguous.
+    cd.bind_client(client)
     return client
 
 
@@ -59,11 +60,7 @@ def apply_control(vehicle, control):
     Gated by C.DETERMINISTIC_CONTROL, which is off for Town04 so the published artifact
     keeps reproducing exactly.
     """
-    if C.DETERMINISTIC_CONTROL and _CLIENT is not None:
-        _CLIENT.apply_batch_sync(
-            [carla.command.ApplyVehicleControl(vehicle.id, control)], False)
-    else:
-        vehicle.apply_control(control)
+    cd.apply_control(vehicle, control, enabled=C.DETERMINISTIC_CONTROL)
 
 
 def load_study_map(client, fresh=True):

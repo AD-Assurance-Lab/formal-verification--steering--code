@@ -37,10 +37,10 @@ rate over >=10 reps — now justified by measurement, with the noise 168x smalle
 
 ## Running the simulator
 
-`CARLA_DETERMINISM.md` is now the authority and is hash-locked; `CLAUDE.md` keeps the
-operational hygiene rules (R-SIM-1..6). Both still apply.
+The `carla-determinism` package is now the authority on determinism and is hash-locked;
+`CLAUDE.md` keeps the operational hygiene rules (R-SIM-1..6). Both still apply.
 
-    python3 scripts/check_carla_determinism.py     # preflight; entry points call it too
+    python3 -m carla_determinism --port 3000       # preflight; entry points call it too
     bash scripts/carla_restart.sh                  # before EVERY measurement run
 
 **Never pipe or capture the output of `carla_restart.sh`** — it daemonises CARLA, the
