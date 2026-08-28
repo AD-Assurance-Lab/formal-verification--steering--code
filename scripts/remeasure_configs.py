@@ -60,9 +60,18 @@ def parse(out):
 
 def restart_carla():
     """R-SIM-1: fresh server before every cell. R-SIM-2: SIGTERM before SIGKILL."""
-    subprocess.run(["bash", str(REPO / "scripts" / "carla_restart.sh")],
-                   capture_output=True, text=True,
-                   env=dict(os.environ, CARLA_PORT=os.environ.get("CARLA_PORT", "3000")))
+    # See check_student_competence.restart_carla: capture_output on a script that
+    # daemonises CARLA hangs forever on the inherited pipe.
+    logp = REPO / "results" / "town06_logs" / "restart_inline.log"
+    logp.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with open(logp, "a") as fh:
+            subprocess.run(["bash", str(REPO / "scripts" / "carla_restart.sh")],
+                           stdout=fh, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                           timeout=300,
+                           env=dict(os.environ, CARLA_PORT=os.environ.get("CARLA_PORT", "3000")))
+    except subprocess.TimeoutExpired:
+        print("  !! carla_restart exceeded 300s; continuing", flush=True)
 
 
 def main():

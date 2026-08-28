@@ -8,37 +8,37 @@
           "passed": true,
           "n_pass": 3,
           "reps": 3,
-          "max_cte_ft": 0.36
+          "max_cte_ft": 0.37
         },
         "s01": {
           "passed": true,
           "n_pass": 3,
           "reps": 3,
-          "max_cte_ft": 0.67
+          "max_cte_ft": 0.71
         },
         "s02": {
           "passed": false,
-          "n_pass": 1,
+          "n_pass": 2,
           "reps": 3,
-          "max_cte_ft": 10.36
+          "max_cte_ft": 8.2
         },
         "s03": {
           "passed": true,
           "n_pass": 3,
           "reps": 3,
-          "max_cte_ft": 0.68
+          "max_cte_ft": 0.54
         },
         "s04": {
           "passed": true,
           "n_pass": 3,
           "reps": 3,
-          "max_cte_ft": 0.64
+          "max_cte_ft": 0.61
         },
         "s05": {
           "passed": true,
           "n_pass": 3,
           "reps": 3,
-          "max_cte_ft": 0.58
+          "max_cte_ft": 0.59
         }
       },
       "competent": false
@@ -48,39 +48,39 @@
       "sections": {
         "s00": {
           "passed": false,
-          "n_pass": 0,
+          "n_pass": 1,
           "reps": 3,
-          "max_cte_ft": 42.54
+          "max_cte_ft": 36.09
         },
         "s01": {
           "passed": true,
           "n_pass": 3,
           "reps": 3,
-          "max_cte_ft": 0.69
+          "max_cte_ft": 0.68
         },
         "s02": {
           "passed": true,
           "n_pass": 3,
           "reps": 3,
-          "max_cte_ft": 1.81
+          "max_cte_ft": 0.8
         },
         "s03": {
           "passed": false,
           "n_pass": 2,
           "reps": 3,
-          "max_cte_ft": 4.53
+          "max_cte_ft": 2.4
         },
         "s04": {
           "passed": true,
           "n_pass": 3,
           "reps": 3,
-          "max_cte_ft": 0.94
+          "max_cte_ft": 0.91
         },
         "s05": {
           "passed": true,
           "n_pass": 3,
           "reps": 3,
-          "max_cte_ft": 1.22
+          "max_cte_ft": 0.61
         }
       },
       "competent": false
@@ -88,7 +88,7 @@
   },
   "all_competent": false,
   "cte_budget_ft": 2.1916011199999996,
-  "git_commit": "5868404c641336d67594d4fb90cee06ebb87ec46",
+  "git_commit": "06f4b3f41ee572eef053efc9dcebefe861418a53",
   "reps": 3,
   "note": "clear weather only; s=0 anchor, not a disturbance cell, not a scored ledger cell; every section must hold on every rep"
 }
