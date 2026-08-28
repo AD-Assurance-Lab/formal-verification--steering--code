@@ -292,3 +292,21 @@ under the old harness. It must be re-measured under the corrected one before the
 policy is collected; if it moves, the condition definition moves with it and this
 amendment gains a clause.
 
+**Re-derivation RESULT, 2026-08-28: 5 degrees HOLDS; no clause needed.** Measured under
+the corrected harness at all six section spawns (`scripts/verify_conditions_render.py
+--sections all`), on the network's own input:
+
+| | Town06, corrected harness | Town04 published | verdict |
+|---|---|---|---|
+| low sun, mean brightness | 0.1204 | 0.1117 | 7.8% away; T06-F20 accepted 9% |
+| night − low sun gap | 0.0921 | 0.0958 | axis stays ordered |
+| low sun, per-section CV | 2.65% | — | was 3.29% under the old harness |
+
+All four conditions also still classify as themselves under
+`condition_signature.identify()`, with margin on every discriminator: night's sigma
+0.1422 against a 0.100 threshold and 0.065 for the rest; fog's p01 0.1614 against 0.120
+and at most 0.044 for the rest; clear's mean 0.2983 against 0.250 with low sun at 0.1204.
+That check matters because `evaluate.py` RAISES on a condition mismatch, so a threshold
+crossing would have aborted every run of the affected condition part-way through the
+unattended rebuild rather than at its start.
+
