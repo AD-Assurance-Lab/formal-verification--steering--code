@@ -77,12 +77,24 @@ def restart_carla():
     """
     # EVERY subprocess here carries a timeout. Without one a hung restart hangs the whole
     # gate: measured at 12h52m, 0% CPU, one entire night of CARLA time.
+    # NEVER capture_output on a script that DAEMONISES a child. carla_restart.sh
+    # launches CARLA with setsid; that child inherits the capture pipe and never closes
+    # it, so subprocess.run waits on EOF forever no matter what the script itself does.
+    # Measured: the same script takes 57 s standalone and hangs indefinitely under
+    # capture_output=True. This cost a 12h52m hang overnight and six timed-out restarts
+    # the next morning, whose drives then ran on an un-restarted server and produced
+    # numbers that looked like student failures.
+    # Redirect to a log file instead, so no pipe is held open.
     env = dict(os.environ, CARLA_PORT=os.environ.get("CARLA_PORT", "3000"))
-    for cmd, lim in ((["bash", str(REPO / "scripts" / "carla_restart.sh")], 420),
+    logp = REPO / "results" / "town06_logs" / "restart_inline.log"
+    logp.parent.mkdir(parents=True, exist_ok=True)
+    for cmd, lim in ((["bash", str(REPO / "scripts" / "carla_restart.sh")], 300),
                      ([sys.executable, str(REPO / "scripts" / "wait_carla_ready.py"),
-                       "--timeout", "260"], 300)):
+                       "--timeout", "200"], 240)):
         try:
-            subprocess.run(cmd, capture_output=True, text=True, timeout=lim, env=env)
+            with open(logp, "a") as fh:
+                subprocess.run(cmd, stdout=fh, stderr=subprocess.STDOUT,
+                               stdin=subprocess.DEVNULL, timeout=lim, env=env)
         except subprocess.TimeoutExpired:
             print(f"      !! restart step exceeded {lim}s; continuing", flush=True)
 
