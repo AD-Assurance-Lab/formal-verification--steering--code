@@ -75,12 +75,16 @@ def restart_carla():
     time. The gate was reporting simulator degradation as a student departing the lane.
     Every other measurement script in this study already restarts; this one did not.
     """
-    subprocess.run(["bash", str(REPO / "scripts" / "carla_restart.sh")],
-                   capture_output=True, text=True,
-                   env=dict(os.environ, CARLA_PORT=os.environ.get("CARLA_PORT", "3000")))
-    subprocess.run([sys.executable, str(REPO / "scripts" / "wait_carla_ready.py"),
-                    "--timeout", "260"], capture_output=True, text=True,
-                   env=dict(os.environ, CARLA_PORT=os.environ.get("CARLA_PORT", "3000")))
+    # EVERY subprocess here carries a timeout. Without one a hung restart hangs the whole
+    # gate: measured at 12h52m, 0% CPU, one entire night of CARLA time.
+    env = dict(os.environ, CARLA_PORT=os.environ.get("CARLA_PORT", "3000"))
+    for cmd, lim in ((["bash", str(REPO / "scripts" / "carla_restart.sh")], 420),
+                     ([sys.executable, str(REPO / "scripts" / "wait_carla_ready.py"),
+                       "--timeout", "260"], 300)):
+        try:
+            subprocess.run(cmd, capture_output=True, text=True, timeout=lim, env=env)
+        except subprocess.TimeoutExpired:
+            print(f"      !! restart step exceeded {lim}s; continuing", flush=True)
 
 
 def run_eval(ckpt, channels, fc):
