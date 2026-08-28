@@ -47,6 +47,8 @@ else
         < /dev/null & )
 fi
 
-CARLA_PORT=$PORT python3 "$REPO/scripts/wait_carla_ready.py" --timeout 240 || {
+# `timeout` as a wall clock. A readiness probe that hangs is worse than one that fails,
+# because every caller then waits on it forever.
+CARLA_PORT=$PORT timeout 300 python3 "$REPO/scripts/wait_carla_ready.py" --timeout 240 || {
     echo "FATAL: CARLA did not come back on $PORT"; exit 1; }
 nvidia-smi --query-gpu=memory.used --format=csv,noheader | sed 's/^/  GPU after restart: /'
