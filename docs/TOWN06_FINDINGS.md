@@ -1081,3 +1081,57 @@ clean across every round so far. Ten runs aborted early (steps 53-351), and ever
 them reported FAIL with a large max|CTE|. R-SIM-6's concern is a SHORT run reporting a
 tiny |CTE| as a PASS; zero did. These are genuine lane departures by a policy still being
 trained, which is what DAgger is for.
+
+### T06-F23 DISPOSITION: the falsifier FIRED, and it fired for a real reason
+
+The pre-registered prediction had two parts. One was confirmed, one was falsified, and the
+falsification is informative rather than a badly chosen threshold.
+
+**Confirmed: the teacher turned, at exactly the round the control predicted.** Round 3,
+the same round the clear-only teacher turned on this harness.
+
+    round  passed   median |CTE|   worst |CTE|
+      2     5/24        --            59.31
+      3    18/24       1.48            4.09   <-- the turn
+      4    17/24       1.86           10.29
+      5    22/24       1.18           55.59
+      6    (running)
+
+**Falsified: "worst max|CTE| under 20 ft by round 5".** Round 5 was 55.59 ft.
+
+**Disposition.** The falsifier did not fire because worst-of-24 is a fragile max statistic
+-- that was the tempting rationalisation and it is wrong. It fired because ONE CELL is
+diverging while every other cell converges. At round 5, 22 of 24 cells pass, the median is
+1.18 ft, and the only serious failure is `night/s02`:
+
+    night/s02   round 3:   2.66 ft FAIL
+                round 4:  10.29 ft FAIL
+                round 5:  55.59 ft FAIL
+
+Failing in every round since the turn, monotonically worse, while the aggregate improves.
+That is the opposite of DAgger noise, which would move a different cell each round.
+
+**What this is NOT yet evidence of.** Each cell-round here is ONE run, and standing rule 3
+says a single run near the cliff is wrong about one time in eight. So the SEVERITY trend
+(2.66 -> 10.29 -> 55.59) is weak evidence -- three single runs. The PERSISTENCE is the
+stronger signal: `night/s02` has failed 3 for 3 since the turn while the rest of the route
+converged. `dagger.py`'s own `--margin-frac` docstring already names this tension: a
+single-run gate can stop on a lucky pass, and it can equally fail on an unlucky one.
+
+**Prior, held loosely.** The previous generation's D-T06-3 was also night on the mixed
+policy, and s02 was already suspected as the hard section. That measurement is discarded
+by A-2 and cannot be used as evidence -- but the same cell resurfacing on independently
+collected data, under a corrected harness, on a route chosen without driving, is worth
+noting as a pattern to test rather than a coincidence to ignore.
+
+**What happens next, and why nothing can pass silently.** `dagger.py` requires ALL 24
+cells to pass in a single round. If `night/s02` does not come in, the run exhausts its 14
+rounds, prints "Exhausted N rounds without passing", and `teacher_gate` in
+`run_town06_pipeline.sh` FATALs rather than distilling. So the outcome is either a teacher
+that genuinely met budget on every cell, or a hard stop -- not a quiet degradation.
+
+**If it stops.** The question to answer first is whether `night/s02` is a policy problem or
+a scene problem, and the cheap discriminator already exists: drive the ORACLE on
+`night/s02`. The oracle is bit-identical under this harness and never reads the camera, so
+if it holds the section, the geometry is fine and the failure is perception under night;
+if it does not, the section itself is the problem and no amount of training fixes it.
