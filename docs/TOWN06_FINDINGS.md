@@ -1034,3 +1034,50 @@ One stale artefact worth naming: the reference table in `condition_signature.py`
 docstring still lists shadows at mean 0.1842. That is the pre-T06-F20 15-degree value,
 not a drift caused by the harness change. The thresholds themselves are unaffected,
 because shadows is identified by falling below clear's 0.250, not by matching 0.1842.
+
+### T06-F23 (PRE-REGISTERED, result not yet in): what the mixed teacher must do to be normal
+
+Written 2026-08-28 while `dagger_mixed` is still running, so that the check means
+something when the result arrives. Standing rule 2: a result contradicting this is a bug
+until a written disposition rules out the candidate causes.
+
+The mixed teacher's first three rounds looked alarming -- worst max|CTE| RISING, 40.19 ->
+46.12 -> 59.31 ft, with only 5 of 24 cells passing. It is not alarming, because the
+clear-only teacher on the SAME corrected harness did the same thing and then converged:
+
+    clear-only teacher              mixed teacher
+    round  passed  worst |CTE|      round  passed   worst |CTE|
+      0     0/6      17.91            0     2/24      40.19
+      1     1/6      17.57            1     4/24      46.12
+      2     3/6      25.64  <-- rose  2     5/24      59.31  <-- rose
+      3     3/6       8.81  <-- turn
+      4     4/6       3.24
+      5     5/6       3.08
+      6     5/6       2.28
+      7     6/6       1.25  PASS
+
+DAgger gets worse before it gets better by construction: it aggregates expert corrections
+on the states the current policy visits, so a policy that is still bad visits bad states
+and the peak excursion grows before the aggregated data pays off. Both teachers show it.
+Pass count, which is the less noisy signal, improved monotonically for both.
+
+**The prediction.** If the mixed teacher is merely slower than the clear one and not
+broken, its worst max|CTE| turns downward by round 4 and is under 20 ft by round 5, with
+the pass count still climbing. It has 14 rounds and the clear one needed 7 for a quarter
+of the cells.
+
+**What falsifies it.** Worst max|CTE| still above 20 ft at round 5, or a pass count that
+stalls or reverses across two consecutive rounds. That would be a real finding about
+capacity or about the mixed dataset, not DAgger noise, and it must be disposed in writing
+before anything downstream is trusted.
+
+Recorded because the honest failure mode here is the other direction: watching a bad
+trend, waiting, and then rationalising whatever happens as expected. `teacher_gate` in
+`run_town06_pipeline.sh` independently refuses to distil a teacher that exhausts its
+rounds without meeting budget, so a failure cannot pass silently either way.
+
+Note also cleared, and worth recording because it was flagged as suspicious: R-SIM-6 is
+clean across every round so far. Ten runs aborted early (steps 53-351), and every one of
+them reported FAIL with a large max|CTE|. R-SIM-6's concern is a SHORT run reporting a
+tiny |CTE| as a PASS; zero did. These are genuine lane departures by a policy still being
+trained, which is what DAgger is for.
