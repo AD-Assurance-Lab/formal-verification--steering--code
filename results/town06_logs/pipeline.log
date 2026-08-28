@@ -208,3 +208,21 @@
 [2026-08-27 16:49:21] FATAL: a student is not competent in clear weather. Certifying it would bound
 [2026-08-27 16:49:21]        deviation from an output that is already wrong. Fix capacity or
 [2026-08-27 16:49:21]        distillation before proceeding.
+[2026-08-28 17:18:02] PROTOCOL lock OK; STUDY_MAP=Town06 CARLA_PORT=3000
+[2026-08-28 17:18:03] carla-determinism rules lock OK
+  determinism preflight OK (lock intact; D-3/D-5 verified on the live server)
+  D-7 floor remains: closed-loop numbers are still RATES over >=10 repetitions
+[2026-08-28 17:18:03] determinism preflight OK on the live server
+[2026-08-28 17:18:03] route fingerprint 706db50636cbd6c9
+[2026-08-28 17:18:03] START collect_clear (attempt 1)
+[2026-08-28 17:23:55] OK    collect_clear
+[2026-08-28 17:23:55] START train_clear_bc (attempt 1)
+[2026-08-28 17:26:41] OK    train_clear_bc
+[2026-08-28 17:26:41] START dagger_clear (attempt 1)
+[2026-08-28 17:47:15] OK    dagger_clear
+[2026-08-28 17:47:15] GATE  dagger_clear: teacher met budget
+[2026-08-28 17:47:15] START collect_mixed (attempt 1)
+[2026-08-28 18:05:38] OK    collect_mixed
+[2026-08-28 18:05:38] START train_mixed_bc (attempt 1)
+[2026-08-28 18:13:21] OK    train_mixed_bc
+[2026-08-28 18:13:21] START dagger_mixed (attempt 1)
