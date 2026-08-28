@@ -241,3 +241,54 @@ future blind claim must be produced under a fresh certificate committed before i
 NO result produced while this amendment is in force may be presented as a blind
 prediction, in the paper or anywhere else. Results from this phase are exploratory by
 construction and must be labelled as such.
+
+#### A-2. The harness was wrong; all Town06 driven data is recollected from step 0
+
+**Date:** 2026-08-28. **Requested by:** Zach, after T06-F22.
+
+**What changed.** Every Town06 artifact that was produced by DRIVING is discarded and
+recollected: base datasets, DAgger datasets, both teachers, both students, the oracle
+validation and the lap captures. Nothing that was driven under the old harness is reused.
+
+**Why.** Two defects in the simulator harness, measured open loop with the feedback cut
+(T06-F22, and the `carla-determinism` package's RULES.md D-1..D-11):
+
+1. `vehicle.apply_control()` is fire-and-forget and races `world.tick()`. Synchronous
+   mode synchronises the tick, not the command queue feeding it. Three repetitions of
+   one identical scripted command sequence finished 60 m apart.
+2. UE4 streams texture mips asynchronously, so mip residency depends on load timing
+   rather than on world state. `-notexturestreaming` cut the steering noise the renderer
+   injects by 168x.
+
+The second is what forces recollection rather than merely re-evaluation. Training frames
+captured with texture streaming on carry mip variation that a corrected evaluation never
+shows, which is a train/test distribution shift in the images themselves. The first means
+the trajectories those frames were sampled along are not the trajectories the corrected
+harness produces.
+
+**What is NOT affected, and why it survives.** The route and its six sections were chosen
+on map geometry alone, before any Town06 model existed and without driving anything
+(section 6); fingerprint `706db50636cbd6c9` is unchanged and the pipeline's route guard
+still enforces it. **Section 3's frozen constants are untouched** — the criterion, the
+tolerance, the stride and the BaB split are unchanged, so `PROTOCOL.lock` is still valid
+and a Town06 result stays comparable to the published Town04 study. What changed is the
+instrument, not the measurement being made.
+
+**What it invalidates.** Every Town06 closed-loop number and every Town06 checkpoint
+produced before this date, including T06-F14's student-DAgger comparison and the
+competence-gate results that motivated the capacity question in `TOWN06_STATUS.md`. That
+capacity question is **re-opened, not answered**: it was asked of students trained on data
+this amendment discards, so it must be re-asked of the rebuilt ones rather than carried
+over.
+
+**What it does NOT relax.** Standing rule 3 still holds and is now measured rather than
+assumed: bit-exact closed-loop replay is unreachable (D-7), so every closed-loop number
+remains a rate over at least 10 repetitions. A-1's suspension of R1 is unchanged and its
+re-entry condition is unchanged.
+
+**Re-derivation required before the rebuild is trusted.** The low-sun angle for Town06
+(5 degrees, T06-F20) was chosen from rendered brightness measured on lap captures taken
+under the old harness. It must be re-measured under the corrected one before the mixed
+policy is collected; if it moves, the condition definition moves with it and this
+amendment gains a clause.
+
