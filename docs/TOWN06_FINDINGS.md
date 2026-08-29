@@ -2222,3 +2222,56 @@ from one.
     (daylight 800 vs night 200), so a pixel chord between them interpolates an exposure
     change as well as a lighting change. That is a harder object to justify and is left
     open rather than asserted.
+
+## T06-F38  Cross-study: the steering dusk band is under 3 degrees; AEB's is 25.5
+
+The AEB study found a dusk failure independently (`formal-verification--aeb--code` F4):
+Property S falsified in a **single contiguous band from +25.899 to +0.360 degrees**, 25.5
+degrees of dusk between the two FMVSS 127 regulatory endpoints, certified only at the
+extremes. Its lead campaign's band was 10.8 degrees.
+
+This study's low-sun result has the same shape. Bracketing it:
+
+    sun     verdict                     evidence
+     15     0/6 pass                    1 run per section
+     10     0/6 pass                    1 run per section
+      5     0/12 pass (LEDGER)          the trained low-sun condition
+      4     0/6 pass, max 0.67 ft       1 run per section
+      3     0/6 pass, max 0.86 ft       1 run per section
+      2     12/12 FAIL, 8.11-8.48 ft    Wilson [76,100]%
+      0     degenerate (black image)    runs end in 17-67 steps
+
+**The steering dusk band is under 3 degrees wide** — clean at 3, failing at 2 — against
+AEB's 25.5.
+
+### The comparison is real but the two numbers are NOT the same object
+
+AEB's 25.5 degrees is the band where a **certificate is falsified**; its witness drives
+(M7) were still queued at F4. This study's band is where **driving fails**, measured as a
+rate. A falsified band is an upper bound on what driving would show, so quoting 25.5
+against <3 as if they were the same measurement would be wrong, and the paper must not.
+
+What IS comparable, and is the point: **both studies find that the interval between tested
+illuminations contains a failure that testing at the endpoints cannot see** — AEB by
+certificate between two regulatory conditions, this study by driving between clear and its
+trained low-sun condition.
+
+### A candidate explanation, offered as a hypothesis and not a result
+
+The band widths track how close the nearest TRAINED illumination is. The mixed steering
+student trains on low sun at 5 degrees and fails only in a narrow band just below it. The
+AEB `P_pts` policy trains on the two regulatory endpoints with nothing between, and its
+falsified band spans essentially the whole interior.
+
+That would say the failure is not "dusk is hard" but "the untrained interval is hard, and
+its width is the width of the untrained interval." It is consistent with both results and
+with Zach's own reading -- one model handles dusk untrained and another does not -- and it
+is **not tested**. Testing it needs a steering student trained WITHOUT the low-sun
+condition, whose band should then widen towards clear. The clear-only student is nearly
+that experiment and it fails from 45 degrees downward (T06-F36), which is suggestive and
+not conclusive, since it also lacks fog and night.
+
+Two further reasons to hold it loosely: the tasks differ (lateral control against
+longitudinal braking, different hazards and budgets), and the 3 and 4 degree points here
+are single runs per section rather than rates -- though at 0.16-0.86 ft against a 2.19 ft
+budget they are nowhere near the cliff.
