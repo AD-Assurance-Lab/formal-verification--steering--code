@@ -2150,3 +2150,75 @@ between them, which is the case for verification over a family rather than at te
 This is the complementary case: **where a policy is genuinely fragile, the certificate's
 bound is correspondingly large, and the fragility begins almost immediately.** The bound
 magnitude carries information, not just its side of the threshold.
+
+## T06-F37  The CERTIFIED cell's family IS faithful — the soundness gap from T06-F34 is closed
+
+T06-F34 found the fog chord optimistic for the mixed student and flagged the consequence:
+an optimistic family threatens **CERTIFIED** verdicts specifically, and
+`S_mixed_t06/shadows` — the only CERTIFIED cell in the deployment test — had never had its
+family checked. This checks it.
+
+`scripts/interpolation_fidelity.py` is now axis-parameterised (`--axis fog|lowsun`) rather
+than hardcoded to fog. Re-running the fog axis after the refactor reproduces its numbers
+exactly, which is the regression check that the generalisation changed nothing.
+
+### A prerequisite fix: the two overrides were inconsistently scoped
+
+`_density_override` applies only to `fog`, so a fog sweep leaves the clear baseline alone.
+`_sun_override` applied to **every** condition, so a sun sweep moved clear too. That is
+fatal for a fidelity capture, which must hold an unperturbed clear baseline and a
+perturbed condition in ONE session: without the fix the chord's origin moves with its
+endpoint and the projection is meaningless. `_sun_override` is now scoped to skip `clear`,
+mirroring the fog path. Verified: under `SUN_ALTITUDE_OVERRIDE=30`, clear stays at 90 while
+shadows and night follow; with no override every preset is unchanged.
+
+`clear` is the s = 0 anchor of every disturbance family here. It is not a point to sweep;
+it is what the sweep is measured against.
+
+### Result — low-sun axis (clear 90 deg -> low sun 5 deg, daylight exposure at both ends)
+
+    S_mixed_t06   (lap-mean bias at s=1: -0.00210 = -0.17x tol)
+      sun deg    s*     pixel err   steer err    x tol
+        60      0.083    0.00306    +0.00001    +0.00
+        30      0.374    0.00792    -0.00062    -0.05
+        15      0.666    0.00927    -0.00202    -0.17
+
+    S_clear_t06   (lap-mean bias at s=1: +0.01018 = +0.85x tol)
+        60      0.083    0.00306    +0.00246    +0.20
+        30      0.374    0.00792    +0.00319    +0.27
+        15      0.666    0.00927    +0.00482    +0.40
+
+**For the mixed student every interior steering error is at most 0.17x tolerance**, and
+pixel errors are 0.003-0.009 — a third of the fog axis's. The chord's interior behaves
+like the real render. **The CERTIFIED verdict on `S_mixed_t06/shadows` is not resting on
+an optimistic family model, and it stands.**
+
+The s = 1 bias measured here (-0.00210, 81 poses on s02) sits inside the certificate's
+route-pooled bound for that cell (-0.00327 to +0.00209 over 243 poses), which is a
+consistency check on both.
+
+For the clear student the chord understates by more (ratios 0.16-0.36) but the absolute
+errors stay under half a tolerance, and that cell is NOT_CERTIFIED regardless, so nothing
+rests on it.
+
+### Why the two axes differ, and it is not arbitrary
+
+Fog is nonlinear in density and saturates — density 52.5 already projects to s* = 0.99,
+so most of the chord's parameter range is spent on a narrow band of physical densities and
+the low-density end is poorly represented. The low-sun axis is a near-uniform darkening:
+s* runs 0.083 / 0.374 / 0.666 for 60 / 30 / 15 degrees, spreading smoothly across the
+chord, and both endpoints share the daylight exposure. **A chord is a good model of a
+family that is close to linear in image space and a poor one where the physics saturates.**
+That is a per-axis property, so fidelity has to be measured per axis rather than assumed
+from one.
+
+### Standing scope for the coverage claim
+
+  - `S_mixed_t06/shadows` — CERTIFIED, family faithful. Claim holds.
+  - fog cells — chord optimistic at the low-density end; NOT_CERTIFIED verdicts are
+    unaffected (an optimistic family cannot manufacture a false alarm), and the interior
+    failures at density 17.5-35 are outside the certified set.
+  - `night` cells — not measured. Both endpoints of that family carry DIFFERENT exposures
+    (daylight 800 vs night 200), so a pixel chord between them interpolates an exposure
+    change as well as a lighting change. That is a harder object to justify and is left
+    open rather than asserted.

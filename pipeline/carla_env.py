@@ -182,18 +182,28 @@ def _density_override(name, w):
     return w
 
 
-def _sun_override(w):
+def _sun_override(name, w):
     """SUN_ALTITUDE_OVERRIDE exposes the axis the three lighting conditions already lie on.
 
     `clear`, `shadows` and `night` are not separate phenomena -- they are sun_altitude_angle
     90, 15 and -25 of one continuous physical parameter. Sweeping it turns a three-point
     comparison into a curve, which is what makes a transition point predictable in advance
-    and therefore falsifiable. Headlights still key off the CONDITION, not the angle, so a
-    swept `shadows` run stays lights-off exactly as the preset is.
+    and therefore falsifiable. Headlights still key off the ANGLE (see headlights_on), so a
+    swept run below the horizon correctly turns them on.
+
+    SCOPED TO SKIP `clear`, exactly as _density_override is scoped to `fog`. The two
+    overrides were inconsistent: a fog override left the clear baseline alone, a sun
+    override moved it. That matters for any capture holding both an unperturbed clear
+    baseline and a perturbed condition in ONE session -- the interpolation-fidelity
+    captures do precisely that, and without this scoping the chord's own origin moves with
+    its endpoint and the projection is meaningless.
+
+    `clear` is the s = 0 anchor of every disturbance family in this study. It is not a
+    point to be swept; it is what the sweep is measured against.
     """
     import os
     v = os.environ.get("SUN_ALTITUDE_OVERRIDE")
-    if v:
+    if v and name != "clear":
         w.sun_altitude_angle = float(v)
     return w
 
@@ -206,7 +216,7 @@ def weather_params(name):
     w = carla.WeatherParameters()
     for field, value in {**CLEAR_BASELINE, **CONDITION_DELTAS[name]}.items():
         setattr(w, field, value)
-    return _sun_override(_density_override(name, w))
+    return _sun_override(name, _density_override(name, w))
 
 
 def set_clear_weather(world):
