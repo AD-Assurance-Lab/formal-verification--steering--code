@@ -1615,3 +1615,64 @@ T06-F17/F18 found night needed vertical resolution), then both, then re-enabling
 DAgger -- whose removal by T06-F14 rests on data A-2 discarded and which Zach's experience
 says has always been needed. Per Zach: it does not matter which architecture is optimal,
 only that one works, because this study is about formal verification.
+
+## T06-F30  w3 mixed student: 24/24, all four conditions, 58% margin. A-1's re-entry condition is met.
+
+Exploratory under A-1, one run per cell. Same teacher, same data, same input size; the
+only change is student width, w2 (21,408 ReLU) -> w3 (24,48,48)/fc96, 32,112 ReLU.
+
+    condition    w2 worst        w3 worst
+    clear      6/6  1.51 ft    6/6  0.91 ft
+    fog        5/6  8.52 ft    6/6  0.84 ft      fog/s00  8.52 -> 0.35 ft
+    night      6/6  2.10 ft    6/6  0.54 ft      night/s05 2.10 -> 0.54 ft
+    shadows    5/6  2.99 ft    6/6  0.52 ft      shadows/s02 2.99 -> 0.34 ft
+               22/24           24/24             gate 2.19 ft
+
+**Worst cell across all 24 is 0.91 ft against a 2.19 ft budget, a 58% margin.** The two
+cells that failed at w2 improved by 24x and 9x. Distillation fidelity improved in step:
+KD RMSE 0.0391 -> 0.0325, relative error 0.428 -> 0.356, R^2 0.82 -> 0.87.
+
+For scale, published Town04's mixed student ranges 0.53-1.61 ft on the same budget. This
+one is at least as comfortable.
+
+That is the capacity hypothesis confirmed end to end: the teacher held the failing cells
+at 0.37-0.49 ft (T06-F29), the student could not reproduce it at w2, and 50% more ReLU
+closed the entire gap. It is also the conclusion Town04 reached independently at
+`4b2ad73`, and the one Zach predicted from experience before any of this was measured.
+
+### What this settles, and what it does not
+
+**Settled: the mixed student needs to be wider than the clear one.** They are not matched
+and there was never a reason for them to be. T06-F14's contrary finding is discarded with
+its data.
+
+**Not settled, and deliberately not pursued: whether w3 is optimal.** It is not being
+swept further. Per Zach: it does not matter which architecture is optimal, only that one
+works, because the study is about formal verification and the network is the object under
+test, not the contribution. w3 works with margin and is well inside tractability
+(T06-F12: 32,112 ReLU against ~11% UNKNOWN being the useful limit, since the binding
+dimension is the 1-D disturbance family).
+
+**Not needed: student DAgger.** Its removal by T06-F14 rests on discarded data and is
+evidentially unsupported, and Zach's experience is that it has always been required. It
+simply is not required here -- w3 reaches 24/24 with 58% margin distilled only. The stage
+and its tooling (`pipeline/dagger_student.py`) remain available if a later result needs
+it, and nothing in this build should be read as re-establishing F14's claim that it is
+harmful.
+
+**Not a rate.** Every number above is ONE run per cell, which standing rule 3 forbids
+treating as a failure rate. It is triage that says where the student stands, and the
+margin is wide enough that the ordering is not in doubt. The competence gate (3 reps) and
+the scored ledger (>=10 reps) supply the rates.
+
+### A-1 re-entry
+
+A-1 suspended R1 with the re-entry condition: "R1 resumes when a mixed student drives
+every condition." **A mixed student has now driven every condition.** So R1 is back in
+force, and everything from here needs a fresh certificate committed before its drives. No
+result in T06-F29 or F30 may be presented as a blind prediction; they are exploratory by
+construction and are labelled so.
+
+Next: re-run the clear-weather competence gate against the w3 checkpoint -- the existing
+record is keyed to the w2 digest and the new guard correctly refuses it -- then capture,
+certify blind, commit, and drive the scored ledger.
