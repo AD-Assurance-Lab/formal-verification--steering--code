@@ -1428,3 +1428,67 @@ now the file on disk is from 11:47 today, describing the students A-2 discarded,
 happens to say "not competent" -- so it would refuse rather than wrongly proceed. The
 guard works by luck, not by construction. It should record the checkpoint file hashes it
 was measured on, and the deployment script should verify they match.
+
+## T06-F27  Prediction 3 FALSIFIED: the mixed student is fine; the CLEAR one regressed
+
+T06-F26 predicted the mixed student would be worse than the clear one, "having twice the
+off-nominal data at identical capacity." Measured, both distilled:
+
+    student      KD RMSE  target sd        n   rel err    R^2    x tolerance
+    clear NEW     0.0728     0.1081    25,628    0.673    0.55       6.06x
+    clear OLD     0.0300     0.0808    20,792    0.371    0.86       2.50x
+    mixed NEW     0.0391     0.0914   135,526    0.428    0.82       3.26x
+    mixed OLD     0.0480     0.1151    83,293    0.417    0.83       4.00x
+
+**The mixed student is unchanged** -- relative error 0.428 against 0.417 before, R^2 0.82
+against 0.83. Its absolute KD RMSE even improved, 0.0480 -> 0.0391, because its target got
+easier: the mixed DAgger set came out LESS extreme this time (sd 0.0914 against 0.1151),
+not more, despite twice the rounds.
+
+**The clear student is what regressed**, and badly: relative error 0.371 -> 0.673, R^2 from
+0.86 to 0.55. It now explains barely half its teacher's variance.
+
+### Why the inversion, and it is not the one anyone expected
+
+The two students face opposite data situations:
+
+    clear:  25,628 samples, target sd 0.1081, 67% of it off-nominal DAgger recovery data
+    mixed: 135,526 samples, target sd 0.0914, and four conditions to average over
+
+The clear student has **five times less data against a HIGHER-variance target**. T06-F26's
+mechanism was right -- extra DAgger rounds raise target variance -- but it bites the
+CLEAR student, not the mixed one, because clear's base set is small enough that each extra
+round of recovery data moves its distribution substantially. The mixed set is large enough
+to absorb the same rounds without shifting.
+
+So the causal chain from T06-F24 stands and lands somewhere different from where it was
+aimed: **the conjunctive gate's lucky-round wait degrades whichever student has the least
+data to dilute the recovery states it appends, and that is the clear one.**
+
+### This contradicts the standing prior, and the prior should not simply win
+
+Zach's experience, and Town04, both say the clear student is the easy one and the mixed
+student is the hard one needing width and input sweeps. On Town04 that is exactly right,
+and its student sizes encode it: `S_clear` (8,16,16)/fc32 against `S_mixed` (24,48,48)/fc96,
+3x width.
+
+This measurement says the opposite for THIS build, and the reason is specific and
+traceable rather than mysterious: it is a property of how much data each student got
+relative to its target's variance, not a property of the task. The mixed policy is still
+the harder TASK. The clear student is simply the more data-starved MODEL right now.
+
+Both can be true, and the fix differs for each:
+  - mixed: capacity, if it fails the four-condition drive -- the Town04 lever, w3 then input
+  - clear: capacity too, but the cheaper first move is more clear base data, since its
+    problem is a small dataset rather than a hard function
+
+### What the clear-weather gate can and cannot settle
+
+Recorded before the gate reports, because it bears on how its result should be read:
+**passing the clear competence gate does not clear the mixed student.** Town04's own
+history is the proof -- there, w2 mixed passed clear and then failed night 10/10, and w3
+was what fixed it (`4b2ad73`). The clear gate is the s=0 anchor, not a capacity test.
+
+So whatever the gate says, the mixed student still needs a four-condition exploratory
+drive before its width is settled. A-1 permits exactly that -- R1 is suspended, and A-1's
+re-entry condition is literally "a mixed student drives every condition."

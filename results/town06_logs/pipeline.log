@@ -234,3 +234,5 @@
 [2026-08-28 20:26:58] OK    distill_S_clear_t06
 [2026-08-28 20:26:58] distil S_mixed_t06 -> S_mixed_t06_168x28_w2 (168x28, 21408 ReLU) from teacher_mixed_t06_dagger_r11
 [2026-08-28 20:26:58] START distill_S_mixed_t06 (attempt 1)
+[2026-08-28 21:03:37] OK    distill_S_mixed_t06
+[2026-08-28 21:03:37] START competence (attempt 1)
