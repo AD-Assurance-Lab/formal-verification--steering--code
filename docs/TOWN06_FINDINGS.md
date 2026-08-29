@@ -1866,3 +1866,93 @@ The night axis has not been swept. It is not a clean analogue: `headlights_on()`
 at sun altitude 0, so the clear-to-night family contains a discontinuity the pixel chord
 does not model, and the family also passes through the low-sun preset at 5 degrees. Worth
 doing, worth designing rather than just running.
+
+## T06-F33  A SECOND interior failure, with a physical mechanism: the sun on the horizon
+
+Exploratory under A-1. The clear->night family is a sun-altitude sweep, and **three points
+on it are already measured and all pass**: clear (90 deg, ledger 0/12), low sun (5 deg,
+0/12), night (-25 deg, 0/12). This drives the gaps.
+
+    sun altitude   signature   frame mean   sections failing   worst |CTE|
+      90 (clear)   clear          0.2983    0/6  (0/12 ledger)     ~1.5 ft
+      45           'fog'          0.5740    3/6                    11.68 ft
+      20           'fog'          0.5112    2/6                    10.68 ft
+      10           'fog'          0.4652    3/6                    11.41 ft
+       5 (low sun) shadows        0.1204    0/6  (0/12 ledger)      ~0.5 ft
+       0           'shadows'      0.0910    6/6  ALL SECTIONS       10.23 ft
+      -8           night          0.2058    1/6                     6.07 ft
+     -16           night          0.2058    0/6                     0.97 ft
+     -25 (night)   night          0.2125    0/6  (0/12 ledger)      ~0.54 ft
+
+### Rate at the worst point
+
+    sun altitude 0, section s00, fresh server per run
+    FAILURE RATE 11/11 = 100%,  Wilson 95% CI [74, 100]%
+    max|CTE| 10.48 - 10.82 ft against a 2.19 ft budget; steps 499 on every run
+
+The spread is TIGHT, 0.34 ft across eleven runs, unlike the fog interior's bifurcation.
+This is not a marginal policy occasionally falling over; it is a deterministic failure.
+
+### It has a mechanism, and the mechanism is a switching threshold
+
+`carla_env.headlights_on()` returns `sun_altitude_deg < 0.0`. At **exactly 0 degrees** the
+sun contributes no direct illumination -- the frame mean is 0.0910, DARKER than the low-sun
+preset at 0.1204 and darker than night at 0.2125 -- **and the headlights are still off**,
+because 0 is not less than 0. It is the darkest lights-off condition the family can reach.
+
+So the failure is not a quirk of the policy. It is a gap created by where the headlight
+rule switches, and the policy is being asked to steer on almost no signal. Both immediate
+neighbours pass: 5 degrees above (lights off, but brighter) and 8 degrees below (darker,
+but lights ON). **The failure sits precisely in the notch between them.**
+
+That is a genuine safety finding with a physical explanation rather than a number, and it
+is the kind of thing endpoint testing cannot reach by construction.
+
+### The methodological catch, stated plainly
+
+**The rendered sun sweep is NOT monotone in image space, and the interior leaves the
+range spanned by the endpoints in BOTH directions:**
+
+    endpoint clear   0.2983
+    interior 45 deg  0.5740   <- BRIGHTER than either endpoint (low sun ahead = glare)
+    interior  0 deg  0.0910   <- DARKER  than either endpoint
+    endpoint night   0.2125
+
+The certified family is a pixel-space chord between 0.2983 and 0.2125. Neither excursion
+lies on it. **So these interior failures are real, reproducible, physically meaningful
+failures, and they are NOT points inside the certified set.** They must not be described
+as failures the certificate bounded.
+
+This also qualifies a claim the study currently makes. `_sun_override`'s docstring says
+clear, shadows and night "are not separate phenomena -- they are sun_altitude_angle 90, 15
+and -25 of one continuous physical parameter", and treats sweeping it as turning a
+three-point comparison into a curve. The PARAMETER is continuous; the rendered images
+along it are not monotone, and a straight line between two of them does not pass through
+what the simulator actually renders in between. That is worth stating in the paper rather
+than being found by a reviewer.
+
+Minor, and worth a look: sun -8 and -16 produce IDENTICAL signatures to four decimals
+(mean 0.2058, sigma 0.1469). CARLA appears to clamp illumination once the sun is below the
+horizon, which would make the family degenerate below 0 and is easy to confirm.
+
+### What the two interior results support, together
+
+Fog (T06-F32) and sun altitude (here) are independent axes, and both show the same shape:
+
+    axis      endpoints driven          interior driven
+    fog       0 and 70:  0/12, 0/12     density 35:      11/11 FAIL
+    sun       90, 5, -25: 0/12 each     altitude 0 deg:  11/11 FAIL
+
+**A policy that passes every endpoint of every disturbance axis, 0/12 each, fails 100% of
+runs at interior points of two different axes.** Formal verification declined to certify
+four of those six cells. Endpoint closed-loop testing passed all of them.
+
+The honest and sufficient claim is therefore:
+
+    verification withheld the certificate; endpoint driving said the policy was fine;
+    driving the physically reachable interior found 100% failure rates on two
+    independent axes.
+
+That stands without needing the failures to lie inside the certified chord, and it is the
+argument for verification: the endpoints are where testing looks, and they are not where
+this policy breaks.
