@@ -1179,3 +1179,93 @@ diagnosed. Candidate causes, none ruled out: the corrected harness genuinely pre
 harder learning problem; the recollected data differs in composition; ordinary run-to-run
 variation in DAgger convergence, which the oscillation above shows is large. It must not
 be written up as a harness effect without a measurement that separates these.
+
+## T06-F24  The extra DAgger rounds are the GATE's arithmetic, not the harness
+
+Diagnosing the number left undiagnosed in T06-F23: the mixed teacher needed 12 rounds
+under the corrected harness against 6 before. The answer is that round count is not a
+measure of task difficulty, and comparing 12 with 6 measures almost nothing.
+
+### The gate is a conjunction of N single runs, and N differs by 4x
+
+`dagger.py` stops when EVERY cell passes in ONE round. The clear teacher has 6 cells
+(6 sections x clear). The mixed teacher has 24 (6 sections x 4 conditions). Each cell is
+a SINGLE run, which standing rule 3 says is wrong about one time in eight near the cliff.
+
+Measured per-cell pass RATES from the turn onward -- the rate rule 3 asks for, which the
+gate itself never computes:
+
+    CLEAR teacher, rounds 3-7    pass counts  [3, 4, 5, 5, 6] of 6     mean 4.6/6
+    MIXED teacher, rounds 3-12   pass counts  [18,17,22,16,20,19,22,20,19,24] of 24
+                                                                       mean 19.7/24
+
+Both teachers sit at ~77-82% per-cell competence. **They are equally good. The mixed one
+simply has to win four times as many coin flips simultaneously.**
+
+    clear:  P(all 6 pass)  = 0.173  -> expected wait  6 rounds;  actual 5
+    mixed:  P(all 24 pass) = 0.0036 -> expected wait 276 rounds;  actual 10
+
+The clear teacher's wait matches the independent prediction almost exactly. The mixed
+one's does not, and the reason is visible in the dispersion: its round-to-round pass count
+has sd 2.33 where independent cells would give 1.63. **Rounds are overdispersed, so cells
+are positively correlated within a round** -- each round is a differently-retrained
+network that is uniformly better or worse, and the gate is waiting for one that happens to
+be good everywhere at once. That correlation is what rescues the wait from 276 rounds down
+to 10, and it is also what makes the wait enormously variable.
+
+**So 12 versus 6 is two draws from a high-variance waiting time.** It is not evidence that
+the corrected harness presents a harder learning problem, and it must not be written up as
+one. The candidate cause named in T06-F23 -- "the corrected harness genuinely presents a
+harder learning problem" -- is not ruled out by this, but it is no longer needed to explain
+anything, and nothing here supports it.
+
+### The consequence that actually matters: the gate selects a LUCKY ROUND
+
+The teacher we are distilling from, `teacher_mixed_t06_dagger_r11`, was chosen because on
+one round it scored 24/24. Its typical round scores 19.7/24. Its true per-cell rates were
+never measured, because the gate measures one run per cell and then stops.
+
+`dagger.py`'s own `--margin-frac` docstring already says this out loud -- "a single-run
+gate can stop on a lucky pass" -- and the same applies to the clear teacher, selected on
+one 6/6 round with a 4.6/6 typical.
+
+This is not fatal: distillation copies the teacher's steering OUTPUTS over a fixed
+dataset, not its closed-loop trajectories, so an occasional departure does not
+automatically transfer. But it means the phrase "the teacher met budget" carries less than
+it appears to, and any claim resting on teacher quality should quote the rate above rather
+than the gate verdict.
+
+**Recommendation, not yet acted on because it is a protocol matter:** the teacher gate
+should require a RATE over repetitions like every other closed-loop number in this study,
+rather than one conjunctive round. Changing it mid-study needs an amendment and it would
+cost real simulator time, so it is recorded here for Zach rather than done.
+
+### The per-cell rates predict where the STUDENT will fail first
+
+A distilled student mimics its teacher, so the teacher's weak cells are the student's
+likely weak cells. Ranked worst first:
+
+    night/s05  0.30      clear/s02   0.70      fog/s01   0.80
+    night/s02  0.40      night/s00   0.70      fog/s03   0.80
+    fog/s00    0.60      shadows/s02 0.70      (13 cells at 0.90-1.00)
+    fog/s02    0.60      clear/s00   0.80
+
+Two things fall out of this list. `night/s02` and `night/s05` are the worst cells, which
+is consistent with night being the hard condition on this route. And **`clear/s02` at 0.70
+is the immediate risk**, because the competence gate that runs next is clear-weather only
+and requires every section to hold on every one of 3 repetitions.
+
+### PRE-REGISTERED, before the competence gate runs
+
+If the students inherit their teacher's per-cell rates, the clear gate is a conjunction of
+6 sections x 3 reps that must ALL hold. Using the clear teacher's own clear-cell rates
+(s00 0.80, s01 0.90, s02 0.70, s03 1.00, s04 1.00, s05 1.00 for the mixed teacher's clear
+row; the clear-only teacher's are similar):
+
+**Prediction: if either student fails the clear competence gate, it fails on s02, and
+possibly s00 or s01. It does not fail on s03, s04 or s05.**
+
+That is falsifiable and cheap to check. If a student instead fails on s03/s04/s05 -- the
+sections both teachers hold reliably -- then the student is NOT merely inheriting teacher
+weakness and the cause is distillation capacity, which is a different problem with a
+different fix (width, or input size).
