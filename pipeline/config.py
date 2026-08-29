@@ -326,11 +326,20 @@ TOWN06_INPUT_W, TOWN06_INPUT_H = (int(os.environ.get("T06_IN_W", "168")),
 #   (name, checkpoint stem, conv channels, FC width)
 TOWN06_STUDENTS = (
     ("S_clear_t06", "S_clear_t06_168x28_w2", (16, 32, 32), 64),
-    # T06-F14: both students are w2 and NEITHER gets student DAgger. Measured on a
-    # 3-rep clear gate: mixed w2 distilled-only holds 6/6, w3 holds 4/6 with 50% more
-    # ReLU, and 4 DAgger rounds take w2 from 6/6 to 3/6. The w3 widening in F13 was
-    # decided on single-pass numbers and the repetitions reversed it.
-    ("S_mixed_t06", "S_mixed_t06_168x28_w2", (16, 32, 32), 64),
+    # THE MIXED STUDENT IS WIDER THAN THE CLEAR ONE, as in published Town04
+    # (S_clear (8,16,16)/fc32 against S_mixed (24,48,48)/fc96). There is no reason for the
+    # two to match: they fit different functions, and only the mixed one has to represent
+    # four conditions.
+    #
+    # The previous entry pinned both at w2 on the authority of T06-F14, which A-2
+    # discarded along with its data. Measured on the REBUILD (T06-F29), w2 mixed drove
+    # 22/24 exploratory cells and failed fog/s00 at 8.52 ft and shadows/s02 at 2.99 ft --
+    # while the teacher it was distilled from holds those same two cells 3/3 at 0.37-0.40
+    # and 0.41-0.49 ft. The teacher is competent and the student cannot reproduce it, so
+    # the gap is student capacity and width is the direct lever. This is the same
+    # conclusion Town04 reached at 4b2ad73, where w1 failed all four conditions, w2 failed
+    # night 10/10 and w3 passed everything.
+    ("S_mixed_t06", "S_mixed_t06_168x28_w3", (24, 48, 48), 96),
 )
 
 
