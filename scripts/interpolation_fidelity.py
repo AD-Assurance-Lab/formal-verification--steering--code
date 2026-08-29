@@ -98,8 +98,15 @@ def main():
     print(f"  {n} poses, tolerance {tol:.4f}\n")
 
     out = {"n_poses": int(n), "tolerance": tol, "full_density": FULL_DENSITY, "cells": {}}
-    for nm, ck, ch, fc in C.STUDENTS:
-        net = StudentNet(28, 84, channels=ch, fc=fc).to(dev)
+    # MAP-AWARE, like the rest of the pipeline. This script was written for Town04 and
+    # hardcoded its students and its 28x84 input; run unchanged under STUDY_MAP=Town06 it
+    # would silently load Town04 checkpoints at the wrong resolution.
+    students = C.TOWN06_STUDENTS if C.STUDY_MAP == "Town06" else C.STUDENTS
+    in_h, in_w = ((C.TOWN06_INPUT_H, C.TOWN06_INPUT_W) if C.STUDY_MAP == "Town06"
+                  else (28, 84))
+    print(f"  map {C.STUDY_MAP}, students at {in_w}x{in_h}")
+    for nm, ck, ch, fc in students:
+        net = StudentNet(in_h, in_w, channels=ch, fc=fc).to(dev)
         net.load_state_dict(torch.load(f"{C.CHECKPOINT_DIR}/{ck}.pth",
                                        map_location=dev, weights_only=True))
         net.eval()
