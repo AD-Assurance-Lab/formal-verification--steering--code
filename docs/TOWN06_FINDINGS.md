@@ -1548,3 +1548,70 @@ more than how good the student was.
 study should rest on it.** It remains useful for what it actually measures -- whether
 distillation converged at all, and per-condition breakdowns like T06-F17's, where the
 comparison is between conditions on one student rather than between students.
+
+## T06-F29  The mixed student's gap is CAPACITY, proved by driving the teacher on the same cells
+
+Exploratory under A-1 (R1 suspended); ONE run per cell, so these are triage, not rates,
+and no verdict here is a blind prediction.
+
+### Mixed student at w2 (21,408 ReLU), all four conditions
+
+    condition   result   worst cell
+    clear        6/6     s02 1.51 ft
+    fog          5/6     s00 8.52 ft  FAIL
+    night        6/6     s05 2.10 ft  (tight: gate is 2.19)
+    shadows      5/6     s02 2.99 ft  FAIL
+                22/24
+
+**Night passes 6/6 at w2**, which is worth recording because Town04's w2 mixed student
+failed night 10/10 and needed 3x width to fix it (`4b2ad73`). Whatever makes night hard is
+not the same on both maps, and the Town04 prior does not transfer cell-for-cell. The
+clear-weather competence gate had already passed this student 3/3 on every section, so
+this is the first evidence about it under disturbance.
+
+### Is that a student limit or a teacher limit? Drive the teacher on the same two cells.
+
+A distilled student mimics its teacher and cannot exceed it, so a failure where the
+teacher is ALSO weak means widening cannot help. Both failing cells were among the
+teacher's weakest by the pooled per-round rates in T06-F24 (fog/s00 0.60, shadows/s02
+0.70), which made this the live possibility. So it was measured rather than assumed:
+
+    teacher_mixed_t06_dagger_r11, 3 reps each, fresh server every run
+
+    fog/s00        PASS 0.40 ft   PASS 0.37 ft   PASS 0.37 ft
+    shadows/s02    PASS 0.42 ft   PASS 0.41 ft   PASS 0.49 ft
+
+**The teacher holds both cells 3/3 with an order of magnitude of margin**, against a
+student that fails them at 8.52 and 2.99 ft. The teacher is competent and the student
+cannot reproduce it, so the gap is student capacity. Width is the direct lever.
+
+Note also what those six numbers say about the harness: 0.40 / 0.37 / 0.37 across three
+freshly restarted servers. A competent, contractive policy is now extremely repeatable,
+which is D-10 read from the other end -- the run-to-run spread that made the old build
+uninterpretable appears where the margin is thin, not everywhere.
+
+### A correction to how T06-F24's per-cell rates should be used
+
+Those rates pooled every DAgger round from the turn onward, i.e. a different checkpoint
+each round. They describe the DAgger TRAJECTORY, not the selected checkpoint. The final
+teacher holds fog/s00 at 0.37 ft where the pooled rate said 0.60. So the rates are a
+useful guide to which cells are hard -- and they did correctly rank the two cells the
+student failed -- but they must not be quoted as properties of the teacher being
+distilled from.
+
+### Action
+
+Mixed student widened to **(24,48,48)/fc96, 32,112 ReLU**, matching published Town04's
+ratio of a wider mixed student than clear. The clear student stays at w2: it passed its
+gate 6/6 at 1.31 ft and there is no reason to widen a policy that only ever sees one
+condition, which is also what Town04 did.
+
+T06-F12 puts 32,112 ReLU well inside tractability -- 5,152 measured 0.78% UNKNOWN and
+15,456 measured 2.5%, against ~11% where certification stops being useful -- because what
+binds here is the disturbance dimension, which is 1-D, not network size.
+
+If w3 does not close it, the next levers in order are input size (168x56 first, since
+T06-F17/F18 found night needed vertical resolution), then both, then re-enabling student
+DAgger -- whose removal by T06-F14 rests on data A-2 discarded and which Zach's experience
+says has always been needed. Per Zach: it does not matter which architecture is optimal,
+only that one works, because this study is about formal verification.
