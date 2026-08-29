@@ -58,6 +58,27 @@ sys.path.insert(0, str(REPO / "pipeline"))
 
 import config as C  # noqa: E402
 
+
+def checkpoint_digest(ck):
+    """SHA-256 of a checkpoint file.
+
+    The competence record is a PRECONDITION for certification -- finish_town06_deployment
+    refuses to certify without it. It was keyed to nothing, so a record left over from a
+    previous generation of students would gate a certification of DIFFERENT checkpoints,
+    and the only thing preventing that was luck about what the stale file happened to say.
+    Recording the digests makes the record self-verifying: it is evidence about exactly
+    these weights or it is not evidence at all.
+    """
+    import hashlib
+    p = os.path.join(C.CHECKPOINT_DIR, f"{ck}.pth")
+    if not os.path.exists(p):
+        return None
+    h = hashlib.sha256()
+    with open(p, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()[:16]
+
 OUT = REPO / "results" / "town06" / "competence_clear.json"
 
 # One definition, in config. Four scripts previously named checkpoints independently
@@ -207,6 +228,8 @@ def main():
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(dict(map=C.STUDY_MAP, students=report,
                                    all_competent=all_ok,
+                                   checkpoint_digests={ck: checkpoint_digest(ck)
+                                                       for _, ck, _, _ in STUDENTS},
                                    cte_budget_ft=C.CTE_BUDGET_FT,
                                    git_commit=head,
                                    reps=args.reps,
