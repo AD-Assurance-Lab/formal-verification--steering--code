@@ -35,18 +35,19 @@ carla_stop() {
     nvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader | \
         sed 's/^/    GPU after stop: /' | tee -a "$LOG"; }
 carla_start() {
-    say "starting CARLA on $CARLA_PORT"
-    ( cd "$CARLA_ROOT" && setsid nohup ./CarlaUE4.sh -carla-rpc-port="$CARLA_PORT" \
-        -RenderOffScreen -quality-level=Epic >>"$LOG_DIR/carla.log" 2>&1 < /dev/null & )
-    # A bound port is not a ready simulator: it binds well before it can serve, and a
-    # gate once drove for 12 minutes against a listening-but-unready server, recording
-    # the failure as if the students had failed. Readiness is a successful get_world().
-    if python3 scripts/wait_carla_ready.py --port "$CARLA_PORT" --timeout 240; then
-        say "CARLA ready"; return 0; fi
-    say "FATAL: CARLA did not become ready"; return 1; }
+    # ONE launcher (scripts/carla_launch.sh). This function used to start CARLA itself
+    # and lacked -notexturestreaming -- and it is the server the SCORED LEDGER runs
+    # against, so every certified cell would have been measured 168x noisier than the
+    # floor while looking completely normal. carla_launch.sh also verifies the flags
+    # actually landed, by reading the server's real /proc argv.
+    say "starting CARLA on $CARLA_PORT (via scripts/carla_launch.sh)"
+    if bash scripts/carla_launch.sh >>"$LOG" 2>&1; then say "CARLA ready"; return 0; fi
+    say "FATAL: CARLA did not become ready, or violates the determinism rules"; return 1; }
 
 # ---------------------------------------------------------------- preconditions
 python3 scripts/check_protocol_lock.py >/dev/null || { say "FATAL: PROTOCOL lock"; exit 1; }
+python3 -m carla_determinism --lock-only >/dev/null || {
+    say "FATAL: carla-determinism rules lock mismatch"; exit 1; }
 
 # The certificate bounds deviation FROM clear. A student that is wrong in clear weather
 # certifies perfectly and drives off the road, so competence is a precondition for the
@@ -112,7 +113,7 @@ PROTOCOL R1. This is what makes the verdicts a prediction rather than a descript
 no closed-loop cell has been driven, and no truth table was read to produce it.
 
 Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_017s53EDyiBNRN9VM8sxqLT8
+Claude-Session: https://claude.ai/code/session_01ShU3GkJPKyadKYYmn82com
 MSG
     say "committed the certificate"
 fi
