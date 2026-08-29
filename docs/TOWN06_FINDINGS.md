@@ -1787,3 +1787,82 @@ having passed the competence gate 3/3 on every section. The interval [1,35]% inc
 rates and the cell is scored PASS, but it is not zero, and the certificate for that cell
 is vacuous by construction (Delta_p = 0 at s=0). It belongs in the write-up as a measured
 property of the anchor rather than being quietly dropped.
+
+## T06-F32  THE INTERIOR RESULT: the mixed student passes both endpoints and fails between them
+
+Exploratory under A-1. The certificate for `S_mixed_t06/fog` said NOT_CERTIFIED while the
+scored ledger drove the fog PRESET and passed 0/12. The certificate quantifies over the
+whole one-parameter family; the ledger drove one point of it. So the interior was the one
+place neither had looked.
+
+### The fog axis, mixed student w3
+
+    fog density   sections failing        worst |CTE|      how measured
+      0 (clear)   0/6                        ~1.5 ft       ledger, 0/12 failures
+      17.5        4/6  (s01,s02,s03,s04)      8.56 ft       1 run per section
+      35          1/6  (s02)                 11.57 ft       1 run per section
+      52.5        0/6                         2.01 ft       1 run per section
+     70 (preset)  0/6                         0.84 ft       ledger, 0/12 failures
+
+**Both endpoints are clean and the interior is not.** Endpoint-only closed-loop testing --
+which is what the ledger and the published Town04 study both do -- declares this policy
+safe under fog. It is not.
+
+### The failure is a rate, not a run
+
+Sharpest cell, fog density 35 on s02, repeated on a freshly restarted server each time:
+
+    FAILURE RATE 11/11 = 100%,  Wilson 95% CI [74, 100]%
+    max|CTE| per run: 3.66  3.70  3.71  4.30  11.44  11.55  11.56  11.56  11.57  11.57  11.57
+    budget 2.19 ft -- every run exceeded it; step counts 349 on all 11 (R-SIM-6 clean)
+
+One rep was lost to a CARLA startup segfault and skipped rather than substituted.
+
+The values are **bimodal** -- either ~3.7 ft or ~11.6 ft, nothing between. The closed-loop
+system falls into one of two trajectories from a render-floor-sized perturbation, which is
+D-10 again: the spread is largest where the margin is thinnest, and here it is not spread
+but bifurcation.
+
+### The certificate flagged the right SECTION, not just the right cell
+
+`S_mixed_t06/fog` per-section bounds put **s02 worst at 2.35x tolerance**, ahead of s04
+(2.24x), s05 (1.55x), s01 (1.54x). s02 is the section that fails at every interior density
+tested, and the only one still failing at density 35. The correspondence is specific
+rather than a general "something in this cell is wrong".
+
+### What this does and does not establish
+
+**Does:** a policy can pass both endpoints of a disturbance family 0/12 and fail its
+interior 11/11; the certificate marked that cell NOT_CERTIFIED and its worst-bounded
+section is the one that fails. That is the specificity evidence the deployment test needed
+-- `TOWN06_STATUS.md` declared in advance that a uniform pass-and-certify outcome would
+measure sensitivity only, and this is the opposite of that outcome.
+
+It also reproduces, in the steering domain, what the AEB study found independently: a
+camera-only policy that passes both FMVSS 127 lighting endpoints and is falsified by
+certificate between them.
+
+**Does not, and must not be claimed:** that the certificate *predicted this specific
+failure*. The certified family is a pixel-space chord between two RENDERED endpoints,
+`x0 + s(x1 - x0)`. A CARLA render at density 35 is not the pixel-wise midpoint of
+densities 0 and 70, because fog is nonlinear in density -- so the rendered point tested
+here lies off the certified chord by an unmeasured amount. `scripts/interpolation_fidelity.py`
+exists to measure exactly that, its own docstring records that both blind reviewers raised
+it, and **it has never been run on Town06**; its captures are from 2026-08-15, Town04-era,
+pre-harness-fix, at 84x28 rather than 168x28.
+
+Until it is run the defensible claim is the weaker one, which is still strong:
+
+    the certificate marked the cell not certifiable; endpoint driving passed 0/12;
+    interior driving fails 11/11 on the section the bound implicated most
+
+Making it the stronger claim -- that the failure lies inside the certified set -- requires
+the chord-vs-render agreement to be measured in STEERING terms on Town06. That is the next
+experiment and it is cheap.
+
+### Also open
+
+The night axis has not been swept. It is not a clean analogue: `headlights_on()` switches
+at sun altitude 0, so the clear-to-night family contains a discontinuity the pixel chord
+does not model, and the family also passes through the low-sun preset at 5 degrees. Worth
+doing, worth designing rather than just running.
