@@ -242,11 +242,30 @@ def main():
         # struct is what we asked for, not what the camera sees -- exposure, headlights
         # and the sensor all sit between them. One frame, and it costs a few ticks.
         sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
-        from condition_signature import assert_condition  # noqa: E402
+        from condition_signature import assert_condition, identify  # noqa: E402
         for _ in range(6):
             f_ = world.tick()
         _img = env.grab_frame(img_queue, f_)
-        assert_condition(student_preprocess(env.raw_to_bgr(_img), 168, 28), args.weather)
+        # R-SIM-4: confirm from a RENDERED FRAME that the requested condition is what is
+        # actually drawn. This is the Town04 fog-into-night failure and it stays ON for
+        # every normal run.
+        #
+        # It is SKIPPED, and only skipped, when a disturbance override is deliberately
+        # in force. An override renders an INTERMEDIATE point of the disturbance family
+        # -- fog at density 17.5, say -- which by construction is not the preset, so
+        # `identify` will not call it 'fog' and the assert would abort a run that is
+        # doing exactly what was asked. The signature is still measured and printed, so
+        # the rendered condition is on the record rather than merely unchecked.
+        _sig_frame = student_preprocess(env.raw_to_bgr(_img), 168, 28)
+        _ovr = {k: os.environ[k] for k in
+                ("FOG_DENSITY_OVERRIDE", "SUN_ALTITUDE_OVERRIDE") if os.environ.get(k)}
+        if _ovr:
+            _got, _st = identify(_sig_frame)
+            print(f"  OVERRIDE ACTIVE {_ovr}: preset assert skipped by design. "
+                  f"Rendered signature: looks like '{_got}' "
+                  f"(mean={_st['mean']:.4f} sigma={_st['sigma']:.4f} p01={_st['p01']:.4f})")
+        else:
+            assert_condition(_sig_frame, args.weather)
         for d in dirs:
             recs = drive_nn(world, world_map, vehicle, img_queue, model, device, d, min(args.max_steps, C.steps_for(d)))
             results[d] = save_and_report(args.model, d, recs)
