@@ -1956,3 +1956,79 @@ The honest and sufficient claim is therefore:
 That stands without needing the failures to lie inside the certified chord, and it is the
 argument for verification: the endpoints are where testing looks, and they are not where
 this policy breaks.
+
+## T06-F34  INTERPOLATION FIDELITY on Town06: the chord UNDERSTATES the real condition
+
+The test both blind reviewers asked for, never before run on Town06. Fresh captures under
+the corrected harness at the students' resolution, fog densities 17.5 / 35 / 52.5 / 70,
+clear and fog in the same file so the chord's endpoints are same-session (F43/F44: a
+cross-session baseline once inverted the sign of a fog measurement). 81 poses on s02.
+`scripts/interpolation_fidelity.py`, made map-aware -- it was hardcoded to Town04's
+students and 28x84 input and would otherwise have loaded the wrong checkpoints silently.
+
+Each rendered intermediate is projected onto its pose's chord to find the s it corresponds
+to, then chord and render are compared where it matters -- what the POLICY does.
+
+    density   s*      pixel err    S_clear steer err        S_mixed steer err
+     17.5    0.262     0.0212     -0.0094  (-0.78x tol)    -0.0449  (-3.74x tol)
+     35.0    0.615     0.0088     -0.0016  (-0.14x tol)    +0.0065  (+0.54x tol)
+     52.5    0.990     0.0132     +0.0006  (+0.05x tol)    -0.0019  (-0.16x tol)
+
+**Fog saturates.** Density 52.5 already projects to s* = 0.99 -- in image space it is
+essentially the full-fog endpoint. The physical parameter maps very non-linearly onto the
+chord, so equal steps in density are nothing like equal steps in s.
+
+### The clear student: the chord is faithful
+
+Steering error 0.05-0.78x tolerance against an s=1 bias of 2.89x, and chord/render bias
+ratios 0.67, 0.96, 1.02. For this policy the chord's interior behaves like a real render
+and the coverage claim holds.
+
+### The mixed student at low density: the chord is NOT faithful, and it is OPTIMISTIC
+
+    density 17.5:  bias from the REAL RENDER   +0.04758  =  3.96x tolerance
+                   bias from the CHORD point   +0.00267  =  0.22x tolerance
+                   ratio chord/render            0.056    -- the render drives the policy
+                                                             ~18x HARDER than the chord
+
+The steering error at that point, -3.74x tolerance, is **thirteen times the cell's entire
+s=1 bias** (-0.28x). The interior of the certified family, at that end, is a pixel
+construct that does not behave like the condition it is supposed to stand for.
+
+**And it errs on the optimistic side.** This is the opposite failure to the analytic
+Koschmieder model, which drove the policy 23.8x HARDER than reality and was rejected for
+it. A chord that is gentler than reality does not produce false alarms; it produces
+**missed ones**.
+
+### What this settles, and it settles T06-F32 cleanly
+
+T06-F32 recorded that the mixed student fails 11/11 at fog density 35 and said the failure
+"is not inside the certified set". This quantifies why: at the low-density end the real
+condition induces a lap-mean bias of **3.96x tolerance** while the certified chord induces
+**0.22x**. The certificate bounded the gentler object. The closed-loop failure is real,
+the certificate's NOT_CERTIFIED on that cell is right, and the mechanism is now measured
+rather than asserted.
+
+Note what that does to the argument, which is stronger rather than weaker: **verification
+flagged the cell while modelling a disturbance three times gentler than the real one.**
+The flag survived the understatement.
+
+### The limitation this creates, and it must be in the paper
+
+An optimistic family model is a soundness risk for **CERTIFIED** verdicts specifically. A
+cell can certify because the chord is mild where the real condition is not. This test was
+run on the fog axis only; **`S_mixed_t06/shadows`, the one CERTIFIED cell in the whole
+deployment test, has not had its family's fidelity checked.** Doing so is the obvious next
+measurement and it is cheap -- the same capture-and-project procedure on the sun-altitude
+axis.
+
+The honest scope for the coverage claim, as the script's own guidance puts it: small
+steering error means the chord is behaviourally faithful and the claim holds; comparable
+means the interior is a pixel construct and the claim must be scoped to the endpoints.
+**On Town06 the answer differs by policy** -- faithful for the clear student, not faithful
+for the mixed student at low fog density -- so the claim must be scoped per cell rather
+than made once for the family.
+
+Caveat on this measurement itself: 81 poses, section s02 only, fog axis only. It is enough
+to show the chord is not uniformly faithful; it is not enough to characterise the whole
+route.
