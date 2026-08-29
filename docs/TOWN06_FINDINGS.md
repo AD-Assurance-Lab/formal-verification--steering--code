@@ -2114,3 +2114,39 @@ The concrete gap: `evaluate.py`'s override path prints the rendered signature bu
 compares it against what the condition is supposed to look like. At sun 5 with night
 exposure the signature said `clear` while the run was labelled `shadows`, and that
 disagreement was printed and ignored. Worth a warning at minimum.
+
+## T06-F36  The clear-only student's failure ONSET is very early, which is what its bound said
+
+The clear-only student already fails at every disturbance endpoint (fog 83 %, night 100 %,
+low sun 100 %), so an interior sweep is not looking for a hidden failure. The informative
+question is the **onset**: how little disturbance does it take? That is what a bound of
+2.76x / 13.63x / 1.79x tolerance is a claim about.
+
+Exploratory, one run per section, correct per-condition exposure on both axes.
+
+    FOG (preset density 70)              LOW SUN (clear 90 deg -> preset 5 deg)
+    density   sections failing            sun     sections failing
+       5      1/6  (s02 3.56 ft)           60      0/6
+      10      1/6  (s02 11.05 ft)          45      1/6  (s00 10.75 ft)
+      17.5    2/6  (s02, s04 ~11.7 ft)     30      2/6  (s00 10.63, s05 2.73 ft)
+      70      10/12 = 83 %  (ledger)        5      12/12 = 100 %  (ledger)
+
+**Fog onset is density 5 of 70 — seven percent of the preset intensity.** **Low-sun onset
+is 45 degrees, barely darkened from the 90-degree clear baseline.** A policy trained only
+on clear weather departs its lane at a fog a person would struggle to notice.
+
+That is the behaviour its certificate described. The three clear-only cells carry the
+largest bounds in the study, and night's 13.63x tolerance is the largest of all -- these
+are not marginal calls near the threshold, and the closed loop agrees: the policy is
+fragile from the first perceptible disturbance.
+
+s02 is again the first section to go on the fog axis, as it was for the mixed student and
+as the certificate's per-section bounds ranked it.
+
+### Why this matters to the argument
+
+The interior results so far (T06-F32, F35) show a policy passing endpoints and failing
+between them, which is the case for verification over a family rather than at test points.
+This is the complementary case: **where a policy is genuinely fragile, the certificate's
+bound is correspondingly large, and the fragility begins almost immediately.** The bound
+magnitude carries information, not just its side of the threshold.
