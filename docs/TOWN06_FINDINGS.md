@@ -1338,3 +1338,93 @@ order is cheapest-first and stops at the first thing that passes, rather than se
 
 The clear student stays at w2 unless it fails on its own; there is no reason to widen a
 policy that only ever sees one condition, and Town04 did not.
+
+## T06-F26  The conjunctive gate degrades the STUDENT, by way of the DAgger set
+
+Diagnosing why the freshly distilled clear student fits its teacher much worse than the
+superseded one did. This connects T06-F24 to the student problem, and it is a causal
+chain rather than a coincidence.
+
+### First, an A-2 premise that turns out to be wrong
+
+A-2 justified recollection on two grounds: the images carry texture-mip variation a
+corrected evaluation never shows, and "the trajectories those frames were sampled along
+are not the trajectories the corrected harness produces." **The second is false for the
+base datasets, and measurably so.**
+
+Comparing the recollected `clear_t06` against the archived one:
+
+    manifest.csv   md5 IDENTICAL   (poses, steering labels, CTE, speed -- byte for byte)
+    frames/*.png   md5 DIFFER
+    mtimes         new written today; it WAS recollected, not reused
+
+Same for `mixed_t06`. So the expert-driven collection reproduces its trajectory and its
+labels exactly across the harness change, and only the rendering moved.
+
+Two candidate explanations, and this does not distinguish them: the pure-pursuit expert is
+strongly contractive, so a one-tick-late command decays instead of compounding (the
+converse of D-10, where a marginal policy amplifies the same perturbation); or the
+`apply_control` race simply did not fire during either collection, which the Tier-1
+measurements show is possible -- several probe runs were clean for 200 steps.
+
+**A-2's conclusion still stands on the first ground alone.** The images differ, D-11
+applies, recollection was correct. But the amendment claims one reason too many and should
+not be cited for the trajectory claim.
+
+### The regression, measured properly
+
+    clear student KD RMSE      old harness 0.0300      new 0.0728      2.43x worse
+
+That comparison is not apples-to-apples, because the two students were distilled against
+different targets. Normalising by the standard deviation of the actual teacher targets:
+
+    target sd (teacher outputs)   old 0.0808        new 0.1081     1.34x harder target
+    relative error KD/sd          old 0.371         new 0.673      1.81x worse FIT
+
+So a third of it is a genuinely harder target and the rest is the student fitting it
+worse. In R^2 terms the student went from explaining ~86% of the teacher's variance to
+~55%. **It is under-fitting, not mis-measured.**
+
+### Why the target got harder, and it traces straight back to T06-F24
+
+The distillation set is base + every DAgger round. The clear teacher needed 7 rounds this
+time against 5, and T06-F24 showed those extra rounds are the conjunctive single-run
+gate's waiting time, not extra task difficulty. Each extra round appends more off-nominal
+recovery data, and recovery states carry large corrective steering:
+
+    dagger_clear_t06   old  n=12,228  mean|s|=0.0494  sd=0.1048  p99=0.4859
+                       new  n=17,064  mean|s|=0.0617  sd=0.1330  p99=0.5772
+    distillation set   old  59% DAgger        new  67% DAgger
+
+So: **the gate waits for a lucky round -> each round of waiting appends more off-nominal
+data -> the distillation target's variance rises -> a fixed-capacity student fits it
+worse.** The gate's statistical defect propagates into the student's competence. That is
+worth stating plainly because it means the round count is not merely uninformative, as
+T06-F24 concluded, but actively harmful downstream.
+
+The mixed student is the same story amplified: 12 rounds produced **109,834** DAgger
+frames against 57,601 before, and it is being distilled at the same 21,408 ReLU.
+
+### Predictions, recorded before the competence gate reports
+
+1. **The clear student fails the clear-weather competence gate**, at relative error 0.673.
+2. **If it fails, it fails on s02 first** (T06-F25's prediction, from the teacher's own
+   per-cell rates), not on s03/s04/s05.
+3. **The mixed student is worse than the clear one**, having twice the off-nominal data at
+   identical capacity.
+
+If 1 holds, the lever is capacity, and Zach's ordering applies: width first, then input
+size, and it does not matter which architecture is optimal as long as one works. Note that
+widening is the right response to an UNDER-FITTING student, which is what the relative
+error says this is -- so the diagnosis and the cheapest lever agree, which is not always
+the case and is worth noticing.
+
+### Latent hazard found while reading the deployment script
+
+`results/town06/competence_clear.json` is keyed to nothing. `finish_town06_deployment.sh`
+gates on its `all_competent` flag, so a STALE record from a previous generation of
+students would let certification proceed on evidence about different checkpoints. Right
+now the file on disk is from 11:47 today, describing the students A-2 discarded, and it
+happens to say "not competent" -- so it would refuse rather than wrongly proceed. The
+guard works by luck, not by construction. It should record the checkpoint file hashes it
+was measured on, and the deployment script should verify they match.
