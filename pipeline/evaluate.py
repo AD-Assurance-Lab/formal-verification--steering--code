@@ -264,6 +264,26 @@ def main():
             print(f"  OVERRIDE ACTIVE {_ovr}: preset assert skipped by design. "
                   f"Rendered signature: looks like '{_got}' "
                   f"(mean={_st['mean']:.4f} sigma={_st['sigma']:.4f} p01={_st['p01']:.4f})")
+            # The signature was printed and NOT checked, and that cost a whole sweep
+            # (T06-F35): sun altitude was swept with --weather night, so the DECLARED
+            # EXPOSURE was night's shutter 200 against daylight's 800, and daylight
+            # scenes were rendered through a night camera. Every run completed, every
+            # CTE was plausible, every step count was normal, and the signature line
+            # said 'clear' on a run labelled 'shadows' -- printed, and ignored.
+            #
+            # An override legitimately moves the condition off its preset, so this
+            # cannot assert. But a signature that has crossed into a DIFFERENT named
+            # condition is worth shouting about, because the usual cause is that the
+            # exposure belongs to the wrong condition rather than that the override
+            # went far enough to change the condition's character.
+            if _got != args.weather:
+                print(f"  *** WARNING: the rendered frame classifies as '{_got}' but this "
+                      f"run is labelled '{args.weather}'. Check that --weather names the "
+                      f"condition whose EXPOSURE you intend: exposure is per-condition "
+                      f"(clear/fog/low-sun shutter "
+                      f"{C.exposure_for('clear')['shutter']:.0f}, night "
+                      f"{C.exposure_for('night')['shutter']:.0f}), so the wrong one "
+                      f"silently rescales every frame. See T06-F35.")
         else:
             assert_condition(_sig_frame, args.weather)
         for d in dirs:
