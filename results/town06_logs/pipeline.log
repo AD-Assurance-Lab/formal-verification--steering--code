@@ -236,3 +236,9 @@
 [2026-08-28 20:26:58] START distill_S_mixed_t06 (attempt 1)
 [2026-08-28 21:03:37] OK    distill_S_mixed_t06
 [2026-08-28 21:03:37] START competence (attempt 1)
+[2026-08-28 21:15:15] OK    competence
+[2026-08-28 21:15:15] PIPELINE COMPLETE -- students built and competent in clear weather.
+[2026-08-28 21:15:15] NEXT: bash scripts/finish_town06_deployment.sh
+[2026-08-28 21:15:15]   It captures at the students' resolution, stops CARLA, certifies blind, COMMITS
+[2026-08-28 21:15:15]   the certificate, and only then drives the scored ledger. That order is PROTOCOL
+[2026-08-28 21:15:15]   R1 and check_order_town06.py enforces it independently.
