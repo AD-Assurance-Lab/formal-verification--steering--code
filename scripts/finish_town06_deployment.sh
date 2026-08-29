@@ -61,6 +61,23 @@ if not p.exists():
 d = json.loads(p.read_text())
 if not d.get("all_competent"):
     sys.exit("FATAL: competence record says a student is NOT competent in clear weather.")
+
+# The record must be about THESE weights. Without this the record is keyed to nothing,
+# and one left over from a superseded generation of students would gate the
+# certification of entirely different checkpoints.
+sys.path.insert(0, "pipeline"); sys.path.insert(0, "scripts")
+import config as C
+from check_student_competence import checkpoint_digest
+have = d.get("checkpoint_digests")
+if not have:
+    sys.exit("FATAL: competence record predates checkpoint digests, so it cannot be "
+             "shown to describe the students on disk. Re-run the competence gate.")
+for _, ck, _, _ in C.TOWN06_STUDENTS:
+    now = checkpoint_digest(ck)
+    if have.get(ck) != now:
+        sys.exit(f"FATAL: competence record is STALE for {ck} "
+                 f"(recorded {have.get(ck)}, on disk {now}). Re-run the competence gate.")
+print("  competence record verified against the checkpoints on disk")
 print(f"  competence OK ({d.get('reps')} reps, every section on every rep): "
       + ", ".join(f"{k}={v.get('checkpoint')}" for k, v in d["students"].items()))
 PY
