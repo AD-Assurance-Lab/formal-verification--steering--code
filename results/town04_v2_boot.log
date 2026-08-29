@@ -1,0 +1,3 @@
+[2026-08-29 18:55:26] determinism rules lock OK; STUDY_MAP=Town04 TOWN04_REDO=1 port 3000
+[2026-08-29 18:55:26] determinism preflight OK on the live server
+[2026-08-29 18:55:26] START collect (attempt 1)
