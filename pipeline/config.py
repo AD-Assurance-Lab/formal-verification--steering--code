@@ -54,8 +54,11 @@ MAP_NAME = STUDY_MAP
 # DEFAULT IS TOWN06 ONLY. Town04 is the published artifact and must keep reproducing
 # byte-for-byte until its own re-measurement is authorised, so with STUDY_MAP unset
 # this is off and the code path is the original one.
-DETERMINISTIC_CONTROL = os.environ.get(
-    "DETERMINISTIC_CONTROL", "1" if STUDY_MAP == "Town06" else "0") == "1"
+# ON FOR EVERY MAP as of the Town04 redo. It defaulted off for Town04 while the published
+# artifact had to keep reproducing byte-for-byte; that gate has served its purpose and
+# Town04 is now being re-measured under the corrected harness. `main` still carries the old
+# default, so reproducing the PUBLISHED study from the published branch is unaffected.
+DETERMINISTIC_CONTROL = os.environ.get("DETERMINISTIC_CONTROL", "1") == "1"
 
 # ── Vehicle (Tesla Model 3, as instantiated in CARLA) ────────────────────────
 VEHICLE_BLUEPRINT = "vehicle.tesla.model3"
@@ -186,8 +189,22 @@ LAP_END_M = 2861.0
 # clear-only one -- width, not input resolution, is the verifier-friendly capacity lever,
 # because width adds parameters at fixed input-perturbation dimension. This registry was
 # copy-pasted into ~20 scripts in three mutually incompatible shapes.
-STUDENTS = (("S_clear", "S_clear_84x28", (8, 16, 16), 32),
-            ("S_mixed", "S_mixed_84x28_w3", (24, 48, 48), 96))
+# TOWN04_REDO re-runs the Town04 study under the corrected simulator harness (T06-F22).
+#
+# It is a DISCOVERY test, as the published one was -- T_CLOSED_LOOP_S was back-solved from
+# Town04's own closed-loop cliff, so its agreement measures sensitivity rather than
+# prediction, and re-running it does not turn it into a deployment test. Town06 is the
+# deployment test and a third map would be needed for another.
+#
+# Everything the redo writes is NAMESPACED, because the published artifacts are tracked in
+# git under exactly these names and a redo would otherwise overwrite the record it is meant
+# to be compared against: `results/ledger/clear__S_clear__closed_loop.json` and
+# `checkpoints/S_clear_84x28.pth` are the paper's, not scratch space.
+TOWN04_REDO = os.environ.get("TOWN04_REDO", "0") == "1"
+_V2 = "_v2" if TOWN04_REDO else ""
+
+STUDENTS = (("S_clear", f"S_clear_84x28{_V2}", (8, 16, 16), 32),
+            ("S_mixed", f"S_mixed_84x28_w3{_V2}", (24, 48, 48), 96))
 
 # ── Spawn points (start just after the western intersection) ─────────────────
 SPAWN_EASTBOUND = {"x": -357.1, "y": 30.0, "z": 0.5, "yaw": 0.0}
@@ -463,6 +480,12 @@ REPO_ROOT = os.path.dirname(_BASE)
 DATASET_DIR = os.path.join(_BASE, "data")
 CHECKPOINT_DIR = os.path.join(_BASE, "checkpoints")
 RESULTS_DIR = os.path.join(_BASE, "results")
+
+# The Town04 redo keeps its results beside the published ones rather than on top of them,
+# so old and new can be compared directly in the working tree. Comparing them IS the
+# result of a discovery-test redo.
+LEDGER_DIR = os.path.join(REPO_ROOT, "results",
+                          "town04_v2" if TOWN04_REDO else "", "ledger")
 
 
 def summary():
