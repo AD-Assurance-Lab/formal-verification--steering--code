@@ -1269,3 +1269,72 @@ That is falsifiable and cheap to check. If a student instead fails on s03/s04/s0
 sections both teachers hold reliably -- then the student is NOT merely inheriting teacher
 weakness and the cause is distillation capacity, which is a different problem with a
 different fix (width, or input size).
+
+## T06-F25  The student registry encodes two conclusions from data that A-2 discarded
+
+Found while planning the student stage. Both are live decisions in the running pipeline
+and both rest on T06-F14, which the handoff already listed as untrusted ("measured on the
+contaminated sections; never re-tested on the corrected ones") and which A-2 has now
+discarded outright along with the data underneath it.
+
+**1. Both students are the SAME width.** `TOWN06_STUDENTS` declares clear and mixed both
+at channels (16,32,32), fc 64, 168x28 -- 21,408 ReLU each. That came from T06-F14's "w2
+beats w3", measured on contaminated sections with single-pass numbers.
+
+It contradicts the published Town04 study, which is the reference this whole deployment
+test is calibrated against: there the mixed student is **3x the clear student's width**,
+and M3 (`4b2ad73`) established that width was exactly what the mixed policy needed --
+w1 failed all four conditions, w2 failed night 10/10, w3 passed everything. T06-F11/F13
+reached the same conclusion on Town06 before T06-F14 reversed it on data now discarded.
+
+**2. There is no student-DAgger stage at all.** `run_town06_pipeline.sh` goes distil ->
+competence gate, with a comment block explaining that T06-F14 removed it. Same discarded
+evidence.
+
+### Why this matters tonight rather than later
+
+The prior from every source that survives A-2 -- the published Town04 result, T06-F11,
+T06-F13, and the mixed teacher needing 4x the cells of the clear one -- says the mixed
+policy needs more capacity than the clear one. The pipeline is currently building them
+identical, on the authority of a finding that no longer has data.
+
+That does not mean widening now. It means the w2 mixed student is being tested against a
+prior that expects it to fail, so a failure is the EXPECTED outcome and not a surprise
+requiring diagnosis, and a pass is the informative result.
+
+### The levers, and what each costs to verify
+
+`T06_IN_W` / `T06_IN_H` are environment-overridable, so input size needs no config edit.
+ReLU counts, against T06-F12's finding that what binds certification here is the
+DISTURBANCE dimension (1-D) rather than network size:
+
+    current  w2  168x28    21,408   1.00x
+    w3           168x28    32,112   1.50x
+    w4           168x28    42,816   2.00x
+    w2           224x28    28,800   1.35x
+    w2           168x56    50,944   2.38x
+
+T06-F12 measured 5,152 ReLU -> 0.78% UNKNOWN and 15,456 -> 2.5%, against ~11% where
+certification stops being useful. There is real headroom, and widening is the cheap axis.
+
+Distillation is also cheap: the clear student distilled in about 7 minutes from an
+existing teacher, and changing the student needs NO new teacher and NO new data. So an
+architecture sweep here costs distillation plus a competence gate, not a rebuild.
+
+### Order of levers if the gate fails
+
+Zach's framing governs and it is the right one: **it does not matter what architecture is
+optimal, only that one works, because this study is about formal verification.** So the
+order is cheapest-first and stops at the first thing that passes, rather than searching:
+
+  1. **Width on the mixed student** (w3, then w4). Cheapest, best-supported by the
+     surviving prior, and matches what published Town04 actually did.
+  2. **Input size** (168x56 first: night and the straight sections are where the failures
+     are, and vertical resolution is what T06-F17/F18 found night needed).
+  3. **Both**, if neither alone does it.
+  4. **Re-enable student DAgger** last -- not because it is worst, but because its removal
+     is the decision here with the least surviving evidence either way, so re-adding it
+     changes two things at once unless the others are settled first.
+
+The clear student stays at w2 unless it fails on its own; there is no reason to widen a
+policy that only ever sees one condition, and Town04 did not.
