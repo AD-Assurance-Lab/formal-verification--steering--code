@@ -1492,3 +1492,59 @@ was what fixed it (`4b2ad73`). The clear gate is the s=0 anchor, not a capacity 
 So whatever the gate says, the mixed student still needs a four-condition exploratory
 drive before its width is settled. A-1 permits exactly that -- R1 is suspended, and A-1's
 re-entry condition is literally "a mixed student drives every condition."
+
+## T06-F28  BOTH STUDENTS COMPETENT WITH MARGIN. The capacity crisis was the data.
+
+The clear-weather competence gate, 3 repetitions x 6 sections per student, every section
+required to hold on every repetition:
+
+    S_clear_t06_168x28_w2   6/6 sections, 3/3 reps each, worst max|CTE| 1.31 ft
+    S_mixed_t06_168x28_w2   6/6 sections, 3/3 reps each, worst max|CTE| 1.01 ft
+                                                          gate 2.19 ft
+
+Against the build A-2 discarded, same architecture, same gate:
+
+    old S_clear_t06   5/6, then 6/6, then 5/6 on three consecutive runs, nothing changed
+                      worst |CTE| ranging 1.71 to 2.92 ft -- straddling the budget
+
+**That is the whole reason this study was paused.** `TOWN06_STATUS.md` opens with "PAUSED
+-- students are marginal, and a capacity decision is needed", and lays out three options,
+all of which amount to spending days on width or data. The students are not marginal. They
+have 40% and 54% margin, and they are the SAME architecture the marginal ones were.
+
+So the capacity question that blocked the study for a week was, at least for clear
+weather, an artefact of the contaminated harness and the data collected under it. Nobody
+could have known that without fixing the harness first, which is the argument for having
+done so.
+
+**This does not settle the mixed student**, and it must not be read as settling it. Town04
+is the proof: there, the w2 mixed student passed clear weather and then failed night 10/10,
+and 3x width was what fixed it (`4b2ad73`). The clear gate is the s=0 anchor of the
+disturbance family, not a capacity test. The mixed student is being driven under fog,
+night and low sun now, under A-1.
+
+### Both of T06-F26's predictions about the students were wrong
+
+    1. "The clear student fails the clear competence gate"   FALSIFIED -- 6/6, 1.31 ft
+    3. "The mixed student is worse than the clear one"       FALSIFIED -- 1.01 vs 1.31 ft
+    2. "if it fails, it fails on s02"                        moot; nothing failed
+
+Prediction 1 was made from the distillation relative error: 0.673, R^2 0.55, six times the
+steering tolerance. It looked damning and it predicted nothing.
+
+**The lesson is about the metric, and it is worth carrying.** KD RMSE is computed over the
+distillation set, which is 67% DAgger recovery data by construction -- deliberately
+off-distribution states the student visits only when it is already in trouble. A student
+can fit those states poorly, carry a large pooled RMSE, and still drive well, because when
+it drives well it never goes there. The error is concentrated exactly where it does not
+matter.
+
+That also explains the direction of the earlier surprise in T06-F27: the clear student's
+relative error was worst precisely because its small base set left the recovery states
+dominating its distillation mix. The metric was measuring how DAgger-heavy the set was,
+more than how good the student was.
+
+**So KD RMSE should not be used to predict closed-loop competence, and no decision in this
+study should rest on it.** It remains useful for what it actually measures -- whether
+distillation converged at all, and per-condition breakdowns like T06-F17's, where the
+comparison is between conditions on one student rather than between students.
