@@ -1,0 +1,257 @@
+{
+  "verdict": "FAIL",
+  "repetitions": 12,
+  "failures": 10,
+  "failure_rate": 0.8333333333333334,
+  "wilson_95": [
+    0.5519636426153274,
+    0.9530358523851776
+  ],
+  "student": "S_clear_t06_168x28_w2",
+  "condition": "fog",
+  "exposure": {
+    "shutter": 800.0,
+    "iso": 100.0,
+    "fstop": 2.8,
+    "gamma": 2.2
+  },
+  "cte_budget_m": 0.6679999999999999,
+  "provenance": {
+    "run_started": "2026-08-29T08:28:13-04:00",
+    "weather": {
+      "cloudiness": 80.0,
+      "dust_storm": 0.0,
+      "fog_density": 70.0,
+      "fog_distance": 10.0,
+      "fog_falloff": 0.20000000298023224,
+      "mie_scattering_scale": 0.0,
+      "precipitation": 0.0,
+      "precipitation_deposits": 0.0,
+      "scattering_intensity": 0.0,
+      "sun_altitude_angle": 90.0,
+      "sun_azimuth_angle": 0.0,
+      "wetness": 0.0,
+      "wind_intensity": 0.0
+    },
+    "env_overrides": {},
+    "fixed_delta_seconds": 0.2,
+    "substepping": {
+      "max_substeps": 16,
+      "max_substep_delta_time": 0.0125
+    },
+    "map": "Town06",
+    "target_speed_ms": 8.9408,
+    "lap_end_m": 490.0,
+    "git_sha": "bfea31a5f3e5745d93b9c619e5ed432638e09e9c",
+    "git_dirty": false,
+    "run_finished": "2026-08-29T08:29:35-04:00"
+  },
+  "runs": [
+    {
+      "rep": 0,
+      "direction": "s00",
+      "max_cte_m": 0.22304993320641997,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 305,
+        "x": -356.59576416015625,
+        "y": 227.60665893554688
+      }
+    },
+    {
+      "rep": 0,
+      "direction": "s01",
+      "max_cte_m": 1.3856683247146933,
+      "frac_over_budget": 0.06788511749347259,
+      "departed": false,
+      "passed": false,
+      "max_cte_at": {
+        "step": 23,
+        "x": 71.7601089477539,
+        "y": 245.93576049804688,
+        "onset": {
+          "step": 8,
+          "x": 45.29071044921875,
+          "y": 245.2299346923828
+        }
+      }
+    },
+    {
+      "rep": 0,
+      "direction": "s02",
+      "max_cte_m": 4.56675297791463,
+      "frac_over_budget": 0.32571428571428573,
+      "departed": false,
+      "passed": false,
+      "max_cte_at": {
+        "step": 286,
+        "x": 537.1617431640625,
+        "y": 49.78175354003906,
+        "onset": {
+          "step": 65,
+          "x": 142.64315795898438,
+          "y": 45.93938446044922
+        }
+      }
+    },
+    {
+      "rep": 0,
+      "direction": "s03",
+      "max_cte_m": 6.6781236095003855,
+      "frac_over_budget": 0.34202898550724636,
+      "departed": false,
+      "passed": false,
+      "max_cte_at": {
+        "step": 94,
+        "x": 198.5922088623047,
+        "y": 150.42135620117188,
+        "onset": {
+          "step": 6,
+          "x": 41.997127532958984,
+          "y": 143.84886169433594
+        }
+      }
+    },
+    {
+      "rep": 0,
+      "direction": "s04",
+      "max_cte_m": 3.6027323919525123,
+      "frac_over_budget": 0.903448275862069,
+      "departed": false,
+      "passed": false,
+      "max_cte_at": {
+        "step": 194,
+        "x": 329.05010986328125,
+        "y": -20.73812484741211,
+        "onset": {
+          "step": 28,
+          "x": 625.1224365234375,
+          "y": -15.913697242736816
+        }
+      }
+    },
+    {
+      "rep": 0,
+      "direction": "s05",
+      "max_cte_m": 1.0754976265570357,
+      "frac_over_budget": 0.11678832116788321,
+      "departed": false,
+      "passed": false,
+      "max_cte_at": {
+        "step": 192,
+        "x": -304.00750732421875,
+        "y": 67.08303833007812,
+        "onset": {
+          "step": 168,
+          "x": -314.8818359375,
+          "y": 106.80841827392578
+        }
+      }
+    },
+    {
+      "rep": 1,
+      "direction": "s00",
+      "max_cte_m": 0.35069981439517595,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 498,
+        "x": -15.932279586791992,
+        "y": 246.78118896484375
+      }
+    },
+    {
+      "rep": 1,
+      "direction": "s01",
+      "max_cte_m": 1.3415775853007064,
+      "frac_over_budget": 0.06266318537859007,
+      "departed": false,
+      "passed": false,
+      "max_cte_at": {
+        "step": 14,
+        "x": 57.51703643798828,
+        "y": 245.88681030273438,
+        "onset": {
+          "step": 9,
+          "x": 48.686336517333984,
+          "y": 245.29676818847656
+        }
+      }
+    },
+    {
+      "rep": 1,
+      "direction": "s02",
+      "max_cte_m": 5.008529310493761,
+      "frac_over_budget": 0.32,
+      "departed": false,
+      "passed": false,
+      "max_cte_at": {
+        "step": 286,
+        "x": 536.4482421875,
+        "y": 50.223876953125,
+        "onset": {
+          "step": 65,
+          "x": 142.5084991455078,
+          "y": 45.94529724121094
+        }
+      }
+    },
+    {
+      "rep": 1,
+      "direction": "s03",
+      "max_cte_m": 6.249047849110027,
+      "frac_over_budget": 0.336231884057971,
+      "departed": false,
+      "passed": false,
+      "max_cte_at": {
+        "step": 94,
+        "x": 200.57411193847656,
+        "y": 150.00039672851562,
+        "onset": {
+          "step": 9,
+          "x": 48.95432662963867,
+          "y": 143.96063232421875
+        }
+      }
+    },
+    {
+      "rep": 1,
+      "direction": "s04",
+      "max_cte_m": 3.6056003060773953,
+      "frac_over_budget": 0.903448275862069,
+      "departed": false,
+      "passed": false,
+      "max_cte_at": {
+        "step": 242,
+        "x": 243.2017059326172,
+        "y": -20.42831039428711,
+        "onset": {
+          "step": 28,
+          "x": 625.12353515625,
+          "y": -15.926016807556152
+        }
+      }
+    },
+    {
+      "rep": 1,
+      "direction": "s05",
+      "max_cte_m": 1.0718317282556087,
+      "frac_over_budget": 0.09854014598540146,
+      "departed": false,
+      "passed": false,
+      "max_cte_at": {
+        "step": 181,
+        "x": -312.92071533203125,
+        "y": 81.36447143554688,
+        "onset": {
+          "step": 156,
+          "x": -306.3842468261719,
+          "y": 123.3295669555664
+        }
+      }
+    }
+  ]
+}

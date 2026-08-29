@@ -1676,3 +1676,114 @@ construction and are labelled so.
 Next: re-run the clear-weather competence gate against the w3 checkpoint -- the existing
 record is keyed to the w2 digest and the new guard correctly refuses it -- then capture,
 certify blind, commit, and drive the scored ledger.
+
+## T06-F31  TOWN06 DEPLOYMENT TEST RESULT: 4/6, and 3/3 on the cells that are actually blind
+
+Certificate committed at `bfea31a` before any scored drive; `check_order_town06.py`
+confirms R1. Ledger: 8 cells, 6 sections x 2 reps = 12 runs each.
+
+    condition  student       driving              certificate      agreement
+    clear      S_clear_t06   PASS  1/12 [1,35]%   CERTIFIED        vacuous
+    clear      S_mixed_t06   PASS  0/12 [0,24]%   CERTIFIED        vacuous
+    fog        S_clear_t06   FAIL 10/12 [55,95]%  NOT_CERTIFIED    AGREE
+    fog        S_mixed_t06   PASS  0/12 [0,24]%   NOT_CERTIFIED    disagree
+    night      S_clear_t06   FAIL 12/12 [76,100]% NOT_CERTIFIED    AGREE
+    night      S_mixed_t06   PASS  0/12 [0,24]%   NOT_CERTIFIED    disagree
+    low sun    S_clear_t06   FAIL 12/12 [76,100]% NOT_CERTIFIED    AGREE
+    low sun    S_mixed_t06   PASS  0/12 [0,24]%   CERTIFIED        AGREE
+
+### The headline number 4/6 mixes two kinds of cell and should not be quoted alone
+
+**The three clear-only cells are genuinely blind.** Audited: before the certificate was
+written at 23:16, the clear student appears in no log with any disturbance weather flag.
+Its only closed-loop exposure was the clear-weather competence gate, which is the s=0
+anchor by construction. The captures do not drive it either -- `capture_offset_yaw.py`
+holds the brake and captures at teleported poses. **Those three cells agree 3/3.**
+
+**The three mixed cells are NOT blind, and no claim may say otherwise.** T06-F29 and F30
+drove the mixed student under fog, night and low sun at 21:34 and 21:58, before the
+certificate at 23:16. `certify_town06.py` had no access to those results -- it has no truth
+table and cannot print an agreement column -- so the certificate is not computationally
+contaminated. But the decision to certify THIS checkpoint, at w3, was made using them.
+**Those three cells agree 1/3.**
+
+So the honest statement is **3/3 blind, 1/3 non-blind**, not "4/6". The repo already
+declares a weaker version of this leak in PROTOCOL section 5 ("the clear-only cells are
+the strong evidence and the mixed cells are the weaker"); this makes it concrete and
+stronger than declared, because the mixed student was explicitly driven rather than merely
+exposed through training.
+
+### The comparison itself has a logical gap, and it is the interesting one
+
+`certify_town06.py` runs alpha-CROWN **over the one-parameter disturbance family** with 16
+branch-and-bound sub-intervals. `NOT_CERTIFIED` therefore means:
+
+    THERE EXISTS an s in the family whose sustained-bias bound exceeds tolerance
+
+The ledger drives **one point** of that family, the preset endpoint (fog_density 70,
+sun -25, sun 5). So a NOT_CERTIFIED verdict does NOT predict failure at the preset, and a
+preset drive that passes does not contradict it. The agreement column treats
+NOT_CERTIFIED as "predicts FAIL here", which is a stronger claim than the certificate
+makes.
+
+For the clear student this did not matter -- it failed at the preset too. For the mixed
+student it is the whole story: **fog/S_mixed and night/S_mixed may not be false alarms at
+all.** They are statements about the family that a preset-only drive cannot test.
+
+Completing the test therefore requires driving the s the certificate implicates, and the
+s must be chosen BY RULE from the committed certificate rather than by searching for a
+failure. That rule is registered in T06-F32 below, before the drive.
+
+### Dispositions -- standing rule 2, three cells contradict the pre-registration
+
+**D-T06-4  fog/S_clear_t06 drove FAIL 10/12; the pre-registration expected PASS.**
+The certificate said NOT_CERTIFIED and was RIGHT; the prior was wrong. The
+pre-registration carried Town04's D-14 forward -- "the clear-only student is genuinely
+robust in fog on open road" -- and it did not transfer. Candidate causes not yet ruled
+out: D-14 may be map-specific and was carried over without re-derivation; Town06 fog
+renders against different geometry, 74-79% straight against Town04's 51-56%; and this is
+a different clear student on different data. **This is the most favourable kind of
+contradiction: the criterion beat the human prior on a genuinely blind cell.** It should
+be reported as such and not buried.
+
+**D-T06-5  fog/S_mixed_t06 drove PASS 0/12; certificate NOT_CERTIFIED.**
+**D-T06-6  night/S_mixed_t06 drove PASS 0/12; certificate NOT_CERTIFIED.**
+Both miss by little pooled -- 1.26x and 1.24x tolerance -- but by more per section: fog
+peaks at 2.35x on s02, night at 2.16x on s05. Candidate causes, none yet ruled out:
+  1. **The family/point mismatch above.** The most likely explanation and the one that is
+     testable: the bound may be driven by an intermediate s the ledger never drove.
+  2. **Bound looseness** at 32,112 ReLU. alpha-CROWN over-approximates, and 0/12 failures
+     against a 2.35x bound means the over-approximation is at least that large if (1) is
+     false.
+  3. Not the route-mean averaging -- see the robustness check below, which rules it out.
+
+### Robustness check on the criterion, and it passes
+
+The bound is a route MEAN over scored poses, not a worst-case envelope, deliberately:
+the criterion is a SUSTAINED bias, which is the paper's own thesis that a small persistent
+bias walks the vehicle out of its lane while a large oscillating one integrates to
+nothing. Per-section means therefore exceed the pooled mean, and a section-level sustained
+bias could in principle be diluted by averaging over six sections.
+
+Re-scored against the stricter reading -- worst SECTION rather than route mean:
+
+    cell                    pooled xtol   worst section xtol   verdict        strict verdict
+    S_clear_t06/fog                2.76                 4.51   NOT_CERTIFIED  NOT_CERTIFIED
+    S_clear_t06/night             13.63                17.72   NOT_CERTIFIED  NOT_CERTIFIED
+    S_clear_t06/shadows            1.79                 3.75   NOT_CERTIFIED  NOT_CERTIFIED
+    S_mixed_t06/fog                1.26                 2.35   NOT_CERTIFIED  NOT_CERTIFIED
+    S_mixed_t06/night              1.24                 2.16   NOT_CERTIFIED  NOT_CERTIFIED
+    S_mixed_t06/shadows            0.27                 0.69   CERTIFIED      CERTIFIED
+
+**No verdict changes.** The one CERTIFIED cell certifies under the stricter reading too,
+with its worst section at 0.69x. So the averaging is a real limitation of the criterion in
+principle and has no effect on this result, and the CERTIFIED verdict is not an artefact
+of it. Worth stating explicitly because it is the first thing a reviewer should ask.
+
+### Also recorded
+
+clear/S_clear_t06 drove **1 failure in 12** in CLEAR weather, its own anchor condition,
+having passed the competence gate 3/3 on every section. The interval [1,35]% includes low
+rates and the cell is scored PASS, but it is not zero, and the certificate for that cell
+is vacuous by construction (Delta_p = 0 at s=0). It belongs in the write-up as a measured
+property of the anchor rather than being quietly dropped.
