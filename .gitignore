@@ -15,6 +15,10 @@ pipeline/checkpoints/*
 !pipeline/data/
 pipeline/data/*
 !pipeline/data/routes_town06/
+# ...and the TOWN04 routes, for exactly the same reason. They are the geometric
+# definition of the published lap and they were never tracked -- the published artifact
+# could not be reproduced from its own repository without them. 52 KB.
+!pipeline/data/routes/
 runs/
 results/**/*.png
 results/**/*.npy
