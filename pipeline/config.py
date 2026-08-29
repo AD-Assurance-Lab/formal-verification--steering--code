@@ -373,8 +373,24 @@ def relu_count(channels, fc, in_h=28, in_w=84):
     return n + fc
 
 
+# Does this study's procedure INCLUDE student DAgger? Town06 removed it (T06-F14) and the
+# rebuild confirmed it is not needed there -- w3 reaches 24/24 distilled only. Town04's
+# published pipeline is behaviour cloning -> teacher DAgger -> distillation -> STUDENT
+# DAgger (README "Reproduce", and the archived dagger_student_clear / dagger_student_w3
+# round directories), so the redo must run it to reproduce the published procedure.
+STUDENT_DAGGER = STUDY_MAP == "Town04"
+
+
 def final_student(base):
-    """The checkpoint that IS the student. Since T06-F14 that is the DISTILLED one.
+    """The checkpoint that IS the student.
+
+    Which one that is depends on whether the study RUNS student DAgger, so this is gated
+    on STUDENT_DAGGER rather than assumed. Getting it wrong certifies a model nobody
+    intended to ship, in either direction: preferring a DAgger round where the procedure
+    no longer runs one selects a stale artefact, and preferring the distilled
+    intermediate where the procedure DOES run one selects a model that is not the policy.
+
+    For Town06, where student DAgger was removed, that is the DISTILLED one:
 
     This function used to return the newest <base>_dagger_rNN, because student DAgger
     was part of the procedure and every downstream stage was naming the distilled
@@ -394,7 +410,16 @@ def final_student(base):
     checkpoint is how the wrong model gets certified.
     """
     import glob as _glob
-    stale = _glob.glob(os.path.join(CHECKPOINT_DIR, f"{base}_dagger_r*.pth"))
+    rounds = sorted(_glob.glob(os.path.join(CHECKPOINT_DIR, f"{base}_dagger_r*.pth")))
+
+    if STUDENT_DAGGER:
+        # Town04: student DAgger is part of the procedure, so the newest round IS the
+        # policy and the distilled checkpoint is the intermediate.
+        if not rounds:
+            return base          # not yet DAgger'd; the distilled one is all there is
+        return os.path.splitext(os.path.basename(rounds[-1]))[0]
+
+    stale = rounds
     if stale:
         raise RuntimeError(
             f"{len(stale)} student-DAgger checkpoint(s) for '{base}' are still in "
