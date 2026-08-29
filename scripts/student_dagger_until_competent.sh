@@ -37,8 +37,9 @@ carla_up() { for i in $(seq 1 "${1:-60}"); do
 carla_restart() {
     say "restarting CARLA on $CARLA_PORT"
     pkill -f "[C]arlaUE4-Linux-Shipping.*rpc-port=$CARLA_PORT" 2>/dev/null; sleep 8
-    ( cd "$CARLA_ROOT" && setsid nohup ./CarlaUE4.sh -carla-rpc-port="$CARLA_PORT" \
-        -RenderOffScreen -quality-level=Epic >>"$LOG_DIR/carla.log" 2>&1 < /dev/null & )
+    # ONE launcher: the determinism flags are launch-time and invisible over RPC,
+    # so a second copy of this command is a second chance to omit them.
+    bash "$REPO/scripts/carla_launch.sh"
     carla_up 60 && { say "CARLA back"; sleep 10; return 0; }
     say "FATAL: CARLA did not return"; return 1; }
 

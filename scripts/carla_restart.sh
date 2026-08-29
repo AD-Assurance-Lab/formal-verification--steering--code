@@ -60,19 +60,9 @@ rm -f "/tmp/carla-locks/carla-$PORT.lock" 2>/dev/null
 # CARLA_WINDOWED=1 launches with a visible window on DISPLAY so runs can be WATCHED.
 # The spectator chase camera (carla_env.update_spectator) follows the ego automatically;
 # it only needs a window to draw into. Headless is the default for unattended sweeps.
-if [ "${CARLA_WINDOWED:-0}" = "1" ]; then
-    echo "  launching CARLA WINDOWED on DISPLAY=${DISPLAY:-:0}"
-    ( cd "$CARLA_ROOT" && DISPLAY="${DISPLAY:-:0}" setsid nohup ./CarlaUE4.sh \
-        -carla-rpc-port="$PORT" -quality-level="$QUALITY" $EXTRA -windowed -ResX=1280 -ResY=720 \
-        >>"$REPO/results/town06_logs/carla.log" 2>&1 < /dev/null & )
-else
-    ( cd "$CARLA_ROOT" && setsid nohup ./CarlaUE4.sh -carla-rpc-port="$PORT" \
-        -RenderOffScreen -quality-level="$QUALITY" $EXTRA >>"$REPO/results/town06_logs/carla.log" 2>&1 \
-        < /dev/null & )
-fi
+# The LAUNCH half lives in carla_launch.sh, which is the single place that knows the
+# determinism flags. This script owns the STOP half -- the order of which matters
+# (SIGTERM, wait, SIGKILL) and is why the two are separate files.
+bash "$REPO/scripts/carla_launch.sh" || exit 1
 
-# `timeout` as a wall clock. A readiness probe that hangs is worse than one that fails,
-# because every caller then waits on it forever.
-CARLA_PORT=$PORT timeout 300 python3 "$REPO/scripts/wait_carla_ready.py" --timeout 240 || {
-    echo "FATAL: CARLA did not come back on $PORT"; exit 1; }
 nvidia-smi --query-gpu=memory.used --format=csv,noheader | sed 's/^/  GPU after restart: /'
