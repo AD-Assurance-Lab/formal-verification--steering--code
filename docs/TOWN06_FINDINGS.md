@@ -2032,3 +2032,85 @@ than made once for the family.
 Caveat on this measurement itself: 81 poses, section s02 only, fog axis only. It is enough
 to show the chord is not uniformly faithful; it is not enough to characterise the whole
 route.
+
+## T06-F35  CORRECTION to T06-F33: the sun sweep used the wrong exposure. Most of it is withdrawn.
+
+Zach's scoping prompted the check that found this. **"Low sun" is a uniform DARKENING with
+headlights off** -- a single-axis disturbance that is easy to model, which is why the study
+calls it low sun and not shadows. Sideways sun casts shadows ON the road, a different
+disturbance, modelled differently and out of scope at this stage.
+
+Checking whether the T06-F33 sweep had strayed into cast shadows turned up a bigger
+problem.
+
+### The error
+
+T06-F33 swept sun altitude with `--weather night`. `evaluate.py` applies the condition's
+DECLARED EXPOSURE, and night's is shutter 200 against daylight's 800 -- a 4x difference.
+**The sweep therefore rendered daylight scenes through a night camera.** Measured at s02:
+
+    sun    daylight exposure (800)     night exposure (200)
+      0    mean 0.0081                 mean 0.1150
+      5    mean 0.1155  <- the preset  mean 0.3922   reads as 'clear'
+     10    mean 0.1574                 mean 0.4501   reads as 'clear'
+     20    mean 0.1911                 mean 0.4904   reads as 'clear'
+
+The 5-45 degree points in T06-F33 were massively overexposed. They are not operating
+points on any family and their failures are an artefact of the wrong camera setting.
+
+### What is WITHDRAWN from T06-F33
+
+  - The failures at sun 45, 20 and 10 degrees (3/6, 2/6, 3/6). Artefact.
+  - **The claim that the sun axis is non-monotone in image space and "leaves the endpoint
+    range in BOTH directions" (0.5740 at 45 degrees).** That was the night exposure, not
+    the scene. Under the correct daylight exposure the axis is MONOTONE and well behaved:
+    mean 0.0032 / 0.0366 / 0.1155 / 0.1705 / 0.1913 at sun 0 / 2 / 5 / 10 / 15, with sigma
+    rising smoothly 0.0059 -> 0.0633 and no contrast blow-up.
+  - The consequent claim that the study's "one continuous physical parameter" framing is
+    misleading about the rendered path. On this axis, correctly exposed, it is fine.
+
+This also removes the basis for the corresponding limitation in the arXiv staging
+document, which is corrected there.
+
+### What SURVIVES, re-measured correctly
+
+Swept with `--weather shadows`, i.e. the daylight exposure low sun is defined under:
+
+    sun    mean     sigma    sections failing   steps        note
+      0   0.0032   0.0059    6/6                17-67   DEGENERATE, see below
+      2   0.0366   0.0198    3/6                full     s00 6.36, s02 7.78, s04 6.23 ft
+      5   0.1155   0.0374    0/6                full     the preset; ledger 0/12
+     10   0.1705   0.0580    0/6                full
+     15   0.1913   0.0633    0/6                full
+
+**Sun 0 is degenerate and is not a result.** The frame mean is 0.0032 -- a black image --
+and the runs end after 17 to 67 steps against normal lengths of 274 to 499. R-SIM-6 says a
+run ending in a handful of steps is a bug rather than a verdict; here they are genuine
+immediate departures with 30-51 ft of CTE rather than false passes, but a policy given no
+input at all is not an interesting measurement. It is reported as degenerate, not as a
+failure of the policy.
+
+**Sun 2 degrees is the real finding.** Full-length runs, 3 of 6 sections over budget, and
+sigma 0.0198 is LOWER than the 5 degree preset's 0.0374 -- so there is no cast-shadow
+component. It is squarely inside the low-sun class as Zach defines it: uniform darkening,
+headlights off.
+
+So the surviving statement is narrower than T06-F33's and still holds the shape that
+matters: **the policy is tested at low sun 5 degrees and passes 0/12; at 2 degrees -- a
+marginally lower sun, same disturbance class, same exposure, no shadows -- it fails half
+its sections.** Both 10 and 15 degrees pass cleanly, so the failure is a band just below
+the tested condition rather than a general low-light weakness.
+
+### Why this was worth catching
+
+Nothing in the T06-F33 numbers looked wrong. The runs completed, the CTEs were plausible,
+the step counts were normal, and the condition-signature line printed a value rather than
+raising -- because the override path deliberately skips the preset assert. An exposure
+mismatch produces a perfectly well-formed result that means something else. It is the same
+class as the Town04 fog-into-night leak and the degraded-server episode, and the same
+lesson: **a plausible number is not a checked one.**
+
+The concrete gap: `evaluate.py`'s override path prints the rendered signature but nothing
+compares it against what the condition is supposed to look like. At sun 5 with night
+exposure the signature said `clear` while the run was labelled `shadows`, and that
+disagreement was printed and ignored. Worth a warning at minimum.
