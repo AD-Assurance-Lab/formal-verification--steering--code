@@ -28,10 +28,12 @@ mkdir -p "$(dirname "$LOG")"
 # D-3, defaulted per map so Town04 relaunches exactly as the published study did.
 if [ -n "${CARLA_EXTRA_ARGS:-}" ]; then
     EXTRA=$CARLA_EXTRA_ARGS
-elif [ "${STUDY_MAP:-}" = "Town06" ]; then
-    EXTRA="-notexturestreaming"
 else
-    EXTRA=""
+    # EVERY map, as of the Town04 redo. This was Town06-only while the published Town04
+    # artifact had to keep reproducing byte-for-byte; Town04 is now being re-measured
+    # under the corrected harness, so there is no longer a map that wants the old
+    # behaviour. `main` still carries the Town06-only default.
+    EXTRA="-notexturestreaming"
 fi
 
 if [ "${CARLA_WINDOWED:-0}" = "1" ]; then

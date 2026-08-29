@@ -18,6 +18,7 @@ import json
 import math
 import os
 import sys
+import pathlib
 from pathlib import Path
 
 import cv2
@@ -33,11 +34,13 @@ import config as C  # noqa: E402
 from route import load_route, signed_cte_route, pure_pursuit_route  # noqa: E402
 from student import StudentNet, student_preprocess  # noqa: E402
 
-# Map-scoped: Town04 keeps results/ledger; the Town06 deployment test writes to
-# results/town06/ledger, so a deployment-test cell can never be mistaken for, or
-# overwrite, a published discovery-test cell.
+# Map-scoped, and now REDO-scoped. Town04 keeps results/ledger; the Town06 deployment
+# test writes to results/town06/ledger; the Town04 REDO writes to results/town04_v2/ledger.
+# A cell can therefore never be mistaken for, or overwrite, a published one -- and the
+# published cells are tracked in git under exactly these filenames, so an unscoped redo
+# would overwrite the record it exists to be compared against.
 LEDGER = (REPO / "results" / "town06" / "ledger" if C.STUDY_MAP != "Town04"
-          else REPO / "results" / "ledger")
+          else pathlib.Path(C.LEDGER_DIR))
 # Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).
 SPAWNS = C.SPAWNS
 
