@@ -1135,3 +1135,47 @@ a scene problem, and the cheap discriminator already exists: drive the ORACLE on
 `night/s02`. The oracle is bit-identical under this harness and never reads the camera, so
 if it holds the section, the geometry is fine and the failure is perception under night;
 if it does not, the section itself is the problem and no amount of training fixes it.
+
+### T06-F23 RESOLUTION: the teacher passed at round 12, and my reading of night/s02 was wrong
+
+**Result: the mixed teacher met budget on all 24 cells at round 12, worst max|CTE| 1.78 ft.**
+`teacher_gate` passed and the pipeline moved on to distillation.
+
+`night/s02`, which the disposition above singled out as "diverging while every other cell
+converges", in full:
+
+    round  0:   4.48 FAIL      round  7:   1.47 PASS
+    round  1:  11.35 FAIL      round  8:   2.47 FAIL
+    round  2:  27.41 FAIL      round  9:   3.56 FAIL
+    round  3:   2.66 FAIL      round 10:   2.49 FAIL
+    round  4:  10.29 FAIL      round 11:   1.13 PASS
+    round  5:  55.59 FAIL      round 12:   0.74 PASS
+    round  6:   0.51 PASS
+
+**55.59 ft, then 0.51 ft in the very next round.** The disposition called the 2.66 ->
+10.29 -> 55.59 sequence "monotonically worse... the opposite of DAgger noise, which would
+move a different cell each round." That inference was wrong, and it was wrong in an
+avoidable way: it read a trend out of three consecutive SINGLE runs, which is precisely
+what standing rule 3 says cannot be done. The disposition even stated the caveat -- "the
+severity trend is weak evidence, three single runs" -- and then led with the trend anyway.
+The caveat was right and the headline was wrong.
+
+What survives, and it is the smaller claim: **`night/s02` is genuinely the hardest cell on
+the route.** It failed 9 of 13 rounds, more than any other, and it is the last thing the
+teacher fits. Identifying it was correct; calling it divergent was not. A cell that
+oscillates 55.59 -> 0.51 -> 1.47 -> 2.47 is a cell sitting on the stability cliff, which is
+exactly what T06-F22's D-10 predicts: run-to-run spread is a stability-margin measurement,
+and the widest spread appears where the margin is thinnest.
+
+So the pre-registration did its job in both directions. It caught a real signal -- s02 at
+night is the hard cell, and that is worth carrying into the certification cells -- and it
+caught me over-reading that signal, because the falsifier and the caveat were both written
+down before the answer existed rather than chosen afterwards.
+
+**One number to carry forward, not yet explained.** The mixed teacher needed **12 DAgger
+rounds** under the corrected harness against 6 on the old one, while the clear teacher
+needed 7 against a previous 6-ish. That is a real difference and it has NOT been
+diagnosed. Candidate causes, none ruled out: the corrected harness genuinely presents a
+harder learning problem; the recollected data differs in composition; ordinary run-to-run
+variation in DAgger convergence, which the oscillation above shows is large. It must not
+be written up as a harness effect without a measurement that separates these.
