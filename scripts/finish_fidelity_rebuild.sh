@@ -29,7 +29,14 @@ say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG/fidelity_rebuild.log"; }
 die() { say "FATAL: $*"; exit 1; }
 
 # R-SIM-3: one client per port.
-while pgrep -f "[f]inish_town06_rebuild|[f]inish_town04_rebuild" >/dev/null; do sleep 60; done
+# Wait for EVERY job that drives the simulator, not just the two that existed when this
+# was written. The ledger re-drive was added later and this list was not updated, so this
+# script started the moment the Town04 orchestrator was stopped and took the CARLA lock
+# out from under the ledger. The lock refused the ledger rather than letting two clients
+# interleave ticks (R-SIM-3) -- the guard worked, the schedule was wrong.
+while pgrep -f "[f]inish_town06_rebuild|[f]inish_town04_rebuild|[r]edrive_ledgers|[r]un_town0[46]_ledger|[c]losed_loop_ledger" >/dev/null; do
+    sleep 60
+done
 say "map rebuilds finished; starting fidelity"
 
 # ---- Town06: all six sections -------------------------------------------------
