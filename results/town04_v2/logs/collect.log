@@ -1,0 +1,36 @@
+  [clear/eastbound lap00] start speed=19.9 mph
+    loop closed at step 1695 (1696 frames)
+  [clear/westbound lap00] start speed=20.0 mph
+    loop closed at step 1694 (1695 frames)
+  [clear/eastbound lap01] start speed=20.2 mph
+    loop closed at step 1692 (1693 frames)
+  [clear/westbound lap01] start speed=20.0 mph
+    loop closed at step 1694 (1695 frames)
+  [fog/eastbound lap00] start speed=20.2 mph
+    loop closed at step 1694 (1695 frames)
+  [fog/westbound lap00] start speed=19.9 mph
+    loop closed at step 1694 (1695 frames)
+  [fog/eastbound lap01] start speed=19.9 mph
+    loop closed at step 1692 (1693 frames)
+  [fog/westbound lap01] start speed=20.0 mph
+    loop closed at step 1694 (1695 frames)
+  [night/eastbound lap00] start speed=19.9 mph
+    loop closed at step 1693 (1694 frames)
+  [night/westbound lap00] start speed=20.0 mph
+    loop closed at step 1694 (1695 frames)
+  [night/eastbound lap01] start speed=20.3 mph
+    loop closed at step 1692 (1693 frames)
+  [night/westbound lap01] start speed=19.6 mph
+    loop closed at step 1695 (1696 frames)
+  [shadows/eastbound lap00] start speed=20.0 mph
+    loop closed at step 1694 (1695 frames)
+  [shadows/westbound lap00] start speed=19.6 mph
+    loop closed at step 1693 (1694 frames)
+  [shadows/eastbound lap01] start speed=19.9 mph
+    loop closed at step 1692 (1693 frames)
+  [shadows/westbound lap01] start speed=20.0 mph
+    loop closed at step 1694 (1695 frames)
+
+Collected 27112 frames -> /home/za/ad-assurance--workspace/formal-verification--steering--code/pipeline/data/conditions_v2/manifest.csv
+  straight (|steer|<=0.01): 15626 (58%) | left: 5379 | right: 6107
+  steer range: [-0.049, 0.074]

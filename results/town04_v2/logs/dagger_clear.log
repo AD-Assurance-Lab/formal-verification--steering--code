@@ -1,0 +1,41 @@
+base datasets: ['conditions_v2']
+
+################################################################
+# DAgger round 0 — evaluating policy 'teacher_clear_v2_bc'
+################################################################
+    eastbound: aborted at step 1046 (stall/offroad)
+  [clear/eastbound] over-budget= 79.6%  max|CTE|=23.74ft  (gate 2.19ft) -> FAIL
+  [clear/westbound] over-budget=  8.3%  max|CTE|= 9.48ft  (gate 2.19ft) -> FAIL
+  collected 2741 frames at beta=0.00
+  aggregating 2 manifests, warm-start from 'teacher_clear_v2_bc' -> teacher_clear_v2_dagger_r00
+
+################################################################
+# DAgger round 1 — evaluating policy 'teacher_clear_v2_dagger_r00'
+################################################################
+  [clear/eastbound] over-budget=  0.0%  max|CTE|= 2.12ft  (gate 2.19ft) -> PASS
+  [clear/westbound] over-budget=  0.9%  max|CTE|=31.91ft  (gate 2.19ft) -> FAIL
+  collected 3395 frames at beta=0.00
+  aggregating 3 manifests, warm-start from 'teacher_clear_v2_dagger_r00' -> teacher_clear_v2_dagger_r01
+
+################################################################
+# DAgger round 2 — evaluating policy 'teacher_clear_v2_dagger_r01'
+################################################################
+  [clear/eastbound] over-budget=  0.5%  max|CTE|= 6.71ft  (gate 2.19ft) -> FAIL
+  [clear/westbound] over-budget=  0.0%  max|CTE|= 0.43ft  (gate 2.19ft) -> PASS
+  collected 3388 frames at beta=0.00
+  aggregating 4 manifests, warm-start from 'teacher_clear_v2_dagger_r01' -> teacher_clear_v2_dagger_r02
+
+################################################################
+# DAgger round 3 — evaluating policy 'teacher_clear_v2_dagger_r02'
+################################################################
+  [clear/eastbound] over-budget=  0.0%  max|CTE|= 0.55ft  (gate 2.19ft) -> PASS
+  [clear/westbound] over-budget=  0.0%  max|CTE|= 1.74ft  (gate 2.19ft) -> PASS
+  collected 3390 frames at beta=0.00
+
+*** PASSED at round 3 with policy 'teacher_clear_v2_dagger_r02' ***
+
+===== DAgger summary =====
+  round 0: teacher_clear_v2_bc      FAIL
+  round 1: teacher_clear_v2_dagger_r00 FAIL
+  round 2: teacher_clear_v2_dagger_r01 FAIL
+  round 3: teacher_clear_v2_dagger_r02 PASS

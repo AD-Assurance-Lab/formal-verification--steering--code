@@ -1,0 +1,14 @@
+  OVERRIDE ACTIVE {'FOG_DENSITY_OVERRIDE': '17.5'}: preset assert skipped by design. Rendered signature: looks like 'clear' (mean=0.2994 sigma=0.0685 p01=0.0627)
+  *** WARNING: the rendered frame classifies as 'clear' but this run is labelled 'fog'. Check that --weather names the condition whose EXPOSURE you intend: exposure is per-condition (clear/fog/low-sun shutter 800, night 200), so the wrong one silently rescales every frame. See T06-F35.
+
+=== EASTBOUND (network in control) ===
+  loop closed at step 1697
+  [eastbound] PASS | steps=1698 max|CTE|=1.00ft over-budget=0.0%
+
+=== WESTBOUND (network in control) ===
+  loop closed at step 1692
+  [westbound] PASS | steps=1693 max|CTE|=1.04ft over-budget=0.0%
+
+============================================================
+eastbound : PASS steps=1698 max|CTE|=1.00ft over-budget=0.0%
+westbound : PASS steps=1693 max|CTE|=1.04ft over-budget=0.0%

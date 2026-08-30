@@ -17,6 +17,9 @@ import os
 import sys
 import glob
 import csv
+import gc
+import subprocess
+import time
 import argparse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -33,7 +36,8 @@ from metrics import summarize_cte  # noqa: E402
 from model import CarlaSteeringNet  # noqa: E402
 from train import train_model  # noqa: E402
 
-SPAWNS = {"eastbound": C.SPAWN_EASTBOUND, "westbound": C.SPAWN_WESTBOUND}
+# Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).
+SPAWNS = C.SPAWNS
 FIELDS = ["image", "weather", "direction", "step", "steer", "steer_rad", "nn_steer",
           "cte_m", "speed_mph", "x", "y", "yaw"]
 
@@ -108,7 +112,7 @@ def drive_collect(world, vehicle, img_queue, model, device, weather, direction,
         # useful states; the recorded LABEL is always the pure expert action.
         applied = (1.0 - beta) * nn_steer + beta * exp_steer
         thr, brk = speed_ctrl.control(vehicle)
-        vehicle.apply_control(carla.VehicleControl(throttle=thr, brake=brk,
+        env.apply_control(vehicle, carla.VehicleControl(throttle=thr, brake=brk,
                                                    steer=float(applied)))
 
         d0 = loc.distance(start)
@@ -162,6 +166,48 @@ def write_manifest(round_dir, rows):
     return path
 
 
+
+def restart_carla_and_reconnect(camera, vehicle, world, original):
+    """Stop the SERVER, relaunch it, reconnect. Returns (client, world, original,
+    vehicle, camera, img_queue).
+
+    NOT carla_restart.sh -- it pkills client processes by name and dagger.py is on that
+    list, so calling it from in here terminates this script. Stop the server by its
+    rpc-port and bring it back through the single canonical launcher.
+
+    Release the client BEFORE killing the server: a live carla.Client whose server
+    disappears throws from a background thread, which surfaces as SIGABRT that no Python
+    `except` can catch.
+    """
+    env.cleanup([camera, vehicle], world, original)
+    del camera, vehicle, world, original
+    env._CLIENT = None
+    gc.collect()
+    port = os.environ.get("CARLA_PORT", str(C.PORT))
+    subprocess.run(["pkill", "-f", f"[C]arlaUE4-Linux-Shipping.*rpc-port={port}"],
+                   stdin=subprocess.DEVNULL)
+    time.sleep(10)
+    log = os.path.join(C.REPO_ROOT, "results", "carla_restart_dagger.log")
+    with open(log, "a") as fh:
+        subprocess.run(["bash", os.path.join(C.REPO_ROOT, "scripts", "carla_launch.sh")],
+                       stdout=fh, stderr=subprocess.STDOUT,
+                       stdin=subprocess.DEVNULL, timeout=600)
+    last = None
+    for i in range(4):
+        try:
+            client = env.connect()
+            world = env.load_town04(client)
+            original = env.enable_sync_mode(world)
+            vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
+            camera, img_queue = env.spawn_camera(world, vehicle)
+            return client, world, original, vehicle, camera, img_queue
+        except Exception as exc:
+            last = exc
+            print(f"  reconnect attempt {i + 1}/4 failed: {type(exc).__name__}", flush=True)
+            time.sleep(20)
+    raise RuntimeError(f"could not reach CARLA after the round restart: {last}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", default="clear",
@@ -170,6 +216,17 @@ def main():
                          "--base clear,mixed")
     ap.add_argument("--init", default="steering_bc_baseline", help="initial policy checkpoint")
     ap.add_argument("--rounds", type=int, default=6, help="max DAgger retrains")
+    ap.add_argument("--gate-reps", type=int, default=1,
+                    help="evaluation passes per cell per round. 1 reproduces the old "
+                         "single-run gate. >1 makes the gate a RATE, which standing rule 3 "
+                         "requires of every other closed-loop number here and which "
+                         "T06-F24 showed this gate needs: at ~80%% per-cell competence a "
+                         "conjunction of single runs selects a lucky round, not a better "
+                         "teacher. The worst repetition decides the cell.")
+    ap.add_argument("--min-rounds", type=int, default=0,
+                    help="keep collecting through this round even once the teacher "
+                         "passes; the DAgger set is an input to distillation, not just "
+                         "a means of fixing the teacher")
     ap.add_argument("--epochs", type=int, default=120)
     ap.add_argument("--lr", type=float, default=5e-4,
                     help="LR for warm-start retrains (gentle fine-tune from prior round)")
@@ -265,6 +322,17 @@ def main():
         camera, img_queue = env.spawn_camera(world, vehicle)
         for r_local in range(args.rounds + 1):
             r = r_local + round_offset
+            # R-SIM-1 in the TEACHER loop too. This drives len(weathers) x len(sections)
+            # times per round with retraining in between, holding one server for the whole
+            # run -- the exposure that silently voided a six-round student-DAgger run (the
+            # same checkpoint read 3.8% over budget on a fresh server and 96.9% inside the
+            # loop). The teacher results in this study survive only because they were
+            # independently re-measured on fresh servers; that was luck, not design.
+            if r_local > 0:
+                (client, world, original, vehicle,
+                 camera, img_queue) = restart_carla_and_reconnect(
+                     camera, vehicle, world, original)
+                print(f"  [R-SIM-1] CARLA restarted before round {r}", flush=True)
             round_dir = os.path.join(dagger_dir, f"round{r:02d}")
             print(f"\n{'#'*64}\n# DAgger round {r} — evaluating policy '{current}'\n{'#'*64}")
             # beta decays over rounds: heavy expert assistance early (when the policy
@@ -274,27 +342,45 @@ def main():
             rows, passed = [], True
             for weather in weathers:
                 camera, img_queue = env.set_condition(world, vehicle, weather, camera)
-                for d in ["eastbound", "westbound"]:
+                for d in C.SECTIONS:
                     if beta <= 0.0:
                         # v1 behaviour, which demonstrably converged with these presets:
                         # ONE pass that both evaluates (pure policy, honest abort) and
                         # collects. Adequate here because the policy drives ~420 steps
                         # before departing, so a round still gathers thousands of frames.
                         drows, st = drive_collect(world, vehicle, img_queue, model, device,
-                                                  weather, d, round_dir, args.max_steps,
+                                                  weather, d, round_dir, min(args.max_steps, C.steps_for(d)),
                                                   beta=0.0, collect=True,
                                                   abort_on_departure=True)
                         rows += drows
+                        # THE GATE AS A RATE (--gate-reps > 1). Standing rule 3 applies to
+                        # every closed-loop number in this study except, until now, this
+                        # one: the teacher gate was a conjunction of SINGLE runs. T06-F24
+                        # measured what that does -- both teachers sat at ~77-82% per-cell
+                        # competence and the gate simply waited for a round where every
+                        # cell won its coin flip at once, so the round count is a waiting
+                        # time and the selected teacher is a lucky draw rather than a
+                        # better policy. Extra passes EVALUATE only; the collected frames
+                        # come from the first pass, so the DAgger set is unchanged.
+                        for _ in range(max(0, args.gate_reps - 1)):
+                            _, st_r = drive_collect(world, vehicle, img_queue, model, device,
+                                                    weather, d, round_dir,
+                                                    min(args.max_steps, C.steps_for(d)),
+                                                    beta=0.0, collect=False,
+                                                    abort_on_departure=True)
+                            # worst of the repetitions decides the cell
+                            if (st_r.get("max_abs_cte_m", 0) or 0) > (st.get("max_abs_cte_m", 0) or 0):
+                                st = st_r
                     else:
                         # beta > 0: evaluation and collection cannot share a pass, since
                         # one needs pure policy control and the other needs the vehicle
                         # kept in a useful state distribution.
                         _, st = drive_collect(world, vehicle, img_queue, model, device,
-                                              weather, d, round_dir, args.max_steps,
+                                              weather, d, round_dir, min(args.max_steps, C.steps_for(d)),
                                               beta=0.0, collect=False,
                                               abort_on_departure=True)
                         drows, _ = drive_collect(world, vehicle, img_queue, model, device,
-                                                 weather, d, round_dir, args.max_steps,
+                                                 weather, d, round_dir, min(args.max_steps, C.steps_for(d)),
                                                  beta=beta, collect=True,
                                                  abort_on_departure=False)
                         rows += drows
@@ -311,9 +397,20 @@ def main():
             mpath = write_manifest(round_dir, rows)
             history.append((r, current, passed))
 
-            if passed:
+            if passed and r >= args.min_rounds:
                 print(f"\n*** PASSED at round {r} with policy '{current}' ***")
                 break
+            if passed:
+                # Keep going purely to COLLECT. A teacher that passes early leaves a thin
+                # DAgger set behind, and the student distilled from it inherits that gap:
+                # the clear teacher passed at round 5 with 13,271 frames while the mixed
+                # teacher took 12 rounds and left 117,469, and the clear student is the
+                # one that cannot hold the 620 m straight. These frames are OFF-NOMINAL
+                # recovery states, which is what teaches fine lateral correction --
+                # exactly the s03 failure mode. Labels come from the expert, not from the
+                # policy, so they stay correct however the policy drifts.
+                print(f"\n*** passed at round {r}, but --min-rounds {args.min_rounds} "
+                      f"means collection continues ***")
             if r == args.rounds:
                 print(f"\nExhausted {args.rounds} rounds without passing "
                       f"(last policy '{current}').")

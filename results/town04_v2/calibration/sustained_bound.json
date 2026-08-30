@@ -1,0 +1,86 @@
+{
+  "westbound/S_clear/fog": {
+    "lo": -0.0024486118229106067,
+    "hi": 0.008786018751561642,
+    "verdict": "CERTIFIED",
+    "baseline": "foreign"
+  },
+  "westbound/S_clear/night": {
+    "lo": -0.06855193371884524,
+    "hi": 0.011048630205914378,
+    "verdict": "FALSIFIED",
+    "baseline": "foreign"
+  },
+  "westbound/S_clear/shadows": {
+    "lo": -0.009715153905563056,
+    "hi": 0.01796902888454497,
+    "verdict": "FALSIFIED",
+    "baseline": "foreign"
+  },
+  "westbound/S_mixed/fog": {
+    "lo": -0.0027162442915141583,
+    "hi": 0.000581437605433166,
+    "verdict": "CERTIFIED",
+    "baseline": "foreign"
+  },
+  "westbound/S_mixed/night": {
+    "lo": -0.0022655489039607344,
+    "hi": 0.0032935640774667263,
+    "verdict": "CERTIFIED",
+    "baseline": "foreign"
+  },
+  "westbound/S_mixed/shadows": {
+    "lo": -0.001437402132432908,
+    "hi": 0.001541247288696468,
+    "verdict": "CERTIFIED",
+    "baseline": "foreign"
+  },
+  "eastbound/S_clear/fog": {
+    "lo": -0.005332135013304651,
+    "hi": 0.0027757818408479743,
+    "verdict": "CERTIFIED",
+    "baseline": "foreign"
+  },
+  "eastbound/S_clear/night": {
+    "lo": -0.037591433808715505,
+    "hi": 0.0053815676894208245,
+    "verdict": "FALSIFIED",
+    "baseline": "foreign"
+  },
+  "eastbound/S_clear/shadows": {
+    "lo": -0.0066362026846036315,
+    "hi": 7.289006713439117e-05,
+    "verdict": "CERTIFIED",
+    "baseline": "foreign"
+  },
+  "eastbound/S_mixed/fog": {
+    "lo": -0.0002446041061458263,
+    "hi": 0.0024703596136532724,
+    "verdict": "CERTIFIED",
+    "baseline": "foreign"
+  },
+  "eastbound/S_mixed/night": {
+    "lo": -0.0015880650290372696,
+    "hi": 0.003223870748611675,
+    "verdict": "CERTIFIED",
+    "baseline": "foreign"
+  },
+  "eastbound/S_mixed/shadows": {
+    "lo": -0.000794870165092024,
+    "hi": 0.0008963002685711465,
+    "verdict": "CERTIFIED",
+    "baseline": "foreign"
+  },
+  "_meta": {
+    "nsplit": 16,
+    "stride": 8,
+    "tolerance": 0.012011303577323182,
+    "cells_expected": 12,
+    "cells_scored": 12,
+    "correct": 0,
+    "git_commit": "717e358be12e1f2670544794631dff697e79bf84",
+    "device": "cuda",
+    "torch": "2.13.0+cu130",
+    "numpy": "1.26.4"
+  }
+}

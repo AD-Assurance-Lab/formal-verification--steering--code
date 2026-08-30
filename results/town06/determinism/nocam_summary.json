@@ -1,0 +1,18 @@
+{
+  "label": "nocam",
+  "n_steps": 200,
+  "n_reps": 3,
+  "physics_identical": false,
+  "render_identical": true,
+  "preproc_identical": true,
+  "nn_identical": true,
+  "control_identical": false,
+  "first_control_divergence": 0,
+  "first_pose_divergence": 15,
+  "max_pose_delta": 61.55504751205444,
+  "first_raw_divergence": null,
+  "raw_diff_steps": 0,
+  "first_pre_divergence": null,
+  "pre_diff_steps": 0,
+  "max_nn_steer_delta": 0.0
+}

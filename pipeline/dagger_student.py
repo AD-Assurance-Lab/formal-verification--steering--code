@@ -14,6 +14,9 @@ import glob
 import sys
 import csv
 import argparse
+import gc
+import subprocess
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -28,7 +31,8 @@ from metrics import summarize_cte
 from student import StudentNet, student_preprocess
 from distill import distill_student
 
-SPAWNS = {"eastbound": C.SPAWN_EASTBOUND, "westbound": C.SPAWN_WESTBOUND}
+# Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).
+SPAWNS = C.SPAWNS
 FIELDS = ["image", "weather", "direction", "step", "steer", "steer_rad", "nn_steer",
           "cte_m", "speed_mph", "x", "y", "yaw"]
 
@@ -91,7 +95,7 @@ def drive_collect(world, vehicle, img_queue, model, device, w, h, weather, direc
         # generating useful states. The recorded LABEL is unaffected.
         applied = (1.0 - beta) * nn_steer + beta * exp_steer
         thr, brk = sc.control(vehicle)
-        vehicle.apply_control(carla.VehicleControl(throttle=thr, brake=brk,
+        env.apply_control(vehicle, carla.VehicleControl(throttle=thr, brake=brk,
                                                    steer=float(applied)))
 
         d0 = loc.distance(start)
@@ -137,6 +141,30 @@ def write_manifest(round_dir, rows):
     return path
 
 
+
+def connect_with_retries(attempts=4, pause=20):
+    """Connect and load the study map, retrying.
+
+    A freshly launched CARLA answers a readiness probe well before it will survive a
+    reload_world(), and a client that has just been aborted can leave the previous world
+    in synchronous mode with nothing ticking (R-SIM-2), which makes the next reload hang
+    until the 120 s client timeout. Both were measured here, and both cost a whole run
+    apiece. Retry rather than lose the round; fail loudly rather than continue on a
+    server whose state is unknown.
+    """
+    last = None
+    for i in range(attempts):
+        try:
+            client = env.connect()
+            return client, env.load_town04(client)
+        except Exception as exc:
+            last = exc
+            print(f"  connect attempt {i + 1}/{attempts} failed: {type(exc).__name__}; "
+                  f"retrying in {pause}s", flush=True)
+            time.sleep(pause)
+    raise RuntimeError(f"could not reach CARLA after {attempts} attempts: {last}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--student", default="student_84x28")
@@ -153,6 +181,9 @@ def main():
                     help="subdir under data/ for this run's student-DAgger rounds")
     ap.add_argument("--teacher", default="steering_dagger_r02", help="teacher for re-distill labels")
     ap.add_argument("--base", default="clear", help="base BC dataset name for re-distill")
+    ap.add_argument("--balance", action="store_true",
+                    help="downsample near-straight frames on every re-distil; must match "
+                         "the initial distillation or each round undoes it")
     ap.add_argument("--distill-dirs", default="dagger,dagger_student",
                     help="DAgger subdirs folded into re-distill (teacher rounds + this student dir)")
     ap.add_argument("--channels", default="8,16,16", help="conv widths (capacity lever; must match --student)")
@@ -198,8 +229,7 @@ def main():
     model = load_student(start_from, args.w, args.h, device, channels=channels, fc=args.fc)
     current = start_from
 
-    client = env.connect()
-    world = env.load_town04(client)
+    client, world = connect_with_retries()
     original = env.enable_sync_mode(world)
     # Spawn INSIDE the try: an exception between enable_sync_mode and the first tick
     # would otherwise skip the finally and leave the server hung in synchronous mode
@@ -214,6 +244,61 @@ def main():
                   flush=True)
         for r_local in range(args.rounds + 1):
             r = r_local + _offset
+            # R-SIM-1: RESTART CARLA BEFORE EVERY ROUND.
+            #
+            # This loop drives 2 x len(weathers) times per round and retrains in between,
+            # holding ONE server for the whole run. A server degrades silently under that
+            # exposure -- it keeps answering and keeps reporting plausible velocities
+            # while it stops advancing physics correctly. Measured here, and it voided a
+            # complete six-round run: the SAME distilled checkpoint scored 3.8% / 0.0%
+            # over budget on a freshly restarted server and 96.9% / 96.2% inside this
+            # loop. Every round of that run reported a catastrophic failure that did not
+            # exist. Nothing in the output reveals which server you were on.
+            #
+            # This is the same defect check_student_competence.py had before it was fixed,
+            # and dagger.py's teacher loop should be looked at for the same reason.
+            if r_local > 0:
+                env.cleanup([camera, vehicle], world, original)
+                # RELEASE THE CLIENT BEFORE KILLING THE SERVER. A live carla.Client whose
+                # server disappears throws from a background thread, and that surfaces as
+                # "terminate called after throwing an instance of
+                # carla::client::TimeoutException" -- a SIGABRT that no Python `except`
+                # can catch, because it never unwinds into Python. Measured twice here:
+                # the retry helper was in place and did not get a chance to run.
+                camera = vehicle = img_queue = None
+                world = original = None
+                client = None
+                env._CLIENT = None
+                gc.collect()
+                # NOT carla_restart.sh: it pkills client processes by name and
+                # dagger_student.py is on its list, so calling it from in here makes this
+                # script terminate ITSELF mid-round. Measured -- the run died during the
+                # round-0 re-distillation with SIGTERM and no explanation.
+                #
+                # So: stop the SERVER only, then use the single canonical launcher.
+                # NEVER capture_output on a script that daemonises CARLA -- the detached
+                # child inherits the pipe and the call never returns.
+                _rlog = os.path.join(C.REPO_ROOT, "results", "carla_restart_dagger_student.log")
+                _port = os.environ.get("CARLA_PORT", str(C.PORT))
+                subprocess.run(["pkill", "-f",
+                                f"[C]arlaUE4-Linux-Shipping.*rpc-port={_port}"],
+                               stdin=subprocess.DEVNULL)
+                time.sleep(10)
+                with open(_rlog, "a") as _fh:
+                    subprocess.run(["bash", os.path.join(C.REPO_ROOT, "scripts", "carla_launch.sh")],
+                                   stdout=_fh, stderr=subprocess.STDOUT,
+                                   stdin=subprocess.DEVNULL, timeout=600)
+                # RECONNECT WITH RETRIES. carla_launch.sh's readiness probe returning
+                # means the server answered ONE get_world(); it does not mean the map is
+                # finished settling, and the next client can still time out. Measured:
+                # the launcher reported "CARLA ready after 43s" and the preflight passed,
+                # and the very next get_world() threw TimeoutException and aborted the
+                # process. Retry rather than lose the round.
+                client, world = connect_with_retries()
+                original = env.enable_sync_mode(world)
+                vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
+                camera, img_queue = env.spawn_camera(world, vehicle)
+                print(f"  [R-SIM-1] CARLA restarted before round {r}", flush=True)
             round_dir = os.path.join(dagger_student_dir, f"round{r:02d}")
             print(f"\n{'#'*64}\n# student DAgger round {r} — policy '{current}'\n{'#'*64}", flush=True)
             rows, passed = [], True
@@ -224,22 +309,22 @@ def main():
                 # set_weather captured every condition through the PREVIOUS condition's
                 # exposure -- night through the daylight setting, silently.
                 camera, img_queue = env.set_condition(world, vehicle, weather, camera)
-                for d in ["eastbound", "westbound"]:
+                for d in C.SECTIONS:
                     if beta <= 0.0:
                         drows, st = drive_collect(world, vehicle, img_queue, model, device,
                                                   args.w, args.h, weather, d, round_dir,
-                                                  args.max_steps, beta=0.0, collect=True,
+                                                  min(args.max_steps, C.steps_for(d)), beta=0.0, collect=True,
                                                   abort_on_departure=True)
                     else:
                         # evaluate honestly under pure policy control, then collect with
                         # expert assistance so a weak policy still yields a full lap
                         _, st = drive_collect(world, vehicle, img_queue, model, device,
                                               args.w, args.h, weather, d, round_dir,
-                                              args.max_steps, beta=0.0, collect=False,
+                                              min(args.max_steps, C.steps_for(d)), beta=0.0, collect=False,
                                               abort_on_departure=True)
                         drows, _ = drive_collect(world, vehicle, img_queue, model, device,
                                                  args.w, args.h, weather, d, round_dir,
-                                                 args.max_steps, beta=beta, collect=True,
+                                                 min(args.max_steps, C.steps_for(d)), beta=beta, collect=True,
                                                  abort_on_departure=False)
                     rows += drows
                     ob = st.get("frac_over_budget", 1) * 100
@@ -261,7 +346,7 @@ def main():
             print(f"  re-distilling (warm-start from '{current}') -> {new}", flush=True)
             distill_student(args.w, args.h, new, teacher_name=args.teacher, base=args.base,
                             dagger_dirs=distill_dirs, weathers=weathers, channels=channels, fc=args.fc,
-                            init_from=current, lr=args.lr, epochs=args.epochs, quiet=True)
+                            init_from=current, lr=args.lr, epochs=args.epochs, quiet=True, balance=args.balance)
             model = load_student(new, args.w, args.h, device, channels=channels, fc=args.fc)
             current = new
     finally:

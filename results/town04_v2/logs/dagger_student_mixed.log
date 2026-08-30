@@ -1,0 +1,32 @@
+
+################################################################
+# student DAgger round 0 — policy 'S_mixed_84x28_w3_v2'
+################################################################
+  [clear/eastbound] over-budget=  0.0%  max|CTE|= 0.68ft  -> PASS
+  [clear/westbound] over-budget=  0.0%  max|CTE|= 0.67ft  -> PASS
+  [fog/eastbound] over-budget=  0.0%  max|CTE|= 1.56ft  -> PASS
+  [fog/westbound] over-budget=  0.4%  max|CTE|= 2.43ft  -> FAIL
+  [night/eastbound] over-budget=  0.0%  max|CTE|= 0.84ft  -> PASS
+  [night/westbound] over-budget=  0.0%  max|CTE|= 1.20ft  -> PASS
+  [shadows/eastbound] over-budget=  0.0%  max|CTE|= 1.33ft  -> PASS
+  [shadows/westbound] over-budget=  0.0%  max|CTE|= 0.97ft  -> PASS
+  re-distilling (warm-start from 'S_mixed_84x28_w3_v2') -> S_mixed_84x28_w3_v2_dagger_r00
+all 27112 teacher targets cached
+
+################################################################
+# student DAgger round 1 — policy 'S_mixed_84x28_w3_v2_dagger_r00'
+################################################################
+  [clear/eastbound] over-budget=  0.0%  max|CTE|= 0.60ft  -> PASS
+  [clear/westbound] over-budget=  0.0%  max|CTE|= 0.39ft  -> PASS
+  [fog/eastbound] over-budget=  0.0%  max|CTE|= 1.72ft  -> PASS
+  [fog/westbound] over-budget=  0.0%  max|CTE|= 1.65ft  -> PASS
+  [night/eastbound] over-budget=  0.0%  max|CTE|= 1.60ft  -> PASS
+  [night/westbound] over-budget=  0.0%  max|CTE|= 1.27ft  -> PASS
+  [shadows/eastbound] over-budget=  0.0%  max|CTE|= 1.04ft  -> PASS
+  [shadows/westbound] over-budget=  0.0%  max|CTE|= 0.78ft  -> PASS
+
+*** student PASSED at round 1 with 'S_mixed_84x28_w3_v2_dagger_r00' ***
+
+===== student DAgger summary =====
+  round 0: S_mixed_84x28_w3_v2          FAIL
+  round 1: S_mixed_84x28_w3_v2_dagger_r00 PASS

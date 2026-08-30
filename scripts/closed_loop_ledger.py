@@ -18,6 +18,7 @@ import json
 import math
 import os
 import sys
+import pathlib
 from pathlib import Path
 
 import cv2
@@ -33,8 +34,15 @@ import config as C  # noqa: E402
 from route import load_route, signed_cte_route, pure_pursuit_route  # noqa: E402
 from student import StudentNet, student_preprocess  # noqa: E402
 
-LEDGER = REPO / "results" / "ledger"
-SPAWNS = {"eastbound": C.SPAWN_EASTBOUND, "westbound": C.SPAWN_WESTBOUND}
+# Map-scoped, and now REDO-scoped. Town04 keeps results/ledger; the Town06 deployment
+# test writes to results/town06/ledger; the Town04 REDO writes to results/town04_v2/ledger.
+# A cell can therefore never be mistaken for, or overwrite, a published one -- and the
+# published cells are tracked in git under exactly these filenames, so an unscoped redo
+# would overwrite the record it exists to be compared against.
+LEDGER = (REPO / "results" / "town06" / "ledger" if C.STUDY_MAP != "Town04"
+          else pathlib.Path(C.LEDGER_DIR))
+# Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).
+SPAWNS = C.SPAWNS
 
 # Env vars that silently change what a run measures. A leftover export in the shell
 # would otherwise overwrite a canonical cell with a different disturbance and leave
@@ -173,7 +181,7 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps,
                                  speed_mph=float(env.speed_mph(vehicle))))
 
         thr, brk = speed_ctrl.control(vehicle)
-        vehicle.apply_control(carla.VehicleControl(throttle=thr, brake=brk, steer=steer))
+        env.apply_control(vehicle, carla.VehicleControl(throttle=thr, brake=brk, steer=steer))
 
         d0 = loc.distance(start)
         if d0 > 50.0:
@@ -235,14 +243,31 @@ def main():
               "the variables.")
         return 2
 
+    # PROTOCOL R1. On the deployment test the certificate must already be committed
+    # before a scored cell is driven -- that ordering is the entire difference between
+    # this experiment and the Town04 discovery test, so it is enforced here rather than
+    # left to whoever remembers to run the checker afterwards.
+    if C.STUDY_MAP != "Town04":
+        sys.path.insert(0, str(REPO / "scripts"))
+        from check_order_town06 import require_certificate_committed
+        require_certificate_committed()
+
     prov = run_provenance(args.condition)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    # DRIVE THE POLICY, NOT THE DISTILLED INTERMEDIATE -- see certify_sustained_bound.
+    # A ledger cell that names a student must be about the checkpoint that IS that
+    # student, or the certificate and the drive can agree with each other while both
+    # describe a model nobody ships.
+    _ck = C.final_student(args.student)
+    if _ck != args.student:
+        print(f"  student '{args.student}' resolves to '{_ck}' (student DAgger is part of "
+              f"this study's procedure)", flush=True)
     model = StudentNet(args.h, args.w,
                        channels=tuple(int(v) for v in args.channels.split(",")),
                        fc=args.fc).to(device)
     model.load_state_dict(torch.load(
-        os.path.join(C.CHECKPOINT_DIR, f"{args.student}.pth"), map_location=device))
+        os.path.join(C.CHECKPOINT_DIR, f"{_ck}.pth"), map_location=device))
     model.eval()   # StudentNet sets in_h/in_w from its constructor args
 
     client = env.connect()
@@ -256,16 +281,18 @@ def main():
         print(f"{args.student} under '{args.condition}' "
               f"(exposure shutter={C.exposure_for(args.condition)['shutter']:.0f})")
         print(f"budget {C.CTE_BUDGET_M:.3f} m ({C.CTE_BUDGET_FT:.2f} ft), "
-              f"{args.reps} reps x 2 directions\n")
+              f"{args.reps} reps x {len(C.SECTIONS)} sections "
+              f"= {args.reps * len(C.SECTIONS)} runs\n")
 
         for rep in range(args.reps):
-            for d in ("eastbound", "westbound"):
+            for d in C.SECTIONS:
                 ldir = None
                 if args.log_frames and rep < args.log_frames_reps:
                     ldir = (Path(args.log_frames) /
                             f"{args.condition}_{d}_rep{rep:02d}")
                 mx, frac, departed, where = drive_once(world, vehicle, cam_queue, model,
-                                                device, d, args.max_steps, log_dir=ldir)
+                                                device, d, min(args.max_steps, C.steps_for(d)),
+                                                log_dir=ldir)
                 if ldir is not None:
                     n = len(list((ldir / "frames").glob("*.png"))) if (ldir/"frames").exists() else 0
                     print(f"    logged {n} frames -> {ldir}")
@@ -316,7 +343,8 @@ def main():
     with open(path, "w") as fh:
         json.dump(dict(
             verdict=verdict, repetitions=n, failures=fails, failure_rate=rate,
-            wilson_95=[lo, hi], student=args.student, condition=args.condition,
+            wilson_95=[lo, hi], student=args.student, checkpoint=_ck,
+            condition=args.condition,
             exposure=C.exposure_for(args.condition),
             cte_budget_m=C.CTE_BUDGET_M, provenance=prov, runs=runs,
         ), fh, indent=2)

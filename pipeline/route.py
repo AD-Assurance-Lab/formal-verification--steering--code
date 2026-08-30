@@ -17,9 +17,12 @@ import math
 import numpy as np
 import carla
 
-from config import DATASET_DIR, WHEELBASE_M, LOOKAHEAD_M, MAX_STEER_RAD
+from config import DATASET_DIR, WHEELBASE_M, LOOKAHEAD_M, MAX_STEER_RAD, ROUTES_SUBDIR
 
-ROUTES_DIR = os.path.join(DATASET_DIR, "routes")
+# Map-scoped: Town04 keeps "routes", the Town06 deployment test reads
+# "routes_town06". Selected by config.STUDY_MAP so a run cannot silently load the
+# wrong map's centreline -- which would produce a plausible, wrong CTE.
+ROUTES_DIR = os.path.join(DATASET_DIR, ROUTES_SUBDIR)
 STEP_M = 2.0  # route vertex spacing
 
 

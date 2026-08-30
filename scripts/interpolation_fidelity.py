@@ -48,7 +48,18 @@ import config as C  # noqa: E402
 from student import StudentNet  # noqa: E402
 
 DIAG = REPO / "results" / "diagnostic"
-FULL_DENSITY = 70.0          # the canonical `fog` preset (carla_env.PRESETS)
+
+# AXES. The test is the same for any one-parameter family; only the file naming, the
+# condition held at the far endpoint, and which end of the swept parameter IS that
+# endpoint differ. Fog runs 0 -> 70 (endpoint = the largest density); low sun runs
+# 90 -> 5 degrees (endpoint = the SMALLEST angle), so `endpoint_is_max` carries that.
+AXES = {
+    "fog":    dict(glob="interp_fog_d*.npz",     pat=r"interp_fog_d([\d.]+)\.npz",
+                   cond="fog",     endpoint=70.0, endpoint_is_max=True,  unit="density"),
+    "lowsun": dict(glob="interp_lowsun_s*.npz",  pat=r"interp_lowsun_s([\d.]+)\.npz",
+                   cond="shadows", endpoint=5.0,  endpoint_is_max=False, unit="sun deg"),
+}
+FULL_DENSITY = 70.0          # kept for the fog default
 
 
 def frames(path, cond):
@@ -72,34 +83,51 @@ def main():
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     tol = C.CLOSED_LOOP_TOLERANCE
 
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--axis", default="fog", choices=sorted(AXES))
+    args = ap.parse_args()
+    ax = AXES[args.axis]
+
     caps = {}
-    for p in sorted(glob.glob(str(DIAG / "interp_fog_d*.npz"))):
-        d = float(re.search(r"interp_fog_d([0-9.]+)\.npz", p).group(1))
-        caps[d] = p
-    if FULL_DENSITY not in caps:
-        print(f"need the full-density capture interp_fog_d{FULL_DENSITY}.npz in {DIAG}",
+    for p in sorted(glob.glob(str(DIAG / ax["glob"]))):
+        m = re.search(ax["pat"], p)
+        if m:
+            caps[float(m.group(1))] = p
+    end = ax["endpoint"]
+    if end not in caps:
+        print(f"need the endpoint capture for {end:g} {ax['unit']} in {DIAG}",
               file=sys.stderr)
         return 2
-    inters = sorted(d for d in caps if d != FULL_DENSITY)
+    inters = sorted((d for d in caps if d != end), reverse=not ax["endpoint_is_max"])
     if not inters:
-        print("need at least one intermediate density", file=sys.stderr)
+        print("need at least one intermediate point", file=sys.stderr)
         return 2
 
-    # The chord's endpoints come from the FULL-density capture, so both are same-session
+    # The chord's endpoints come from the ENDPOINT capture, so both are same-session
     # (F43/F44: a cross-session baseline inverted the sign of a fog measurement).
-    clear = frames(caps[FULL_DENSITY], "clear")
-    full = frames(caps[FULL_DENSITY], "fog")
+    clear = frames(caps[end], "clear")
+    full = frames(caps[end], ax["cond"])
     n = len(clear)
     d_vec = (full - clear).reshape(n, -1)
     denom = np.einsum("ij,ij->i", d_vec, d_vec)
 
     print(f"\nINTERPOLATION FIDELITY -- is the family's interior a real condition?")
-    print(f"  chord endpoints from interp_fog_d{FULL_DENSITY:g}.npz (same session)")
+    print(f"  axis '{args.axis}': clear -> {ax['cond']} at {end:g} {ax['unit']}")
+    print(f"  chord endpoints from {Path(caps[end]).name} (same session)")
     print(f"  {n} poses, tolerance {tol:.4f}\n")
 
-    out = {"n_poses": int(n), "tolerance": tol, "full_density": FULL_DENSITY, "cells": {}}
-    for nm, ck, ch, fc in C.STUDENTS:
-        net = StudentNet(28, 84, channels=ch, fc=fc).to(dev)
+    out = {"n_poses": int(n), "tolerance": tol, "axis": args.axis,
+           "endpoint": end, "unit": ax["unit"], "cells": {}}
+    # MAP-AWARE, like the rest of the pipeline. This script was written for Town04 and
+    # hardcoded its students and its 28x84 input; run unchanged under STUDY_MAP=Town06 it
+    # would silently load Town04 checkpoints at the wrong resolution.
+    students = C.TOWN06_STUDENTS if C.STUDY_MAP == "Town06" else C.STUDENTS
+    in_h, in_w = ((C.TOWN06_INPUT_H, C.TOWN06_INPUT_W) if C.STUDY_MAP == "Town06"
+                  else (28, 84))
+    print(f"  map {C.STUDY_MAP}, students at {in_w}x{in_h}")
+    for nm, ck, ch, fc in students:
+        net = StudentNet(in_h, in_w, channels=ch, fc=fc).to(dev)
         net.load_state_dict(torch.load(f"{C.CHECKPOINT_DIR}/{ck}.pth",
                                        map_location=dev, weights_only=True))
         net.eval()
@@ -107,10 +135,10 @@ def main():
         s_full = steer(net, full, dev)
         print(f"  {nm}   (lap-mean bias at s=1: {np.mean(s_full - s_clear):+.5f}"
               f" = {np.mean(s_full - s_clear) / tol:+.2f}x tol)")
-        print(f"    {'density':>8} {'s*':>6} {'pixel err':>10} {'steer err':>10}"
+        print(f"    {ax['unit']:>8} {'s*':>6} {'pixel err':>10} {'steer err':>10}"
               f" {'x tol':>7} {'chord/render':>13}")
         for d in inters:
-            xr = frames(caps[d], "fog")
+            xr = frames(caps[d], ax["cond"])
             # Project each pose's render onto that pose's chord.
             r = (xr - clear).reshape(n, -1)
             s_star = np.einsum("ij,ij->i", r, d_vec) / np.maximum(denom, 1e-12)
@@ -142,8 +170,9 @@ def main():
                 ratio_meaningful=not weak)
         print()
 
-    (DIAG / "interpolation_fidelity.json").write_text(json.dumps(out, indent=2))
-    print("  -> results/diagnostic/interpolation_fidelity.json")
+    outp = DIAG / f"interpolation_fidelity_{args.axis}.json"
+    outp.write_text(json.dumps(out, indent=2))
+    print(f"  -> {outp.relative_to(REPO)}")
     print("\n  READ IT THIS WAY. The steering error is what a verdict would inherit if the")
     print("  interior were treated as a real operating point. Compare it to the s=1 bias:")
     print("  small means the chord is behaviourally faithful and the coverage claim holds;")

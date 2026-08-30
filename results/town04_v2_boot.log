@@ -1,0 +1,24 @@
+[2026-08-29 18:55:26] determinism rules lock OK; STUDY_MAP=Town04 TOWN04_REDO=1 port 3000
+[2026-08-29 18:55:26] determinism preflight OK on the live server
+[2026-08-29 18:55:26] START collect (attempt 1)
+[2026-08-29 19:13:50] OK    collect
+[2026-08-29 19:13:50] START train_clear_bc (attempt 1)
+[2026-08-29 19:15:43] OK    train_clear_bc
+[2026-08-29 19:15:43] START dagger_clear (attempt 1)
+[2026-08-29 19:27:46] OK    dagger_clear
+[2026-08-29 19:27:46] GATE  dagger_clear: teacher met budget
+[2026-08-29 19:27:46] START train_mixed_bc (attempt 1)
+[2026-08-29 19:35:42] OK    train_mixed_bc
+[2026-08-29 19:35:42] START dagger_mixed (attempt 1)
+[2026-08-29 20:34:36] OK    dagger_mixed
+[2026-08-29 20:34:36] GATE  dagger_mixed: teacher met budget
+[2026-08-29 20:34:36] teachers: clear=teacher_clear_v2_dagger_r02 mixed=teacher_mixed_v2_dagger_r03
+[2026-08-29 20:34:36] START distill_clear (attempt 1)
+[2026-08-29 20:38:53] OK    distill_clear
+[2026-08-29 20:38:53] START distill_mixed (attempt 1)
+[2026-08-29 21:03:19] OK    distill_mixed
+[2026-08-29 21:03:19] START dagger_student_clear (attempt 1)
+[2026-08-29 21:05:06] FAIL  dagger_student_clear attempt 1 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/logs/dagger_student_clear.log)
+[2026-08-29 21:05:11] START dagger_student_clear (attempt 2)
+[2026-08-29 21:06:52] FAIL  dagger_student_clear attempt 2 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/logs/dagger_student_clear.log)
+[2026-08-29 21:06:57] FAIL  dagger_student_clear after 2 attempts -- stopping

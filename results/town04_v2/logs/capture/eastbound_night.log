@@ -1,0 +1,5 @@
+capturing 81 frames: 1 cond x 81 poses x 1 offsets x 1 yaws
+  settled 81 poses: z 0.01..4.88 m, pitch +0.25..+2.99 deg, 0 fell back
+  night: 81 frames
+
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/calibration/lap_eastbound_night.npz  (1.9 MB)

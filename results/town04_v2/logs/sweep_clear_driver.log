@@ -1,0 +1,13 @@
+[2026-08-29 21:42:46] === w2_84x28  ch=16,32,32 fc=64 in=84x28 ===
+  distil rc=0 RMSE=0.0314 (10304 neurons)
+    eastbound : FAIL steps=418 max|CTE|=30.11ft over-budget=3.8%
+    westbound : FAIL steps=1693 max|CTE|=2.95ft over-budget=0.2%
+[2026-08-29 21:46:13] === w1_168x28  ch=8,16,16 fc=32 in=168x28 ===
+  distil rc=0 RMSE=0.0311 (10704 neurons)
+    eastbound : FAIL steps=417 max|CTE|=31.26ft over-budget=4.1%
+    westbound : PASS steps=1694 max|CTE|=1.83ft over-budget=0.0%
+[2026-08-29 21:49:25] === w2_168x28  ch=16,32,32 fc=64 in=168x28 ===
+  distil rc=0 RMSE=0.0309 (21408 neurons)
+    eastbound : FAIL steps=456 max|CTE|=31.58ft over-budget=3.7%
+    westbound : PASS steps=1695 max|CTE|=1.66ft over-budget=0.0%
+SWEEP CLEAR DONE

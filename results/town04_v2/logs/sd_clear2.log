@@ -1,0 +1,76 @@
+
+################################################################
+# student DAgger round 0 — policy 'S_clear_84x28_v2'
+################################################################
+    eastbound: aborted at step 451
+  [clear/eastbound] over-budget= 96.9%  max|CTE|=31.78ft  -> FAIL
+  [clear/westbound] over-budget= 96.2%  max|CTE|=14.21ft  -> FAIL
+  re-distilling (warm-start from 'S_clear_84x28_v2') -> S_clear_84x28_v2_dagger_r00
+all 6779 teacher targets cached
+
+################################################################
+# student DAgger round 1 — policy 'S_clear_84x28_v2_dagger_r00'
+################################################################
+    eastbound: aborted at step 439
+  [clear/eastbound] over-budget= 97.3%  max|CTE|=33.79ft  -> FAIL
+  [clear/westbound] over-budget= 96.8%  max|CTE|=14.30ft  -> FAIL
+  re-distilling (warm-start from 'S_clear_84x28_v2_dagger_r00') -> S_clear_84x28_v2_dagger_r01
+all 6779 teacher targets cached
+
+################################################################
+# student DAgger round 2 — policy 'S_clear_84x28_v2_dagger_r01'
+################################################################
+    eastbound: aborted at step 437
+  [clear/eastbound] over-budget= 97.0%  max|CTE|=35.35ft  -> FAIL
+  [clear/westbound] over-budget= 97.2%  max|CTE|=14.52ft  -> FAIL
+  re-distilling (warm-start from 'S_clear_84x28_v2_dagger_r01') -> S_clear_84x28_v2_dagger_r02
+all 6779 teacher targets cached
+
+################################################################
+# student DAgger round 3 — policy 'S_clear_84x28_v2_dagger_r02'
+################################################################
+    eastbound: aborted at step 416
+  [clear/eastbound] over-budget= 97.6%  max|CTE|=29.22ft  -> FAIL
+    westbound: aborted at step 67
+  [clear/westbound] over-budget= 79.4%  max|CTE|=31.87ft  -> FAIL
+  re-distilling (warm-start from 'S_clear_84x28_v2_dagger_r02') -> S_clear_84x28_v2_dagger_r03
+all 6779 teacher targets cached
+
+################################################################
+# student DAgger round 4 — policy 'S_clear_84x28_v2_dagger_r03'
+################################################################
+    eastbound: aborted at step 418
+  [clear/eastbound] over-budget= 97.6%  max|CTE|=29.04ft  -> FAIL
+    westbound: aborted at step 72
+  [clear/westbound] over-budget= 78.1%  max|CTE|=31.99ft  -> FAIL
+  re-distilling (warm-start from 'S_clear_84x28_v2_dagger_r03') -> S_clear_84x28_v2_dagger_r04
+all 6779 teacher targets cached
+
+################################################################
+# student DAgger round 5 — policy 'S_clear_84x28_v2_dagger_r04'
+################################################################
+    eastbound: aborted at step 445
+  [clear/eastbound] over-budget= 96.6%  max|CTE|=31.89ft  -> FAIL
+    westbound: aborted at step 222
+  [clear/westbound] over-budget= 94.2%  max|CTE|=34.39ft  -> FAIL
+  re-distilling (warm-start from 'S_clear_84x28_v2_dagger_r04') -> S_clear_84x28_v2_dagger_r05
+all 6779 teacher targets cached
+
+################################################################
+# student DAgger round 6 — policy 'S_clear_84x28_v2_dagger_r05'
+################################################################
+    eastbound: aborted at step 422
+  [clear/eastbound] over-budget= 97.6%  max|CTE|=30.51ft  -> FAIL
+    westbound: aborted at step 91
+  [clear/westbound] over-budget= 73.9%  max|CTE|=30.98ft  -> FAIL
+
+Exhausted 6 rounds (last 'S_clear_84x28_v2_dagger_r05').
+
+===== student DAgger summary =====
+  round 0: S_clear_84x28_v2             FAIL
+  round 1: S_clear_84x28_v2_dagger_r00  FAIL
+  round 2: S_clear_84x28_v2_dagger_r01  FAIL
+  round 3: S_clear_84x28_v2_dagger_r02  FAIL
+  round 4: S_clear_84x28_v2_dagger_r03  FAIL
+  round 5: S_clear_84x28_v2_dagger_r04  FAIL
+  round 6: S_clear_84x28_v2_dagger_r05  FAIL

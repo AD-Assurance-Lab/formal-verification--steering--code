@@ -12,6 +12,7 @@ manifest CSV. Usage:
     python collect_data.py --dataset clear --laps 2 --direction both
 """
 import os
+from pathlib import Path
 import sys
 import csv
 import argparse
@@ -25,7 +26,8 @@ import config as C  # noqa: E402
 import carla_env as env  # noqa: E402
 from route import load_route, signed_cte_route, pure_pursuit_route  # noqa: E402
 
-SPAWNS = {"eastbound": C.SPAWN_EASTBOUND, "westbound": C.SPAWN_WESTBOUND}
+# Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).
+SPAWNS = C.SPAWNS
 FIELDS = ["image", "weather", "direction", "lap", "step", "steer", "steer_rad",
           "cte_m", "speed_mph", "x", "y", "yaw"]
 
@@ -65,7 +67,7 @@ def collect_lap(world, world_map, vehicle, img_queue, weather, direction, lap, o
             speed_mph=env.speed_mph(vehicle), x=loc.x, y=loc.y, yaw=tf.rotation.yaw,
         ))
 
-        vehicle.apply_control(carla.VehicleControl(*_ctrl(speed_ctrl, vehicle, steer)))
+        env.apply_control(vehicle, carla.VehicleControl(*_ctrl(speed_ctrl, vehicle, steer)))
 
         d0 = loc.distance(start)
         if d0 > 50.0:
@@ -87,7 +89,8 @@ def main():
     ap.add_argument("--weathers", default="clear",
                     help="comma-separated weather presets to collect (clear,fog,rain,night)")
     ap.add_argument("--laps", type=int, default=2)
-    ap.add_argument("--direction", default="both", choices=["eastbound", "westbound", "both"])
+    ap.add_argument("--direction", default="both",
+                    help="section name, or 'both'/'all' for every section")
     ap.add_argument("--max-steps", type=int, default=2500)
     args = ap.parse_args()
 
@@ -103,7 +106,7 @@ def main():
     # Spawn INSIDE the try: a failure here would otherwise skip the finally and leave
     # the server hung in synchronous mode with no ticking client (trap 3b).
     vehicle = camera = img_queue = None
-    dirs = ["eastbound", "westbound"] if args.direction == "both" else [args.direction]
+    dirs = list(C.SECTIONS) if args.direction in ("both", "all") else [args.direction]
     all_rows = []
     try:
         vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
@@ -112,10 +115,24 @@ def main():
             # Respawn the camera: exposure is declared per condition and is a
             # blueprint attribute, so it cannot be changed on a live sensor.
             camera, img_queue = env.set_condition(world, vehicle, weather, camera)
-            for lap in range(args.laps):
+            # Lap indices continue after whatever this weather already has on disk.
+            # `range(args.laps)` always restarted at 0, so a SECOND collection for the
+            # same weather rewrote lap00.. with new images while the manifest kept the
+            # old rows pointing at those same paths -- old labels, new pixels, no error.
+            # Appending is only safe across weathers, which get distinct directories.
+            base_lap = 0
+            for d in dirs:
+                existing = sorted(Path(out_dir).glob(f"{weather}_{d}_lap*"))
+                if existing:
+                    base_lap = max(base_lap,
+                                   max(int(x.name.rsplit("lap", 1)[1]) for x in existing) + 1)
+            if base_lap:
+                print(f"  {weather}: {base_lap} lap(s) already on disk, "
+                      f"collecting lap{base_lap:02d}..lap{base_lap + args.laps - 1:02d}")
+            for lap in range(base_lap, base_lap + args.laps):
                 for d in dirs:
                     all_rows += collect_lap(world, world_map, vehicle, img_queue,
-                                            weather, d, lap, out_dir, args.max_steps)
+                                            weather, d, lap, out_dir, min(args.max_steps, C.steps_for(d)))
     finally:
         env.cleanup([camera, vehicle], world, original)
 

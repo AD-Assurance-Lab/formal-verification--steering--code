@@ -24,20 +24,61 @@ from imaging import raw_to_bgr, preprocess_for_model  # noqa: F401
 
 # ── Connection / world ───────────────────────────────────────────────────────
 
+# Determinism rules and their enforcement live in the `carla-determinism` package, so
+# every study in the lab shares one copy rather than each vendoring its own that drifts.
+# See its RULES.md (D-1..D-11); the two that bite here are D-2 (acknowledged commands)
+# and D-3 (-notexturestreaming, applied by scripts/carla_restart.sh).
+import carla_determinism as cd
+
+
 def connect():
     client = carla.Client(HOST, PORT)
     client.set_timeout(CLIENT_TIMEOUT_S)
+    # Register the client for acknowledged vehicle commands (D-2). One client per port
+    # is already a hard invariant here (carla_lock, R-SIM-3), so this cannot be
+    # ambiguous.
+    cd.bind_client(client)
     return client
 
 
-def load_town04(client, fresh=True):
-    """Return a Town04 world. With fresh=True (default) the world is reloaded on
-    every connect, clearing any accumulated actors/state from prior runs on a
-    long-lived CARLA server (which can silently corrupt closed-loop results)."""
+def apply_control(vehicle, control):
+    """Apply a vehicle command. THE choke point -- every driving loop goes through here.
+
+    `vehicle.apply_control()` is fire-and-forget: it returns once the message is
+    written, and whether the server has registered it before it processes the next
+    `world.tick()` is a timing race. Synchronous mode does not close this, because it
+    synchronises the TICK, not the command queue feeding it.
+
+    The race is silent while a command is unchanged -- a late arrival re-applies the
+    same value -- so it only ever bites on the step where the command CHANGES, which is
+    every step of a closed-loop run. Measured open loop with the feedback cut and an
+    identical scripted command sequence, it moved the vehicle up to 60 m apart across
+    three repetitions of the same run, and the applied-control readback differed
+    between reps at the same step. With the acknowledged batch command, pose, velocity,
+    gear and applied control are bit-identical for every step.
+
+    Gated by C.DETERMINISTIC_CONTROL, which is off for Town04 so the published artifact
+    keeps reproducing exactly.
+    """
+    cd.apply_control(vehicle, control, enabled=C.DETERMINISTIC_CONTROL)
+
+
+def load_study_map(client, fresh=True):
+    """Return a world for config.MAP_NAME (STUDY_MAP; default Town04).
+
+    With fresh=True (default) the world is reloaded on every connect, clearing any
+    accumulated actors/state from prior runs on a long-lived CARLA server (which can
+    silently corrupt closed-loop results).
+    """
     world = client.get_world()
     if world.get_map().name.split("/")[-1] != MAP_NAME:
         return client.load_world(MAP_NAME)      # loads a fresh map
-    return client.reload_world() if fresh else world  # already Town04 -> reload fresh
+    return client.reload_world() if fresh else world  # already right map -> reload fresh
+
+
+# Name kept so existing entry points and the published study read unchanged. It now
+# honours STUDY_MAP, which is the whole point: one pipeline, two maps.
+load_town04 = load_study_map
 
 
 def enable_sync_mode(world):
@@ -97,12 +138,34 @@ CLEAR_BASELINE = dict(
 )
 
 # Each condition moves exactly ONE physical axis off the clear baseline.
+# LOW SUN IS DECLARED BY ITS RENDERED OUTCOME, NOT BY ITS SUN ANGLE.
+#
+# The condition is "the whole road uniformly in shadow, still daylight, headlights off".
+# On Town04 that is what 15 degrees produces, because the terrain shadows the road at
+# that elevation. Town06's terrain does not, so the SAME 15 degrees renders a materially
+# different condition. Measured from lap captures, mean brightness of the network's input:
+#
+#                     Town04 (published)   Town06 at 15 deg   Town06 at 5 deg
+#     clear                 0.2411              0.2963              --
+#     night                 0.2075              0.2058              --
+#     low sun               0.1117              0.1841             0.1215
+#     night - low sun       0.0958              0.0217             0.0843
+#
+# At 15 degrees Town06's low sun is 65% brighter than Town04's and nearly indistinguishable
+# from night, which collapses an axis the study depends on being ordered. At 5 degrees it
+# matches Town04 to within 9% and restores the gap. Per-section uniformity improves too:
+# worst pose-to-pose CV 6.81% -> 3.29%, against Town04's 0.32%.
+#
+# So the angle is MAP-SPECIFIC and the CONDITION is what is held fixed. Town04 keeps 15
+# degrees exactly, or the published study stops reproducing.
+_LOW_SUN_DEG = {"Town06": 5.0}
+
 CONDITION_DELTAS = {
     "clear":   {},
     "fog":     dict(fog_density=70.0, fog_distance=10.0, fog_falloff=0.2),
     "rain":    dict(precipitation=85.0, precipitation_deposits=70.0, wetness=80.0),
     "night":   dict(sun_altitude_angle=-25.0),
-    "shadows": dict(sun_altitude_angle=15.0),
+    "shadows": dict(sun_altitude_angle=_LOW_SUN_DEG.get(C.STUDY_MAP, 15.0)),
 }
 
 
@@ -119,18 +182,28 @@ def _density_override(name, w):
     return w
 
 
-def _sun_override(w):
+def _sun_override(name, w):
     """SUN_ALTITUDE_OVERRIDE exposes the axis the three lighting conditions already lie on.
 
     `clear`, `shadows` and `night` are not separate phenomena -- they are sun_altitude_angle
     90, 15 and -25 of one continuous physical parameter. Sweeping it turns a three-point
     comparison into a curve, which is what makes a transition point predictable in advance
-    and therefore falsifiable. Headlights still key off the CONDITION, not the angle, so a
-    swept `shadows` run stays lights-off exactly as the preset is.
+    and therefore falsifiable. Headlights still key off the ANGLE (see headlights_on), so a
+    swept run below the horizon correctly turns them on.
+
+    SCOPED TO SKIP `clear`, exactly as _density_override is scoped to `fog`. The two
+    overrides were inconsistent: a fog override left the clear baseline alone, a sun
+    override moved it. That matters for any capture holding both an unperturbed clear
+    baseline and a perturbed condition in ONE session -- the interpolation-fidelity
+    captures do precisely that, and without this scoping the chord's own origin moves with
+    its endpoint and the projection is meaningless.
+
+    `clear` is the s = 0 anchor of every disturbance family in this study. It is not a
+    point to be swept; it is what the sweep is measured against.
     """
     import os
     v = os.environ.get("SUN_ALTITUDE_OVERRIDE")
-    if v:
+    if v and name != "clear":
         w.sun_altitude_angle = float(v)
     return w
 
@@ -143,7 +216,7 @@ def weather_params(name):
     w = carla.WeatherParameters()
     for field, value in {**CLEAR_BASELINE, **CONDITION_DELTAS[name]}.items():
         setattr(w, field, value)
-    return _sun_override(_density_override(name, w))
+    return _sun_override(name, _density_override(name, w))
 
 
 def set_clear_weather(world):
@@ -211,7 +284,42 @@ def set_condition(world, vehicle, name, camera=None):
     set_weather(world, name, vehicle)
     if camera is not None:
         camera.destroy()
-    return spawn_camera(world, vehicle, condition=name)
+    cam, q = spawn_camera(world, vehicle, condition=name)
+    verify_condition(world, name)
+    return cam, q
+
+
+def verify_condition(world, name, tick=True):
+    """Read the weather BACK and confirm it is the one that was asked for.
+
+    world.set_weather() applies on the NEXT TICK, and nothing errors if a caller reads or
+    renders before that tick. In the Town04 generation a fog run followed by a night run
+    left fog in the night frames, so the "night" cells were really fog+night. Nothing in
+    the results can reveal that -- the numbers are simply wrong and look fine.
+
+    So the condition is not trusted, it is checked: tick once so the write lands, read
+    the weather back, and compare the fields that DEFINE the conditions this study uses.
+    A mismatch raises rather than warns, because a warning in a long unattended run is a
+    warning nobody reads.
+    """
+    if tick:
+        world.tick()
+    want, got = weather_params(name), world.get_weather()
+    fields = ("fog_density", "sun_altitude_angle", "precipitation",
+              "precipitation_deposits", "cloudiness", "fog_distance", "wetness")
+    bad = []
+    for f in fields:
+        w_, g_ = getattr(want, f, None), getattr(got, f, None)
+        if w_ is None or g_ is None:
+            continue
+        if abs(float(w_) - float(g_)) > 1e-3:
+            bad.append(f"{f}: asked {float(w_):.3f}, got {float(g_):.3f}")
+    if bad:
+        raise RuntimeError(
+            f"CONDITION MISMATCH for '{name}' -- the simulator is not rendering what was "
+            f"requested, so every frame from here is mislabelled:\n    "
+            + "\n    ".join(bad))
+    return got
 
 
 # ── Spawning ─────────────────────────────────────────────────────────────────
@@ -371,14 +479,14 @@ def warmup_to_speed(world, vehicle, img_queue, speed_ctrl, steer_fn=None,
     """
     speed_ctrl.reset()
     for _ in range(settle_ticks):
-        vehicle.apply_control(carla.VehicleControl(throttle=0.0, brake=1.0, steer=0.0))
+        apply_control(vehicle, carla.VehicleControl(throttle=0.0, brake=1.0, steer=0.0))
         update_spectator(world, vehicle)   # else the view freezes for the whole warmup
         world.tick()
         _drain(img_queue)
     for _ in range(max_accel_ticks):
         steer = steer_fn(vehicle) if steer_fn else 0.0
         thr, brk = speed_ctrl.control(vehicle)
-        vehicle.apply_control(carla.VehicleControl(throttle=thr, brake=brk, steer=steer))
+        apply_control(vehicle, carla.VehicleControl(throttle=thr, brake=brk, steer=steer))
         update_spectator(world, vehicle)
         world.tick()
         _drain(img_queue)

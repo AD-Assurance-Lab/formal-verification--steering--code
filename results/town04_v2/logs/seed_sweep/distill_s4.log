@@ -1,0 +1,18 @@
+  DISTILL_SEED=4 (default is 0; this is a different draw, not a different method)
+condition filter ['clear']: kept 23084/43417 frames
+all 23084 teacher targets cached
+student 84x28 channels=(8, 16, 16) fc=32: 5152 ReLU neurons, 10305 params | train=19650 val=3434
+  epoch   0 | val KD-MSE 2.577e-03 | rmse 0.0508 *
+  epoch   1 | val KD-MSE 2.157e-03 | rmse 0.0464 *
+  epoch   2 | val KD-MSE 1.808e-03 | rmse 0.0425 *
+  epoch   4 | val KD-MSE 1.464e-03 | rmse 0.0383 *
+  epoch   5 | val KD-MSE 1.307e-03 | rmse 0.0362 *
+  epoch   7 | val KD-MSE 1.292e-03 | rmse 0.0359 *
+  epoch   9 | val KD-MSE 1.258e-03 | rmse 0.0355 *
+  epoch  10 | val KD-MSE 1.506e-03 | rmse 0.0388
+  epoch  13 | val KD-MSE 1.164e-03 | rmse 0.0341 *
+  epoch  14 | val KD-MSE 1.123e-03 | rmse 0.0335 *
+  epoch  17 | val KD-MSE 1.049e-03 | rmse 0.0324 *
+  epoch  20 | val KD-MSE 1.314e-03 | rmse 0.0362
+  epoch  30 | val KD-MSE 1.204e-03 | rmse 0.0347
+BEST KD val MSE=1.049e-03 RMSE=0.0324 (5152 neurons) -> /home/za/ad-assurance--workspace/formal-verification--steering--code/pipeline/checkpoints/S_clear_seed4_v2.pth

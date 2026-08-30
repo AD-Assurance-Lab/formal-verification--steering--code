@@ -49,3 +49,11 @@ opencv-python==4.13.0
 scipy==1.15.3
 matplotlib>=3.7
 pytest>=7.4
+
+# CARLA determinism rules and preflight. Pinned to an exact tag deliberately: a rule
+# change must never arrive silently in the middle of a study. See its RULES.md for
+# D-1..D-11 and why each one is a measurement rather than a preference.
+#
+# For local development against a sibling checkout instead of the pinned tag:
+#     pip install -e ../carla-determinism--simulation--package
+carla-determinism @ git+https://github.com/AD-Assurance-Lab/carla-determinism--simulation--package@v1.0.0

@@ -40,6 +40,7 @@ linear and a convex combination of two valid images needs no clamp (measured agr
 
     python scripts/certify_sustained_bound.py
 """
+import os
 import sys
 import json
 import argparse
@@ -57,12 +58,19 @@ import config as C  # noqa: E402
 import certify_cell as cc  # noqa: E402
 from student import StudentNet  # noqa: E402
 
-STUDENTS = (("S_clear", "S_clear_84x28", (8, 16, 16), 32),
-            ("S_mixed", "S_mixed_84x28_w3", (24, 48, 48), 96))
+# FROM CONFIG, not hardcoded. This tuple duplicated config.STUDENTS with the PUBLISHED
+# checkpoint names, so under TOWN04_REDO the certifier silently certified the PUBLISHED
+# students while the ledger drove the redo's -- two runs produced byte-identical bounds
+# across all 12 cells, which is what exposed it. A registry that exists in config must be
+# read from config; a second copy is a second thing to forget to update.
+STUDENTS = C.STUDENTS
+# Under TOWN04_REDO the hardcoded outcomes below belong to DIFFERENT students and must
+# not be used; see the REDO branch in the verdict loop.
+REDO = os.environ.get("TOWN04_REDO", "0") == "1"
+
 TRUTH = {("S_clear", "fog"): "PASS", ("S_clear", "night"): "FAIL",
          ("S_clear", "shadows"): "FAIL", ("S_mixed", "fog"): "PASS",
          ("S_mixed", "night"): "PASS", ("S_mixed", "shadows"): "PASS"}
-import os
 # Branch-and-bound sub-intervals of s. At 4 the bound on S_mixed/night reads -0.0128 while
 # direct sampling of the interval peaks at -0.0039 -- 3.3x conservative, enough to falsify a
 # model that is safe at every intensity. The relaxation is the only thing between them, so
@@ -132,7 +140,12 @@ def main():
 
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     tol = C.CLOSED_LOOP_TOLERANCE
-    cal = REPO / "results" / "calibration"
+    # The redo reads and writes its OWN captures. results/calibration holds the
+    # published ones, taken under the old harness -- D-11 says they are not reusable, and
+    # overwriting them would destroy the record the redo is meant to be compared against.
+    cal = (REPO / "results" / "town04_v2" / "calibration" if REDO
+           else REPO / "results" / "calibration")
+    cal.mkdir(parents=True, exist_ok=True)
 
     # Refuse to produce a partial score that reads like a complete one. A silent `continue`
     # here once printed a clean 6/6 that was indistinguishable from 12/12.
@@ -170,7 +183,15 @@ def main():
             p = cal / f"lap_{direction}_{cond}.npz"
             if p.exists():
                 bl[cond] = baseline_for(p, fallback)
-        for nm, ck, ch, fc in STUDENTS:
+        for nm, ck_base, ch, fc in STUDENTS:
+            # CERTIFY THE POLICY, NOT THE DISTILLED INTERMEDIATE. Where a study runs
+            # student DAgger -- Town04 does -- the checkpoint that IS the student is the
+            # newest DAgger round, and config.final_student resolves it. This script
+            # certified `ck` directly, and the Town04 redo certified the distilled model
+            # while the ledger drove it too, so the two agreed with each other and
+            # neither was the policy. That is exactly the failure final_student was
+            # written to prevent, and neither this script nor the ledger called it.
+            ck = C.final_student(ck_base)
             net = StudentNet(28, 84, channels=ch, fc=fc).to(dev)
             net.load_state_dict(torch.load(f"{C.CHECKPOINT_DIR}/{ck}.pth",
                                            map_location=dev, weights_only=True))
@@ -209,16 +230,33 @@ def main():
                 # instead whether it is unsafe at every intensity, which is a different
                 # (and much weaker) statement -- that error scored 6 cells INCONCLUSIVE.
                 v = "CERTIFIED" if (bhi <= tol and blo >= -tol) else "FALSIFIED"
-                t = TRUTH[(nm, cond)]
-                match = (v == "CERTIFIED") == (t == "PASS")
-                ok += match
                 n += 1
-                out[f"{direction}/{nm}/{cond}"] = dict(lo=blo, hi=bhi, verdict=v,
-                                                      truth=t, baseline=origin)
-                print(f"  {direction:10s} {nm:9s} {cond:9s} {origin:8s} "
-                      f"[{blo:+.5f},{bhi:+.5f}] [{blo/tol:+5.2f},{bhi/tol:+5.2f}]"
-                      f"  {v:12s} {t:5s} {'agree' if match else '-'}", flush=True)
-    print(f"\n  decisive and correct: {ok}/{n} of {n_expected} expected")
+                if REDO:
+                    # TRUTH holds the PUBLISHED students' driven outcomes. Under the redo
+                    # these are DIFFERENT students, so scoring new bounds against old
+                    # outcomes would print an agreement that means nothing. The redo's own
+                    # agreement is computed afterwards, from its own ledger, the way the
+                    # Town06 deployment test does it.
+                    out[f"{direction}/{nm}/{cond}"] = dict(lo=blo, hi=bhi, verdict=v,
+                                                          baseline=origin)
+                    print(f"  {direction:10s} {nm:9s} {cond:9s} {origin:8s} "
+                          f"[{blo:+.5f},{bhi:+.5f}] [{blo/tol:+5.2f},{bhi/tol:+5.2f}]"
+                          f"  {v:12s}", flush=True)
+                else:
+                    t = TRUTH[(nm, cond)]
+                    match = (v == "CERTIFIED") == (t == "PASS")
+                    ok += match
+                    out[f"{direction}/{nm}/{cond}"] = dict(lo=blo, hi=bhi, verdict=v,
+                                                          truth=t, baseline=origin)
+                    print(f"  {direction:10s} {nm:9s} {cond:9s} {origin:8s} "
+                          f"[{blo:+.5f},{bhi:+.5f}] [{blo/tol:+5.2f},{bhi/tol:+5.2f}]"
+                          f"  {v:12s} {t:5s} {'agree' if match else '-'}", flush=True)
+    if REDO:
+        print(f"\n  {n} cells bounded. NO agreement column: these are different\n"
+              f"  students from the published ones, so the hardcoded outcomes do not\n"
+              f"  apply. Agreement comes from this redo's OWN ledger.")
+    else:
+        print(f"\n  decisive and correct: {ok}/{n} of {n_expected} expected")
     if n != n_expected:
         print(f"  WARNING: {n_expected - n} cell(s) did not run. This score is NOT "
               f"comparable to the published 12/12.")
