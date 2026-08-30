@@ -14,6 +14,7 @@ import glob
 import sys
 import csv
 import argparse
+import gc
 import subprocess
 import time
 
@@ -258,6 +259,17 @@ def main():
             # and dagger.py's teacher loop should be looked at for the same reason.
             if r_local > 0:
                 env.cleanup([camera, vehicle], world, original)
+                # RELEASE THE CLIENT BEFORE KILLING THE SERVER. A live carla.Client whose
+                # server disappears throws from a background thread, and that surfaces as
+                # "terminate called after throwing an instance of
+                # carla::client::TimeoutException" -- a SIGABRT that no Python `except`
+                # can catch, because it never unwinds into Python. Measured twice here:
+                # the retry helper was in place and did not get a chance to run.
+                camera = vehicle = img_queue = None
+                world = original = None
+                client = None
+                env._CLIENT = None
+                gc.collect()
                 # NOT carla_restart.sh: it pkills client processes by name and
                 # dagger_student.py is on its list, so calling it from in here makes this
                 # script terminate ITSELF mid-round. Measured -- the run died during the
