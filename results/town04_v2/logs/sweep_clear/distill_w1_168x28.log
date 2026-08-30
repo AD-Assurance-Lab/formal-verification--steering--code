@@ -1,0 +1,24 @@
+condition filter ['clear']: kept 19693/40026 frames
+all 19693 teacher targets cached
+student 168x28 channels=(8, 16, 16) fc=32: 10704 ReLU neurons, 15937 params | train=16743 val=2950
+  epoch   0 | val KD-MSE 6.590e-03 | rmse 0.0812 *
+  epoch   1 | val KD-MSE 3.788e-03 | rmse 0.0615 *
+  epoch   2 | val KD-MSE 3.218e-03 | rmse 0.0567 *
+  epoch   3 | val KD-MSE 3.078e-03 | rmse 0.0555 *
+  epoch   4 | val KD-MSE 2.683e-03 | rmse 0.0518 *
+  epoch   5 | val KD-MSE 2.311e-03 | rmse 0.0481 *
+  epoch   6 | val KD-MSE 1.950e-03 | rmse 0.0442 *
+  epoch   7 | val KD-MSE 1.669e-03 | rmse 0.0409 *
+  epoch   8 | val KD-MSE 1.625e-03 | rmse 0.0403 *
+  epoch   9 | val KD-MSE 1.566e-03 | rmse 0.0396 *
+  epoch  10 | val KD-MSE 1.375e-03 | rmse 0.0371 *
+  epoch  12 | val KD-MSE 1.351e-03 | rmse 0.0368 *
+  epoch  13 | val KD-MSE 1.132e-03 | rmse 0.0336 *
+  epoch  15 | val KD-MSE 1.108e-03 | rmse 0.0333 *
+  epoch  17 | val KD-MSE 1.099e-03 | rmse 0.0331 *
+  epoch  20 | val KD-MSE 1.203e-03 | rmse 0.0347
+  epoch  23 | val KD-MSE 1.047e-03 | rmse 0.0324 *
+  epoch  24 | val KD-MSE 9.646e-04 | rmse 0.0311 *
+  epoch  30 | val KD-MSE 1.071e-03 | rmse 0.0327
+  epoch  40 | val KD-MSE 1.013e-03 | rmse 0.0318
+BEST KD val MSE=9.646e-04 RMSE=0.0311 (10704 neurons) -> /home/za/ad-assurance--workspace/formal-verification--steering--code/pipeline/checkpoints/S_clear_w1_168x28_v2.pth

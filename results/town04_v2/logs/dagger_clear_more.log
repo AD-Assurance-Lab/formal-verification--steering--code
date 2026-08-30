@@ -1,0 +1,15 @@
+base datasets: ['conditions_v2']
+resuming: found 4 prior DAgger round(s) in dagger_clear_v2, continuing at round 4
+WARNING: no teacher_clear_v2b_dagger_r*.pth from this run; falling back to 'teacher_clear_v2_dagger_r02', discarding 4 rounds of improvement
+
+################################################################
+# DAgger round 4 — evaluating policy 'teacher_clear_v2_dagger_r02'
+################################################################
+  [clear/eastbound] over-budget=  0.0%  max|CTE|= 0.57ft  (gate 2.19ft) -> PASS
+  [clear/westbound] over-budget=  0.0%  max|CTE|= 2.11ft  (gate 2.19ft) -> PASS
+  collected 3391 frames at beta=0.00
+
+*** PASSED at round 4 with policy 'teacher_clear_v2_dagger_r02' ***
+
+===== DAgger summary =====
+  round 4: teacher_clear_v2_dagger_r02 PASS
