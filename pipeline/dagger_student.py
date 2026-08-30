@@ -140,6 +140,30 @@ def write_manifest(round_dir, rows):
     return path
 
 
+
+def connect_with_retries(attempts=4, pause=20):
+    """Connect and load the study map, retrying.
+
+    A freshly launched CARLA answers a readiness probe well before it will survive a
+    reload_world(), and a client that has just been aborted can leave the previous world
+    in synchronous mode with nothing ticking (R-SIM-2), which makes the next reload hang
+    until the 120 s client timeout. Both were measured here, and both cost a whole run
+    apiece. Retry rather than lose the round; fail loudly rather than continue on a
+    server whose state is unknown.
+    """
+    last = None
+    for i in range(attempts):
+        try:
+            client = env.connect()
+            return client, env.load_town04(client)
+        except Exception as exc:
+            last = exc
+            print(f"  connect attempt {i + 1}/{attempts} failed: {type(exc).__name__}; "
+                  f"retrying in {pause}s", flush=True)
+            time.sleep(pause)
+    raise RuntimeError(f"could not reach CARLA after {attempts} attempts: {last}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--student", default="student_84x28")
@@ -204,8 +228,7 @@ def main():
     model = load_student(start_from, args.w, args.h, device, channels=channels, fc=args.fc)
     current = start_from
 
-    client = env.connect()
-    world = env.load_town04(client)
+    client, world = connect_with_retries()
     original = env.enable_sync_mode(world)
     # Spawn INSIDE the try: an exception between enable_sync_mode and the first tick
     # would otherwise skip the finally and leave the server hung in synchronous mode
@@ -259,20 +282,7 @@ def main():
                 # the launcher reported "CARLA ready after 43s" and the preflight passed,
                 # and the very next get_world() threw TimeoutException and aborted the
                 # process. Retry rather than lose the round.
-                world = None
-                for _attempt in range(3):
-                    try:
-                        client = env.connect()
-                        world = env.load_town04(client)
-                        break
-                    except Exception as exc:
-                        print(f"  reconnect attempt {_attempt + 1} failed: "
-                              f"{type(exc).__name__}; retrying", flush=True)
-                        time.sleep(20)
-                if world is None:
-                    raise RuntimeError("could not reconnect to CARLA after the round "
-                                       f"{r} restart; refusing to continue on a server "
-                                       "whose state is unknown")
+                client, world = connect_with_retries()
                 original = env.enable_sync_mode(world)
                 vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
                 camera, img_queue = env.spawn_camera(world, vehicle)
