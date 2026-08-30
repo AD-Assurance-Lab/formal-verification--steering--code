@@ -40,6 +40,28 @@ else
     EXTRA=""
 fi
 
+# REFUSE TO RUN IF SOMEONE ELSE HOLDS THE CARLA LOCK.
+#
+# The kill list below terminates client processes BY NAME, which is correct when this
+# script owns the machine and catastrophic when it does not: a capture job calling this
+# per capture will SIGTERM a ledger that is mid-run, in another job, holding the lock.
+# That happened -- a ledger cell died with exit 143 and left a stale lock, and it read as
+# a mysterious silent failure because the signal came from a different pipeline.
+#
+# The lock already exists to stop two clients ticking one world. Honour it here too:
+# killing the holder is a worse version of the same collision.
+LOCKF="/tmp/carla-locks/carla-$PORT.lock"
+if [ "${CARLA_RESTART_FORCE:-}" != "1" ] && [ -f "$LOCKF" ]; then
+    LOCKPID=$(head -c 64 "$LOCKF" 2>/dev/null | tr -dc '0-9' | head -c 9)
+    if [ -n "$LOCKPID" ] && kill -0 "$LOCKPID" 2>/dev/null; then
+        echo "REFUSING to restart: CARLA :$PORT is held by live pid $LOCKPID"
+        echo "  ($(cat "$LOCKF" 2>/dev/null))"
+        echo "  This script kills clients by name and would terminate that job mid-run."
+        echo "  Wait for it, or re-run with CARLA_RESTART_FORCE=1 if it is genuinely dead."
+        exit 3
+    fi
+fi
+
 # SIGTERM first, never SIGKILL: a client killed with -9 skips env.cleanup and leaves the
 # world in synchronous mode with nothing ticking, which is how the server gets wedged in
 # the first place. Give clients a chance to restore settings.
