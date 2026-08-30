@@ -1959,6 +1959,18 @@ this policy breaks.
 
 ## T06-F34  INTERPOLATION FIDELITY on Town06: the chord UNDERSTATES the real condition
 
+> **SCOPE DEFECT, 2026-08-30 — this finding is under re-measurement.** The captures behind
+> it cover **81 poses over 160 m** (`results/diagnostic/interpolation_fidelity.json`,
+> `n_poses: 81`), inherited from `capture_offset_yaw.py --length-m`'s 160 m default, and
+> they cover **one section**, which is at most 23% of Town06's 3,834 m of scored road. The
+> fidelity measurement validates the DISTURBANCE FAMILY that every certified bound is
+> quantified over, so a narrow measurement here narrows every downstream claim at once
+> while the JSON still reads as complete. Being re-measured across all six sections with
+> `scripts/capture_interp_fidelity.sh`; the analysis now refuses a short capture and records
+> `sections`, `poses_per_section` and `route_span_m`. Same root cause as the Town04 160 m
+> defect — see standing rules 7 and 8.
+
+
 The test both blind reviewers asked for, never before run on Town06. Fresh captures under
 the corrected harness at the students' resolution, fog densities 17.5 / 35 / 52.5 / 70,
 clear and fog in the same file so the chord's endpoints are same-session (F43/F44: a
@@ -2152,6 +2164,18 @@ bound is correspondingly large, and the fragility begins almost immediately.** T
 magnitude carries information, not just its side of the threshold.
 
 ## T06-F37  The CERTIFIED cell's family IS faithful — the soundness gap from T06-F34 is closed
+
+> **SCOPE DEFECT, 2026-08-30 — this finding is under re-measurement.** The captures behind
+> it cover **81 poses over 160 m** (`results/diagnostic/interpolation_fidelity.json`,
+> `n_poses: 81`), inherited from `capture_offset_yaw.py --length-m`'s 160 m default, and
+> they cover **one section**, which is at most 23% of Town06's 3,834 m of scored road. The
+> fidelity measurement validates the DISTURBANCE FAMILY that every certified bound is
+> quantified over, so a narrow measurement here narrows every downstream claim at once
+> while the JSON still reads as complete. Being re-measured across all six sections with
+> `scripts/capture_interp_fidelity.sh`; the analysis now refuses a short capture and records
+> `sections`, `poses_per_section` and `route_span_m`. Same root cause as the Town04 160 m
+> defect — see standing rules 7 and 8.
+
 
 T06-F34 found the fog chord optimistic for the mixed student and flagged the consequence:
 an optimistic family threatens **CERTIFIED** verdicts specifically, and

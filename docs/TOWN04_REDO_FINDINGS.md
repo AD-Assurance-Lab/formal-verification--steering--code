@@ -1,5 +1,29 @@
 # Town04 redo — findings
 
+> ## WITHDRAWN, 2026-08-30: T04-R5, T04-R6 and T04-R7 rest on invalid captures.
+>
+> The redo's verification captures covered **160 m of the 2,861 m scored lap (5.6%)**.
+> `capture_offset_yaw.py --length-m` defaulted to 160 m — a calibration-probe length — and
+> the captures were driven by a hand-typed command rather than a committed script, so the
+> default was never passed and never noticed. The certificates below were therefore computed
+> on 5.6% of the road and compared against **full-lap** driving. The agreement numbers are
+> not evidence and are withdrawn.
+>
+> Found by the arxiv session reading the paper, not by anyone running the study. Nothing in
+> the pipeline objected: the array shapes are identical, the bound computes cleanly, and the
+> certificate reproduces exactly. The one loud signal — 1.8 MB captures against the published
+> 1.7 GB, 81 poses against 1,600 — was visible throughout and went unexamined.
+>
+> **Unaffected:** T04-R1 through T04-R4. Those are training, distillation and closed-loop
+> driving results that never read a capture.
+>
+> Re-running now against full **scored-length** captures (2,861 m, not the 3,042 m route
+> geometry — the last 181 m cross an ODD boundary the study excludes). Guards added so this
+> class of defect fails loudly: coverage is recomputed from the pose track and checked in
+> both directions, sibling certifiers must carry the same guards, a redo is compared against
+> what it replaces, and the capture-vs-driven gate is a precondition of certification rather
+> than a claim in the paper. See standing rules 7 and 8.
+
 Redo of the published Town04 study under the corrected simulator harness (T06-F22). A
 DISCOVERY test, as the published one was: `T_CLOSED_LOOP_S` was back-solved from Town04's
 own closed-loop cliff, so its agreement measures sensitivity rather than prediction.
@@ -131,7 +155,11 @@ used by either study's driver, and its own help text describes exactly the failu
 prevents: "the DAgger set is an input to distillation, not just a means of fixing the
 teacher."
 
-## T04-R5  RESULT: the redo reproduces the published agreement, 6/6
+## T04-R5  ~~RESULT: the redo reproduces the published agreement, 6/6~~ WITHDRAWN
+
+**The certificate below was computed on 160 m of a 2,861 m lap and compared against
+full-lap driving. The 6/6 is withdrawn.** The two bugs recorded at the end of this
+section were real and their fixes stand; the agreement number does not.
 
 Certificate on the policy checkpoints, ledger 12 runs per cell, both under the corrected
 harness.
@@ -182,7 +210,7 @@ important part: every intermediate number was well-formed, plausible, and wrong.
 Town04 redo complete. Both arms competent, certificate and ledger on the policy
 checkpoints, 6/6 agreement, all under the harness whose two defects T06-F22 measured.
 
-## T04-R6  Town04's interior: fog is clean, low sun is not, and it supports T06-F38
+## T04-R6  ~~Town04's interior: fog is clean, low sun is not~~ WITHDRAWN (same captures)
 
 Exploratory, one run per direction. Town06's headline finding -- a policy passing both
 endpoints of a disturbance axis and failing between them -- tested on Town04.
@@ -229,7 +257,8 @@ fog axis; on Town04 it does not. What holds on BOTH maps is the low-sun result: 
 tested at its declared low-sun condition passes, and fails at a lower sun the test never
 sampled. That is the claim to make, and it is the one the AEB study found independently.
 
-## T04-R7  The night axis IS faithful, and the CERTIFIED night cells stand
+## T04-R7  ~~The night axis IS faithful~~ WITHDRAWN (interpolation-fidelity captures,
+81 poses over 160 m; the fidelity measurement validates the disturbance family itself)
 
 The night chord was left unmeasured deliberately: its endpoints carry different declared
 exposures (daylight shutter 800, night 200), so a pixel chord between them interpolates an
