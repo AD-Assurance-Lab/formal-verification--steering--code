@@ -124,13 +124,15 @@ else say "SKIP  distill_mixed"; fi
 if ! ls "$CK_DIR"/S_clear_84x28_v2_dagger_r*.pth >/dev/null 2>&1; then
   run dagger_student_clear python3 dagger_student.py --student S_clear_84x28_v2 \
       --w 84 --h 28 --rounds 3 --weathers clear --teacher "$TC" \
-      --dagger-dir dagger_student_clear_v2 --channels 8,16,16 --fc 32 || exit 1
+      --base conditions_v2 --dagger-dir dagger_student_clear_v2 \
+      --channels 8,16,16 --fc 32 || exit 1
 else say "SKIP  dagger_student_clear"; fi
 
 if ! ls "$CK_DIR"/S_mixed_84x28_w3_v2_dagger_r*.pth >/dev/null 2>&1; then
   run dagger_student_mixed python3 dagger_student.py --student S_mixed_84x28_w3_v2 \
       --w 84 --h 28 --rounds 3 --weathers clear,fog,night,shadows --teacher "$TM" \
-      --dagger-dir dagger_student_mixed_v2 --channels 24,48,48 --fc 96 || exit 1
+      --base conditions_v2 --dagger-dir dagger_student_mixed_v2 \
+      --channels 24,48,48 --fc 96 || exit 1
 else say "SKIP  dagger_student_mixed"; fi
 
 say "TOWN04 REDO BUILD COMPLETE"
