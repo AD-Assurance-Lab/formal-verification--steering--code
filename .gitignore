@@ -60,3 +60,16 @@ results/town06_logs/
 # scripts/determinism_*.py, and raw frames are large binaries.
 results/town06/determinism/*_rep*.json
 results/town06/determinism/frames/
+
+# pipeline/results is evaluate.py's SCRATCH directory -- every exploratory run writes a
+# per-step CSV and PNG there, and a sweep writes dozens. Only the traces the paper reports
+# are tracked. 572 scratch files were committed during the Town06 rebuild and the Town04
+# redo before this rule existed; they are archived, not deleted.
+pipeline/results/*
+!pipeline/results/eval_teacher_clear_bc_*.csv
+!pipeline/results/eval_teacher_clear_bc_*.png
+!pipeline/results/oracle_*.csv
+!pipeline/results/oracle_*.png
+!pipeline/results/reference_routes.png
+!pipeline/results/teacher_clear_bc_training.png
+!pipeline/results/teacher_mixed_bc_training.png
