@@ -44,7 +44,8 @@ Releases), then:
 
 ```bash
 pip install -r requirements.txt          # includes the carla-determinism package
-tar xf steering-captures-vX.Y.Z.tar.zst  # -> results/town06/captures, results/town04_v2/calibration
+tar xf steering-captures.tar.zst         # -> results/{town06/captures,town04_v2/calibration,diagnostic}
+# sha256 10fb9b4a05e4b4de8591bf86df35216f1ac51420ceed637027b4efefd6a89e8c
 
 STUDY_MAP=Town06 python3 scripts/certify_town06.py          # 6 cells, blind
 STUDY_MAP=Town04 TOWN04_REDO=1 python3 scripts/certify_sustained_bound.py   # 12 cells
