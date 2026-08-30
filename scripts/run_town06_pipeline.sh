@@ -193,7 +193,7 @@ else say "SKIP  train_clear_bc"; fi
 
 if ! ls "$CK_DIR"/teacher_clear_t06_dagger_r*.pth >/dev/null 2>&1; then
     run dagger_clear python3 dagger.py --base clear_t06 \
-        --init teacher_clear_t06_bc --rounds 12 --weathers clear \
+        --init teacher_clear_t06_bc --rounds 12 --min-rounds 8 --gate-reps 3 --weathers clear \
         --dagger-dir dagger_clear_t06 --out-prefix teacher_clear_t06_dagger || exit 1
     teacher_gate dagger_clear || exit 1
 else say "SKIP  dagger_clear"; teacher_gate dagger_clear || exit 1; fi
@@ -213,7 +213,7 @@ else say "SKIP  train_mixed_bc"; fi
 
 if ! ls "$CK_DIR"/teacher_mixed_t06_dagger_r*.pth >/dev/null 2>&1; then
     run dagger_mixed python3 dagger.py --base mixed_t06 \
-        --init teacher_mixed_t06_bc --rounds 14 --weathers clear,fog,night,shadows \
+        --init teacher_mixed_t06_bc --rounds 14 --min-rounds 8 --gate-reps 3 --weathers clear,fog,night,shadows \
         --dagger-dir dagger_mixed_t06 --out-prefix teacher_mixed_t06_dagger || exit 1
     teacher_gate dagger_mixed || exit 1
 else say "SKIP  dagger_mixed"; teacher_gate dagger_mixed || exit 1; fi
