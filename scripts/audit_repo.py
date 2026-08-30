@@ -180,6 +180,28 @@ for _d in ("scripts/capture_town04_laps.sh", "scripts/capture_town06_laps.sh",
         chk("carla_restart" in open(_d).read(),
             f"{os.path.basename(_d)} restarts CARLA before measuring (R-SIM-1)")
 
+# --- ledger cells must come from INDEPENDENT runs -----------------------------
+# The ledger restarted per CELL and spawned the vehicle once for all twelve runs, so the
+# runs were two chains of six that inherited each other's physics state on an ageing
+# server. A failure rate over dependent trials is not a rate, and the Wilson interval
+# assumes independence. Cells written under the old regime carry neither key.
+# results/ledger/ is the PUBLISHED study's frozen record and is not rebuilt -- it is the
+# baseline the redo is compared against, so it stays as it was collected.
+_led = [f for f in glob.glob("results/*/ledger/*.json")
+        if f.startswith(("results/town06/", "results/town04_v2/"))]
+_dep = []
+for _c in _led:
+    if "_superseded" in _c:
+        continue
+    try:
+        _p = json.load(open(_c)).get("provenance", {})
+    except ValueError:
+        continue
+    if _p.get("restart_granularity") != "per_run":
+        _dep.append(os.path.basename(_c))
+chk(not _dep, f"every ledger cell came from independent runs "
+              f"({len(_dep)} predate the fix: {_dep[:3]})")
+
 # --- a certificate must have scored every cell it expected ---------------------
 # certify_sustained_bound WARNS when a cell does not run and still writes the file; a
 # warning in a long log is not a guard. Both certifiers record the two counts, so the
