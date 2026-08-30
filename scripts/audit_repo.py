@@ -174,10 +174,20 @@ chk(not _rogue, f"sync mode only via env.enable_sync_mode (rogue: {_rogue})")
 
 # Every driver that MEASURES must restart the server first (R-SIM-1).
 for _d in ("scripts/capture_town04_laps.sh", "scripts/capture_town06_laps.sh",
-           "scripts/capture_interp_fidelity.sh", "scripts/capture_gate_drives.py"):
+           "scripts/capture_interp_fidelity.sh", "scripts/capture_gate_drives.py",
+           "scripts/run_town06_ledger.sh", "scripts/run_town04_ledger.sh"):
     if os.path.exists(_d):
         chk("carla_restart" in open(_d).read(),
             f"{os.path.basename(_d)} restarts CARLA before measuring (R-SIM-1)")
+
+# --- every scored measurement needs a COMMITTED driver (standing rule 8) -------
+# Town06 had run_town06_ledger.sh and Town04 had nothing, so its ledger was hand-driven
+# and its restart discipline is unprovable after the fact. The asymmetry between the two
+# maps' tooling is what the 160 m defect exploited.
+for _pair in (("scripts/capture_town06_laps.sh", "scripts/capture_town04_laps.sh"),
+              ("scripts/run_town06_ledger.sh", "scripts/run_town04_ledger.sh")):
+    chk(all(os.path.exists(x) for x in _pair),
+        f"both maps have a committed driver: {' / '.join(os.path.basename(x) for x in _pair)}")
 
 # --- the guards must be DEMONSTRATED to refuse, not just present ---------------
 # Every guard written for the 160 m defect had a defect of its own, and grepping for the
