@@ -58,8 +58,12 @@ import config as C  # noqa: E402
 import certify_cell as cc  # noqa: E402
 from student import StudentNet  # noqa: E402
 
-STUDENTS = (("S_clear", "S_clear_84x28", (8, 16, 16), 32),
-            ("S_mixed", "S_mixed_84x28_w3", (24, 48, 48), 96))
+# FROM CONFIG, not hardcoded. This tuple duplicated config.STUDENTS with the PUBLISHED
+# checkpoint names, so under TOWN04_REDO the certifier silently certified the PUBLISHED
+# students while the ledger drove the redo's -- two runs produced byte-identical bounds
+# across all 12 cells, which is what exposed it. A registry that exists in config must be
+# read from config; a second copy is a second thing to forget to update.
+STUDENTS = C.STUDENTS
 # Under TOWN04_REDO the hardcoded outcomes below belong to DIFFERENT students and must
 # not be used; see the REDO branch in the verdict loop.
 REDO = os.environ.get("TOWN04_REDO", "0") == "1"
