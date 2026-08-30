@@ -1,11 +1,12 @@
 # CLAUDE.md
 
 
-> **PENDING — CARLA harness defect.** Read `CARLA_DETERMINISM_PENDING.md` before
-> running or re-measuring anything here. Two defects found on 2026-08-28 affect
-> every CARLA study in the lab. The published results are NOT invalidated — they
-> are already rates over repetitions — but the harness is superseded. The rework is
-> queued behind Town06 and must not be started without talking to Zach.
+> **The harness defects are FIXED and both studies are rebuilt on the corrected one.**
+> Every CARLA measurement here goes through the `carla-determinism` package: bind the
+> client, call `require_deterministic()` before measuring, issue commands with
+> `cd.apply_control()`, and launch via `scripts/carla_launch.sh`. Bit-exact closed-loop
+> replay is still unreachable (rule D-7), so every closed-loop number remains a rate over
+> >= 10 repetitions. Run `python3 scripts/audit_repo.py` before any release.
 
 Public artifact repo for the end-to-end steering verification paper.
 
