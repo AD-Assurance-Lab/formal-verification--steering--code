@@ -6,6 +6,7 @@ dynamics and could stall the vehicle; a speed controller keeps physics intact so
 the CTE we measure is real.
 """
 import math
+import os
 import queue
 
 import carla
@@ -99,6 +100,24 @@ def enable_sync_mode(world):
     settings.max_substeps = 16
     settings.max_substep_delta_time = FIXED_DT / 16   # 0.0125 for dt=0.2 -> full 0.2s
     world.apply_settings(settings)
+
+    # ASSERT THE DETERMINISM RULES HERE, for every map, on every measurement.
+    #
+    # Standing rule 5 says call require_deterministic() before measuring. It was called in
+    # exactly two places: evaluate.py, and there ONLY under `if C.STUDY_MAP == "Town06"`,
+    # and verify_conditions_render.py. So every Town04 drive and EVERY capture on either
+    # map -- capture_offset_yaw.py is the tool that produces all of them -- ran without
+    # asserting it, relying on carla_launch.sh having preflighted the server whenever it
+    # happened to be launched.
+    #
+    # That is the same drift that put R-SIM-1 in some drivers and not others: a rule each
+    # caller must remember is a rule the next new file will miss. Sync mode is the one
+    # thing every measurement does, so the assertion belongs here.
+    import config as _C
+    if not os.environ.get("CARLA_SKIP_PREFLIGHT"):
+        import carla_determinism as _cd
+        _cd.require_deterministic(_C.PORT, world, fixed_dt=FIXED_DT,
+                                  deterministic_control=_C.DETERMINISTIC_CONTROL)
     return original
 
 
@@ -331,7 +350,39 @@ def make_transform(spawn):
     )
 
 
+def require_clean_world(world):
+    """REFUSE to measure in a world that already contains someone's actors.
+
+    R-SIM-1 says restart before every measurement run. It lived only in prose and in a
+    line each driver script had to remember to copy, so it drifted the moment a new
+    driver was written: the two lap drivers restart, the interpolation-fidelity driver
+    did not, and 78 captures were about to be taken on one ageing server.
+
+    Worse than staleness, a killed run LEAKS its actors -- SIGTERM does not run Python
+    cleanup -- so the next capture photographs a road with a parked Tesla on it. That was
+    found in the world, not in the data: the arrays are the right shape and full of
+    entirely plausible frames, and nothing downstream can see it.
+
+    This is the choke point every capture and every drive passes through, so the check
+    lives here rather than in each caller. A rule enforced by copying is a rule that
+    drifts; a rule enforced at the choke point cannot be forgotten by the next script.
+    """
+    stale = [a for a in world.get_actors()
+             if a.type_id.startswith(("vehicle.", "sensor."))]
+    if stale:
+        listing = "\n".join(f"      {a.id} {a.type_id}" for a in stale[:8])
+        raise RuntimeError(
+            f"REFUSING to spawn: {len(stale)} actor(s) already alive in this world.\n"
+            f"{listing}\n"
+            "    They are a previous run's leftovers -- most likely a capture or drive\n"
+            "    that was killed, since SIGTERM skips cleanup. Measuring here means\n"
+            "    rendering a road with someone else's vehicle parked on it, which no\n"
+            "    array shape or verdict can reveal.\n"
+            "    Restart the server first (R-SIM-1): bash scripts/carla_restart.sh")
+
+
 def spawn_vehicle(world, spawn):
+    require_clean_world(world)
     bp = world.get_blueprint_library().filter(VEHICLE_BLUEPRINT)[0]
     tf = make_transform(spawn)
     vehicle = world.try_spawn_actor(bp, tf)
