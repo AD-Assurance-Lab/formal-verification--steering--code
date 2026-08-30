@@ -1,0 +1,10 @@
+
+################################################################
+# student DAgger round 0 — policy 'S_clear_84x28_v2'
+################################################################
+    eastbound: aborted at step 425
+  [clear/eastbound] over-budget=  5.6%  max|CTE|=29.76ft  -> FAIL
+  [clear/westbound] over-budget=  0.2%  max|CTE|= 2.84ft  -> FAIL
+  re-distilling (warm-start from 'S_clear_84x28_v2') -> S_clear_84x28_v2_dagger_r00
+all 6779 teacher targets cached
+Terminated
