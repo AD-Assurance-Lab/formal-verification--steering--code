@@ -149,12 +149,21 @@ def distill_student(in_w, in_h, out_name, teacher_name="steering_dagger_r02",
                     epochs=120, batch_size=64, lr=1e-3, patience=20,
                     device=None, quiet=False, balance=False, augment=0.0):
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-    torch.manual_seed(0)
+    # DISTILL_SEED exposes what was a hardcoded 0. Seed is not a tuning knob here -- it
+    # is the variable T06-F14 measured as flipping a student from 4/6 to 6/6 on a clear
+    # gate with the architecture and data held fixed. Leaving it hardcoded makes that
+    # variance invisible: one draw is taken, and whether it was a good one is unknowable
+    # without re-drawing. Default 0, so every existing result reproduces exactly.
+    _seed = int(os.environ.get("DISTILL_SEED", "0"))
+    if _seed:
+        print(f"  DISTILL_SEED={_seed} (default is 0; this is a different draw, not a "
+              f"different method)", flush=True)
+    torch.manual_seed(_seed)
     # Seed the augmentation RNG too: dataset._shift draws from the global `random`,
     # and torch.manual_seed alone left retraining non-reproducible bit-for-bit.
     import random as _random
-    _random.seed(0)
-    np.random.seed(0)
+    _random.seed(_seed)
+    np.random.seed(_seed)
     os.makedirs(C.CHECKPOINT_DIR, exist_ok=True)
     _, rows = load_manifests(aggregated_manifests(base, dagger_dirs))
     if weathers:

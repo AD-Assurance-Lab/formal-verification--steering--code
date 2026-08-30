@@ -1,0 +1,12 @@
+
+=== EASTBOUND (network in control) ===
+  OFF-ROAD (departed lane) at step 439, x=413
+  [eastbound] FAIL | steps=440 max|CTE|=31.18ft over-budget=3.9%
+
+=== WESTBOUND (network in control) ===
+  loop closed at step 1696
+  [westbound] FAIL | steps=1697 max|CTE|=3.72ft over-budget=0.5%
+
+============================================================
+eastbound : FAIL steps=440 max|CTE|=31.18ft over-budget=3.9%
+westbound : FAIL steps=1697 max|CTE|=3.72ft over-budget=0.5%

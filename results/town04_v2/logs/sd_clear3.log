@@ -1,8 +1,12 @@
+  connect attempt 1/4 failed: RuntimeError; retrying in 20s
+  connect attempt 2/4 failed: RuntimeError; retrying in 20s
+  connect attempt 3/4 failed: RuntimeError; retrying in 20s
+  connect attempt 4/4 failed: RuntimeError; retrying in 20s
 Traceback (most recent call last):
-  File "/home/za/ad-assurance--workspace/formal-verification--steering--code/pipeline/dagger_student.py", line 346, in <module>
+  File "/home/za/ad-assurance--workspace/formal-verification--steering--code/pipeline/dagger_student.py", line 368, in <module>
     main()
-  File "/home/za/ad-assurance--workspace/formal-verification--steering--code/pipeline/dagger_student.py", line 208, in main
-    world = env.load_town04(client)
-  File "/home/za/ad-assurance--workspace/formal-verification--steering--code/pipeline/carla_env.py", line 76, in load_study_map
-    return client.reload_world() if fresh else world  # already right map -> reload fresh
-RuntimeError: time-out of 120000ms while waiting for the simulator, make sure the simulator is ready and connected to 127.0.0.1:3000
+  File "/home/za/ad-assurance--workspace/formal-verification--steering--code/pipeline/dagger_student.py", line 232, in main
+    client, world = connect_with_retries()
+  File "/home/za/ad-assurance--workspace/formal-verification--steering--code/pipeline/dagger_student.py", line 165, in connect_with_retries
+    raise RuntimeError(f"could not reach CARLA after {attempts} attempts: {last}")
+RuntimeError: could not reach CARLA after 4 attempts: time-out of 120000ms while waiting for the simulator, make sure the simulator is ready and connected to 127.0.0.1:3000
