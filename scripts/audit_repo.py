@@ -152,6 +152,15 @@ for guard in ("MIN_POSES_PER_CELL", "MIN_ROUTE_COVERAGE", "check_coverage"):
     chk(guard in cert_a and guard in cert_b,
         f"both certifiers carry {guard} (parity, not one-sided)")
 
+# --- the guards must be DEMONSTRATED to refuse, not just present ---------------
+# Every guard written for the 160 m defect had a defect of its own, and grepping for the
+# guard's name would have passed all three. Presence is not force.
+_t = subprocess.run([sys.executable, "tests/test_scope_guards.py"],
+                    capture_output=True, text=True, cwd=os.path.dirname(os.path.dirname(
+                        os.path.abspath(__file__))))
+chk(_t.returncode == 0, "scope guards demonstrably refuse short, over-long and "
+                        "self-contradicting captures (tests/test_scope_guards.py)")
+
 # --- a redo's artifacts should be comparable in SIZE to what they replace -----
 # The single loudest available signal: the redo's captures were 1.8 MB against the
 # published 1.7 GB, and 81 poses against 1,600. Orders of magnitude are worth asserting.
