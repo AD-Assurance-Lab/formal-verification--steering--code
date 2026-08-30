@@ -33,6 +33,22 @@ DIAG = REPO / "results" / "diagnostic"
 # angle -> the condition whose EXPOSURE the study declares at that angle
 INTERMEDIATES = [(45.0, "shadows"), (20.0, "shadows"), (5.0, "shadows"), (-10.0, "night")]
 
+MIN_COVERAGE = 0.80          # of the section's scored length
+
+
+def check_coverage(path, sec):
+    """Refuse a capture that covers a slice of the section. See interpolation_fidelity."""
+    z = np.load(path, allow_pickle=True)
+    x = np.asarray(z["pose_x"], float); y = np.asarray(z["pose_y"], float)
+    span = float(np.sum(np.hypot(np.diff(x), np.diff(y))))
+    expect = getattr(C, "SECTION_LEN_M", {}).get(sec)
+    if expect is not None and span < MIN_COVERAGE * expect:
+        print(f"\nREFUSING to measure fidelity from {Path(path).name}: it spans "
+              f"{span:.0f} m of a {expect:.0f} m section ({100 * span / expect:.1f}%). "
+              f"Recapture with scripts/capture_interp_fidelity.sh.", file=sys.stderr)
+        sys.exit(2)
+    return span
+
 
 def frames(path, cond):
     z = np.load(path, allow_pickle=True)
@@ -52,10 +68,28 @@ def steer(net, x, dev):
 def main():
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     tol = C.CLOSED_LOOP_TOLERANCE
-    end = DIAG / "interp_night_end.npz"
-    if not end.exists():
-        print(f"need {end} (clear + night at -25, same session)", file=sys.stderr); return 2
-    clear, full = frames(end, "clear"), frames(end, "night")
+    # EVERY SECTION, not one. See interpolation_fidelity.py -- a single section is at
+    # most 23% of the route, and the old output could not say which part it covered.
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--sections", default=None,
+                    help="comma-separated sections to pool over; default EVERY section")
+    args = ap.parse_args()
+    sections = args.sections.split(",") if args.sections else list(C.SECTIONS)
+
+    ends = {}
+    for sec in sections:
+        e = DIAG / f"interp_night_{sec}_end.npz"
+        if not e.exists():
+            print(f"need {e} (clear + night at -25, same session). "
+                  f"Run scripts/capture_interp_fidelity.sh {sec}", file=sys.stderr)
+            return 2
+        check_coverage(e, sec)
+        ends[sec] = e
+    total_span = sum(check_coverage(ends[s], s) for s in sections)
+
+    clear = np.concatenate([frames(ends[s], "clear") for s in sections])
+    full = np.concatenate([frames(ends[s], "night") for s in sections])
     n = len(clear)
     d_vec = (full - clear).reshape(n, -1)
     denom = np.einsum("ij,ij->i", d_vec, d_vec)
@@ -65,7 +99,10 @@ def main():
     print(f"\nNIGHT-AXIS INTERPOLATION FIDELITY -- {C.STUDY_MAP}, {n} poses, tol {tol:.4f}")
     print("  chord: clear (daylight exposure) -> night at -25 deg (night exposure)")
     print("  each intermediate rendered at the exposure the study declares for its angle\n")
-    out = {"n_poses": int(n), "tolerance": tol, "cells": {}}
+    print(f"  scope: {len(sections)} sections ({','.join(sections)}), "
+          f"{n} poses, {total_span:.0f} m of road\n")
+    out = {"n_poses": int(n), "tolerance": tol, "sections": list(sections),
+           "route_span_m": float(total_span), "cells": {}}
     for nm, ck_base, ch, fc in students:
         ck = C.final_student(ck_base)
         net = StudentNet(in_h, in_w, channels=ch, fc=fc).to(dev)
@@ -78,10 +115,12 @@ def main():
         print(f"    {'sun':>6} {'exposure':>9} {'s*':>6} {'pixel err':>10} {'steer err':>10} {'x tol':>7}")
         cells = {}
         for ang, cond in INTERMEDIATES:
-            p = DIAG / f"interp_night_s{ang:g}.npz"
-            if not p.exists():
+            paths = [DIAG / f"interp_night_{sec}_s{ang:g}.npz" for sec in sections]
+            if not all(q.exists() for q in paths):
                 print(f"    {ang:6g} {cond:>9} {'capture missing':>36}"); continue
-            xr = frames(p, cond)
+            for sec, q in zip(sections, paths):
+                check_coverage(q, sec)
+            xr = np.concatenate([frames(q, cond) for q in paths])
             if xr is None or len(xr) != n:
                 print(f"    {ang:6g} {cond:>9} {'length mismatch':>36}"); continue
             r = (xr - clear).reshape(n, -1)
