@@ -99,10 +99,18 @@ for cap in glob.glob("results/**/lap_*.npz", recursive=True) + glob.glob("result
         z = _np.load(cap, allow_pickle=True)
     except Exception:
         continue
-    span = float(z["route_span_m"]) if "route_span_m" in z.files else None
-    if span is None and "pose_x" in z.files:
+    # Measure the pose track; treat route_span_m as a claim to be checked, not a source.
+    span = None
+    if "pose_x" in z.files:
         x, y = _np.asarray(z["pose_x"], float), _np.asarray(z["pose_y"], float)
         span = float(_np.hypot(_np.diff(x), _np.diff(y)).sum())
+    claimed = float(z["route_span_m"]) if "route_span_m" in z.files else None
+    if span is not None and claimed is not None:
+        chk(abs(claimed - span) <= 25.0,
+            f"{os.path.basename(cap)}: recorded span {claimed:.0f} m matches its poses "
+            f"({span:.0f} m)")
+    if span is None:
+        span = claimed
     if span is None:
         continue
     # Compare against what this capture is SUPPOSED to cover, not a magic number:
@@ -122,9 +130,15 @@ for cap in glob.glob("results/**/lap_*.npz", recursive=True) + glob.glob("result
         except Exception:
             want = None
     if want:
+        # Two-sided. A one-sided floor catches the 160 m bug and misses its mirror --
+        # capturing the whole 3,042 m Town04 loop when the SCORED prefix is 2,861 m,
+        # which certifies 181 m of ODD-boundary road the study excludes.
         chk(span >= 0.80 * want,
             f"{os.path.basename(cap)}: spans {span:.0f} m of {want:.0f} m "
             f"({100*span/want:.0f}%)")
+        chk(span <= want + 25.0,
+            f"{os.path.basename(cap)}: spans {span:.0f} m, within the {want:.0f} m "
+            f"scored length")
 
 # --- sibling tools must carry the same guards --------------------------------
 # certify_town06 had MIN_POSES_PER_CELL and certify_sustained_bound did not, and the redo

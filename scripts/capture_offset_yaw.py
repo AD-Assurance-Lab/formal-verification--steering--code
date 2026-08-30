@@ -124,10 +124,27 @@ def main():
                     if r["weather"] == "clear" and r["direction"] == args.direction]
         xy = np.array([[float(r["x"]), float(r["y"])] for r in rows])
     if args.length_m is None:
+        # THE SCORED LENGTH, which is not the same as the route's geometry.
+        #
+        # Defaulting to the raw geometry is wrong in the opposite direction to the 160 m
+        # bug and just as much a scope error. Town04's route is a closed 3,042 m loop, but
+        # the study's scored prefix is LAP_END_M = 2,861 m: the last 181 m run through a
+        # western traffic-light intersection that is a real ODD boundary, where the lane
+        # centreline is undefined and which every closed-loop and verification number in
+        # the study excludes. The published captures span exactly 2,861 m. Capturing the
+        # full loop would certify 181 m of road the study does not claim, and the
+        # certificate would not be comparable to the drives it is validated against.
+        #
+        # Town06's section routes are already built to their scored length, so there the
+        # two agree and this changes nothing.
         seg = np.linalg.norm(np.diff(np.asarray(xy, dtype=float), axis=0), axis=1)
-        args.length_m = float(seg.sum())
-        print(f"  --length-m not given: covering the WHOLE route, {args.length_m:.0f} m",
-              flush=True)
+        geom = float(seg.sum())
+        scored = float(getattr(C, "SECTION_LEN_M", {}).get(args.direction, geom))
+        args.length_m = min(scored, geom)
+        note = "" if abs(geom - args.length_m) < 1.0 else \
+            f" (route geometry is {geom:.0f} m; the tail is outside the scored prefix)"
+        print(f"  --length-m not given: covering the whole SCORED route, "
+              f"{args.length_m:.0f} m{note}", flush=True)
     if len(xy) < 2:
         sys.exit(f"no poses for direction '{args.direction}' -- refusing to capture")
     d = np.concatenate([[0], np.cumsum(np.linalg.norm(np.diff(xy, axis=0), axis=1))])
@@ -294,9 +311,17 @@ def main():
     # the shapes are the same, the certificate computes fine, and the number it produces is
     # wrong about a different thing than it claims. Writing the span means a consumer can
     # check, and certify_* now does.
-    _cov = float(np.linalg.norm(np.diff(np.asarray(xy, dtype=float), axis=0), axis=1).sum())
-    print(f"  route coverage: {args.length_m:.0f} m requested, {_cov:.0f} m of route "
-          f"spanned by {len(rows)} poses", flush=True)
+    # MEASURE THE POSES THAT WERE CAPTURED, not the route they were drawn from.
+    #
+    # This read the whole route, so it recorded the ROUTE's length as the capture's
+    # coverage. Every capture would then claim full coverage no matter how short it was,
+    # which defeats the guard this field exists to feed: the certifiers TRUST
+    # route_span_m when it is present and only measure the pose track when it is absent.
+    # The 160 m captures were caught solely because they predate the field.
+    _pxy = np.array([[float(r["x"]), float(r["y"])] for r in poses], dtype=float)
+    _cov = float(np.linalg.norm(np.diff(_pxy, axis=0), axis=1).sum()) if len(_pxy) > 1 else 0.0
+    print(f"  route coverage: {args.length_m:.0f} m requested, {_cov:.0f} m actually "
+          f"spanned by {len(poses)} captured poses", flush=True)
     np.savez_compressed(
         OUT, frames=frames, offsets=OFFSETS, yaws=YAWS, conds=np.array(CONDS),
         route_span_m=_cov, length_m_requested=args.length_m,
