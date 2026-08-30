@@ -7,8 +7,27 @@ checkpoints/
 # produced it. Every other checkpoint (teachers, DAgger rounds, width variants) stays out.
 !pipeline/checkpoints/
 pipeline/checkpoints/*
+# EVERY SHIPPED POLICY, and the final teacher each was distilled from. 5.5 MB in total,
+# so there is no reason to make an external researcher reconstruct them -- and with the
+# renderer's irreducible per-frame nondeterminism (carla-determinism D-7) a reconstruction
+# would not be bit-identical anyway. Training checkpoints (BC, intermediate DAgger rounds,
+# width variants) stay out: they are scaffolding, not results.
+#
+# Town04, published:
 !pipeline/checkpoints/S_clear_84x28.pth
 !pipeline/checkpoints/S_mixed_84x28_w3.pth
+# Town04, redo under the corrected harness (T04-R5; the mixed policy is the
+# student-DAgger'd checkpoint, which is what final_student resolves to):
+!pipeline/checkpoints/S_clear_84x28_v2.pth
+!pipeline/checkpoints/S_mixed_84x28_w3_v2_dagger_r00.pth
+# Town06 deployment test:
+!pipeline/checkpoints/S_clear_t06_168x28_w2.pth
+!pipeline/checkpoints/S_mixed_t06_168x28_w3.pth
+# the final teachers, so a student can be re-distilled without re-running DAgger:
+!pipeline/checkpoints/teacher_clear_v3_dagger_r05.pth
+!pipeline/checkpoints/teacher_mixed_v2_dagger_r03.pth
+!pipeline/checkpoints/teacher_clear_t06_dagger_r06.pth
+!pipeline/checkpoints/teacher_mixed_t06_dagger_r11.pth
 # ...and the Town06 deployment-test routes. These are PROTOCOL artifacts, not data:
 # the route had to be fixed, on geometry alone, before any Town06 model existed, and
 # committing it is what makes that checkable later. ~23 KB each.
