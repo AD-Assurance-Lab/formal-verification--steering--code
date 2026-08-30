@@ -79,12 +79,24 @@ def main():
                     help="several sun-altitude failures are direction-specific: the sun's\n                          azimuth is fixed, so travelling east or west puts it ahead or\n                          behind. Verification measured in one direction cannot see a\n                          failure that only occurs in the other.")
     args = ap.parse_args()
 
-    if getattr(C, "SECTION_BASED", False):
-        # Section-based maps have no live_pairs manifest -- that dataset is Town04's, and
-        # filtering it for direction "s00" returned nothing, which surfaced as an
-        # AxisError deep in the arc-length maths rather than as "no poses". The ROUTE is
-        # the pose source here, and it is the same geometry the closed-loop runs follow,
-        # so capture poses and driving agree by construction rather than by coincidence.
+    # THE ROUTE IS THE POSE SOURCE ON EVERY MAP.
+    #
+    # This was section-based maps only; Town04 read poses from the `live_pairs` dataset
+    # instead. Two reasons it now reads the route as well:
+    #
+    #   1. The reason already given below and never applied to Town04 -- the route is the
+    #      same geometry the closed-loop runs follow, so capture poses and driving agree
+    #      by construction rather than by coincidence.
+    #   2. `live_pairs` is a captured DATASET. Under D-11 the Town04 redo may not reuse
+    #      data collected on the violating harness, and it was archived; making the
+    #      verification captures depend on it would have reintroduced exactly the coupling
+    #      the redo exists to remove. The routes are geometry, are tracked in git, and are
+    #      unchanged.
+    #
+    # The poses therefore differ slightly from the published run's. That is a declared
+    # difference of the redo, not a defect: it is the same road, sampled from the
+    # definition of the road rather than from one drive along it.
+    if True:
         from route import load_route
         rt = np.asarray(load_route(args.direction), dtype=float)
         dx = np.diff(rt[:, 0], append=rt[0, 0])
