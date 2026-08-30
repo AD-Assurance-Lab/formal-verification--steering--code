@@ -42,7 +42,11 @@ REFERENCE = {
 CONDITIONS = ("clear", "fog", "night", "shadows")
 
 
-def main(sections=("s02",)):
+def main(sections=None):
+    # The function's own default must not disagree with the CLI's. A caller that imports
+    # this module would otherwise silently get one section while the command line gets
+    # every section -- the same defect in a second place.
+    sections = tuple(sections) if sections else tuple(C.SECTIONS)
     if C.MAP_NAME != "Town06":
         raise SystemExit(f"Town06 only; STUDY_MAP is {C.MAP_NAME}")
 
@@ -128,15 +132,21 @@ def main(sections=("s02",)):
         print("  Do NOT start the rebuild: evaluate.py raises on a condition mismatch,")
         print("  so every run of these conditions would abort part-way through it.")
         return 1
-    print("\n  All four conditions classify correctly. Safe to collect.")
+    print(f"\n  All four conditions classify correctly on "
+          f"{len(sections)} section(s): {','.join(sections)}. Safe to collect.")
     return 0
 
 
 if __name__ == "__main__":
     import argparse
     _ap = argparse.ArgumentParser()
-    _ap.add_argument("--sections", default="s02",
-                     help="comma-separated, or 'all' for every section")
+    # EVERY SECTION BY DEFAULT. This defaulted to s02 alone and then printed "All four
+    # conditions classify correctly. Safe to collect." -- a map-wide clearance from one
+    # section of six. The docstring already argues that one pose is not evidence about a
+    # section; one section is not evidence about a map for the same reason. Narrowing is
+    # still available, but it has to be asked for (standing rule 7).
+    _ap.add_argument("--sections", default="all",
+                     help="comma-separated, or 'all' (default) for every section")
     _a = _ap.parse_args()
     _secs = tuple(C.SECTIONS) if _a.sections == "all" else tuple(_a.sections.split(","))
 
