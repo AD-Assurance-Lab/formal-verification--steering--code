@@ -2299,3 +2299,49 @@ Two further reasons to hold it loosely: the tasks differ (lateral control agains
 longitudinal braking, different hazards and budgets), and the 3 and 4 degree points here
 are single runs per section rather than rates -- though at 0.16-0.86 ft against a 2.19 ft
 budget they are nowhere near the cliff.
+
+---
+
+## T06-F39  What the R-SIM-1 violation actually cost: negligible in the mean, 1.4x tol in a frame
+
+`capture_town06_laps.sh` took all 24 Town06 verification captures in ONE server session
+with no restarts, while its Town04 sibling restarted before every capture. R-SIM-1 says
+restart before every measurement; the rule lived in prose and was re-typed into each
+driver, so it drifted the moment a second driver existed. Found 2026-08-30 by auditing
+every measurement path rather than by anything in a result.
+
+The captures were recaptured with a restart before each. Because the pose sampling is
+deterministic, the two sets are pose-identical and the difference is purely rendering,
+which makes the cost directly measurable rather than a matter of judgement.
+
+**Pixels (s00, normalised):**
+
+    clear    mean|d| 0.00081   max 0.0667
+    fog      mean|d| 0.00084   max 0.0257
+    night    mean|d| 0.00173   max 0.0276
+    shadows  mean|d| 0.00189   max 0.0280
+
+**Steering, against the 0.012011 tolerance:**
+
+    S_clear_t06  clear    mean -0.01x tol    max |d| 0.41x tol
+    S_clear_t06  night    mean +0.04x tol    max |d| 1.39x tol
+    S_mixed_t06  clear    mean -0.01x tol    max |d| 0.29x tol
+    S_mixed_t06  night    mean -0.02x tol    max |d| 1.38x tol
+
+**Read it both ways, because it cuts both ways.** The criterion is a route-MEAN sustained
+bias, and the mean shift is 1-4% of tolerance, so the certificate's verdicts are very
+unlikely to move — the old captures were not badly wrong. But an individual frame moves by
+up to **1.4x the entire tolerance**, which is not noise: it is larger than the whole safety
+margin at that pose. A per-frame claim built on those captures would have been unsound
+while the route-mean claim was fine.
+
+That distinction is the value of the number. "It was probably fine" and "the mean moved 1%
+while the worst frame moved 139%" are different statements, and only the second says which
+claims survive.
+
+**Why this is a finding and not a footnote.** Both this and the 160 m capture defect are
+the same disease: a rule that each new script must remember. The fix is not diligence, it
+is placement — `require_deterministic()` and the session-hygiene checks now run inside
+`enable_sync_mode` and `spawn_vehicle`, the choke points every measurement passes through,
+and in the `carla-determinism` package (>= 1.1) so AEB and multi-condition inherit them
+rather than copying them. Six audit checks fail the build if a driver bypasses them.
