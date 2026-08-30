@@ -158,11 +158,31 @@ used by either study's driver, and its own help text describes exactly the failu
 prevents: "the DAgger set is an input to distillation, not just a means of fixing the
 teacher."
 
-## T04-R5  ~~RESULT: the redo reproduces the published agreement, 6/6~~ WITHDRAWN
+## T04-R5  RESULT: the redo reproduces the published agreement, 6/6 — REDONE on full laps
 
-**The certificate below was computed on 160 m of a 2,861 m lap and compared against
-full-lap driving. The 6/6 is withdrawn.** The two bugs recorded at the end of this
-section were real and their fixes stand; the agreement number does not.
+> **The original T04-R5 was computed on 160 m of the 2,861 m scored lap and is withdrawn.**
+> Redone 2026-08-30 on full scored-length captures (1,421-1,429 poses per direction,
+> 2,862 m of a 2,861 m scored route), preceded by the capture gate the paper states as a
+> precondition and which had never been run: worst mean |capture − driven| **0.0065**
+> against the 0.05 threshold. The corrected result is below and the headline is unchanged.
+>
+> ### The short capture DID flip a verdict, and the agreement number could not see it
+>
+> This is the part worth keeping. On the 160 m captures, `eastbound / S_clear / shadows`
+> came out **CERTIFIED [-0.55, +0.01]**. On the full lap it is **FALSIFIED [-0.76, +1.53]**
+> — a wrong verdict, not merely an unsupported one: the 160 m window sat on clean road and
+> missed the region where shadows drive that student out of bounds. Eastbound / S_clear /
+> night was likewise understated, [-3.13, +0.45] against [-4.32, +0.93] on the full lap.
+>
+> **And 6/6 was reported both times.** A condition-level cell is CERTIFIED only if BOTH
+> directions certify, and westbound/S_clear/shadows already falsified, so the aggregation
+> absorbed the flipped direction. The agreement statistic is therefore **insensitive to a
+> single-direction verdict flip** — it was 6/6 with a wrong verdict inside it. That the
+> number reproduces is not evidence the captures were sound; it is evidence this statistic
+> cannot detect this class of error. Any paper reporting it should say so.
+>
+> Direction-level verdicts are the honest granularity for detecting capture defects, and
+> the certificate records them (`results/town04_v2/calibration/sustained_bound.json`).
 
 Certificate on the policy checkpoints, ledger 12 runs per cell, both under the corrected
 harness.
