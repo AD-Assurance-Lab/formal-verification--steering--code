@@ -2345,3 +2345,32 @@ is placement — `require_deterministic()` and the session-hygiene checks now ru
 `enable_sync_mode` and `spawn_vehicle`, the choke points every measurement passes through,
 and in the `carla-determinism` package (>= 1.1) so AEB and multi-condition inherit them
 rather than copying them. Six audit checks fail the build if a driver bypasses them.
+
+
+### Addendum: s05's elevated gate value is the SECTION, not server age (predicted, then tested)
+
+The pre-rebuild capture gate read 0.0244 / 0.0236 at s05 against ~0.010 everywhere else,
+in both students. s05 was also the LAST section captured in the non-compliant single-session
+run, so server ageing was the obvious suspect.
+
+Prediction recorded before the rebuilt gate ran: s05 would stay near 0.024, because its
+recaptured frames differ from the old ones by no more than s00's do (mean |d| 0.00073 at
+s05 against 0.00081 at s00). If ageing were the cause, the last-captured section should
+have moved MOST on recapture.
+
+Result on captures taken with a fresh server before each:
+
+    S_clear_t06  s05   0.0261   (was 0.0244)
+    S_mixed_t06  s05   0.0228   (was 0.0236)
+
+Unchanged. **s05 is intrinsically harder ground for capture-to-driving agreement**, and
+the old captures were not degraded there. It is the shortest section (490 m), it carries
+the widest certified bounds of the six, and it now shows the largest capture-driven
+disagreement -- three independent signals on the same section, worth remembering before
+anything is concluded from s05 alone.
+
+This also settles the honest reading of the rebuild: it was correct under the standing
+rule -- captures taken in violation of R-SIM-1 are suspect by definition, and the worst
+frame moved 1.39x tolerance -- but the evidence now says the original captures were
+probably sound. The rebuild turned "probably" into "measured", which is the only form
+that belongs in a paper.
