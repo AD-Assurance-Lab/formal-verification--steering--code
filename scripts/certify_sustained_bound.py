@@ -239,7 +239,12 @@ def main():
                     print(f"  {direction:10s} {nm:9s} {cond:9s} {origin:8s} "
                           f"[{blo:+.5f},{bhi:+.5f}] [{blo/tol:+5.2f},{bhi/tol:+5.2f}]"
                           f"  {v:12s} {t:5s} {'agree' if match else '-'}", flush=True)
-    print(f"\n  decisive and correct: {ok}/{n} of {n_expected} expected")
+    if REDO:
+        print(f"\n  {n} cells bounded. NO agreement column: these are different\n"
+              f"  students from the published ones, so the hardcoded outcomes do not\n"
+              f"  apply. Agreement comes from this redo's OWN ledger.")
+    else:
+        print(f"\n  decisive and correct: {ok}/{n} of {n_expected} expected")
     if n != n_expected:
         print(f"  WARNING: {n_expected - n} cell(s) did not run. This score is NOT "
               f"comparable to the published 12/12.")
