@@ -1,0 +1,6 @@
+capturing 162 frames: 2 cond x 81 poses x 1 offsets x 1 yaws
+  settled 81 poses: z 0.01..4.88 m, pitch +0.25..+2.99 deg, 0 fell back
+  clear: 81 frames
+  shadows: 81 frames
+
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/diagnostic/interp_night_s5.npz  (3.8 MB)
