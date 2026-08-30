@@ -14,6 +14,9 @@ Writes results/ledger/<condition>__<student>__closed_loop.json, which
 
 import argparse
 import csv
+import gc
+import subprocess
+import time
 import json
 import math
 import os
@@ -96,6 +99,54 @@ def wilson(k, n, z=1.96):
     centre = (p + z * z / (2 * n)) / d
     half = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
     return (max(0.0, centre - half), min(1.0, centre + half))
+
+
+def restart_and_respawn(camera, vehicle, world, original, condition):
+    """R-SIM-1 AT RUN GRANULARITY, plus a genuinely fresh vehicle.
+
+    The ledger restarted the server once per CELL and spawned the vehicle once for all
+    twelve runs in it, so runs 2..12 ran on a progressively older server AND inherited the
+    previous run's physics state. The twelve "repetitions" were therefore two chains of
+    six, not twelve independent trials -- and a failure RATE over them is not a rate over
+    independent trials, which is exactly what the Wilson interval in standing rule 3
+    assumes.
+
+    Measured: clear/S_clear_t06 s00 peaks at 0.50 ft as the first run after the spawn and
+    2.77 ft in the same position one chain later, at the SAME step and place, reproducibly
+    across two independent rebuilds. Every other section is preceded by another run in
+    both chains and every other section is stable. That asymmetry is the tell.
+
+    NOT carla_restart.sh: it pkills client processes by name and this script is on that
+    list. Stop the server by its rpc-port and bring it back through the one launcher.
+    Release the client BEFORE killing the server -- a live carla.Client whose server
+    disappears throws from a background thread as SIGABRT, which no `except` can catch.
+    """
+    env.cleanup([camera, vehicle], world, original)
+    del camera, vehicle, world, original
+    env._CLIENT = None
+    gc.collect()
+    port = os.environ.get("CARLA_PORT", str(C.PORT))
+    subprocess.run(["pkill", "-f", f"[C]arlaUE4-Linux-Shipping.*rpc-port={port}"],
+                   stdin=subprocess.DEVNULL)
+    time.sleep(10)
+    log = os.path.join(C.REPO_ROOT, "results", "carla_restart_ledger.log")
+    with open(log, "a") as fh:
+        subprocess.run(["bash", os.path.join(C.REPO_ROOT, "scripts", "carla_launch.sh")],
+                       stdout=fh, stderr=subprocess.STDOUT,
+                       stdin=subprocess.DEVNULL, timeout=600)
+    last = None
+    for _ in range(4):
+        try:
+            client = env.connect()
+            world = env.load_town04(client)
+            original = env.enable_sync_mode(world)
+            vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
+            camera, q = env.set_condition(world, vehicle, condition)
+            return client, world, original, vehicle, camera, q
+        except Exception as exc:          # noqa: BLE001
+            last = exc
+            time.sleep(15)
+    raise RuntimeError(f"could not reconnect after restart: {last}")
 
 
 def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps,
@@ -253,6 +304,11 @@ def main():
         require_certificate_committed()
 
     prov = run_provenance(args.condition)
+    # The Wilson interval assumes independent trials, so record that these ARE: a fresh
+    # server and a fresh vehicle per run, not per cell. A cell written before this change
+    # carries neither key, which is how the two regimes are told apart afterwards.
+    prov["independent_runs"] = True
+    prov["restart_granularity"] = "per_run"
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     # DRIVE THE POLICY, NOT THE DISTILLED INTERMEDIATE -- see certify_sustained_bound.
@@ -284,12 +340,23 @@ def main():
               f"{args.reps} reps x {len(C.SECTIONS)} sections "
               f"= {args.reps * len(C.SECTIONS)} runs\n")
 
+        n_run = 0
         for rep in range(args.reps):
             for d in C.SECTIONS:
                 ldir = None
                 if args.log_frames and rep < args.log_frames_reps:
                     ldir = (Path(args.log_frames) /
                             f"{args.condition}_{d}_rep{rep:02d}")
+                # INDEPENDENCE PER RUN, not per cell: fresh server AND fresh vehicle.
+                # The first run uses the server and vehicle established above, so it is
+                # already fresh; every run after it gets its own.
+                if n_run:
+                    print(f"  [R-SIM-1] restart + respawn before rep {rep} {d}",
+                          flush=True)
+                    (client, world, original, vehicle, camera,
+                     cam_queue) = restart_and_respawn(camera, vehicle, world, original,
+                                                      args.condition)
+                n_run += 1
                 mx, frac, departed, where = drive_once(world, vehicle, cam_queue, model,
                                                 device, d, min(args.max_steps, C.steps_for(d)),
                                                 log_dir=ldir)
