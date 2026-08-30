@@ -21,8 +21,23 @@ import os, subprocess, sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
+
+# The lab server runs on a NON-DEFAULT port (standing rule 6). Every committed CARLA
+# driver here defaults it to 3000, but config.py defaults to 2000, so a script that
+# simply imports config points at a port nothing is listening on. Set it BEFORE the
+# import, exactly as the capture drivers do, or the default silently disagrees with the
+# rest of the repo.
+os.environ.setdefault("CARLA_PORT", "3000")
+
 sys.path.insert(0, str(REPO / "pipeline"))
 import config as C                                              # noqa: E402
+
+
+def server_listening(port):
+    import socket
+    with socket.socket() as s:
+        s.settimeout(2.0)
+        return s.connect_ex(("127.0.0.1", int(port))) == 0
 
 
 def main():
@@ -35,6 +50,11 @@ def main():
     subprocess.run(["bash", str(REPO / "scripts" / "carla_restart.sh")],
                    stdout=open("/tmp/gate_drive_restart.log", "w"),
                    stderr=subprocess.STDOUT, check=False)
+
+    if not server_listening(C.PORT):
+        print(f"FATAL: nothing is listening on port {C.PORT}. Refusing to run 12 drives "
+              f"that would each time out after 120 s and write no trace.", flush=True)
+        return 2
 
     rc_all = 0
     for nm, ck_base, ch, fc in students:
