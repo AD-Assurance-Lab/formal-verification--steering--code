@@ -1,0 +1,24 @@
+S_clear_84x28_v2 under 'night' (exposure shutter=200)
+budget 0.668 m (2.19 ft), 6 reps x 2 sections = 12 runs
+
+  rep 0 eastbound  max|CTE|= 29.43 ft over= 64.5%  FAIL  (departed)
+  rep 0 westbound  max|CTE|= 28.39 ft over= 64.3%  FAIL  (departed)
+  rep 1 eastbound  max|CTE|= 27.72 ft over= 57.5%  FAIL  (departed)
+  rep 1 westbound  max|CTE|= 34.44 ft over= 74.0%  FAIL  (departed)
+  rep 2 eastbound  max|CTE|= 29.46 ft over= 60.1%  FAIL  (departed)
+  rep 2 westbound  max|CTE|= 28.37 ft over= 77.9%  FAIL  (departed)
+  rep 3 eastbound  max|CTE|= 29.73 ft over= 66.7%  FAIL  (departed)
+  rep 3 westbound  max|CTE|= 37.54 ft over= 78.5%  FAIL  (departed)
+  rep 4 eastbound  max|CTE|= 28.33 ft over= 56.8%  FAIL  (departed)
+  rep 4 westbound  max|CTE|= 44.36 ft over= 81.9%  FAIL  (departed)
+  rep 5 eastbound  max|CTE|= 29.60 ft over= 65.7%  FAIL  (departed)
+  rep 5 westbound  max|CTE|= 27.35 ft over= 81.1%  FAIL  (departed)
+
+================================================================
+  failure rate 12/12 = 100.0%   95% Wilson [75.7%, 100.0%]
+  verdict: FAIL
+  (FAIL when the interval excludes zero -- a rate consistent with zero is
+   not evidence of failure, and one bad lap out of ten is not a pass either)
+================================================================
+
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/night__S_clear_84x28_v2__closed_loop.json
