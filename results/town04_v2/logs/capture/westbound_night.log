@@ -1,5 +1,7 @@
-capturing 74 frames: 1 cond x 74 poses x 1 offsets x 1 yaws
-  settled 74 poses: z -0.00..0.00 m, pitch +0.00..+0.00 deg, 0 fell back
-  night: 74 frames
+  --length-m not given: covering the whole SCORED route, 2861 m (route geometry is 3042 m; the tail is outside the scored prefix)
+capturing 1429 frames: 1 cond x 1429 poses x 1 offsets x 1 yaws
+  settled 1429 poses: z -0.00..11.00 m, pitch -2.98..+3.45 deg, 0 fell back
+  night: 1429 frames
+  route coverage: 2861 m requested, 2862 m actually spanned by 1429 captured poses
 
-wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/calibration/lap_westbound_night.npz  (1.8 MB)
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/calibration/lap_westbound_night.npz  (35.0 MB)

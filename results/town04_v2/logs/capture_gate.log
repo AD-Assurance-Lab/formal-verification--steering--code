@@ -1,0 +1,9 @@
+
+CAPTURE GATE -- Town04, condition 'clear', threshold 0.05
+  S_clear   eastbound  mean|capture-driven| 0.0065  (1421 poses)  PASS
+  S_clear   westbound  mean|capture-driven| 0.0065  (1424 poses)  PASS
+  S_mixed   eastbound  mean|capture-driven| 0.0048  (1421 poses)  PASS
+  S_mixed   westbound  mean|capture-driven| 0.0051  (1424 poses)  PASS
+
+  worst 0.0065 against 0.05  -> PASS
+  -> results/town04_v2/calibration/capture_gate.json

@@ -92,3 +92,8 @@ pipeline/results/*
 !pipeline/results/reference_routes.png
 !pipeline/results/teacher_clear_bc_training.png
 !pipeline/results/teacher_mixed_bc_training.png
+
+# The gate artifact is EVIDENCE, not bulk data: the captures it describes are
+# gigabytes and stay out, but the JSON that says they reproduce the vehicle is the
+# record that a stated precondition was actually checked. It must be in git.
+!results/town06/captures/capture_gate.json
