@@ -45,11 +45,6 @@ def main():
     in_w, in_h = ((C.TOWN06_INPUT_W, C.TOWN06_INPUT_H) if C.STUDY_MAP == "Town06"
                   else (84, 28))
 
-    # R-SIM-1: a degraded server reports plausible velocities and stops advancing physics.
-    print("restarting CARLA before the run (R-SIM-1)", flush=True)
-    subprocess.run(["bash", str(REPO / "scripts" / "carla_restart.sh")],
-                   stdout=open("/tmp/gate_drive_restart.log", "w"),
-                   stderr=subprocess.STDOUT, check=False)
 
     if not server_listening(C.PORT):
         print(f"FATAL: nothing is listening on port {C.PORT}. Refusing to run 12 drives "
@@ -63,15 +58,30 @@ def main():
             print(f"  {nm}: MISSING checkpoint {ck}.pth -- cannot drive", flush=True)
             rc_all = 1
             continue
-        cmd = [sys.executable, str(REPO / "pipeline" / "evaluate.py"),
-               "--model", ck, "--student",
-               "--channels", ",".join(str(c) for c in ch), "--fc", str(fc),
-               "--in-w", str(in_w), "--in-h", str(in_h),
-               "--weather", "clear", "--direction", "all"]
-        print(f"\n=== {nm} ({ck}) ===\n  {' '.join(cmd)}", flush=True)
-        rc = subprocess.run(cmd, cwd=str(REPO)).returncode
-        print(f"  rc={rc}", flush=True)
-        rc_all = rc_all or rc
+        # R-SIM-1: ONE RESTART PER DRIVE, not one per script.
+        #
+        # This restarted once and then drove every section on that server -- 12 drives on
+        # an ageing simulator, which is the exposure the rule exists to remove. A degraded
+        # server keeps answering and stops advancing physics, and no number in the trace
+        # reveals it. Driving section-by-section is what makes a per-drive restart
+        # possible; --direction all cannot be interrupted to restart.
+        for sec in C.SECTIONS:
+            r = subprocess.run(["bash", str(REPO / "scripts" / "carla_restart.sh")],
+                               stdout=open(f"/tmp/gate_restart_{nm}_{sec}.log", "w"),
+                               stderr=subprocess.STDOUT)
+            if r.returncode != 0:
+                print(f"  restart FAILED before {nm}/{sec} -- refusing to measure",
+                      flush=True)
+                return 2
+            cmd = [sys.executable, str(REPO / "pipeline" / "evaluate.py"),
+                   "--model", ck, "--student",
+                   "--channels", ",".join(str(c) for c in ch), "--fc", str(fc),
+                   "--in-w", str(in_w), "--in-h", str(in_h),
+                   "--weather", "clear", "--direction", sec]
+            print(f"\n=== {nm} ({ck}) / {sec} ===", flush=True)
+            rc = subprocess.run(cmd, cwd=str(REPO)).returncode
+            print(f"  rc={rc}", flush=True)
+            rc_all = rc_all or rc
     return rc_all
 
 
