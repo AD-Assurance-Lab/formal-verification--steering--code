@@ -145,11 +145,12 @@ for cap in glob.glob("results/**/lap_*.npz", recursive=True) + glob.glob("result
 # ran the one without it. An asymmetry between two tools doing the same job is detectable.
 cert_a = open("scripts/certify_town06.py").read()
 cert_b = open("scripts/certify_sustained_bound.py").read()
-for guard in ("MIN_POSES_PER_CELL",):
+# The parity check was ITSELF one-sided: it required the coverage guard on
+# certify_sustained_bound only, and certify_town06 had none at all. A symmetric claim
+# has to be asserted symmetrically or it is just the same asymmetry one level up.
+for guard in ("MIN_POSES_PER_CELL", "MIN_ROUTE_COVERAGE", "check_coverage"):
     chk(guard in cert_a and guard in cert_b,
         f"both certifiers carry {guard} (parity, not one-sided)")
-chk("MIN_ROUTE_COVERAGE" in cert_b or "check_coverage" in cert_b,
-    "certify_sustained_bound checks route coverage")
 
 # --- a redo's artifacts should be comparable in SIZE to what they replace -----
 # The single loudest available signal: the redo's captures were 1.8 MB against the
