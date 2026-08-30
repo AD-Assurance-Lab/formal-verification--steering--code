@@ -56,6 +56,41 @@ OUT = REPO / D.CERT_ARTIFACT
 # poses, so a correct run pools a few hundred; anything near the section COUNT means the
 # pose axis collapsed.
 MIN_POSES_PER_CELL = 60
+MIN_ROUTE_COVERAGE = 0.80        # of the section's SCORED length
+
+
+def check_coverage(path, sec):
+    """REFUSE a capture that does not cover the section it claims to.
+
+    Parity with certify_sustained_bound, and the reason parity matters: the two
+    certifiers do the same job, this one carried MIN_POSES_PER_CELL and the other did
+    not, and the Town04 redo ran the one without it and certified 160 m of a 2,861 m lap.
+    A guard on one of two sibling tools is a guard that will eventually be bypassed.
+
+    Coverage is MEASURED from the pose track. route_span_m is the capture's own claim
+    about itself and is cross-checked, never trusted -- the first version of that field
+    recorded the route's length instead of the captured poses', so a short capture would
+    have declared full coverage.
+    """
+    z = np.load(path, allow_pickle=True)
+    if "pose_x" not in z.files:
+        return
+    x, y = np.asarray(z["pose_x"], float), np.asarray(z["pose_y"], float)
+    span = float(np.hypot(np.diff(x), np.diff(y)).sum())
+    claimed = float(z["route_span_m"]) if "route_span_m" in z.files else None
+    if claimed is not None and abs(claimed - span) > 25.0:
+        sys.exit(f"REFUSING to certify from {path.name}: it records route_span_m "
+                 f"{claimed:.0f} m but its poses span {span:.0f} m.")
+    want = float(getattr(C, "SECTION_LEN_M", {}).get(sec, 0.0))
+    if want <= 0:
+        return
+    if span < MIN_ROUTE_COVERAGE * want:
+        sys.exit(f"REFUSING to certify from {path.name}: it spans {span:.0f} m of the "
+                 f"{want:.0f} m section ({100*span/want:.1f}%). Recapture with "
+                 f"scripts/capture_town06_laps.sh.")
+    if span > want + 25.0:
+        sys.exit(f"REFUSING to certify from {path.name}: it spans {span:.0f} m against a "
+                 f"{want:.0f} m scored section -- road the study does not claim.")
 
 
 def nominal(path, cond):
@@ -176,6 +211,7 @@ def main():
             for sec in D.SECTIONS:
                 p = CAPTURES / f"lap_{sec}_{cond}.npz"
                 base = CAPTURES / f"lap_{sec}_clear.npz"
+                check_coverage(p, sec); check_coverage(base, sec)
                 if not p.exists() or not base.exists():
                     continue
                 clr, origin = baseline_for(p, nominal(base, "clear"))
