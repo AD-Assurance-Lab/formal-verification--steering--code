@@ -253,8 +253,26 @@ def main():
                     subprocess.run(["bash", os.path.join(C.REPO_ROOT, "scripts", "carla_launch.sh")],
                                    stdout=_fh, stderr=subprocess.STDOUT,
                                    stdin=subprocess.DEVNULL, timeout=600)
-                client = env.connect()
-                world = env.load_town04(client)
+                # RECONNECT WITH RETRIES. carla_launch.sh's readiness probe returning
+                # means the server answered ONE get_world(); it does not mean the map is
+                # finished settling, and the next client can still time out. Measured:
+                # the launcher reported "CARLA ready after 43s" and the preflight passed,
+                # and the very next get_world() threw TimeoutException and aborted the
+                # process. Retry rather than lose the round.
+                world = None
+                for _attempt in range(3):
+                    try:
+                        client = env.connect()
+                        world = env.load_town04(client)
+                        break
+                    except Exception as exc:
+                        print(f"  reconnect attempt {_attempt + 1} failed: "
+                              f"{type(exc).__name__}; retrying", flush=True)
+                        time.sleep(20)
+                if world is None:
+                    raise RuntimeError("could not reconnect to CARLA after the round "
+                                       f"{r} restart; refusing to continue on a server "
+                                       "whose state is unknown")
                 original = env.enable_sync_mode(world)
                 vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
                 camera, img_queue = env.spawn_camera(world, vehicle)
