@@ -54,11 +54,47 @@ DIAG = REPO / "results" / "diagnostic"
 # endpoint differ. Fog runs 0 -> 70 (endpoint = the largest density); low sun runs
 # 90 -> 5 degrees (endpoint = the SMALLEST angle), so `endpoint_is_max` carries that.
 AXES = {
-    "fog":    dict(glob="interp_fog_d*.npz",     pat=r"interp_fog_d([\d.]+)\.npz",
+    "fog":    dict(glob="interp_fog_{sec}_d*.npz",
+                   pat=r"interp_fog_{sec}_d(-?[\d.]+)\.npz",
                    cond="fog",     endpoint=70.0, endpoint_is_max=True,  unit="density"),
-    "lowsun": dict(glob="interp_lowsun_s*.npz",  pat=r"interp_lowsun_s([\d.]+)\.npz",
+    "lowsun": dict(glob="interp_lowsun_{sec}_s*.npz",
+                   pat=r"interp_lowsun_{sec}_s(-?[\d.]+)\.npz",
                    cond="shadows", endpoint=5.0,  endpoint_is_max=False, unit="sun deg"),
 }
+
+MIN_COVERAGE = 0.80          # of the section's scored length
+
+
+def span_m(path):
+    """Metres of route the capture actually spans. Rule 7: an artifact states its scope."""
+    z = np.load(path, allow_pickle=True)
+    x = np.asarray(z["pose_x"], float); y = np.asarray(z["pose_y"], float)
+    return float(np.sum(np.hypot(np.diff(x), np.diff(y)))), len(x)
+
+
+def check_coverage(path, sec):
+    """REFUSE to measure fidelity from a capture that covers a fraction of the road.
+
+    interpolation_fidelity.json recorded n_poses 81 spanning 160 m, because
+    capture_offset_yaw defaulted --length-m to a calibration length. The fidelity
+    measurement is what validates the disturbance family the whole certificate is
+    quantified over, so a short capture here silently narrows every downstream claim.
+    """
+    span, n = span_m(path)
+    expect = getattr(C, "SECTION_LEN_M", {}).get(sec)
+    if expect is None:
+        try:
+            from route import load_route
+            rt = np.asarray(load_route(sec), dtype=float)
+            expect = float(np.sum(np.hypot(np.diff(rt[:, 0]), np.diff(rt[:, 1]))))
+        except Exception:
+            return span, n            # nothing to compare against; do not invent one
+    if span < MIN_COVERAGE * expect:
+        print(f"\nREFUSING to measure fidelity from {Path(path).name}: it spans "
+              f"{span:.0f} m of a {expect:.0f} m section ({100 * span / expect:.1f}%). "
+              f"Recapture with scripts/capture_interp_fidelity.sh.", file=sys.stderr)
+        sys.exit(2)
+    return span, n
 FULL_DENSITY = 70.0          # kept for the fog default
 
 
@@ -86,39 +122,85 @@ def main():
     import argparse
     ap = argparse.ArgumentParser()
     ap.add_argument("--axis", default="fog", choices=sorted(AXES))
+    # POOL OVER EVERY SECTION BY DEFAULT.
+    #
+    # This measured one section and reported the number as the axis's fidelity. One
+    # Town06 section is 490-894 m of a 3,834 m route, so a single-section result covers
+    # at most 23% of the road and says so nowhere. Naming the sections explicitly is the
+    # only way the output can state its own scope (standing rule 7).
+    ap.add_argument("--sections", default=None,
+                    help="comma-separated sections to pool over; default is EVERY "
+                         "section of the map")
     args = ap.parse_args()
     ax = AXES[args.axis]
+    sections = args.sections.split(",") if args.sections else list(C.SECTIONS)
 
-    caps = {}
-    for p in sorted(glob.glob(str(DIAG / ax["glob"]))):
-        m = re.search(ax["pat"], p)
-        if m:
-            caps[float(m.group(1))] = p
+    # Discover captures per section, then require the SAME intensity set everywhere.
+    # Pooling sections that were swept at different intensities would average unlike
+    # things into one number that still looks like a measurement.
+    per_sec, cover = {}, {}
+    for sec in sections:
+        caps = {}
+        for q in sorted(glob.glob(str(DIAG / ax["glob"].format(sec=sec)))):
+            m = re.search(ax["pat"].format(sec=sec), q)
+            if m:
+                caps[float(m.group(1))] = q
+        if not caps:
+            print(f"no {args.axis} captures for section {sec} in {DIAG}. "
+                  f"Run scripts/capture_interp_fidelity.sh {sec}", file=sys.stderr)
+            return 2
+        per_sec[sec] = caps
+
     end = ax["endpoint"]
-    if end not in caps:
-        print(f"need the endpoint capture for {end:g} {ax['unit']} in {DIAG}",
-              file=sys.stderr)
+    sets = {sec: tuple(sorted(c)) for sec, c in per_sec.items()}
+    if len(set(sets.values())) != 1:
+        print(f"sections were swept at different intensities and cannot be pooled:\n"
+              + "\n".join(f"  {sec}: {v}" for sec, v in sets.items()), file=sys.stderr)
         return 2
-    inters = sorted((d for d in caps if d != end), reverse=not ax["endpoint_is_max"])
+    for sec, caps in per_sec.items():
+        if end not in caps:
+            print(f"section {sec} has no endpoint capture at {end:g} {ax['unit']}",
+                  file=sys.stderr)
+            return 2
+        for q in caps.values():
+            cover[q] = check_coverage(q, sec)
+
+    inters = sorted((d for d in per_sec[sections[0]] if d != end),
+                    reverse=not ax["endpoint_is_max"])
     if not inters:
         print("need at least one intermediate point", file=sys.stderr)
         return 2
 
     # The chord's endpoints come from the ENDPOINT capture, so both are same-session
     # (F43/F44: a cross-session baseline inverted the sign of a fog measurement).
-    clear = frames(caps[end], "clear")
-    full = frames(caps[end], ax["cond"])
+    # Concatenated across sections: the projection is per pose, so pooling is just more
+    # road, and each section keeps its own same-session endpoints.
+    clear = np.concatenate([frames(per_sec[s][end], "clear") for s in sections])
+    full = np.concatenate([frames(per_sec[s][end], ax["cond"]) for s in sections])
+    bounds, acc = {}, 0
+    for sec in sections:
+        k = len(frames(per_sec[sec][end], "clear"))
+        bounds[sec] = (acc, acc + k); acc += k
     n = len(clear)
     d_vec = (full - clear).reshape(n, -1)
     denom = np.einsum("ij,ij->i", d_vec, d_vec)
 
+    total_span = sum(cover[per_sec[s][end]][0] for s in sections)
+    print(f"\n  scope: {len(sections)} sections ({','.join(sections)}), "
+          f"{n} poses, {total_span:.0f} m of road")
+
     print(f"\nINTERPOLATION FIDELITY -- is the family's interior a real condition?")
     print(f"  axis '{args.axis}': clear -> {ax['cond']} at {end:g} {ax['unit']}")
-    print(f"  chord endpoints from {Path(caps[end]).name} (same session)")
+    print(f"  chord endpoints per section from interp_{args.axis}_<sec>_{end:g} (same session)")
     print(f"  {n} poses, tolerance {tol:.4f}\n")
 
     out = {"n_poses": int(n), "tolerance": tol, "axis": args.axis,
-           "endpoint": end, "unit": ax["unit"], "cells": {}}
+           "endpoint": end, "unit": ax["unit"],
+           # SCOPE, recorded in the artifact rather than inferred from it later.
+           "sections": list(sections),
+           "route_span_m": float(total_span),
+           "poses_per_section": {s: int(bounds[s][1] - bounds[s][0]) for s in sections},
+           "cells": {}}
     # MAP-AWARE, like the rest of the pipeline. This script was written for Town04 and
     # hardcoded its students and its 28x84 input; run unchanged under STUDY_MAP=Town06 it
     # would silently load Town04 checkpoints at the wrong resolution.
@@ -138,7 +220,7 @@ def main():
         print(f"    {ax['unit']:>8} {'s*':>6} {'pixel err':>10} {'steer err':>10}"
               f" {'x tol':>7} {'chord/render':>13}")
         for d in inters:
-            xr = frames(caps[d], ax["cond"])
+            xr = np.concatenate([frames(per_sec[s][d], ax["cond"]) for s in sections])
             # Project each pose's render onto that pose's chord.
             r = (xr - clear).reshape(n, -1)
             s_star = np.einsum("ij,ij->i", r, d_vec) / np.maximum(denom, 1e-12)
