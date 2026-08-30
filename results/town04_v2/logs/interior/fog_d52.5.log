@@ -1,0 +1,13 @@
+  OVERRIDE ACTIVE {'FOG_DENSITY_OVERRIDE': '52.5'}: preset assert skipped by design. Rendered signature: looks like 'fog' (mean=0.2387 sigma=0.0615 p01=0.1373)
+
+=== EASTBOUND (network in control) ===
+  loop closed at step 1697
+  [eastbound] PASS | steps=1698 max|CTE|=1.57ft over-budget=0.0%
+
+=== WESTBOUND (network in control) ===
+  loop closed at step 1694
+  [westbound] PASS | steps=1695 max|CTE|=1.96ft over-budget=0.0%
+
+============================================================
+eastbound : PASS steps=1698 max|CTE|=1.57ft over-budget=0.0%
+westbound : PASS steps=1695 max|CTE|=1.96ft over-budget=0.0%

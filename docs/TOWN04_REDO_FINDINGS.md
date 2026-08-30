@@ -181,3 +181,50 @@ important part: every intermediate number was well-formed, plausible, and wrong.
 
 Town04 redo complete. Both arms competent, certificate and ledger on the policy
 checkpoints, 6/6 agreement, all under the harness whose two defects T06-F22 measured.
+
+## T04-R6  Town04's interior: fog is clean, low sun is not, and it supports T06-F38
+
+Exploratory, one run per direction. Town06's headline finding -- a policy passing both
+endpoints of a disturbance axis and failing between them -- tested on Town04.
+
+**Fog: no interior failure.** Endpoints 0 and 70 both drove 0/12, and the interior is
+clean too:
+
+    density 17.5   eastbound 1.00 ft   westbound 1.04 ft
+    density 35     eastbound 1.40 ft   westbound 2.00 ft
+    density 52.5   eastbound 1.57 ft   westbound 1.96 ft
+
+So Town06's fog interior failure (11/11 at density 35) does NOT reproduce on Town04. The
+finding is real on Town06 and is not a universal property of the method or of fog.
+
+**Low sun: it fails below the tested condition.**
+
+    sun 90 (clear)    0/12 PASS (ledger)
+    sun 15 (preset)   0/12 PASS (ledger)      frame mean ~0.19
+    sun 10            PASS  1.45 / 0.81 ft    frame mean 0.1537
+    sun  5            FAIL  westbound 3.76 ft frame mean 0.1123
+    sun  2            FAIL  westbound 18.52 ft frame mean 0.0341
+
+### The cross-map number worth keeping
+
+    Town06   trained at low sun 5 deg  (mean 0.1155)   passes 3 deg, fails 2 deg
+    Town04   trained at low sun 15 deg (mean ~0.19)    passes 10 deg, fails 5 deg
+
+**Town04's mixed student fails at 5 degrees, frame mean 0.1123 -- essentially the
+brightness Town06's mixed student was TRAINED at (0.1155).** Each policy holds down to
+roughly its darkest trained condition and departs below it, and "low sun" denotes a
+different physical angle on each map because the terrain shadows the road differently
+(T06-F20). The angle is map-specific; the brightness is what the policy sees.
+
+That is direct support for T06-F38's hypothesis -- that the dusk failure band tracks the
+distance to the nearest TRAINED illumination rather than being a property of dusk -- from
+a second map, and it was recorded there as untested. It is now supported by two maps and
+still not proven, because neither test held the training set fixed while moving the
+trained illumination; that is the experiment that would settle it.
+
+### Consequence for the story
+
+The interior result is **not** a general claim about this method. On Town06 it holds on the
+fog axis; on Town04 it does not. What holds on BOTH maps is the low-sun result: a policy
+tested at its declared low-sun condition passes, and fails at a lower sun the test never
+sampled. That is the claim to make, and it is the one the AEB study found independently.
