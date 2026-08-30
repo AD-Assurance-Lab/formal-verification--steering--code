@@ -180,6 +180,22 @@ for _d in ("scripts/capture_town04_laps.sh", "scripts/capture_town06_laps.sh",
         chk("carla_restart" in open(_d).read(),
             f"{os.path.basename(_d)} restarts CARLA before measuring (R-SIM-1)")
 
+# --- a certificate must have scored every cell it expected ---------------------
+# certify_sustained_bound WARNS when a cell does not run and still writes the file; a
+# warning in a long log is not a guard. Both certifiers record the two counts, so the
+# comparison is available and is asserted here.
+for _cert in ("results/town06/certificate_town06.json",
+              "results/town04_v2/calibration/sustained_bound.json"):
+    if os.path.exists(_cert):
+        try:
+            _m = json.load(open(_cert)).get("_meta", {}) or json.load(open(_cert))
+            _exp, _got = _m.get("cells_expected"), _m.get("cells_scored")
+            if _exp is not None and _got is not None:
+                chk(_exp == _got,
+                    f"{os.path.basename(_cert)}: scored {_got} of {_exp} expected cells")
+        except (ValueError, KeyError):
+            pass
+
 # --- every scored measurement needs a COMMITTED driver (standing rule 8) -------
 # Town06 had run_town06_ledger.sh and Town04 had nothing, so its ledger was hand-driven
 # and its restart discipline is unprovable after the fact. The asymmetry between the two
