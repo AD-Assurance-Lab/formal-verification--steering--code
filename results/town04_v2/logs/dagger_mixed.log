@@ -1,0 +1,89 @@
+base datasets: ['conditions_v2']
+
+################################################################
+# DAgger round 0 — evaluating policy 'teacher_mixed_v2_bc'
+################################################################
+  [clear/eastbound] over-budget=  0.0%  max|CTE|= 0.64ft  (gate 2.19ft) -> PASS
+    westbound: aborted at step 1292 (stall/offroad)
+  [clear/westbound] over-budget=  1.9%  max|CTE|=21.24ft  (gate 2.19ft) -> FAIL
+    eastbound: aborted at step 426 (stall/offroad)
+  [fog/eastbound] over-budget=  6.1%  max|CTE|=28.98ft  (gate 2.19ft) -> FAIL
+    westbound: aborted at step 1290 (stall/offroad)
+  [fog/westbound] over-budget=  1.9%  max|CTE|=20.94ft  (gate 2.19ft) -> FAIL
+    eastbound: aborted at step 425 (stall/offroad)
+  [night/eastbound] over-budget=  5.9%  max|CTE|=30.05ft  (gate 2.19ft) -> FAIL
+    westbound: aborted at step 1280 (stall/offroad)
+  [night/westbound] over-budget=  2.0%  max|CTE|=21.89ft  (gate 2.19ft) -> FAIL
+    eastbound: aborted at step 432 (stall/offroad)
+  [shadows/eastbound] over-budget=  6.2%  max|CTE|=42.63ft  (gate 2.19ft) -> FAIL
+    westbound: aborted at step 1281 (stall/offroad)
+  [shadows/westbound] over-budget=  1.9%  max|CTE|=21.14ft  (gate 2.19ft) -> FAIL
+  collected 8131 frames at beta=0.00
+  aggregating 2 manifests, warm-start from 'teacher_mixed_v2_bc' -> teacher_mixed_v2_dagger_r00
+
+################################################################
+# DAgger round 1 — evaluating policy 'teacher_mixed_v2_dagger_r00'
+################################################################
+  [clear/eastbound] over-budget=  0.2%  max|CTE|= 3.20ft  (gate 2.19ft) -> FAIL
+  [clear/westbound] over-budget=  0.3%  max|CTE|= 2.97ft  (gate 2.19ft) -> FAIL
+  [fog/eastbound] over-budget=  0.2%  max|CTE|= 5.49ft  (gate 2.19ft) -> FAIL
+  [fog/westbound] over-budget=  0.9%  max|CTE|=22.55ft  (gate 2.19ft) -> FAIL
+  [night/eastbound] over-budget=  0.4%  max|CTE|= 2.97ft  (gate 2.19ft) -> FAIL
+  [night/westbound] over-budget=  1.0%  max|CTE|=11.54ft  (gate 2.19ft) -> FAIL
+    eastbound: aborted at step 458 (stall/offroad)
+  [shadows/eastbound] over-budget=  5.4%  max|CTE|=31.80ft  (gate 2.19ft) -> FAIL
+  [shadows/westbound] over-budget=  0.2%  max|CTE|= 3.18ft  (gate 2.19ft) -> FAIL
+  collected 12334 frames at beta=0.00
+  aggregating 3 manifests, warm-start from 'teacher_mixed_v2_dagger_r00' -> teacher_mixed_v2_dagger_r01
+
+################################################################
+# DAgger round 2 — evaluating policy 'teacher_mixed_v2_dagger_r01'
+################################################################
+  [clear/eastbound] over-budget=  0.0%  max|CTE|= 1.73ft  (gate 2.19ft) -> PASS
+  [clear/westbound] over-budget=  0.8%  max|CTE|= 7.73ft  (gate 2.19ft) -> FAIL
+  [fog/eastbound] over-budget=  0.0%  max|CTE|= 1.63ft  (gate 2.19ft) -> PASS
+  [fog/westbound] over-budget=  0.0%  max|CTE|= 1.15ft  (gate 2.19ft) -> PASS
+  [night/eastbound] over-budget=  0.3%  max|CTE|= 2.70ft  (gate 2.19ft) -> FAIL
+  [night/westbound] over-budget=  0.0%  max|CTE|= 1.85ft  (gate 2.19ft) -> PASS
+  [shadows/eastbound] over-budget=  0.4%  max|CTE|= 3.26ft  (gate 2.19ft) -> FAIL
+  [shadows/westbound] over-budget=  2.8%  max|CTE|=18.14ft  (gate 2.19ft) -> FAIL
+  collected 13565 frames at beta=0.00
+  aggregating 4 manifests, warm-start from 'teacher_mixed_v2_dagger_r01' -> teacher_mixed_v2_dagger_r02
+
+################################################################
+# DAgger round 3 — evaluating policy 'teacher_mixed_v2_dagger_r02'
+################################################################
+  [clear/eastbound] over-budget=  0.2%  max|CTE|= 2.44ft  (gate 2.19ft) -> FAIL
+  [clear/westbound] over-budget=  0.0%  max|CTE|= 1.80ft  (gate 2.19ft) -> PASS
+    eastbound: aborted at step 1705 (stall/offroad)
+  [fog/eastbound] over-budget=  1.3%  max|CTE|=98.41ft  (gate 2.19ft) -> FAIL
+    westbound: aborted at step 1700 (stall/offroad)
+  [fog/westbound] over-budget=  1.2%  max|CTE|=90.20ft  (gate 2.19ft) -> FAIL
+  [night/eastbound] over-budget=  0.0%  max|CTE|= 1.97ft  (gate 2.19ft) -> PASS
+  [night/westbound] over-budget=  0.0%  max|CTE|= 2.17ft  (gate 2.19ft) -> PASS
+  [shadows/eastbound] over-budget=  0.4%  max|CTE|= 3.39ft  (gate 2.19ft) -> FAIL
+  [shadows/westbound] over-budget=  0.3%  max|CTE|= 2.47ft  (gate 2.19ft) -> FAIL
+  collected 13583 frames at beta=0.00
+  aggregating 5 manifests, warm-start from 'teacher_mixed_v2_dagger_r02' -> teacher_mixed_v2_dagger_r03
+
+################################################################
+# DAgger round 4 — evaluating policy 'teacher_mixed_v2_dagger_r03'
+################################################################
+  [clear/eastbound] over-budget=  0.0%  max|CTE|= 0.50ft  (gate 2.19ft) -> PASS
+  [clear/westbound] over-budget=  0.0%  max|CTE|= 0.36ft  (gate 2.19ft) -> PASS
+  [fog/eastbound] over-budget=  0.0%  max|CTE|= 1.07ft  (gate 2.19ft) -> PASS
+  [fog/westbound] over-budget=  0.0%  max|CTE|= 0.41ft  (gate 2.19ft) -> PASS
+  [night/eastbound] over-budget=  0.0%  max|CTE|= 0.78ft  (gate 2.19ft) -> PASS
+  [night/westbound] over-budget=  0.0%  max|CTE|= 0.48ft  (gate 2.19ft) -> PASS
+  [shadows/eastbound] over-budget=  0.0%  max|CTE|= 0.82ft  (gate 2.19ft) -> PASS
+  [shadows/westbound] over-budget=  0.0%  max|CTE|= 0.51ft  (gate 2.19ft) -> PASS
+  collected 13562 frames at beta=0.00
+
+*** PASSED at round 4 with policy 'teacher_mixed_v2_dagger_r03' ***
+
+===== DAgger summary =====
+  round 0: teacher_mixed_v2_bc      FAIL
+  round 1: teacher_mixed_v2_dagger_r00 FAIL
+  round 2: teacher_mixed_v2_dagger_r01 FAIL
+  round 3: teacher_mixed_v2_dagger_r02 FAIL
+  round 4: teacher_mixed_v2_dagger_r03 PASS
