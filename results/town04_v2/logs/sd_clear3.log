@@ -2,9 +2,17 @@
 ################################################################
 # student DAgger round 0 — policy 'S_clear_84x28_v2'
 ################################################################
-    eastbound: aborted at step 425
-  [clear/eastbound] over-budget=  5.6%  max|CTE|=29.76ft  -> FAIL
-  [clear/westbound] over-budget=  0.2%  max|CTE|= 2.84ft  -> FAIL
+    eastbound: aborted at step 424
+  [clear/eastbound] over-budget=  5.4%  max|CTE|=30.16ft  -> FAIL
+  [clear/westbound] over-budget=  0.0%  max|CTE|= 1.62ft  -> PASS
   re-distilling (warm-start from 'S_clear_84x28_v2') -> S_clear_84x28_v2_dagger_r00
 all 6779 teacher targets cached
-Terminated
+  [R-SIM-1] CARLA restarted before round 1
+
+################################################################
+# student DAgger round 1 — policy 'S_clear_84x28_v2_dagger_r00'
+################################################################
+terminate called after throwing an instance of 'carla::client::TimeoutException'
+  what():  time-out of 120000ms while waiting for the simulator, make sure the simulator is ready and connected to 127.0.0.1:3000
+timeout: the monitored command dumped core
+/tmp/sd_clear2.sh: line 12: 650149 Aborted                 timeout 14400 python3 dagger_student.py --student S_clear_84x28_v2 --w 84 --h 28 --rounds 6 --weathers clear --teacher teacher_clear_v2_dagger_r02 --base conditions_v2 --dagger-dir dagger_student_clear_v2 --channels 8,16,16 --fc 32
