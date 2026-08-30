@@ -101,7 +101,7 @@ def wilson(k, n, z=1.96):
     return (max(0.0, centre - half), min(1.0, centre + half))
 
 
-def restart_and_respawn(camera, vehicle, world, original, condition):
+def restart_and_respawn(condition):
     """R-SIM-1 AT RUN GRANULARITY, plus a genuinely fresh vehicle.
 
     The ledger restarted the server once per CELL and spawned the vehicle once for all
@@ -121,8 +121,16 @@ def restart_and_respawn(camera, vehicle, world, original, condition):
     Release the client BEFORE killing the server -- a live carla.Client whose server
     disappears throws from a background thread as SIGABRT, which no `except` can catch.
     """
-    env.cleanup([camera, vehicle], world, original)
-    del camera, vehicle, world, original
+    # THE CALLER MUST HAVE RELEASED EVERYTHING ALREADY.
+    #
+    # `del` here only drops THIS function's local names; the caller's `client`, `world`,
+    # `vehicle`, `camera` and queue still reference live objects, so the old client
+    # survives the server being killed. Its background thread then throws
+    # carla::client::TimeoutException with no handler, and the process dies on
+    # `terminate called` -- which no Python `except` can catch. Measured here: the run
+    # aborted at the first restart with exactly that message.
+    #
+    # So this takes nothing and returns everything: release in the caller, rebuild here.
     env._CLIENT = None
     gc.collect()
     port = os.environ.get("CARLA_PORT", str(C.PORT))
@@ -353,9 +361,12 @@ def main():
                 if n_run:
                     print(f"  [R-SIM-1] restart + respawn before rep {rep} {d}",
                           flush=True)
+                    # Release EVERY reference before the server is killed, in this scope.
+                    env.cleanup([camera, vehicle], world, original)
+                    client = world = original = vehicle = camera = cam_queue = None
+                    gc.collect()
                     (client, world, original, vehicle, camera,
-                     cam_queue) = restart_and_respawn(camera, vehicle, world, original,
-                                                      args.condition)
+                     cam_queue) = restart_and_respawn(args.condition)
                 n_run += 1
                 mx, frac, departed, where = drive_once(world, vehicle, cam_queue, model,
                                                 device, d, min(args.max_steps, C.steps_for(d)),
