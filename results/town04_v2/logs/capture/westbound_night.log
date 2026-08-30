@@ -1,6 +1,5 @@
-Traceback (most recent call last):
-  File "/home/za/ad-assurance--workspace/formal-verification--steering--code/scripts/capture_offset_yaw.py", line 272, in <module>
-    sys.exit(main())
-  File "/home/za/ad-assurance--workspace/formal-verification--steering--code/scripts/capture_offset_yaw.py", line 97, in main
-    with open(base / "manifest.csv") as fh:
-FileNotFoundError: [Errno 2] No such file or directory: '/home/za/ad-assurance--workspace/formal-verification--steering--code/pipeline/data/live_pairs/manifest.csv'
+capturing 74 frames: 1 cond x 74 poses x 1 offsets x 1 yaws
+  settled 74 poses: z -0.00..0.00 m, pitch +0.00..+0.00 deg, 0 fell back
+  night: 74 frames
+
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/calibration/lap_westbound_night.npz  (1.8 MB)
