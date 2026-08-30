@@ -55,6 +55,7 @@ sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(REPO / "pipeline"))
 
 import config as C  # noqa: E402
+from route import load_route  # noqa: E402
 import certify_cell as cc  # noqa: E402
 from student import StudentNet  # noqa: E402
 
@@ -67,6 +68,17 @@ STUDENTS = C.STUDENTS
 # Under TOWN04_REDO the hardcoded outcomes below belong to DIFFERENT students and must
 # not be used; see the REDO branch in the verdict loop.
 REDO = os.environ.get("TOWN04_REDO", "0") == "1"
+
+# A CELL POOLED FROM A HANDFUL OF POSES, OR FROM A SLIVER OF THE ROUTE, IS NOT A
+# CERTIFICATE OF ANYTHING. certify_town06.py has carried MIN_POSES_PER_CELL since the
+# pose-axis bug; this script never did, and that is how the Town04 redo certified 160 m of
+# a 2,861 m lap and reported the result as agreement with full-lap driving.
+#
+# The pose count alone would NOT have caught it -- 81 densely packed poses clear any
+# sensible count threshold. What distinguishes a lap from a probe is how much ROUTE the
+# poses span, so both are checked.
+MIN_POSES_PER_CELL = 60
+MIN_ROUTE_COVERAGE = 0.80        # fraction of the scored route the capture must span
 
 TRUTH = {("S_clear", "fog"): "PASS", ("S_clear", "night"): "FAIL",
          ("S_clear", "shadows"): "FAIL", ("S_mixed", "fog"): "PASS",
@@ -123,6 +135,35 @@ def git_head():
         return None
 
 
+def check_coverage(path, direction):
+    """Refuse a capture that spans a sliver of the route.
+
+    The Town04 redo's captures covered 160 m of a 2,861 m lap because
+    capture_offset_yaw's --length-m defaulted to 160. Nothing downstream noticed: the
+    array shapes are identical, the bound computes cleanly, and the certificate
+    reproduces exactly -- it is simply a certificate about 5.6% of the road, compared
+    afterwards against full-lap driving.
+
+    Older captures predate the route_span_m field; those are measured from their own
+    pose track rather than trusted.
+    """
+    import numpy as _np
+    z = _np.load(path, allow_pickle=True)
+    span = float(z["route_span_m"]) if "route_span_m" in z.files else None
+    if span is None and "pose_x" in z.files:
+        x, y = _np.asarray(z["pose_x"], float), _np.asarray(z["pose_y"], float)
+        span = float(_np.hypot(_np.diff(x), _np.diff(y)).sum())
+    if span is None:
+        return
+    rt = _np.asarray(load_route(direction), dtype=float)
+    full = float(_np.linalg.norm(_np.diff(rt, axis=0), axis=1).sum())
+    if full > 0 and span < MIN_ROUTE_COVERAGE * full:
+        sys.exit(f"REFUSING to certify from {path.name}: it spans {span:.0f} m of a "
+                 f"{full:.0f} m route ({100*span/full:.1f}%), below the "
+                 f"{100*MIN_ROUTE_COVERAGE:.0f}% floor. Recapture without --length-m.")
+
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -175,6 +216,7 @@ def main():
         base = cal / f"lap_{direction}_clear.npz"
         if not base.exists():
             continue
+        check_coverage(base, direction)
         fallback = nominal(base, "clear")
         # Baseline per CONDITION, not per direction: a capture that recorded its own
         # clear frames is paired against those. See baseline_for.
@@ -224,6 +266,10 @@ def main():
                         hi_i.append(u_)
                     los.append(min(lo_i) - sc[i])
                     his.append(max(hi_i) - sc[i])
+                if len(los) < MIN_POSES_PER_CELL:
+                    sys.exit(f"REFUSING to certify {nm}/{cond} {direction}: {len(los)} "
+                             f"poses, below the {MIN_POSES_PER_CELL} minimum. That is a "
+                             f"capture or indexing fault, not a bound.")
                 blo, bhi = float(np.mean(los)), float(np.mean(his))
                 # The property is "safe for EVERY intensity in the interval", so ANY
                 # violation falsifies it. Requiring the WHOLE bound to lie outside asks
