@@ -152,6 +152,33 @@ for guard in ("MIN_POSES_PER_CELL", "MIN_ROUTE_COVERAGE", "check_coverage"):
     chk(guard in cert_a and guard in cert_b,
         f"both certifiers carry {guard} (parity, not one-sided)")
 
+# --- the CARLA rules must hold at a choke point, not by each caller remembering ---
+# R-SIM-1 and standing rule 5 lived in prose and were re-typed into each new driver, so
+# they drifted the moment a driver was added: require_deterministic() was called only in
+# evaluate.py and only under `if STUDY_MAP == "Town06"`, and the fidelity driver restarted
+# nothing at all. Both now sit in the path every measurement takes.
+_env = open("pipeline/carla_env.py").read()
+chk("require_deterministic" in _env.split("def enable_sync_mode")[1][:2000],
+    "enable_sync_mode asserts the determinism rules, for every map")
+chk("require_clean_world" in _env.split("def spawn_vehicle")[1][:400],
+    "spawn_vehicle refuses a world holding another run's actors")
+chk("signal.signal" in open("scripts/capture_offset_yaw.py").read(),
+    "capture_offset_yaw destroys its actors on SIGTERM (a killed run must not leak)")
+
+# Nobody may hand-roll sync mode: it provisions substepping, and a partial copy runs
+# partial physics per tick while looking fine.
+_rogue = [f for f in glob.glob("pipeline/*.py") + glob.glob("scripts/*.py")
+          if f not in ("pipeline/carla_env.py", "scripts/audit_repo.py")
+          and "synchronous_mode =" in open(f).read()]
+chk(not _rogue, f"sync mode only via env.enable_sync_mode (rogue: {_rogue})")
+
+# Every driver that MEASURES must restart the server first (R-SIM-1).
+for _d in ("scripts/capture_town04_laps.sh", "scripts/capture_town06_laps.sh",
+           "scripts/capture_interp_fidelity.sh", "scripts/capture_gate_drives.py"):
+    if os.path.exists(_d):
+        chk("carla_restart" in open(_d).read(),
+            f"{os.path.basename(_d)} restarts CARLA before measuring (R-SIM-1)")
+
 # --- the guards must be DEMONSTRATED to refuse, not just present ---------------
 # Every guard written for the 160 m defect had a defect of its own, and grepping for the
 # guard's name would have passed all three. Presence is not force.

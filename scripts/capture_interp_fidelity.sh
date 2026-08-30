@@ -37,6 +37,16 @@ mkdir -p "$DIAG" results/town06_logs
 cap () {   # cap <out.npz> <conds> <direction> <env assignments...>
     local out="$1" conds="$2" dir="$3"; shift 3
     if [ -f "$DIAG/$out" ]; then echo "  $out exists, skipping"; return 0; fi
+    # R-SIM-1: RESTART BEFORE EVERY MEASUREMENT, not when something looks wrong.
+    #
+    # This driver did not restart at all, which is how 78 captures were about to be taken
+    # on one ageing server (it leaks ~10.5 GiB over 11 h) -- and worse, a killed run leaves
+    # its vehicle and camera ALIVE, because SIGTERM does not run Python cleanup handlers.
+    # Two Teslas and two cameras were found in the world, so the first captures of that
+    # run photographed a road with a parked car in it. Nothing in the resulting arrays
+    # would have shown that. The lap drivers already restart per capture; this now does.
+    bash scripts/carla_restart.sh > "results/town06_logs/restart_${out%.npz}.log" 2>&1 \
+        || { echo "  restart FAILED for $out"; return 1; }
     echo "  capturing $out ($conds, $dir) $*"
     env "$@" OY_CONDS="$conds" OY_OUT="$DIAG/$out" \
         python3 scripts/capture_offset_yaw.py --poses 200 --direction "$dir" \

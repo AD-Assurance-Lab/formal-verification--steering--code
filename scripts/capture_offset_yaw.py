@@ -29,6 +29,7 @@ import csv
 import json
 import math
 import argparse
+import signal
 from pathlib import Path
 
 import os
@@ -67,7 +68,21 @@ IN_H = int(os.environ.get("OY_IN_H", str(getattr(C, "TOWN06_INPUT_H", 28))
                           if getattr(C, "SECTION_BASED", False) else "28"))
 
 
+def _die_cleanly(signum, frame):
+    """SIGTERM must run the cleanup, or the actors outlive the process.
+
+    A killed capture left its vehicle and camera alive in the world, and the NEXT
+    capture then photographed a road with a parked car in it -- invisible in the
+    resulting arrays, which are the right shape and full of plausible frames. Python
+    does not run `finally` on the default SIGTERM handler; raising turns the signal into
+    a normal unwind so the existing teardown executes.
+    """
+    raise KeyboardInterrupt(f"signal {signum}")
+
+
 def main():
+    signal.signal(signal.SIGTERM, _die_cleanly)
+    signal.signal(signal.SIGINT, _die_cleanly)
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--poses", type=int, default=40)
     ap.add_argument("--start-m", type=float, default=0.0)

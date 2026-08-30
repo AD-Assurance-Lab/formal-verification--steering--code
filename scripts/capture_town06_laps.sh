@@ -34,6 +34,13 @@ for SEC in $SECTIONS; do
     OUT="results/town06/captures/lap_${SEC}_${COND}.npz"
     if [ -f "$REPO/$OUT" ]; then echo "SKIP  $OUT"; continue; fi
     echo "[$(date '+%F %T')] capture $SEC/$COND  (${LEN} m, ${POSES} poses)"
+    # R-SIM-1: restart before EVERY measurement. This driver took all 24 captures in one
+    # server session, which is exactly the exposure the rule exists to remove -- a server
+    # degrades silently and nothing in a capture reveals which server produced it. The
+    # Town04 driver restarts per capture; this one did not, and the drift went unnoticed
+    # because the rule lived in prose rather than in a check.
+    bash scripts/carla_restart.sh > "$LOGD/restart_${SEC}_${COND}.log" 2>&1 \
+      || { echo "  restart FAILED $SEC/$COND"; exit 1; }
     OY_OFFSETS=0.0 OY_YAWS=0.0 OY_CONDS="$COND" OY_OUT="$OUT" \
       python3 scripts/capture_offset_yaw.py \
         --direction "$SEC" --poses "$POSES" --start-m 0 --length-m "$LEN" \
