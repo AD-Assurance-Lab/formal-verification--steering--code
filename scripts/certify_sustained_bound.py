@@ -59,6 +59,10 @@ from student import StudentNet  # noqa: E402
 
 STUDENTS = (("S_clear", "S_clear_84x28", (8, 16, 16), 32),
             ("S_mixed", "S_mixed_84x28_w3", (24, 48, 48), 96))
+# Under TOWN04_REDO the hardcoded outcomes below belong to DIFFERENT students and must
+# not be used; see the REDO branch in the verdict loop.
+REDO = os.environ.get("TOWN04_REDO", "0") == "1"
+
 TRUTH = {("S_clear", "fog"): "PASS", ("S_clear", "night"): "FAIL",
          ("S_clear", "shadows"): "FAIL", ("S_mixed", "fog"): "PASS",
          ("S_mixed", "night"): "PASS", ("S_mixed", "shadows"): "PASS"}
@@ -209,15 +213,27 @@ def main():
                 # instead whether it is unsafe at every intensity, which is a different
                 # (and much weaker) statement -- that error scored 6 cells INCONCLUSIVE.
                 v = "CERTIFIED" if (bhi <= tol and blo >= -tol) else "FALSIFIED"
-                t = TRUTH[(nm, cond)]
-                match = (v == "CERTIFIED") == (t == "PASS")
-                ok += match
                 n += 1
-                out[f"{direction}/{nm}/{cond}"] = dict(lo=blo, hi=bhi, verdict=v,
-                                                      truth=t, baseline=origin)
-                print(f"  {direction:10s} {nm:9s} {cond:9s} {origin:8s} "
-                      f"[{blo:+.5f},{bhi:+.5f}] [{blo/tol:+5.2f},{bhi/tol:+5.2f}]"
-                      f"  {v:12s} {t:5s} {'agree' if match else '-'}", flush=True)
+                if REDO:
+                    # TRUTH holds the PUBLISHED students' driven outcomes. Under the redo
+                    # these are DIFFERENT students, so scoring new bounds against old
+                    # outcomes would print an agreement that means nothing. The redo's own
+                    # agreement is computed afterwards, from its own ledger, the way the
+                    # Town06 deployment test does it.
+                    out[f"{direction}/{nm}/{cond}"] = dict(lo=blo, hi=bhi, verdict=v,
+                                                          baseline=origin)
+                    print(f"  {direction:10s} {nm:9s} {cond:9s} {origin:8s} "
+                          f"[{blo:+.5f},{bhi:+.5f}] [{blo/tol:+5.2f},{bhi/tol:+5.2f}]"
+                          f"  {v:12s}", flush=True)
+                else:
+                    t = TRUTH[(nm, cond)]
+                    match = (v == "CERTIFIED") == (t == "PASS")
+                    ok += match
+                    out[f"{direction}/{nm}/{cond}"] = dict(lo=blo, hi=bhi, verdict=v,
+                                                          truth=t, baseline=origin)
+                    print(f"  {direction:10s} {nm:9s} {cond:9s} {origin:8s} "
+                          f"[{blo:+.5f},{bhi:+.5f}] [{blo/tol:+5.2f},{bhi/tol:+5.2f}]"
+                          f"  {v:12s} {t:5s} {'agree' if match else '-'}", flush=True)
     print(f"\n  decisive and correct: {ok}/{n} of {n_expected} expected")
     if n != n_expected:
         print(f"  WARNING: {n_expected - n} cell(s) did not run. This score is NOT "
