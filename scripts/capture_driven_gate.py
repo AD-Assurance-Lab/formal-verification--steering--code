@@ -87,9 +87,24 @@ def main():
             rows.append(dict(student=nm, checkpoint=ck, direction=direction,
                              cond=args.cond, mean_abs_diff=diff, poses=int(keep.sum()),
                              passed=bool(ok)))
+    # A GATE THAT MEASURED NOTHING MUST NOT PASS.
+    #
+    # Every cell can SKIP -- no driven trace, too few matched poses -- and `worst` then
+    # stays 0.0, which reads as a perfect pass. That is the same shape as every other
+    # defect in this study: a result that looks complete because the thing it describes
+    # was never measured. The expected cell count is known, so assert it.
+    expected = len(students) * len(C.SECTIONS)
+    if len(rows) != expected:
+        print(f"\n  REFUSING to report a gate result: {len(rows)} of {expected} cells "
+              f"were measured. A skipped cell is a missing driven trace, not a pass.\n"
+              f"  Run scripts/capture_gate_drives.py first.", file=sys.stderr)
+        return 2
+
     out = Path(args.captures) / "capture_gate.json"
-    out.write_text(json.dumps(dict(threshold=THRESHOLD, worst=worst, cells=rows), indent=2))
-    print(f"\n  worst {worst:.4f} against {THRESHOLD}  -> {'PASS' if worst <= THRESHOLD else 'FAIL'}")
+    out.write_text(json.dumps(dict(threshold=THRESHOLD, worst=worst, cells=rows,
+                                   cells_expected=expected), indent=2))
+    print(f"\n  worst {worst:.4f} against {THRESHOLD}  over {len(rows)}/{expected} cells"
+          f"  -> {'PASS' if worst <= THRESHOLD else 'FAIL'}")
     print(f"  -> {out}")
     return 0 if worst <= THRESHOLD else 1
 
