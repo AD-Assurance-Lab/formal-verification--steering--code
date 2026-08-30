@@ -71,7 +71,20 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--poses", type=int, default=40)
     ap.add_argument("--start-m", type=float, default=0.0)
-    ap.add_argument("--length-m", type=float, default=160.0)
+    # DEFAULT IS THE WHOLE ROUTE, not a 160 m slice.
+    #
+    # It defaulted to 160 m, which is a calibration-probe length, and a caller who passed
+    # --poses without --length-m silently got 200 poses packed into 5.6% of a 2,861 m lap.
+    # That happened: the Town04 redo's verification captures covered 160 m against the
+    # published 2,861, and the certificate computed off them reproduced exactly -- so
+    # nothing downstream complained, and a 160 m certificate was compared against full-lap
+    # driving and reported as 6/6 agreement.
+    #
+    # A default that silently narrows the evidence is worse than no default. Pass
+    # --length-m explicitly to capture a slice, and say why.
+    ap.add_argument("--length-m", type=float, default=None,
+                    help="metres of route to cover; default is the ENTIRE route. Pass a "
+                         "value only for a deliberate slice (calibration probes).")
     # Town04 has two directions; Town06 has six named sections. Hardcoding the Town04
     # pair here made every Town06 capture die at argparse with "invalid choice: 's00'".
     ap.add_argument("--direction", default=C.SECTIONS[0],
@@ -110,6 +123,11 @@ def main():
             rows = [r for r in csv.DictReader(fh)
                     if r["weather"] == "clear" and r["direction"] == args.direction]
         xy = np.array([[float(r["x"]), float(r["y"])] for r in rows])
+    if args.length_m is None:
+        seg = np.linalg.norm(np.diff(np.asarray(xy, dtype=float), axis=0), axis=1)
+        args.length_m = float(seg.sum())
+        print(f"  --length-m not given: covering the WHOLE route, {args.length_m:.0f} m",
+              flush=True)
     if len(xy) < 2:
         sys.exit(f"no poses for direction '{args.direction}' -- refusing to capture")
     d = np.concatenate([[0], np.cumsum(np.linalg.norm(np.diff(xy, axis=0), axis=1))])
@@ -271,8 +289,17 @@ def main():
                 pass
             world.apply_settings(orig)
 
+    # RECORD THE COVERAGE IN THE FILE. A capture that silently covers 5.6% of the route
+    # looks exactly like one that covers all of it, from the outside and from downstream:
+    # the shapes are the same, the certificate computes fine, and the number it produces is
+    # wrong about a different thing than it claims. Writing the span means a consumer can
+    # check, and certify_* now does.
+    _cov = float(np.linalg.norm(np.diff(np.asarray(xy, dtype=float), axis=0), axis=1).sum())
+    print(f"  route coverage: {args.length_m:.0f} m requested, {_cov:.0f} m of route "
+          f"spanned by {len(rows)} poses", flush=True)
     np.savez_compressed(
         OUT, frames=frames, offsets=OFFSETS, yaws=YAWS, conds=np.array(CONDS),
+        route_span_m=_cov, length_m_requested=args.length_m,
         pose_x=np.array([float(r["x"]) for r in poses]),
         pose_y=np.array([float(r["y"]) for r in poses]),
         pose_yaw=np.array([float(r["yaw"]) for r in poses]))
