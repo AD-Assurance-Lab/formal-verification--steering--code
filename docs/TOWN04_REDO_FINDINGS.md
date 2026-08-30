@@ -89,3 +89,44 @@ says nothing about whether it can be distilled. Every student in this study is d
 from such a teacher. Town06's teachers were selected the same way (T06-F24 showed that gate
 also stops on a lucky round), so the same exposure exists there -- it simply did not bite,
 because those teachers happened to run 7 and 12 rounds rather than 4.
+
+## T04-R4  CONFIRMED: smoothing the teacher fixes the student, at the published architecture
+
+Continuing teacher DAgger past the gate with `--min-rounds 9` -- six more rounds, DAgger
+set 12,914 -> 23,084 frames -- and re-distilling, with NOTHING else changed:
+
+    teacher                       clear/eastbound 0.49 ft, clear/westbound 0.46 ft
+    distillation target sd        0.0676 -> 0.0611   (published teacher's was 0.0510)
+    clear student KD RMSE         0.0292 -> 0.0107
+    clear student, closed loop    eastbound 0.92 ft PASS, westbound 0.51 ft PASS
+
+Same architecture the published study used -- (8,16,16)/fc32, 5,152 ReLU. No widening, no
+input-size change, no seed shopping. **The lever was the teacher's distillability, and the
+way to get it was to keep collecting after the teacher already met budget.**
+
+This closes T04-R3's hypothesis with the experiment it named. The chain is:
+
+    teacher gate stops at the first passing round
+      -> fewer DAgger rounds
+      -> the target function the student must fit is less smooth (higher target sd)
+      -> a fixed-capacity student cannot fit it
+      -> the student departs in the sharpest curve while the teacher drives it at 0.48 ft
+
+### Both arms now meet the criterion
+
+    S_clear_84x28_v2       clear                          0.92 / 0.51 ft
+    S_mixed_84x28_w3_v2    clear, fog, night, low sun     8/8, worst 1.91 ft
+                                                          budget 2.19 ft
+
+### The recommendation this makes concrete
+
+T06-F24 recommended the teacher gate require a RATE rather than one conjunctive round, and
+left it as a protocol matter. This adds a second, independent reason to change it, and a
+different one: even a teacher whose competence is genuine and repeatable can be a poor
+distillation target, and the gate cannot see that because it only ever asks whether the
+teacher drives.
+
+A minimum-rounds floor is the cheap fix and the flag already exists. `--min-rounds` is not
+used by either study's driver, and its own help text describes exactly the failure it
+prevents: "the DAgger set is an input to distillation, not just a means of fixing the
+teacher."

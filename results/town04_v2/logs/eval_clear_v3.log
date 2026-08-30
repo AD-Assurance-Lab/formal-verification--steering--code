@@ -1,0 +1,12 @@
+
+=== EASTBOUND (network in control) ===
+  loop closed at step 1695
+  [eastbound] PASS | steps=1696 max|CTE|=0.92ft over-budget=0.0%
+
+=== WESTBOUND (network in control) ===
+  loop closed at step 1695
+  [westbound] PASS | steps=1696 max|CTE|=0.51ft over-budget=0.0%
+
+============================================================
+eastbound : PASS steps=1696 max|CTE|=0.92ft over-budget=0.0%
+westbound : PASS steps=1696 max|CTE|=0.51ft over-budget=0.0%
