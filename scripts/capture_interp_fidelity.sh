@@ -21,6 +21,11 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 export CARLA_PORT=${CARLA_PORT:-3000}
+# NOMINAL POSE ONLY. Both consumers of these files index argmin(|offsets|) and
+# argmin(|yaws|), so the 9x5 grid is 45x the frames for data nothing reads: 18,000 per
+# file instead of 400, across 78 files. Left unset the grid is the default. The lap
+# drivers already collapse it the same way.
+export OY_OFFSETS=0.0 OY_YAWS=0.0
 export STUDY_MAP=${STUDY_MAP:-Town06}
 
 SECTIONS=("$@")
