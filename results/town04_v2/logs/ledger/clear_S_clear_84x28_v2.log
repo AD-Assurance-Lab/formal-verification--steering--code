@@ -1,0 +1,27 @@
+S_clear_84x28_v2 under 'clear' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 6 reps x 2 sections = 12 runs
+
+  rep 0 eastbound  max|CTE|=  0.58 ft over=  0.0%  PASS
+  rep 0 westbound  max|CTE|=  0.49 ft over=  0.0%  PASS
+  rep 1 eastbound  max|CTE|=  0.69 ft over=  0.0%  PASS
+  rep 1 westbound  max|CTE|=  0.54 ft over=  0.0%  PASS
+  rep 2 eastbound  max|CTE|=  0.76 ft over=  0.0%  PASS
+  rep 2 westbound  max|CTE|=  0.52 ft over=  0.0%  PASS
+  rep 3 eastbound  max|CTE|=  0.84 ft over=  0.0%  PASS
+  rep 3 westbound  max|CTE|=  0.53 ft over=  0.0%  PASS
+  rep 4 eastbound  max|CTE|=  0.81 ft over=  0.0%  PASS
+  rep 4 westbound  max|CTE|=  0.55 ft over=  0.0%  PASS
+  rep 5 eastbound  max|CTE|=  0.77 ft over=  0.0%  PASS
+  rep 5 westbound  max|CTE|=  0.54 ft over=  0.0%  PASS
+
+================================================================
+  failure rate 0/12 = 0.0%   95% Wilson [0.0%, 24.3%]
+  verdict: PASS
+  (FAIL when the interval excludes zero -- a rate consistent with zero is
+   not evidence of failure, and one bad lap out of ten is not a pass either)
+
+  NOTE: a PASS at n=12 bounds the failure rate below 24.3%, not to
+  zero. Report it that way. Bounding below 5% would need n ~ 60.
+================================================================
+
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/clear__S_clear_84x28_v2__closed_loop.json

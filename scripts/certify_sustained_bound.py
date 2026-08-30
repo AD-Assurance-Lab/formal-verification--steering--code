@@ -179,7 +179,15 @@ def main():
             p = cal / f"lap_{direction}_{cond}.npz"
             if p.exists():
                 bl[cond] = baseline_for(p, fallback)
-        for nm, ck, ch, fc in STUDENTS:
+        for nm, ck_base, ch, fc in STUDENTS:
+            # CERTIFY THE POLICY, NOT THE DISTILLED INTERMEDIATE. Where a study runs
+            # student DAgger -- Town04 does -- the checkpoint that IS the student is the
+            # newest DAgger round, and config.final_student resolves it. This script
+            # certified `ck` directly, and the Town04 redo certified the distilled model
+            # while the ledger drove it too, so the two agreed with each other and
+            # neither was the policy. That is exactly the failure final_student was
+            # written to prevent, and neither this script nor the ledger called it.
+            ck = C.final_student(ck_base)
             net = StudentNet(28, 84, channels=ch, fc=fc).to(dev)
             net.load_state_dict(torch.load(f"{C.CHECKPOINT_DIR}/{ck}.pth",
                                            map_location=dev, weights_only=True))

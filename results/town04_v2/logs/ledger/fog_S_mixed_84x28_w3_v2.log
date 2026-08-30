@@ -1,0 +1,24 @@
+S_mixed_84x28_w3_v2 under 'fog' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 6 reps x 2 sections = 12 runs
+
+  rep 0 eastbound  max|CTE|=  2.45 ft over=  0.1%  FAIL
+  rep 0 westbound  max|CTE|=  2.44 ft over=  0.3%  FAIL
+  rep 1 eastbound  max|CTE|=  3.04 ft over=  0.2%  FAIL
+  rep 1 westbound  max|CTE|=  2.71 ft over=  0.5%  FAIL
+  rep 2 eastbound  max|CTE|=  3.02 ft over=  0.1%  FAIL
+  rep 2 westbound  max|CTE|=  2.70 ft over=  0.6%  FAIL
+  rep 3 eastbound  max|CTE|=  3.01 ft over=  0.1%  FAIL
+  rep 3 westbound  max|CTE|=  2.89 ft over=  0.4%  FAIL
+  rep 4 eastbound  max|CTE|=  1.51 ft over=  0.0%  PASS
+  rep 4 westbound  max|CTE|=  2.68 ft over=  0.6%  FAIL
+  rep 5 eastbound  max|CTE|=  1.74 ft over=  0.0%  PASS
+  rep 5 westbound  max|CTE|=  2.55 ft over=  0.5%  FAIL
+
+================================================================
+  failure rate 10/12 = 83.3%   95% Wilson [55.2%, 95.3%]
+  verdict: FAIL
+  (FAIL when the interval excludes zero -- a rate consistent with zero is
+   not evidence of failure, and one bad lap out of ten is not a pass either)
+================================================================
+
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/fog__S_mixed_84x28_w3_v2__closed_loop.json

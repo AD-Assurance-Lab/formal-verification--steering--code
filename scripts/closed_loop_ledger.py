@@ -255,11 +255,19 @@ def main():
     prov = run_provenance(args.condition)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    # DRIVE THE POLICY, NOT THE DISTILLED INTERMEDIATE -- see certify_sustained_bound.
+    # A ledger cell that names a student must be about the checkpoint that IS that
+    # student, or the certificate and the drive can agree with each other while both
+    # describe a model nobody ships.
+    _ck = C.final_student(args.student)
+    if _ck != args.student:
+        print(f"  student '{args.student}' resolves to '{_ck}' (student DAgger is part of "
+              f"this study's procedure)", flush=True)
     model = StudentNet(args.h, args.w,
                        channels=tuple(int(v) for v in args.channels.split(",")),
                        fc=args.fc).to(device)
     model.load_state_dict(torch.load(
-        os.path.join(C.CHECKPOINT_DIR, f"{args.student}.pth"), map_location=device))
+        os.path.join(C.CHECKPOINT_DIR, f"{_ck}.pth"), map_location=device))
     model.eval()   # StudentNet sets in_h/in_w from its constructor args
 
     client = env.connect()
@@ -335,7 +343,8 @@ def main():
     with open(path, "w") as fh:
         json.dump(dict(
             verdict=verdict, repetitions=n, failures=fails, failure_rate=rate,
-            wilson_95=[lo, hi], student=args.student, condition=args.condition,
+            wilson_95=[lo, hi], student=args.student, checkpoint=_ck,
+            condition=args.condition,
             exposure=C.exposure_for(args.condition),
             cte_budget_m=C.CTE_BUDGET_M, provenance=prov, runs=runs,
         ), fh, indent=2)
