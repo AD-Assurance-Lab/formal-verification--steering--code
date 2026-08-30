@@ -83,8 +83,12 @@ OUT = REPO / "results" / "town06" / "competence_clear.json"
 
 # One definition, in config. Four scripts previously named checkpoints independently
 # and drifted apart.
+# MAP-AWARE. This hardcoded C.TOWN06_STUDENTS, so running the gate on Town04 would have
+# checked Town06's checkpoints at Town06's resolution -- the same class of defect as the
+# certifier's duplicated registry (T04-R5). One registry, read from config.
+_REG = C.TOWN06_STUDENTS if C.STUDY_MAP == "Town06" else C.STUDENTS
 STUDENTS = tuple((nm, ck, ",".join(str(c) for c in ch), fc)
-                 for nm, ck, ch, fc in C.TOWN06_STUDENTS)
+                 for nm, ck, ch, fc in _REG)
 
 
 def restart_carla():
@@ -127,7 +131,7 @@ def run_eval(ckpt, channels, fc):
     cmd = [sys.executable, "evaluate.py", "--model", ckpt, "--direction", "all",
            "--weather", "clear", "--max-steps", "2000",
            "--channels", channels, "--fc", str(fc), "--student",
-           "--in-w", str(C.TOWN06_INPUT_W), "--in-h", str(C.TOWN06_INPUT_H)]
+           "--in-w", str((C.TOWN06_INPUT_W if C.STUDY_MAP == 'Town06' else 84)), "--in-h", str((C.TOWN06_INPUT_H if C.STUDY_MAP == 'Town06' else 28))]
     p = subprocess.run(cmd, cwd=str(REPO / "pipeline"), env=env,
                        capture_output=True, text=True)
     return p.stdout + p.stderr
