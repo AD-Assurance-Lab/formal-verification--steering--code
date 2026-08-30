@@ -228,3 +228,58 @@ The interior result is **not** a general claim about this method. On Town06 it h
 fog axis; on Town04 it does not. What holds on BOTH maps is the low-sun result: a policy
 tested at its declared low-sun condition passes, and fails at a lower sun the test never
 sampled. That is the claim to make, and it is the one the AEB study found independently.
+
+## T04-R7  The night axis IS faithful, and the CERTIFIED night cells stand
+
+The night chord was left unmeasured deliberately: its endpoints carry different declared
+exposures (daylight shutter 800, night 200), so a pixel chord between them interpolates an
+exposure change as well as a lighting change, and there is no single exposure at which to
+render an intermediate. Rendering the whole sweep at night's exposure is exactly what
+invalidated T06-F33.
+
+It became necessary when an audit showed a **CERTIFIED verdict resting on it**:
+`S_mixed/night` certifies in both directions on Town04, and an optimistic family is a
+soundness risk for CERTIFIED verdicts specifically -- it produces missed alarms, not false
+ones. Same argument that motivated measuring the low-sun axis in T06-F37.
+
+Method: each intermediate is rendered at the exposure the study would DECLARE for its
+angle -- daylight above the horizon, night below it, since `headlights_on()` switches at 0
+-- which is the physically sensible path a vehicle takes through this family.
+
+    S_mixed (S_mixed_84x28_w3_v2_dagger_r00)   s=1 bias +0.00081 = +0.07x tol
+      sun    exposure     s*     pixel err   steer err   x tol
+       45     shadows   0.096      0.02282    +0.00025   +0.02
+       20     shadows   0.249      0.07187    -0.00130   -0.11
+        5     shadows   0.545      0.12346    -0.00223   -0.19
+      -10       night   1.000      0.00034    -0.00000   -0.00
+
+    S_clear (S_clear_84x28_v2)                 s=1 bias -0.03125 = -2.60x tol
+       45 +0.18x   20 +0.39x    5 +0.64x    -10 -0.01x
+
+**Every interior steering error for the mixed student is at most 0.19x tolerance.** The
+chord is behaviourally faithful along the path a vehicle would actually take, and the
+CERTIFIED night cells do not rest on a pixel construct. The clear-only student's errors are
+larger (up to 0.64x) but its night cells are FALSIFIED, so nothing rests on them.
+
+Two details worth keeping:
+
+* **Pixel error is large where steering error is not.** At sun 5 the chord sits 0.123 away
+  from the render in pixel space -- an order of magnitude worse than the fog axis -- while
+  the mixed student's steering error stays under 0.2x tolerance. Image fidelity is not the
+  property that matters, which is the same lesson that disqualified the analytic
+  Koschmieder model despite its road-ROI R^2 of 0.848.
+* **Below the horizon the family is degenerate.** Sun -10 projects to s* = 1.000 with a
+  pixel error of 0.00034 -- it IS the night endpoint. That matches the Town06 measurement
+  where -1 through -40 degrees rendered identically to four decimals, and it means the
+  night family's whole interior lies between 0 and 90 degrees.
+
+### Fidelity is now measured on every axis that carries a CERTIFIED verdict
+
+    fog        T06-F34   faithful for the clear student; OPTIMISTIC for the mixed student
+                         at low density (render drives the policy ~18x harder than chord)
+    low sun    T06-F37   faithful; interior steering error at most 0.17x tolerance
+    night      T04-R7    faithful for the mixed student, at most 0.19x tolerance
+
+The fog result remains the exception, and it is the one where an interior failure was
+actually found. That is consistent rather than coincidental: a chord that understates the
+real disturbance is a chord whose interior the closed loop can still fail in.
