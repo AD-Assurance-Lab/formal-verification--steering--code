@@ -40,6 +40,7 @@ linear and a convex combination of two valid images needs no clamp (measured agr
 
     python scripts/certify_sustained_bound.py
 """
+import os
 import sys
 import json
 import argparse
@@ -66,7 +67,6 @@ REDO = os.environ.get("TOWN04_REDO", "0") == "1"
 TRUTH = {("S_clear", "fog"): "PASS", ("S_clear", "night"): "FAIL",
          ("S_clear", "shadows"): "FAIL", ("S_mixed", "fog"): "PASS",
          ("S_mixed", "night"): "PASS", ("S_mixed", "shadows"): "PASS"}
-import os
 # Branch-and-bound sub-intervals of s. At 4 the bound on S_mixed/night reads -0.0128 while
 # direct sampling of the interval peaks at -0.0039 -- 3.3x conservative, enough to falsify a
 # model that is safe at every intensity. The relaxation is the only thing between them, so
