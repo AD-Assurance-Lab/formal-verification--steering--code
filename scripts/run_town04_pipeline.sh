@@ -78,8 +78,13 @@ if [ ! -f "$CK_DIR/teacher_clear_v2_bc.pth" ]; then
 else say "SKIP  train_clear_bc"; fi
 
 if ! ls "$CK_DIR"/teacher_clear_v2_dagger_r*.pth >/dev/null 2>&1; then
+  # --min-rounds: keep collecting after the teacher meets budget. Without it the gate
+  # stops at the first passing round and selects a teacher that DRIVES but does not
+  # DISTIL -- measured in T04-R3/R4, where the first-passing teacher drove eastbound at
+  # 0.48 ft and its student departed the same curve at 30 ft, and six more rounds fixed
+  # the student at the published architecture with nothing else changed.
   run dagger_clear python3 dagger.py --base conditions_v2 --init teacher_clear_v2_bc \
-      --rounds 12 --weathers clear --dagger-dir dagger_clear_v2 \
+      --rounds 12 --min-rounds 8 --weathers clear --dagger-dir dagger_clear_v2 \
       --out-prefix teacher_clear_v2_dagger || exit 1
   teacher_gate dagger_clear || exit 1
 else say "SKIP  dagger_clear"; teacher_gate dagger_clear || exit 1; fi
@@ -91,8 +96,8 @@ else say "SKIP  train_mixed_bc"; fi
 
 if ! ls "$CK_DIR"/teacher_mixed_v2_dagger_r*.pth >/dev/null 2>&1; then
   run dagger_mixed python3 dagger.py --base conditions_v2 --init teacher_mixed_v2_bc \
-      --rounds 16 --weathers clear,fog,night,shadows --dagger-dir dagger_mixed_v2 \
-      --out-prefix teacher_mixed_v2_dagger || exit 1
+      --rounds 16 --min-rounds 8 --weathers clear,fog,night,shadows \
+      --dagger-dir dagger_mixed_v2 --out-prefix teacher_mixed_v2_dagger || exit 1
   teacher_gate dagger_mixed || exit 1
 else say "SKIP  dagger_mixed"; teacher_gate dagger_mixed || exit 1; fi
 
