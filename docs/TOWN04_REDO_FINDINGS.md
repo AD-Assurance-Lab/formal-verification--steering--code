@@ -1,8 +1,11 @@
 # Town04 redo — findings
 
-> ## WITHDRAWN, 2026-08-30: T04-R5, T04-R6 and T04-R7 rest on invalid captures.
+> ## WITHDRAWN, 2026-08-30: T04-R5 and T04-R7 rest on invalid captures.
 >
 > The redo's verification captures covered **160 m of the 2,861 m scored lap (5.6%)**.
+>
+> **Affected: T04-R5 and T04-R7 only.** T04-R6 was briefly listed here and is
+> reinstated: it is closed-loop driving and reads no captures.
 > `capture_offset_yaw.py --length-m` defaulted to 160 m — a calibration-probe length — and
 > the captures were driven by a hand-typed command rather than a committed script, so the
 > default was never passed and never noticed. The certificates below were therefore computed
@@ -14,8 +17,8 @@
 > certificate reproduces exactly. The one loud signal — 1.8 MB captures against the published
 > 1.7 GB, 81 poses against 1,600 — was visible throughout and went unexamined.
 >
-> **Unaffected:** T04-R1 through T04-R4. Those are training, distillation and closed-loop
-> driving results that never read a capture.
+> **Unaffected:** T04-R1 through T04-R4, and T04-R6. Those are training, distillation and
+> closed-loop driving results that never read a capture.
 >
 > Re-running now against full **scored-length** captures (2,861 m, not the 3,042 m route
 > geometry — the last 181 m cross an ODD boundary the study excludes). Guards added so this
@@ -210,7 +213,14 @@ important part: every intermediate number was well-formed, plausible, and wrong.
 Town04 redo complete. Both arms competent, certificate and ledger on the policy
 checkpoints, 6/6 agreement, all under the harness whose two defects T06-F22 measured.
 
-## T04-R6  ~~Town04's interior: fog is clean, low sun is not~~ WITHDRAWN (same captures)
+## T04-R6  Town04's interior: fog is clean, low sun is not, and it supports T06-F38
+
+> **Briefly mis-withdrawn on 2026-08-30 and reinstated the same day.** A blanket
+> withdrawal swept this finding in with the capture defect. It reads no captures: every
+> number here is a full closed-loop lap (1,694-1,698 steps, loop closure) with the
+> rendered signature measured from the drive's own frames. Nothing here touches an
+> `.npz` or a certificate. Withdrawing a sound result costs as much credibility as
+> keeping an unsound one.
 
 Exploratory, one run per direction. Town06's headline finding -- a policy passing both
 endpoints of a disturbance axis and failing between them -- tested on Town04.
