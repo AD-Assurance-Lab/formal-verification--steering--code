@@ -1,20 +1,42 @@
-WARNING: no S_clear_84x28_v2_dagger_r*.pth from this run; falling back to 'S_clear_84x28_v2', discarding 1 round(s) of improvement
-resuming: found 1 prior student round(s), continuing at round 1
 
 ################################################################
-# student DAgger round 1 — policy 'S_clear_84x28_v2'
+# student DAgger round 0 — policy 'S_clear_84x28_v2'
 ################################################################
     eastbound: aborted at step 420
-  [clear/eastbound] over-budget=  5.7%  max|CTE|=30.72ft  -> FAIL
-  [clear/westbound] over-budget=  0.2%  max|CTE|= 2.35ft  -> FAIL
-  re-distilling (warm-start from 'S_clear_84x28_v2') -> S_clear_84x28_v2_dagger_r01
-Traceback (most recent call last):
-  File "/home/za/ad-assurance--workspace/formal-verification--steering--code/pipeline/dagger_student.py", line 287, in <module>
-    main()
-  File "/home/za/ad-assurance--workspace/formal-verification--steering--code/pipeline/dagger_student.py", line 266, in main
-    distill_student(args.w, args.h, new, teacher_name=args.teacher, base=args.base,
-  File "/home/za/ad-assurance--workspace/formal-verification--steering--code/pipeline/distill.py", line 159, in distill_student
-    _, rows = load_manifests(aggregated_manifests(base, dagger_dirs))
-  File "/home/za/ad-assurance--workspace/formal-verification--steering--code/pipeline/dataset.py", line 34, in load_manifests
-    with open(mp) as f:
-FileNotFoundError: [Errno 2] No such file or directory: '/home/za/ad-assurance--workspace/formal-verification--steering--code/pipeline/data/clear/manifest.csv'
+  [clear/eastbound] over-budget=  5.7%  max|CTE|=30.28ft  -> FAIL
+  [clear/westbound] over-budget=  0.1%  max|CTE|= 2.33ft  -> FAIL
+  re-distilling (warm-start from 'S_clear_84x28_v2') -> S_clear_84x28_v2_dagger_r00
+all 6779 teacher targets cached
+
+################################################################
+# student DAgger round 1 — policy 'S_clear_84x28_v2_dagger_r00'
+################################################################
+    eastbound: aborted at step 425
+  [clear/eastbound] over-budget=  5.9%  max|CTE|=29.75ft  -> FAIL
+  [clear/westbound] over-budget=  0.5%  max|CTE|= 4.83ft  -> FAIL
+  re-distilling (warm-start from 'S_clear_84x28_v2_dagger_r00') -> S_clear_84x28_v2_dagger_r01
+all 6779 teacher targets cached
+
+################################################################
+# student DAgger round 2 — policy 'S_clear_84x28_v2_dagger_r01'
+################################################################
+    eastbound: aborted at step 422
+  [clear/eastbound] over-budget=  6.1%  max|CTE|=30.42ft  -> FAIL
+  [clear/westbound] over-budget=  0.5%  max|CTE|= 4.20ft  -> FAIL
+  re-distilling (warm-start from 'S_clear_84x28_v2_dagger_r01') -> S_clear_84x28_v2_dagger_r02
+all 6779 teacher targets cached
+
+################################################################
+# student DAgger round 3 — policy 'S_clear_84x28_v2_dagger_r02'
+################################################################
+    eastbound: aborted at step 425
+  [clear/eastbound] over-budget=  5.9%  max|CTE|=30.38ft  -> FAIL
+  [clear/westbound] over-budget=  0.5%  max|CTE|= 5.54ft  -> FAIL
+
+Exhausted 3 rounds (last 'S_clear_84x28_v2_dagger_r02').
+
+===== student DAgger summary =====
+  round 0: S_clear_84x28_v2             FAIL
+  round 1: S_clear_84x28_v2_dagger_r00  FAIL
+  round 2: S_clear_84x28_v2_dagger_r01  FAIL
+  round 3: S_clear_84x28_v2_dagger_r02  FAIL

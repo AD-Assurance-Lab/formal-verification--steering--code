@@ -14,6 +14,7 @@ import glob
 import sys
 import csv
 import argparse
+import subprocess
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -218,6 +219,34 @@ def main():
                   flush=True)
         for r_local in range(args.rounds + 1):
             r = r_local + _offset
+            # R-SIM-1: RESTART CARLA BEFORE EVERY ROUND.
+            #
+            # This loop drives 2 x len(weathers) times per round and retrains in between,
+            # holding ONE server for the whole run. A server degrades silently under that
+            # exposure -- it keeps answering and keeps reporting plausible velocities
+            # while it stops advancing physics correctly. Measured here, and it voided a
+            # complete six-round run: the SAME distilled checkpoint scored 3.8% / 0.0%
+            # over budget on a freshly restarted server and 96.9% / 96.2% inside this
+            # loop. Every round of that run reported a catastrophic failure that did not
+            # exist. Nothing in the output reveals which server you were on.
+            #
+            # This is the same defect check_student_competence.py had before it was fixed,
+            # and dagger.py's teacher loop should be looked at for the same reason.
+            if r_local > 0:
+                env.cleanup([camera, vehicle], world, original)
+                # NEVER capture_output on a script that daemonises CARLA: the detached
+                # child inherits the pipe and the call never returns.
+                _rlog = os.path.join(C.REPO_ROOT, "results", "carla_restart_dagger_student.log")
+                with open(_rlog, "a") as _fh:
+                    subprocess.run(["bash", os.path.join(C.REPO_ROOT, "scripts", "carla_restart.sh")],
+                                   stdout=_fh, stderr=subprocess.STDOUT,
+                                   stdin=subprocess.DEVNULL, timeout=600)
+                client = env.connect()
+                world = env.load_town04(client)
+                original = env.enable_sync_mode(world)
+                vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
+                camera, img_queue = env.spawn_camera(world, vehicle)
+                print(f"  [R-SIM-1] CARLA restarted before round {r}", flush=True)
             round_dir = os.path.join(dagger_student_dir, f"round{r:02d}")
             print(f"\n{'#'*64}\n# student DAgger round {r} — policy '{current}'\n{'#'*64}", flush=True)
             rows, passed = [], True
