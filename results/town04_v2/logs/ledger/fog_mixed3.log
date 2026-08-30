@@ -1,0 +1,28 @@
+  student 'S_mixed_84x28_w3_v2' resolves to 'S_mixed_84x28_w3_v2_dagger_r00' (student DAgger is part of this study's procedure)
+S_mixed_84x28_w3_v2 under 'fog' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 6 reps x 2 sections = 12 runs
+
+  rep 0 eastbound  max|CTE|=  2.19 ft over=  0.0%  PASS
+  rep 0 westbound  max|CTE|=  1.65 ft over=  0.0%  PASS
+  rep 1 eastbound  max|CTE|=  1.46 ft over=  0.0%  PASS
+  rep 1 westbound  max|CTE|=  1.61 ft over=  0.0%  PASS
+  rep 2 eastbound  max|CTE|=  1.65 ft over=  0.0%  PASS
+  rep 2 westbound  max|CTE|=  1.72 ft over=  0.0%  PASS
+  rep 3 eastbound  max|CTE|=  2.05 ft over=  0.0%  PASS
+  rep 3 westbound  max|CTE|=  1.75 ft over=  0.0%  PASS
+  rep 4 eastbound  max|CTE|=  1.96 ft over=  0.0%  PASS
+  rep 4 westbound  max|CTE|=  1.66 ft over=  0.0%  PASS
+  rep 5 eastbound  max|CTE|=  1.67 ft over=  0.0%  PASS
+  rep 5 westbound  max|CTE|=  1.65 ft over=  0.0%  PASS
+
+================================================================
+  failure rate 0/12 = 0.0%   95% Wilson [0.0%, 24.3%]
+  verdict: PASS
+  (FAIL when the interval excludes zero -- a rate consistent with zero is
+   not evidence of failure, and one bad lap out of ten is not a pass either)
+
+  NOTE: a PASS at n=12 bounds the failure rate below 24.3%, not to
+  zero. Report it that way. Bounding below 5% would need n ~ 60.
+================================================================
+
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/fog__S_mixed_84x28_w3_v2__closed_loop.json

@@ -1,0 +1,2 @@
+CARLA :3000 is in use by pid 857011 (scripts/closed_loop_ledger.py --student S_mixed_84x28_w3_v2).
+Two synchronous clients on one world interleave ticks and silently corrupt each other's runs -- that is how a ledger cell recorded a 20.69 ft departure that never happened. Wait, or use a different CARLA_PORT.
