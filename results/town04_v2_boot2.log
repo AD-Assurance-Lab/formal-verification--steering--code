@@ -1,0 +1,19 @@
+[2026-08-29 21:13:50] determinism rules lock OK; STUDY_MAP=Town04 TOWN04_REDO=1 port 3000
+[2026-08-29 21:13:50] determinism preflight OK on the live server
+[2026-08-29 21:13:50] SKIP  collect (manifest exists)
+[2026-08-29 21:13:50] SKIP  train_clear_bc
+[2026-08-29 21:13:50] SKIP  dagger_clear
+[2026-08-29 21:13:50] GATE  dagger_clear: teacher met budget
+[2026-08-29 21:13:50] SKIP  train_mixed_bc
+[2026-08-29 21:13:50] SKIP  dagger_mixed
+[2026-08-29 21:13:50] GATE  dagger_mixed: teacher met budget
+[2026-08-29 21:13:50] teachers: clear=teacher_clear_v2_dagger_r02 mixed=teacher_mixed_v2_dagger_r03
+[2026-08-29 21:13:50] SKIP  distill_clear
+[2026-08-29 21:13:50] SKIP  distill_mixed
+[2026-08-29 21:13:50] START dagger_student_clear (attempt 1)
+[2026-08-29 21:21:17] OK    dagger_student_clear
+[2026-08-29 21:21:17] START dagger_student_mixed (attempt 1)
+[2026-08-29 21:42:10] OK    dagger_student_mixed
+[2026-08-29 21:42:10] TOWN04 REDO BUILD COMPLETE
+[2026-08-29 21:42:10] NEXT: capture -> certify -> drive the ledger into results/town04_v2/ledger,
+[2026-08-29 21:42:10]       then compare against the published cells in results/ledger.

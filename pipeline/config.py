@@ -8,6 +8,7 @@ silently disagree. All primitives marked [MEASURED] were verified in CARLA
 """
 import math
 import os
+import re
 
 # ── CARLA connection ─────────────────────────────────────────────────────────
 HOST = "127.0.0.1"
@@ -22,7 +23,42 @@ CLIENT_TIMEOUT_S = 120.0
 CARLA_ROOT = os.environ.get("CARLA_ROOT", os.path.expanduser("~/carla"))
 
 # ── Map ──────────────────────────────────────────────────────────────────────
-MAP_NAME = "Town04"
+# The study map is selectable so the Town06 DEPLOYMENT TEST can reuse this pipeline
+# unchanged. Default is Town04, and with STUDY_MAP unset every value below is
+# bit-identical to the published study -- that property is deliberate and is what
+# lets the same code produce both.
+#
+# Town06 values are LOADED FROM THE COMMITTED ROUTE ARTIFACT, never hardcoded here:
+# the route was fixed on geometry alone before any Town06 model existed (PROTOCOL.md
+# section 6), and reading it back from that file is what keeps the two in step.
+STUDY_MAP = os.environ.get("STUDY_MAP", "Town04")
+MAP_NAME = STUDY_MAP
+
+# ── Determinism ──────────────────────────────────────────────────────────────
+# DETERMINISTIC_CONTROL routes every vehicle command through an ACKNOWLEDGED batch
+# command instead of the fire-and-forget `vehicle.apply_control()` RPC.
+#
+# Measured, open loop, with the feedback cut and the command sequence a pure function
+# of the step index (scripts/determinism_tier1_openloop.py):
+#
+#     vehicle.apply_control()   physics diverges the first time the command CHANGES;
+#                               the applied-control READBACK differs between reps at
+#                               the same step. Max divergence over 200 steps: ~60 m.
+#     apply_batch_sync()        pose, velocity, gear and applied control bit-identical
+#                               for every step of every rep.
+#
+# The race is invisible while a command is unchanged, because a late arrival re-applies
+# the same value -- which is exactly why it went unnoticed and why divergence always
+# appeared to start mid-run for no reason.
+#
+# DEFAULT IS TOWN06 ONLY. Town04 is the published artifact and must keep reproducing
+# byte-for-byte until its own re-measurement is authorised, so with STUDY_MAP unset
+# this is off and the code path is the original one.
+# ON FOR EVERY MAP as of the Town04 redo. It defaulted off for Town04 while the published
+# artifact had to keep reproducing byte-for-byte; that gate has served its purpose and
+# Town04 is now being re-measured under the corrected harness. `main` still carries the old
+# default, so reproducing the PUBLISHED study from the published branch is unaffected.
+DETERMINISTIC_CONTROL = os.environ.get("DETERMINISTIC_CONTROL", "1") == "1"
 
 # ── Vehicle (Tesla Model 3, as instantiated in CARLA) ────────────────────────
 VEHICLE_BLUEPRINT = "vehicle.tesla.model3"
@@ -136,7 +172,11 @@ SIM_HZ = 1.0 / FIXED_DT      # 5 Hz
 LOOKAHEAD_M = 5.0
 
 # ── Road geometry ────────────────────────────────────────────────────────────
-LANE_WIDTH_M = 3.500         # [MEASURED] constant on Town04 highway, both dirs
+# [MEASURED] constant on the Town04 highway, both dirs. Town06's chosen window
+# measures the SAME 3.500 m (std 0.0000), so the derived CTE budget and tolerance are
+# numerically unchanged between the two maps. That is a fact about the maps, not a
+# choice, and PROTOCOL.md section 3 requires it be recomputed rather than assumed.
+LANE_WIDTH_M = 3.500
 
 # Where the measured route ends. NOT a round number for tidiness: the western traffic-light
 # intersection past this point is a real ODD boundary, not a route artifact (D-07 withdrawn,
@@ -149,12 +189,246 @@ LAP_END_M = 2861.0
 # clear-only one -- width, not input resolution, is the verifier-friendly capacity lever,
 # because width adds parameters at fixed input-perturbation dimension. This registry was
 # copy-pasted into ~20 scripts in three mutually incompatible shapes.
-STUDENTS = (("S_clear", "S_clear_84x28", (8, 16, 16), 32),
-            ("S_mixed", "S_mixed_84x28_w3", (24, 48, 48), 96))
+# TOWN04_REDO re-runs the Town04 study under the corrected simulator harness (T06-F22).
+#
+# It is a DISCOVERY test, as the published one was -- T_CLOSED_LOOP_S was back-solved from
+# Town04's own closed-loop cliff, so its agreement measures sensitivity rather than
+# prediction, and re-running it does not turn it into a deployment test. Town06 is the
+# deployment test and a third map would be needed for another.
+#
+# Everything the redo writes is NAMESPACED, because the published artifacts are tracked in
+# git under exactly these names and a redo would otherwise overwrite the record it is meant
+# to be compared against: `results/ledger/clear__S_clear__closed_loop.json` and
+# `checkpoints/S_clear_84x28.pth` are the paper's, not scratch space.
+TOWN04_REDO = os.environ.get("TOWN04_REDO", "0") == "1"
+_V2 = "_v2" if TOWN04_REDO else ""
+
+STUDENTS = (("S_clear", f"S_clear_84x28{_V2}", (8, 16, 16), 32),
+            ("S_mixed", f"S_mixed_84x28_w3{_V2}", (24, 48, 48), 96))
 
 # ── Spawn points (start just after the western intersection) ─────────────────
 SPAWN_EASTBOUND = {"x": -357.1, "y": 30.0, "z": 0.5, "yaw": 0.0}
 SPAWN_WESTBOUND = {"x": -396.8, "y": 12.8, "z": 0.5, "yaw": 180.0}
+
+# ── Map-scoped overrides (Town06 deployment test) ────────────────────────────
+# Applied only when STUDY_MAP != Town04, and sourced entirely from the committed
+# route artifact so the code cannot drift from the pre-registered route.
+ROUTES_SUBDIR = "routes"
+
+if STUDY_MAP != "Town04":
+    import json as _json
+    _rd = os.path.join(DATASET_DIR if "DATASET_DIR" in dir() else
+                       os.path.join(_BASE if "_BASE" in dir() else
+                                    os.path.dirname(os.path.abspath(__file__)), "data"),
+                       f"routes_{STUDY_MAP.lower()}")
+    _meta_path = os.path.join(_rd, "route_meta.json")
+    if not os.path.exists(_meta_path):
+        raise RuntimeError(
+            f"STUDY_MAP={STUDY_MAP} but {_meta_path} is missing. The route is a PROTOCOL\n"
+            f"artifact and must be built and committed before anything runs on this map:\n"
+            f"    CARLA_PORT=$PORT python3 scripts/build_{STUDY_MAP.lower()}_routes.py")
+    with open(_meta_path) as _f:
+        ROUTE_META = _json.load(_f)
+    ROUTES_SUBDIR = f"routes_{STUDY_MAP.lower()}"
+    SECTION_BASED = "sections" in ROUTE_META
+    if SECTION_BASED:
+        # Section-based route (Town06). Town06's outer loop has no dedicated opposing
+        # carriageways, so the route is a set of disjoint clean sections rather than one
+        # lap driven both ways. "Direction" generalises to "section" throughout.
+        SECTIONS = [x["name"] for x in ROUTE_META["sections"]]
+        SPAWNS = {x["name"]: x["spawn"] for x in ROUTE_META["sections"]}
+        SECTION_LEN_M = {x["name"]: float(x["scored_len_m"])
+                         for x in ROUTE_META["sections"]}
+        TOTAL_SCORED_M = float(ROUTE_META["total_scored_m"])
+        # Kept so code that still names the two Town04 directions keeps importing.
+        SPAWN_EASTBOUND = SPAWNS[SECTIONS[0]]
+        SPAWN_WESTBOUND = SPAWNS[SECTIONS[min(1, len(SECTIONS) - 1)]]
+        LAP_END_M = float(min(SECTION_LEN_M.values()))
+    else:
+        SECTIONS = ["eastbound", "westbound"]
+        SPAWN_EASTBOUND = ROUTE_META["spawns"]["eastbound"]
+        SPAWN_WESTBOUND = ROUTE_META["spawns"]["westbound"]
+        SPAWNS = {"eastbound": SPAWN_EASTBOUND, "westbound": SPAWN_WESTBOUND}
+        SECTION_LEN_M = {}
+        if "scored_len_m" in ROUTE_META:
+            LAP_END_M = float(ROUTE_META["scored_len_m"])
+        else:
+            LAP_END_M = float(min(ROUTE_META["window"]["scored_len_m"],
+                                  ROUTE_META["opposing"]["scored_len_m"]))
+        TOTAL_SCORED_M = LAP_END_M * 2.0
+    LANE_WIDTH_M = 3.500
+
+# Section names default to the two Town04 directions; a section-based map overrides
+# them above. Every entry point iterates SECTIONS rather than hardcoding a pair.
+if STUDY_MAP == "Town04":
+    SECTION_BASED = False
+    SECTIONS = ["eastbound", "westbound"]
+    SPAWNS = {"eastbound": SPAWN_EASTBOUND, "westbound": SPAWN_WESTBOUND}
+    SECTION_LEN_M = {"eastbound": LAP_END_M, "westbound": LAP_END_M}
+    TOTAL_SCORED_M = LAP_END_M * 2.0
+
+def steps_for(section, margin=1.0):
+    """Control steps to drive exactly one section, at the fixed study speed.
+
+    Driving PAST a section's end runs the vehicle into the unclean road the section was
+    clipped to exclude, and it fails there for reasons that have nothing to do with the
+    policy. Measured: with one 520-step limit applied to all six Town06 sections, the
+    pure-pursuit oracle "failed" s03 and s04 at max|CTE| 2.08 m and 7.21 m, both in the
+    last few steps. With per-section limits every section passes at <= 0.066 m.
+
+    On Town04 this is a NO-OP by design. Its route is a closed 3042 m loop whose lap
+    ends by loop closure (~1701 steps), while LAP_END_M is the 2861 m SCORED prefix
+    (~1599 steps). Capping there would truncate the published lap and silently change
+    every Town04 number, so section-based maps get a real cap and Town04 gets infinity.
+    """
+    if not SECTION_BASED:
+        return 10 ** 9
+    length = SECTION_LEN_M.get(section, LAP_END_M)
+    return int(length * margin / (TARGET_SPEED_MS * FIXED_DT))
+
+
+# ── Town06 student registry ──────────────────────────────────────────────────
+# ONE definition, read by the pipeline, the competence gate, the certifier and the
+# ledger. They previously each named checkpoints independently and drifted apart: all
+# four pointed at the distilled base while student-DAgger was writing <base>_dagger_rNN,
+# so the gate tested, and the certifier would have certified, a model nobody ships.
+#
+# Sizes follow the rule this lab already settled in 4ac6002 -- "size each student to its
+# own task", identical architecture explicitly REJECTED because the study's claim is
+# WITHIN-model (each policy against its own closed-loop behaviour) and a tool that only
+# works when two models share an architecture is not a tool.
+#
+# Sizes MATCH the Town04 published pair. Widening was tried and is not the fix: the
+# Town06 plateau is a LABEL-DISTRIBUTION problem, not a capacity one.
+#
+#   fraction of the route needing |steer| <= 0.01
+#     Town04 eastbound  60.4 %      Town06 overall  83.8 %
+#     Town04 westbound  56.0 %      Town06 s02     100.0 %
+#                                   Town06 s03     100.0 %  (std 0.0000)
+#
+# Town04 curves continuously, so steering demand is always present. Town06 has two
+# sections, ~1250 m of 3874 m, whose correct steering is identically zero for their
+# whole length. A student trained on that emits ~0 with a small offset, and the straight
+# sections integrate the offset into a departure -- measured on s03, CTE -0.18 -> -1.24
+# -> -8.59 with the sign never changing, while the teacher oscillates about zero.
+#
+# BALANCING WAS TRIED AND IS REFUTED. distill.py --balance (straight-frame downsampling)
+# made the clear student WORSE, 5-6/6 sections down to 0-2/6, worst |CTE| 23.08 ft. On a
+# route that genuinely IS 84 % straight, downsampling straight frames trains the student
+# for a distribution it will not meet. The flag stays in distill.py (train.py has always
+# had it for teachers) but is OFF.
+#
+# So the clear student keeps Town04's size, and only the MIXED student is widened -- the
+# lever Town04 itself established (4b2ad73: w1 failed all four conditions, w2 failed
+# night 10/10, w3 passed everything) and the one Zach identified as justified, since the
+# mixed student needs capacity for the disturbances rather than for the route.
+#
+# Input size is SHARED by both students, deliberately: the verification captures are
+# projected to the model input at capture time, so two different input sizes would mean
+# two capture sets (24 npz files each). Only channel width differs per student.
+#
+# 84x28 is the published Town04 size. Town06's long straights may need more HORIZONTAL
+# resolution -- at 84 px the whole 0.668 m CTE budget spans 1.79 px of image shift at
+# 20 m lookahead, and a 0.1 m error spans 0.27 px, so on a 620 m straight the only cue
+# is sub-pixel. scripts/sweep_student_arch.py measures this closed-loop.
+# MEASURED (T06-F11): 168x28. The control error is LATERAL, so horizontal resolution
+# carries it and vertical buys nothing. At matched cost, 112x38 w2 (21,504 ReLU) holds
+# 4/6 sections at 12.97 ft while 168x28 w2 (21,408) holds 6/6 at 0.97 ft -- inside the
+# 2.19 ft budget with 2.3x margin, on all 3 reps, with NO student-DAgger. Town04's F11
+# rejected resolution having tested only 112x38, which spends half the budget on the
+# axis that does not help.
+TOWN06_INPUT_W, TOWN06_INPUT_H = (int(os.environ.get("T06_IN_W", "168")),
+                                  int(os.environ.get("T06_IN_H", "28")))
+
+#   (name, checkpoint stem, conv channels, FC width)
+TOWN06_STUDENTS = (
+    ("S_clear_t06", "S_clear_t06_168x28_w2", (16, 32, 32), 64),
+    # THE MIXED STUDENT IS WIDER THAN THE CLEAR ONE, as in published Town04
+    # (S_clear (8,16,16)/fc32 against S_mixed (24,48,48)/fc96). There is no reason for the
+    # two to match: they fit different functions, and only the mixed one has to represent
+    # four conditions.
+    #
+    # The previous entry pinned both at w2 on the authority of T06-F14, which A-2
+    # discarded along with its data. Measured on the REBUILD (T06-F29), w2 mixed drove
+    # 22/24 exploratory cells and failed fog/s00 at 8.52 ft and shadows/s02 at 2.99 ft --
+    # while the teacher it was distilled from holds those same two cells 3/3 at 0.37-0.40
+    # and 0.41-0.49 ft. The teacher is competent and the student cannot reproduce it, so
+    # the gap is student capacity and width is the direct lever. This is the same
+    # conclusion Town04 reached at 4b2ad73, where w1 failed all four conditions, w2 failed
+    # night 10/10 and w3 passed everything.
+    ("S_mixed_t06", "S_mixed_t06_168x28_w3", (24, 48, 48), 96),
+)
+
+
+def relu_count(channels, fc, in_h=28, in_w=84):
+    """ReLU neurons, so it can be reported next to every certified rate (4ac6002:
+    a larger model has looser bounds, and that must stay visible rather than be
+    engineered away)."""
+    h, w = in_h, in_w
+    n = 0
+    for c, k in zip(channels, (5, 5, 3)):          # StudentNet: 5x5 s2, 5x5 s2, 3x3 s2
+        h = (h - k) // 2 + 1
+        w = (w - k) // 2 + 1
+        n += c * h * w
+    return n + fc
+
+
+# Does this study's procedure INCLUDE student DAgger? Town06 removed it (T06-F14) and the
+# rebuild confirmed it is not needed there -- w3 reaches 24/24 distilled only. Town04's
+# published pipeline is behaviour cloning -> teacher DAgger -> distillation -> STUDENT
+# DAgger (README "Reproduce", and the archived dagger_student_clear / dagger_student_w3
+# round directories), so the redo must run it to reproduce the published procedure.
+STUDENT_DAGGER = STUDY_MAP == "Town04"
+
+
+def final_student(base):
+    """The checkpoint that IS the student.
+
+    Which one that is depends on whether the study RUNS student DAgger, so this is gated
+    on STUDENT_DAGGER rather than assumed. Getting it wrong certifies a model nobody
+    intended to ship, in either direction: preferring a DAgger round where the procedure
+    no longer runs one selects a stale artefact, and preferring the distilled
+    intermediate where the procedure DOES run one selects a model that is not the policy.
+
+    For Town06, where student DAgger was removed, that is the DISTILLED one:
+
+    This function used to return the newest <base>_dagger_rNN, because student DAgger
+    was part of the procedure and every downstream stage was naming the distilled
+    intermediate -- the gate, the certifier and the ledger would each have used a model
+    nobody intended to ship.
+
+    T06-F14 removed student DAgger: at 168x28 it is harmful, not merely unnecessary
+    (mixed 6/6 -> 3/6 on a 3-rep clear gate). So the distilled checkpoint IS the policy
+    and the old preference is exactly backwards -- it now selects the artefact of a
+    procedure that is no longer run. That is not hypothetical: it happened. A gate run
+    reported the mixed student at 3/6 and the clear student at 5/6, both NOT COMPETENT,
+    while the freshly distilled checkpoints sat unread beside them, and the 3/6 matched
+    the DAgger'd model's measured score exactly.
+
+    Stale rounds are therefore a hard error rather than a warning. They are only ever
+    left behind by a procedure this study has abandoned, and silently preferring either
+    checkpoint is how the wrong model gets certified.
+    """
+    import glob as _glob
+    rounds = sorted(_glob.glob(os.path.join(CHECKPOINT_DIR, f"{base}_dagger_r*.pth")))
+
+    if STUDENT_DAGGER:
+        # Town04: student DAgger is part of the procedure, so the newest round IS the
+        # policy and the distilled checkpoint is the intermediate.
+        if not rounds:
+            return base          # not yet DAgger'd; the distilled one is all there is
+        return os.path.splitext(os.path.basename(rounds[-1]))[0]
+
+    stale = rounds
+    if stale:
+        raise RuntimeError(
+            f"{len(stale)} student-DAgger checkpoint(s) for '{base}' are still in "
+            f"{CHECKPOINT_DIR}. Student DAgger was removed by T06-F14 and these are "
+            f"stale artefacts of it; leaving them there is how the wrong model gets "
+            f"certified. Move them to checkpoints/_superseded_student_dagger/ "
+            f"(they are kept, not deleted) and re-run.")
+    return base
+
 
 # ── Unit conversions ─────────────────────────────────────────────────────────
 M_TO_FT = 3.28084
@@ -231,6 +505,12 @@ REPO_ROOT = os.path.dirname(_BASE)
 DATASET_DIR = os.path.join(_BASE, "data")
 CHECKPOINT_DIR = os.path.join(_BASE, "checkpoints")
 RESULTS_DIR = os.path.join(_BASE, "results")
+
+# The Town04 redo keeps its results beside the published ones rather than on top of them,
+# so old and new can be compared directly in the working tree. Comparing them IS the
+# result of a discovery-test redo.
+LEDGER_DIR = os.path.join(REPO_ROOT, "results",
+                          "town04_v2" if TOWN04_REDO else "", "ledger")
 
 
 def summary():

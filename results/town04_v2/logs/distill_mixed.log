@@ -1,0 +1,79 @@
+computing teacher targets for 88287 new frames with 'teacher_mixed_v2_dagger_r03'...
+  0/88287
+  2000/88287
+  4000/88287
+  6000/88287
+  8000/88287
+  10000/88287
+  12000/88287
+  14000/88287
+  16000/88287
+  18000/88287
+  20000/88287
+  22000/88287
+  24000/88287
+  26000/88287
+  28000/88287
+  30000/88287
+  32000/88287
+  34000/88287
+  36000/88287
+  38000/88287
+  40000/88287
+  42000/88287
+  44000/88287
+  46000/88287
+  48000/88287
+  50000/88287
+  52000/88287
+  54000/88287
+  56000/88287
+  58000/88287
+  60000/88287
+  62000/88287
+  64000/88287
+  66000/88287
+  68000/88287
+  70000/88287
+  72000/88287
+  74000/88287
+  76000/88287
+  78000/88287
+  80000/88287
+  82000/88287
+  84000/88287
+  86000/88287
+  88000/88287
+student 84x28 channels=(24, 48, 48) fc=96: 15456 ReLU neurons, 88513 params | train=75037 val=13250
+  epoch   0 | val KD-MSE 7.877e-04 | rmse 0.0281 *
+  epoch   1 | val KD-MSE 7.470e-04 | rmse 0.0273 *
+  epoch   2 | val KD-MSE 6.368e-04 | rmse 0.0252 *
+  epoch   3 | val KD-MSE 5.440e-04 | rmse 0.0233 *
+  epoch   5 | val KD-MSE 5.385e-04 | rmse 0.0232 *
+  epoch   6 | val KD-MSE 5.078e-04 | rmse 0.0225 *
+  epoch   8 | val KD-MSE 4.958e-04 | rmse 0.0223 *
+  epoch   9 | val KD-MSE 4.927e-04 | rmse 0.0222 *
+  epoch  10 | val KD-MSE 5.325e-04 | rmse 0.0231
+  epoch  13 | val KD-MSE 4.339e-04 | rmse 0.0208 *
+  epoch  20 | val KD-MSE 4.718e-04 | rmse 0.0217
+  epoch  21 | val KD-MSE 4.208e-04 | rmse 0.0205 *
+  epoch  22 | val KD-MSE 3.950e-04 | rmse 0.0199 *
+  epoch  26 | val KD-MSE 3.812e-04 | rmse 0.0195 *
+  epoch  29 | val KD-MSE 3.535e-04 | rmse 0.0188 *
+  epoch  30 | val KD-MSE 4.159e-04 | rmse 0.0204
+  epoch  33 | val KD-MSE 3.344e-04 | rmse 0.0183 *
+  epoch  39 | val KD-MSE 3.318e-04 | rmse 0.0182 *
+  epoch  40 | val KD-MSE 3.573e-04 | rmse 0.0189
+  epoch  41 | val KD-MSE 3.069e-04 | rmse 0.0175 *
+  epoch  50 | val KD-MSE 3.526e-04 | rmse 0.0188
+  epoch  51 | val KD-MSE 2.783e-04 | rmse 0.0167 *
+  epoch  53 | val KD-MSE 2.710e-04 | rmse 0.0165 *
+  epoch  57 | val KD-MSE 2.670e-04 | rmse 0.0163 *
+  epoch  60 | val KD-MSE 2.793e-04 | rmse 0.0167
+  epoch  65 | val KD-MSE 2.600e-04 | rmse 0.0161 *
+  epoch  70 | val KD-MSE 2.538e-04 | rmse 0.0159 *
+  epoch  78 | val KD-MSE 2.449e-04 | rmse 0.0156 *
+  epoch  79 | val KD-MSE 2.442e-04 | rmse 0.0156 *
+  epoch  80 | val KD-MSE 2.546e-04 | rmse 0.0160
+  epoch  90 | val KD-MSE 2.595e-04 | rmse 0.0161
+BEST KD val MSE=2.442e-04 RMSE=0.0156 (15456 neurons) -> /home/za/ad-assurance--workspace/formal-verification--steering--code/pipeline/checkpoints/S_mixed_84x28_w3_v2.pth

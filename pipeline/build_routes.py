@@ -14,7 +14,8 @@ import config as C
 import carla_env as env
 from route import build_route, save_route, ROUTES_DIR
 
-SPAWNS = {"eastbound": C.SPAWN_EASTBOUND, "westbound": C.SPAWN_WESTBOUND}
+# Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).
+SPAWNS = C.SPAWNS
 
 
 def main():

@@ -1,0 +1,26 @@
+/home/za/.local/lib/python3.10/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+
+SUSTAINED-BIAS BOUND over s in [0,1]   tolerance 0.0120
+  stride 8, 16-way branch and bound, 12 cells expected
+
+  dir        model     cond      base                 bias bound        x tol  verdict     drive
+/home/za/ad-assurance--workspace/formal-verification--steering--code/scripts/certify_cell.py:423: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return float(lb.min()), float(ub.max())
+  westbound  S_clear   fog       foreign  [-0.00426,+0.00444] [-0.35,+0.37]  CERTIFIED   
+  westbound  S_clear   night     foreign  [-0.06565,+0.01272] [-5.47,+1.06]  FALSIFIED   
+  westbound  S_clear   shadows   foreign  [-0.02471,+0.00492] [-2.06,+0.41]  FALSIFIED   
+  westbound  S_mixed   fog       foreign  [-0.00025,+0.00481] [-0.02,+0.40]  CERTIFIED   
+  westbound  S_mixed   night     foreign  [-0.00918,+0.00220] [-0.76,+0.18]  CERTIFIED   
+  westbound  S_mixed   shadows   foreign  [-0.00144,+0.00356] [-0.12,+0.30]  CERTIFIED   
+  eastbound  S_clear   fog       foreign  [-0.00222,+0.00390] [-0.18,+0.32]  CERTIFIED   
+  eastbound  S_clear   night     foreign  [-0.07335,+0.01493] [-6.11,+1.24]  FALSIFIED   
+  eastbound  S_clear   shadows   foreign  [-0.00003,+0.00652] [-0.00,+0.54]  CERTIFIED   
+  eastbound  S_mixed   fog       foreign  [-0.00166,+0.00269] [-0.14,+0.22]  CERTIFIED   
+  eastbound  S_mixed   night     foreign  [-0.00685,+0.00102] [-0.57,+0.08]  CERTIFIED   
+  eastbound  S_mixed   shadows   foreign  [-0.00056,+0.00047] [-0.05,+0.04]  CERTIFIED   
+
+  12 cells bounded. NO agreement column: these are different
+  students from the published ones, so the hardcoded outcomes do not
+  apply. Agreement comes from this redo's OWN ledger.

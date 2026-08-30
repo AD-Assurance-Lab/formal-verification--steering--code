@@ -1,0 +1,18 @@
+{
+  "label": "syncctl_nocam",
+  "n_steps": 200,
+  "n_reps": 3,
+  "physics_identical": true,
+  "render_identical": true,
+  "preproc_identical": true,
+  "nn_identical": true,
+  "control_identical": true,
+  "first_control_divergence": null,
+  "first_pose_divergence": null,
+  "max_pose_delta": 0.0,
+  "first_raw_divergence": null,
+  "raw_diff_steps": 0,
+  "first_pre_divergence": null,
+  "pre_diff_steps": 0,
+  "max_nn_steer_delta": 0.0
+}

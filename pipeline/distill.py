@@ -26,7 +26,7 @@ import config as C
 from model import CarlaSteeringNet
 from student import StudentNet, student_preprocess
 from imaging import preprocess_for_model
-from dataset import load_manifests, block_split, filter_conditions
+from dataset import load_manifests, block_split, balance_straight, filter_conditions
 
 
 def aggregated_manifests(base="clear", dagger_dirs=("dagger", "dagger_student")):
@@ -84,9 +84,30 @@ def _kd_decode(args):
 
 
 class KDDataset(Dataset):
-    def __init__(self, rows, indices, targets, in_w, in_h, preload=True):
+    """Distillation frames. Optionally with PHOTOMETRIC augmentation.
+
+    KD had no augmentation at all -- dataset._shift belongs to SteeringDataset, which
+    trains the TEACHER. Distillation fed raw frames, and that is why capacity stopped
+    helping: the w4 student (246k params on 122k frames) reached its best validation at
+    epoch 19 and then overfit, so its KD RMSE came out WORSE than a model half its size.
+    That reads like "capacity is harmful" and is really "no regulariser".
+
+    The jitter is a gain and an offset, x -> clip(a*x + b), which is what changes between
+    illumination conditions. It is applied to the STUDENT input only; the KD target stays
+    the teacher's output on the unjittered frame, so the student is asked to give the same
+    steering under photometric variation.
+
+    NOTE, and it belongs in the write-up: the disturbance family this study certifies IS
+    photometric, so training for photometric invariance deliberately reduces the very
+    Delta the certificate bounds. That is legitimate -- build the property, then verify
+    it -- but it changes the claim from "we certified a model that happened to be robust"
+    to "we built for robustness and verified we got it". Off by default.
+    """
+
+    def __init__(self, rows, indices, targets, in_w, in_h, preload=True, augment=0.0):
         self.rows, self.indices, self.targets = rows, indices, targets
         self.in_w, self.in_h = in_w, in_h
+        self.augment = float(augment)
         self.cache = None
         if preload:
             # Trap 17, second instance. dataset.SteeringDataset was parallelised and this
@@ -105,6 +126,10 @@ class KDDataset(Dataset):
         i = self.indices[k]
         x = self.cache[k] if self.cache is not None else \
             student_preprocess(cv2.imread(self.rows[i]["image"]), self.in_w, self.in_h)
+        if self.augment > 0.0:
+            a = 1.0 + self.augment * np.random.uniform(-1.0, 1.0)      # gain
+            b = 0.25 * self.augment * np.random.uniform(-1.0, 1.0)     # offset
+            x = np.clip(a * x + b, 0.0, 1.0).astype(np.float32)
         return torch.from_numpy(x), torch.tensor([self.targets[self.rows[i]["image"]]],
                                                  dtype=torch.float32)
 
@@ -122,14 +147,23 @@ def distill_student(in_w, in_h, out_name, teacher_name="steering_dagger_r02",
                     base="clear", dagger_dirs=("dagger", "dagger_student"),
                     weathers=None, channels=(8, 16, 16), fc=32, init_from=None,
                     epochs=120, batch_size=64, lr=1e-3, patience=20,
-                    device=None, quiet=False):
+                    device=None, quiet=False, balance=False, augment=0.0):
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-    torch.manual_seed(0)
+    # DISTILL_SEED exposes what was a hardcoded 0. Seed is not a tuning knob here -- it
+    # is the variable T06-F14 measured as flipping a student from 4/6 to 6/6 on a clear
+    # gate with the architecture and data held fixed. Leaving it hardcoded makes that
+    # variance invisible: one draw is taken, and whether it was a good one is unknowable
+    # without re-drawing. Default 0, so every existing result reproduces exactly.
+    _seed = int(os.environ.get("DISTILL_SEED", "0"))
+    if _seed:
+        print(f"  DISTILL_SEED={_seed} (default is 0; this is a different draw, not a "
+              f"different method)", flush=True)
+    torch.manual_seed(_seed)
     # Seed the augmentation RNG too: dataset._shift draws from the global `random`,
     # and torch.manual_seed alone left retraining non-reproducible bit-for-bit.
     import random as _random
-    _random.seed(0)
-    np.random.seed(0)
+    _random.seed(_seed)
+    np.random.seed(_seed)
     os.makedirs(C.CHECKPOINT_DIR, exist_ok=True)
     _, rows = load_manifests(aggregated_manifests(base, dagger_dirs))
     if weathers:
@@ -142,8 +176,25 @@ def distill_student(in_w, in_h, out_name, teacher_name="steering_dagger_r02",
             print(f"condition filter {sorted(set(weathers))}: kept {len(rows)}/{n0} frames")
     targets = teacher_targets(rows, teacher_name, device)
     tr_idx, va_idx = block_split(len(rows), val_frac=0.15, block=50, seed=0)
+    # STRAIGHT-FRAME BALANCING, off by default so Town04 is bit-identical.
+    #
+    # train.py has had this for the teachers since the start; distill.py never did, so
+    # the STUDENT -- the model that actually gets certified -- always trained on the raw
+    # label distribution. On Town04 that was survivable: 56-60 % of its route needs
+    # |steer| <= 0.01. On Town06 it is 83.8 %, and two sections are 100.0 % (std 0.0000),
+    # so a student learns to emit ~0 with a small offset and the straight sections then
+    # integrate that offset into a departure. The teachers absorb the imbalance because
+    # they have ~107k ReLU; a 5-15k ReLU student does not.
+    if balance:
+        n0 = len(tr_idx)
+        tr_idx = balance_straight(rows, tr_idx)
+        if not quiet:
+            print(f"balance: {n0} -> {len(tr_idx)} training frames "
+                  f"(near-straight downsampled)")
 
-    tr = KDDataset(rows, tr_idx, targets, in_w, in_h)
+    # Train augments, validation NEVER does: augmenting val would move the metric with
+    # the knob and make runs at different augment strengths incomparable.
+    tr = KDDataset(rows, tr_idx, targets, in_w, in_h, augment=augment)
     va = KDDataset(rows, va_idx, targets, in_w, in_h)
     tl = DataLoader(tr, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
     vl = DataLoader(va, batch_size=256, shuffle=False, num_workers=0, pin_memory=True)
@@ -198,6 +249,11 @@ def main():
                     help="conv channel widths (capacity lever at fixed resolution)")
     ap.add_argument("--fc", type=int, default=32, help="FC hidden width")
     ap.add_argument("--epochs", type=int, default=120)
+    ap.add_argument("--augment", type=float, default=0.0,
+                    help="photometric jitter strength on the STUDENT input, 0 = off. "
+                         "0.3 is a sensible start. See KDDataset for why this is not "
+                         "a neutral choice for a study certifying photometric "
+                         "disturbances.")
     # These existed as function parameters but were never reachable from the CLI, so the
     # documented fix for multi-condition instability could not actually be applied.
     ap.add_argument("--init-from", default=None,
@@ -206,13 +262,16 @@ def main():
     ap.add_argument("--lr", type=float, default=1e-3,
                     help="use a reduced lr (5e-4) when warm-starting")
     ap.add_argument("--patience", type=int, default=20)
+    ap.add_argument("--balance", action="store_true",
+                    help="downsample near-straight frames in the student's training set")
     args = ap.parse_args()
     distill_student(args.in_w, args.in_h, args.out, teacher_name=args.teacher,
                     base=args.base, dagger_dirs=tuple(args.dagger_dirs.split(",")),
                     weathers=(args.weathers.split(",") if args.weathers else None),
                     channels=tuple(int(x) for x in args.channels.split(",")), fc=args.fc,
                     epochs=args.epochs, init_from=args.init_from, lr=args.lr,
-                    patience=args.patience)
+                    augment=args.augment,
+                    patience=args.patience, balance=args.balance)
 
 
 if __name__ == "__main__":

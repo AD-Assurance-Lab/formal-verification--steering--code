@@ -1,0 +1,28 @@
+base datasets: ['conditions_v2']
+resuming: found 5 prior DAgger round(s) in dagger_clear_v2, continuing at round 5
+WARNING: no teacher_clear_v3_dagger_r*.pth from this run; falling back to 'teacher_clear_v2_dagger_r02', discarding 5 rounds of improvement
+
+################################################################
+# DAgger round 5 — evaluating policy 'teacher_clear_v2_dagger_r02'
+################################################################
+  [clear/eastbound] over-budget=  0.0%  max|CTE|= 0.57ft  (gate 2.19ft) -> PASS
+  [clear/westbound] over-budget=  0.0%  max|CTE|= 1.34ft  (gate 2.19ft) -> PASS
+  collected 3390 frames at beta=0.00
+
+*** passed at round 5, but --min-rounds 9 means collection continues ***
+  aggregating 7 manifests, warm-start from 'teacher_clear_v2_dagger_r02' -> teacher_clear_v3_dagger_r05
+
+################################################################
+# DAgger round 6 — evaluating policy 'teacher_clear_v3_dagger_r05'
+################################################################
+  [clear/eastbound] over-budget=  0.0%  max|CTE|= 0.49ft  (gate 2.19ft) -> PASS
+  [clear/westbound] over-budget=  0.0%  max|CTE|= 0.46ft  (gate 2.19ft) -> PASS
+  collected 3389 frames at beta=0.00
+
+*** passed at round 6, but --min-rounds 9 means collection continues ***
+
+Exhausted 6 rounds without passing (last policy 'teacher_clear_v3_dagger_r05').
+
+===== DAgger summary =====
+  round 5: teacher_clear_v2_dagger_r02 PASS
+  round 6: teacher_clear_v3_dagger_r05 PASS

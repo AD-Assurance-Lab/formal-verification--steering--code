@@ -12,12 +12,14 @@ condition as data collection); the network then drives the evaluated loop.
 """
 import os
 import sys
+from pathlib import Path
 import csv
 import argparse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import torch  # noqa: E402
+import numpy as np
 import carla  # noqa: E402
 import matplotlib  # noqa: E402
 matplotlib.use("Agg")
@@ -26,16 +28,28 @@ import matplotlib.pyplot as plt  # noqa: E402
 import config as C  # noqa: E402
 import carla_env as env  # noqa: E402
 from imaging import preprocess_for_model  # noqa: E402
+from student import student_preprocess  # noqa: E402
 from expert import pure_pursuit_steer  # noqa: E402
 from metrics import summarize_cte  # noqa: E402
 from model import CarlaSteeringNet  # noqa: E402
 from route import load_route, signed_cte_route, pure_pursuit_route  # noqa: E402
 
-SPAWNS = {"eastbound": C.SPAWN_EASTBOUND, "westbound": C.SPAWN_WESTBOUND}
+# Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).
+SPAWNS = C.SPAWNS
 
 
-def load_model(name, device):
-    model = CarlaSteeringNet().to(device)
+def load_model(name, device, student=False, channels=(8, 16, 16), fc=32, h=28, w=84):
+    """Load a teacher (CarlaSteeringNet) or, with student=True, a StudentNet.
+
+    The students are what the certificate actually reasons about, so being able to
+    DRIVE one here is what makes a clear-weather competence check possible without
+    duplicating the closed-loop driving code.
+    """
+    if student:
+        from student import StudentNet
+        model = StudentNet(h, w, channels=tuple(channels), fc=fc).to(device)
+    else:
+        model = CarlaSteeringNet().to(device)
     model.load_state_dict(torch.load(os.path.join(C.CHECKPOINT_DIR, f"{name}.pth"),
                                      map_location=device))
     model.eval()
@@ -55,6 +69,23 @@ def drive_nn(world, world_map, vehicle, img_queue, model, device, direction, max
     start = carla.Location(x=spawn["x"], y=spawn["y"], z=spawn["z"])
     print(f"\n=== {direction.upper()} (network in control) ===")
 
+    # STOP AT THE SECTION'S END, MEASURED ALONG THE ROUTE.
+    #
+    # steps_for() caps STEPS, computed as length / (TARGET_SPEED * dt). That bounds
+    # distance only if the vehicle holds target speed exactly. It runs slightly hot, so
+    # runs overshot: fog failures on s02 peaked at 639 m and 634 m of a 628 m section,
+    # 101-102% through, and night peaked at 94-101% on four sections. Past the boundary
+    # the car is in the unclean road the section was CLIPPED TO EXCLUDE, and the
+    # excursion it finds there was being recorded as that section's max |CTE|.
+    #
+    # steps_for's own docstring already names this failure mode -- "it fails there for
+    # reasons that have nothing to do with the policy" -- and fixes it with a step cap.
+    # A step cap is the wrong instrument for a distance bound. This is the right one.
+    seg_len = np.linalg.norm(np.diff(route, axis=0), axis=1)
+    arc = np.concatenate([[0.0], np.cumsum(seg_len)])
+    scored_m = C.SECTION_LEN_M.get(direction) if getattr(C, "SECTION_BASED", False) else None
+
+    prev_hint, travelled_m = None, 0.0
     records, left, stalled, offroad = [], False, 0, 0
     for step in range(max_steps):
         env.update_spectator(world, vehicle)
@@ -64,7 +95,13 @@ def drive_nn(world, world_map, vehicle, img_queue, model, device, direction, max
         loc = tf.location
 
         # network steering from the camera frame
-        x = torch.from_numpy(preprocess_for_model(env.raw_to_bgr(image))).unsqueeze(0).to(device)
+        # A StudentNet takes 84x28, the teacher 200x66. preprocess_for_model bakes in
+        # the TEACHER size, so driving a student through it feeds the wrong tensor.
+        bgr = env.raw_to_bgr(image)
+        if hasattr(model, "in_w"):
+            x = torch.from_numpy(student_preprocess(bgr, model.in_w, model.in_h)).unsqueeze(0).to(device)
+        else:
+            x = torch.from_numpy(preprocess_for_model(bgr)).unsqueeze(0).to(device)
         with torch.no_grad():
             nn_steer = float(model(x).item())
         nn_steer = max(-1.0, min(1.0, nn_steer))
@@ -74,7 +111,7 @@ def drive_nn(world, world_map, vehicle, img_queue, model, device, direction, max
         exp_steer, _, _ = pure_pursuit_route(route, tf, hint)
 
         thr, brk = speed_ctrl.control(vehicle)
-        vehicle.apply_control(carla.VehicleControl(throttle=thr, brake=brk, steer=nn_steer))
+        env.apply_control(vehicle, carla.VehicleControl(throttle=thr, brake=brk, steer=nn_steer))
 
         records.append(dict(
             step=step, time_sec=round(step * C.FIXED_DT, 2),
@@ -82,6 +119,28 @@ def drive_nn(world, world_map, vehicle, img_queue, model, device, direction, max
             cte_m=cte, cte_ft=(cte * C.M_TO_FT if cte is not None else None),
             speed_mph=env.speed_mph(vehicle), x=loc.x, y=loc.y, yaw=tf.rotation.yaw,
         ))
+
+        # PROGRESS ALONG THE ROUTE, accumulated from UNWRAPPED index deltas.
+        #
+        # Two earlier attempts at this were wrong and both failed the same way -- the run
+        # stopped after a handful of steps and reported a tiny |CTE| as a PASS:
+        #   1. comparing ABSOLUTE arc position assumed every spawn sits at route index 0;
+        #   2. subtracting a start offset then "correcting" a negative result by one lap
+        #      turned a one-index backward wobble near the seam into a full lap of credit.
+        # Accumulating per-step deltas, each unwrapped to the shorter way round, is immune
+        # to both: a wobble contributes its own small negative and cancels itself.
+        if scored_m is not None and hint is not None:
+            if prev_hint is not None:
+                d_idx = hint - prev_hint
+                if d_idx > len(route) // 2:
+                    d_idx -= len(route)
+                elif d_idx < -len(route) // 2:
+                    d_idx += len(route)
+                travelled_m += d_idx * float(np.mean(seg_len))
+            prev_hint = hint
+            if travelled_m >= scored_m:
+                print(f"  reached the section's scored end ({scored_m:.0f} m) at step {step}")
+                break
 
         d0 = loc.distance(start)
         if d0 > 50.0:
@@ -132,7 +191,14 @@ def save_and_report(name, direction, records):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="steering_bc_baseline")
-    ap.add_argument("--direction", default="both", choices=["eastbound", "westbound", "both"])
+    ap.add_argument("--student", action="store_true",
+                    help="load a StudentNet instead of the PilotNet-class teacher")
+    ap.add_argument("--channels", default="8,16,16", help="student conv widths")
+    ap.add_argument("--fc", type=int, default=32, help="student FC width")
+    ap.add_argument("--in-w", type=int, default=84)
+    ap.add_argument("--in-h", type=int, default=28)
+    ap.add_argument("--direction", default="both",
+                    help="section name, or 'both'/'all' for every section")
     ap.add_argument("--max-steps", type=int, default=2000)
     ap.add_argument("--weather", default="clear",
                     choices=["clear", "fog", "rain", "night", "shadows"],
@@ -140,31 +206,99 @@ def main():
     args = ap.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = load_model(args.model, device)
+    model = load_model(args.model, device, student=args.student,
+                       channels=tuple(int(v) for v in args.channels.split(",")),
+                       fc=args.fc, h=args.in_h, w=args.in_w)
 
     client = env.connect()
     world = env.load_town04(client)
     original = env.enable_sync_mode(world)
+
+    # DETERMINISM PREFLIGHT (Town06 only). The launch flags that matter most -- texture
+    # streaming and quality level -- are invisible over RPC, so a server someone started
+    # by hand looks completely normal and quietly produces noisier results. This reads
+    # the server's real command line and refuses rather than warns.
+    #
+    # Town04 is excluded deliberately: it is the published artifact and must keep
+    # reproducing exactly until its own re-measurement is authorised.
+    if C.STUDY_MAP == "Town06":
+        import carla_determinism as cd  # noqa: E402
+        cd.require_deterministic(C.PORT, world, fixed_dt=C.FIXED_DT,
+                                 deterministic_control=C.DETERMINISTIC_CONTROL)
+
     world_map = world.get_map()
     # Spawn INSIDE the try: a failure here would otherwise skip the finally and leave
     # the server hung in synchronous mode with no ticking client (trap 3b).
     vehicle = camera = img_queue = None
-    dirs = ["eastbound", "westbound"] if args.direction == "both" else [args.direction]
+    dirs = list(C.SECTIONS) if args.direction in ("both", "all") else [args.direction]
     results = {}
     try:
         vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
         camera, img_queue = env.spawn_camera(world, vehicle)
         # after spawn: lights need the vehicle, and exposure is declared per condition
         camera, img_queue = env.set_condition(world, vehicle, args.weather, camera)
+        # Confirm from a RENDERED FRAME that the requested condition is what is actually
+        # being drawn. set_condition already reads the weather struct back, but the
+        # struct is what we asked for, not what the camera sees -- exposure, headlights
+        # and the sensor all sit between them. One frame, and it costs a few ticks.
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+        from condition_signature import assert_condition, identify  # noqa: E402
+        for _ in range(6):
+            f_ = world.tick()
+        _img = env.grab_frame(img_queue, f_)
+        # R-SIM-4: confirm from a RENDERED FRAME that the requested condition is what is
+        # actually drawn. This is the Town04 fog-into-night failure and it stays ON for
+        # every normal run.
+        #
+        # It is SKIPPED, and only skipped, when a disturbance override is deliberately
+        # in force. An override renders an INTERMEDIATE point of the disturbance family
+        # -- fog at density 17.5, say -- which by construction is not the preset, so
+        # `identify` will not call it 'fog' and the assert would abort a run that is
+        # doing exactly what was asked. The signature is still measured and printed, so
+        # the rendered condition is on the record rather than merely unchecked.
+        _sig_frame = student_preprocess(env.raw_to_bgr(_img), 168, 28)
+        _ovr = {k: os.environ[k] for k in
+                ("FOG_DENSITY_OVERRIDE", "SUN_ALTITUDE_OVERRIDE") if os.environ.get(k)}
+        if _ovr:
+            _got, _st = identify(_sig_frame)
+            print(f"  OVERRIDE ACTIVE {_ovr}: preset assert skipped by design. "
+                  f"Rendered signature: looks like '{_got}' "
+                  f"(mean={_st['mean']:.4f} sigma={_st['sigma']:.4f} p01={_st['p01']:.4f})")
+            # The signature was printed and NOT checked, and that cost a whole sweep
+            # (T06-F35): sun altitude was swept with --weather night, so the DECLARED
+            # EXPOSURE was night's shutter 200 against daylight's 800, and daylight
+            # scenes were rendered through a night camera. Every run completed, every
+            # CTE was plausible, every step count was normal, and the signature line
+            # said 'clear' on a run labelled 'shadows' -- printed, and ignored.
+            #
+            # An override legitimately moves the condition off its preset, so this
+            # cannot assert. But a signature that has crossed into a DIFFERENT named
+            # condition is worth shouting about, because the usual cause is that the
+            # exposure belongs to the wrong condition rather than that the override
+            # went far enough to change the condition's character.
+            if _got != args.weather:
+                print(f"  *** WARNING: the rendered frame classifies as '{_got}' but this "
+                      f"run is labelled '{args.weather}'. Check that --weather names the "
+                      f"condition whose EXPOSURE you intend: exposure is per-condition "
+                      f"(clear/fog/low-sun shutter "
+                      f"{C.exposure_for('clear')['shutter']:.0f}, night "
+                      f"{C.exposure_for('night')['shutter']:.0f}), so the wrong one "
+                      f"silently rescales every frame. See T06-F35.")
+        else:
+            assert_condition(_sig_frame, args.weather)
         for d in dirs:
-            recs = drive_nn(world, world_map, vehicle, img_queue, model, device, d, args.max_steps)
+            recs = drive_nn(world, world_map, vehicle, img_queue, model, device, d, min(args.max_steps, C.steps_for(d)))
             results[d] = save_and_report(args.model, d, recs)
     finally:
         env.cleanup([camera, vehicle], world, original)
 
     print("\n" + "=" * 60)
     for d, s in results.items():
+        # steps= belongs on the SUMMARY line too, not only the progress line: callers
+        # parse this one, and R-SIM-6 says a run that ends far short of steps_for is void
+        # rather than a pass. Without the step count they cannot tell.
         print(f"{d:10s}: {'PASS' if s.get('passed') else 'FAIL'} "
+              f"steps={s.get('n', 0)} "
               f"max|CTE|={s.get('max_abs_cte_m', 0)*C.M_TO_FT:.2f}ft "
               f"over-budget={s.get('frac_over_budget', 1)*100:.1f}%")
 

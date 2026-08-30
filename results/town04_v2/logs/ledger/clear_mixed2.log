@@ -1,0 +1,6 @@
+  student 'S_mixed_84x28_w3_v2' resolves to 'S_mixed_84x28_w3_v2_dagger_r00' (student DAgger is part of this study's procedure)
+S_mixed_84x28_w3_v2 under 'clear' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 6 reps x 2 sections = 12 runs
+
+ERROR: failed to destroy actor 271 : time-out of 120000ms while waiting for the simulator, make sure the simulator is ready and connected to 127.0.0.1:3000 
+ERROR: failed to destroy actor 270 : time-out of 120000ms while waiting for the simulator, make sure the simulator is ready and connected to 127.0.0.1:3000 

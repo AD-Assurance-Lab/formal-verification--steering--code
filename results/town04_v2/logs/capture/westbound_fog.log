@@ -1,0 +1,5 @@
+capturing 74 frames: 1 cond x 74 poses x 1 offsets x 1 yaws
+  settled 74 poses: z -0.00..0.00 m, pitch +0.00..+0.00 deg, 0 fell back
+  fog: 74 frames
+
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/calibration/lap_westbound_fog.npz  (1.8 MB)

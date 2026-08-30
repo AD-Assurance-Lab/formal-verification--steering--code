@@ -1,0 +1,42 @@
+condition filter ['clear', 'fog', 'night', 'shadows']: kept 27112 of 27112 frames
+manifests=1 total=27112 train=23062 val=4050 | balance=False augment=False | device=cuda
+  epoch   0 | train 1.174e-03 | val 2.399e-04 | rmse 0.0155 *
+  epoch   2 | train 2.228e-04 | val 2.169e-04 | rmse 0.0147 *
+  epoch   3 | train 1.993e-04 | val 1.913e-04 | rmse 0.0138 *
+  epoch   5 | train 1.625e-04 | val 1.747e-04 | rmse 0.0132 *
+  epoch   6 | train 1.400e-04 | val 1.506e-04 | rmse 0.0123 *
+  epoch   7 | train 1.178e-04 | val 1.321e-04 | rmse 0.0115 *
+  epoch   8 | train 9.549e-05 | val 1.035e-04 | rmse 0.0102 *
+  epoch  10 | train 6.162e-05 | val 8.055e-05 | rmse 0.0090 *
+  epoch  11 | train 5.591e-05 | val 6.903e-05 | rmse 0.0083 *
+  epoch  12 | train 4.831e-05 | val 6.544e-05 | rmse 0.0081 *
+  epoch  13 | train 4.562e-05 | val 5.475e-05 | rmse 0.0074 *
+  epoch  14 | train 4.320e-05 | val 5.098e-05 | rmse 0.0071 *
+  epoch  16 | train 3.624e-05 | val 4.552e-05 | rmse 0.0067 *
+  epoch  17 | train 3.367e-05 | val 3.681e-05 | rmse 0.0061 *
+  epoch  19 | train 2.425e-05 | val 3.316e-05 | rmse 0.0058 *
+  epoch  20 | train 2.079e-05 | val 2.570e-05 | rmse 0.0051 *
+  epoch  21 | train 1.667e-05 | val 2.204e-05 | rmse 0.0047 *
+  epoch  22 | train 1.607e-05 | val 1.784e-05 | rmse 0.0042 *
+  epoch  24 | train 1.492e-05 | val 1.617e-05 | rmse 0.0040 *
+  epoch  29 | train 1.397e-05 | val 1.553e-05 | rmse 0.0039 *
+  epoch  30 | train 1.399e-05 | val 2.257e-05 | rmse 0.0048
+  epoch  31 | train 1.419e-05 | val 1.546e-05 | rmse 0.0039 *
+  epoch  35 | train 1.347e-05 | val 1.522e-05 | rmse 0.0039 *
+  epoch  40 | train 1.254e-05 | val 1.568e-05 | rmse 0.0040
+  epoch  41 | train 1.253e-05 | val 1.441e-05 | rmse 0.0038 *
+  epoch  44 | train 1.195e-05 | val 1.346e-05 | rmse 0.0037 *
+  epoch  50 | train 1.120e-05 | val 1.777e-05 | rmse 0.0042
+  epoch  53 | train 1.100e-05 | val 1.258e-05 | rmse 0.0035 *
+  epoch  60 | train 1.095e-05 | val 1.321e-05 | rmse 0.0036
+  epoch  63 | train 9.742e-06 | val 1.214e-05 | rmse 0.0035 *
+  epoch  70 | train 9.945e-06 | val 1.434e-05 | rmse 0.0038
+  epoch  73 | train 9.178e-06 | val 1.201e-05 | rmse 0.0035 *
+  epoch  77 | train 9.300e-06 | val 1.182e-05 | rmse 0.0034 *
+  epoch  80 | train 9.138e-06 | val 1.202e-05 | rmse 0.0035
+  epoch  90 | train 8.949e-06 | val 1.238e-05 | rmse 0.0035
+  epoch  92 | train 8.825e-06 | val 1.171e-05 | rmse 0.0034 *
+  epoch 100 | train 8.831e-06 | val 1.239e-05 | rmse 0.0035
+  epoch 110 | train 8.649e-06 | val 1.177e-05 | rmse 0.0034
+  early stop at epoch 112
+BEST val MSE=1.171e-05 RMSE=0.0034 -> /home/za/ad-assurance--workspace/formal-verification--steering--code/pipeline/checkpoints/teacher_mixed_v2_bc.pth

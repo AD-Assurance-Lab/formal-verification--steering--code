@@ -1,0 +1,18 @@
+{
+  "label": "baseline2",
+  "n_steps": 200,
+  "n_reps": 3,
+  "physics_identical": false,
+  "render_identical": false,
+  "preproc_identical": false,
+  "nn_identical": false,
+  "control_identical": false,
+  "first_control_divergence": 0,
+  "first_pose_divergence": 15,
+  "max_pose_delta": 55.57509088516235,
+  "first_raw_divergence": 0,
+  "raw_diff_steps": 200,
+  "first_pre_divergence": 0,
+  "pre_diff_steps": 200,
+  "max_nn_steer_delta": 0.515373945236206
+}

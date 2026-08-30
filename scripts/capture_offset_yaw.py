@@ -54,6 +54,17 @@ YAWS = np.array([float(x) for x in os.environ.get(
     "OY_YAWS", "-6.0,-3.0,0.0,3.0,6.0").split(",")])   # degrees of heading error
 CONDS = os.environ.get("OY_CONDS", "clear,fog,night,shadows").split(",")
 OUT = REPO / os.environ.get("OY_OUT", "results/calibration/offset_yaw.npz")
+# Model input size. Defaults to the published 84x28, so Town04 captures are unchanged.
+# It is read here rather than hardcoded because the captures ARE the verifier's input:
+# a student at a different resolution needs its own capture set.
+# Default to the REGISTRY, not to Town04's 84x28. These captures ARE the verifier's
+# input, so a stale default silently certifies a different network than the one that
+# drives: this produced 84-wide frames while the registry was at 168, and nothing
+# errored -- the arrays are simply the wrong shape for the student.
+IN_W = int(os.environ.get("OY_IN_W", str(getattr(C, "TOWN06_INPUT_W", 84))
+                          if getattr(C, "SECTION_BASED", False) else "84"))
+IN_H = int(os.environ.get("OY_IN_H", str(getattr(C, "TOWN06_INPUT_H", 28))
+                          if getattr(C, "SECTION_BASED", False) else "28"))
 
 
 def main():
@@ -61,23 +72,53 @@ def main():
     ap.add_argument("--poses", type=int, default=40)
     ap.add_argument("--start-m", type=float, default=0.0)
     ap.add_argument("--length-m", type=float, default=160.0)
-    ap.add_argument("--direction", default="westbound",
-                    choices=["westbound", "eastbound"],
+    # Town04 has two directions; Town06 has six named sections. Hardcoding the Town04
+    # pair here made every Town06 capture die at argparse with "invalid choice: 's00'".
+    ap.add_argument("--direction", default=C.SECTIONS[0],
+                    choices=list(C.SECTIONS),
                     help="several sun-altitude failures are direction-specific: the sun's\n                          azimuth is fixed, so travelling east or west puts it ahead or\n                          behind. Verification measured in one direction cannot see a\n                          failure that only occurs in the other.")
     args = ap.parse_args()
 
-    base = REPO / "pipeline" / "data" / "live_pairs"
-    with open(base / "manifest.csv") as fh:
-        rows = [r for r in csv.DictReader(fh)
-                if r["weather"] == "clear" and r["direction"] == args.direction]
-    xy = np.array([[float(r["x"]), float(r["y"])] for r in rows])
+    # THE ROUTE IS THE POSE SOURCE ON EVERY MAP.
+    #
+    # This was section-based maps only; Town04 read poses from the `live_pairs` dataset
+    # instead. Two reasons it now reads the route as well:
+    #
+    #   1. The reason already given below and never applied to Town04 -- the route is the
+    #      same geometry the closed-loop runs follow, so capture poses and driving agree
+    #      by construction rather than by coincidence.
+    #   2. `live_pairs` is a captured DATASET. Under D-11 the Town04 redo may not reuse
+    #      data collected on the violating harness, and it was archived; making the
+    #      verification captures depend on it would have reintroduced exactly the coupling
+    #      the redo exists to remove. The routes are geometry, are tracked in git, and are
+    #      unchanged.
+    #
+    # The poses therefore differ slightly from the published run's. That is a declared
+    # difference of the redo, not a defect: it is the same road, sampled from the
+    # definition of the road rather than from one drive along it.
+    if True:
+        from route import load_route
+        rt = np.asarray(load_route(args.direction), dtype=float)
+        dx = np.diff(rt[:, 0], append=rt[0, 0])
+        dy = np.diff(rt[:, 1], append=rt[0, 1])
+        yaw_deg = np.degrees(np.arctan2(dy, dx))
+        rows = [dict(x=rt[i, 0], y=rt[i, 1], yaw=yaw_deg[i]) for i in range(len(rt))]
+        xy = rt
+    else:
+        base = REPO / "pipeline" / "data" / "live_pairs"
+        with open(base / "manifest.csv") as fh:
+            rows = [r for r in csv.DictReader(fh)
+                    if r["weather"] == "clear" and r["direction"] == args.direction]
+        xy = np.array([[float(r["x"]), float(r["y"])] for r in rows])
+    if len(xy) < 2:
+        sys.exit(f"no poses for direction '{args.direction}' -- refusing to capture")
     d = np.concatenate([[0], np.cumsum(np.linalg.norm(np.diff(xy, axis=0), axis=1))])
     want = np.linspace(args.start_m, args.start_m + args.length_m, args.poses)
     idx = sorted({int(np.argmin(np.abs(d - w))) for w in want})
     poses = [rows[i] for i in idx]
 
     n = len(CONDS) * len(poses) * len(OFFSETS) * len(YAWS)
-    frames = np.zeros((len(CONDS), len(poses), len(OFFSETS), len(YAWS), 3, 28, 84),
+    frames = np.zeros((len(CONDS), len(poses), len(OFFSETS), len(YAWS), 3, IN_H, IN_W),
                       np.float32)
     print(f"capturing {n} frames: {len(CONDS)} cond x {len(poses)} poses x "
           f"{len(OFFSETS)} offsets x {len(YAWS)} yaws")
@@ -99,9 +140,13 @@ def main():
         orig = env.enable_sync_mode(world)
         v = cam = None
         try:
-            v = env.spawn_vehicle(world, C.SPAWN_WESTBOUND if args.direction ==
-                                  "westbound" else C.SPAWN_EASTBOUND)
-            v.apply_control(carla.VehicleControl(brake=1.0))
+            # SPAWNS is keyed by section on a section-based map; the westbound /
+            # eastbound pair is the Town04 special case.
+            _spawn = (C.SPAWNS[args.direction] if getattr(C, "SECTION_BASED", False)
+                      else (C.SPAWN_WESTBOUND if args.direction == "westbound"
+                            else C.SPAWN_EASTBOUND))
+            v = env.spawn_vehicle(world, _spawn)
+            env.apply_control(v, carla.VehicleControl(brake=1.0))
             for _ in range(40):
                 world.tick()
             z0 = v.get_transform().location.z
@@ -132,7 +177,7 @@ def main():
                     carla.Rotation(yaw=yaw)))
                 v.set_target_velocity(carla.Vector3D(0, 0, 0))
                 v.set_target_angular_velocity(carla.Vector3D(0, 0, 0))
-                v.apply_control(carla.VehicleControl(brake=1.0))
+                env.apply_control(v, carla.VehicleControl(brake=1.0))
                 for _ in range(ticks):
                     world.tick()
                 t = v.get_transform()
@@ -214,7 +259,7 @@ def main():
                                 except Exception:
                                     pass
                             frames[ci, pi, oi, yi] = vd._project(
-                                img.astype(np.float32) / 255.0, 84, 28).reshape(3, 28, 84)
+                                img.astype(np.float32) / 255.0, IN_W, IN_H).reshape(3, IN_H, IN_W)
                 print(f"  {cond}: {len(poses)*len(OFFSETS)*len(YAWS)} frames", flush=True)
         finally:
             try:

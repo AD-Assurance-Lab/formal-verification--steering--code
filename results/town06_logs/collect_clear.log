@@ -1,0 +1,28 @@
+  [clear/s00 lap00] start speed=20.3 mph
+  [clear/s01 lap00] start speed=19.8 mph
+  [clear/s02 lap00] start speed=20.4 mph
+  [clear/s03 lap00] start speed=19.6 mph
+  [clear/s04 lap00] start speed=20.0 mph
+  [clear/s05 lap00] start speed=20.4 mph
+  [clear/s00 lap01] start speed=20.3 mph
+  [clear/s01 lap01] start speed=19.6 mph
+  [clear/s02 lap01] start speed=19.9 mph
+  [clear/s03 lap01] start speed=19.9 mph
+  [clear/s04 lap01] start speed=20.0 mph
+  [clear/s05 lap01] start speed=19.8 mph
+  [clear/s00 lap02] start speed=19.8 mph
+  [clear/s01 lap02] start speed=19.8 mph
+  [clear/s02 lap02] start speed=19.7 mph
+  [clear/s03 lap02] start speed=19.8 mph
+  [clear/s04 lap02] start speed=20.0 mph
+  [clear/s05 lap02] start speed=19.7 mph
+  [clear/s00 lap03] start speed=20.5 mph
+  [clear/s01 lap03] start speed=19.6 mph
+  [clear/s02 lap03] start speed=19.9 mph
+  [clear/s03 lap03] start speed=20.5 mph
+  [clear/s04 lap03] start speed=20.0 mph
+  [clear/s05 lap03] start speed=19.9 mph
+
+Collected 8564 frames -> /home/za/ad-assurance--workspace/formal-verification--steering--code/pipeline/data/clear_t06/manifest.csv
+  straight (|steer|<=0.01): 7363 (86%) | left: 310 | right: 891
+  steer range: [-0.268, 0.337]

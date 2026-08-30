@@ -1,0 +1,42 @@
+
+################################################################
+# student DAgger round 0 — policy 'S_clear_84x28_v2'
+################################################################
+    eastbound: aborted at step 420
+  [clear/eastbound] over-budget=  5.7%  max|CTE|=30.28ft  -> FAIL
+  [clear/westbound] over-budget=  0.1%  max|CTE|= 2.33ft  -> FAIL
+  re-distilling (warm-start from 'S_clear_84x28_v2') -> S_clear_84x28_v2_dagger_r00
+all 6779 teacher targets cached
+
+################################################################
+# student DAgger round 1 — policy 'S_clear_84x28_v2_dagger_r00'
+################################################################
+    eastbound: aborted at step 425
+  [clear/eastbound] over-budget=  5.9%  max|CTE|=29.75ft  -> FAIL
+  [clear/westbound] over-budget=  0.5%  max|CTE|= 4.83ft  -> FAIL
+  re-distilling (warm-start from 'S_clear_84x28_v2_dagger_r00') -> S_clear_84x28_v2_dagger_r01
+all 6779 teacher targets cached
+
+################################################################
+# student DAgger round 2 — policy 'S_clear_84x28_v2_dagger_r01'
+################################################################
+    eastbound: aborted at step 422
+  [clear/eastbound] over-budget=  6.1%  max|CTE|=30.42ft  -> FAIL
+  [clear/westbound] over-budget=  0.5%  max|CTE|= 4.20ft  -> FAIL
+  re-distilling (warm-start from 'S_clear_84x28_v2_dagger_r01') -> S_clear_84x28_v2_dagger_r02
+all 6779 teacher targets cached
+
+################################################################
+# student DAgger round 3 — policy 'S_clear_84x28_v2_dagger_r02'
+################################################################
+    eastbound: aborted at step 425
+  [clear/eastbound] over-budget=  5.9%  max|CTE|=30.38ft  -> FAIL
+  [clear/westbound] over-budget=  0.5%  max|CTE|= 5.54ft  -> FAIL
+
+Exhausted 3 rounds (last 'S_clear_84x28_v2_dagger_r02').
+
+===== student DAgger summary =====
+  round 0: S_clear_84x28_v2             FAIL
+  round 1: S_clear_84x28_v2_dagger_r00  FAIL
+  round 2: S_clear_84x28_v2_dagger_r01  FAIL
+  round 3: S_clear_84x28_v2_dagger_r02  FAIL
