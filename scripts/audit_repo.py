@@ -11,6 +11,7 @@ import hashlib, json, os, subprocess, sys, glob
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(REPO)
 sys.path.insert(0, "pipeline")
+import config as C  # noqa: E402
 ok, bad = [], []
 def chk(c, m): (ok if c else bad).append(m)
 
@@ -84,6 +85,80 @@ scratch = [f for f in subprocess.run(["git", "ls-files", "pipeline/results"],
            if not any(k in f for k in ("teacher_clear_bc", "oracle_", "reference_routes",
                                        "_bc_training"))]
 chk(not scratch, f"no scratch traces tracked ({len(scratch)} found)")
+
+
+# --- capture coverage: the defect that motivated these checks ----------------
+# A capture that spans a sliver of the route is indistinguishable downstream from one
+# that spans all of it: same shapes, clean bound, reproducible certificate. The Town04
+# redo certified 160 m of a 2,861 m lap and nothing complained.
+import numpy as _np
+for cap in glob.glob("results/**/lap_*.npz", recursive=True) + glob.glob("results/**/captures/*.npz", recursive=True):
+    if "_superseded" in cap or "marked-for-deletion" in cap:
+        continue
+    try:
+        z = _np.load(cap, allow_pickle=True)
+    except Exception:
+        continue
+    span = float(z["route_span_m"]) if "route_span_m" in z.files else None
+    if span is None and "pose_x" in z.files:
+        x, y = _np.asarray(z["pose_x"], float), _np.asarray(z["pose_y"], float)
+        span = float(_np.hypot(_np.diff(x), _np.diff(y)).sum())
+    if span is None:
+        continue
+    # Compare against what this capture is SUPPOSED to cover, not a magic number:
+    # Town06 captures one section per file, Town04 a whole lap. A fixed floor flagged
+    # s05 (489 m spanned, 490 m scored) as a sliver, which is the check being wrong
+    # rather than the capture.
+    stem = os.path.basename(cap)[len("lap_"):].rsplit("_", 1)[0]
+    want = None
+    if stem in getattr(C, "SECTION_LEN_M", {}):
+        want = float(C.SECTION_LEN_M[stem])
+    elif stem in ("eastbound", "westbound"):
+        try:
+            import numpy as _n2
+            from route import load_route as _lr
+            rt = _n2.asarray(_lr(stem), dtype=float)
+            want = float(_n2.linalg.norm(_n2.diff(rt, axis=0), axis=1).sum())
+        except Exception:
+            want = None
+    if want:
+        chk(span >= 0.80 * want,
+            f"{os.path.basename(cap)}: spans {span:.0f} m of {want:.0f} m "
+            f"({100*span/want:.0f}%)")
+
+# --- sibling tools must carry the same guards --------------------------------
+# certify_town06 had MIN_POSES_PER_CELL and certify_sustained_bound did not, and the redo
+# ran the one without it. An asymmetry between two tools doing the same job is detectable.
+cert_a = open("scripts/certify_town06.py").read()
+cert_b = open("scripts/certify_sustained_bound.py").read()
+for guard in ("MIN_POSES_PER_CELL",):
+    chk(guard in cert_a and guard in cert_b,
+        f"both certifiers carry {guard} (parity, not one-sided)")
+chk("MIN_ROUTE_COVERAGE" in cert_b or "check_coverage" in cert_b,
+    "certify_sustained_bound checks route coverage")
+
+# --- a redo's artifacts should be comparable in SIZE to what they replace -----
+# The single loudest available signal: the redo's captures were 1.8 MB against the
+# published 1.7 GB, and 81 poses against 1,600. Orders of magnitude are worth asserting.
+pub = sorted(glob.glob("results/calibration/lap_*_clear.npz"))
+redo = sorted(glob.glob("results/town04_v2/calibration/lap_*_clear.npz"))
+if pub and redo:
+    def poses(p):
+        try:
+            return int(_np.load(p, allow_pickle=True)["frames"].shape[1])
+        except Exception:
+            return -1
+    pn, rn = poses(pub[0]), poses(redo[0])
+    chk(rn >= 0.5 * pn, f"redo captures have {rn} poses against the published {pn}")
+
+# --- stated preconditions must have run --------------------------------------
+# The paper states the capture-vs-driven gate as a precondition of certification. It was
+# stated and never executed for either rebuild.
+for d in ("results/town06", "results/town04_v2/calibration"):
+    if glob.glob(os.path.join(d, "**", "*certificate*.json"), recursive=True) or \
+       glob.glob(os.path.join(d, "sustained_bound.json")):
+        chk(bool(glob.glob(os.path.join(d, "**", "capture_gate.json"), recursive=True)),
+            f"{d}: capture gate ran before certification")
 
 print("PASS:")
 for m in ok: print("   ", m)
