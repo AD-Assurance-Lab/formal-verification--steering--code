@@ -136,7 +136,12 @@ def main():
 
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     tol = C.CLOSED_LOOP_TOLERANCE
-    cal = REPO / "results" / "calibration"
+    # The redo reads and writes its OWN captures. results/calibration holds the
+    # published ones, taken under the old harness -- D-11 says they are not reusable, and
+    # overwriting them would destroy the record the redo is meant to be compared against.
+    cal = (REPO / "results" / "town04_v2" / "calibration" if REDO
+           else REPO / "results" / "calibration")
+    cal.mkdir(parents=True, exist_ok=True)
 
     # Refuse to produce a partial score that reads like a complete one. A silent `continue`
     # here once printed a clean 6/6 that was indistinguishable from 12/12.
