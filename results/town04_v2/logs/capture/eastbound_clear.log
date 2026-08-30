@@ -1,5 +1,3 @@
-capturing 81 frames: 1 cond x 81 poses x 1 offsets x 1 yaws
-  settled 81 poses: z 0.01..4.88 m, pitch +0.25..+2.99 deg, 0 fell back
-  clear: 81 frames
-
-wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/calibration/lap_eastbound_clear.npz  (1.9 MB)
+  --length-m not given: covering the WHOLE route, 3042 m
+capturing 1518 frames: 1 cond x 1518 poses x 1 offsets x 1 yaws
+  settled 1518 poses: z -0.00..11.00 m, pitch -3.45..+2.99 deg, 0 fell back
