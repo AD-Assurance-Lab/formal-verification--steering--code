@@ -149,18 +149,39 @@ def check_coverage(path, direction):
     """
     import numpy as _np
     z = _np.load(path, allow_pickle=True)
-    span = float(z["route_span_m"]) if "route_span_m" in z.files else None
-    if span is None and "pose_x" in z.files:
+    # MEASURE, then cross-check what the file claims. Trusting route_span_m was a single
+    # point of failure: the field was written from the whole route rather than the
+    # captured poses, so a short capture would have declared full coverage and this guard
+    # would have waved it through. A self-reported scope is a claim, not evidence.
+    span = None
+    if "pose_x" in z.files:
         x, y = _np.asarray(z["pose_x"], float), _np.asarray(z["pose_y"], float)
         span = float(_np.hypot(_np.diff(x), _np.diff(y)).sum())
+    claimed = float(z["route_span_m"]) if "route_span_m" in z.files else None
+    if span is not None and claimed is not None and abs(claimed - span) > 25.0:
+        sys.exit(f"REFUSING to certify from {path.name}: it records route_span_m "
+                 f"{claimed:.0f} m but its poses span {span:.0f} m. The capture "
+                 f"disagrees with itself; recapture before trusting either number.")
+    if span is None:
+        span = claimed
     if span is None:
         return
+    # Compare against the SCORED length, not the route's geometry. Town04's route is a
+    # closed 3,042 m loop whose scored prefix is 2,861 m -- the tail runs through an ODD
+    # boundary the study excludes -- so a correct full-coverage capture is 2,861 m and
+    # measuring it against 3,042 would report 94% for a capture that is exactly right.
     rt = _np.asarray(load_route(direction), dtype=float)
-    full = float(_np.linalg.norm(_np.diff(rt, axis=0), axis=1).sum())
+    geom = float(_np.linalg.norm(_np.diff(rt, axis=0), axis=1).sum())
+    full = float(getattr(C, "SECTION_LEN_M", {}).get(direction, geom))
     if full > 0 and span < MIN_ROUTE_COVERAGE * full:
         sys.exit(f"REFUSING to certify from {path.name}: it spans {span:.0f} m of a "
-                 f"{full:.0f} m route ({100*span/full:.1f}%), below the "
+                 f"{full:.0f} m scored route ({100*span/full:.1f}%), below the "
                  f"{100*MIN_ROUTE_COVERAGE:.0f}% floor. Recapture without --length-m.")
+    # Over-coverage is a scope error too: it certifies road the study does not claim.
+    if full > 0 and span > full + 25.0:
+        sys.exit(f"REFUSING to certify from {path.name}: it spans {span:.0f} m against a "
+                 f"{full:.0f} m scored route. The excess is outside the scored prefix "
+                 f"(ODD boundary) and is not comparable to the drives. Recapture.")
 
 
 
