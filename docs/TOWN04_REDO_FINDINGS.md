@@ -130,3 +130,54 @@ A minimum-rounds floor is the cheap fix and the flag already exists. `--min-roun
 used by either study's driver, and its own help text describes exactly the failure it
 prevents: "the DAgger set is an input to distillation, not just a means of fixing the
 teacher."
+
+## T04-R5  RESULT: the redo reproduces the published agreement, 6/6
+
+Certificate on the policy checkpoints, ledger 12 runs per cell, both under the corrected
+harness.
+
+    cond      student   driving                  certificate    agreement
+    clear     S_clear   PASS  0/12 [ 0, 24]%     vacuous        --
+    fog       S_clear   PASS  0/12 [ 0, 24]%     CERTIFIED      AGREE
+    night     S_clear   FAIL 12/12 [76,100]%     FALSIFIED      AGREE
+    low sun   S_clear   FAIL 12/12 [76,100]%     FALSIFIED      AGREE
+    clear     S_mixed   PASS  0/12 [ 0, 24]%     vacuous        --
+    fog       S_mixed   PASS  0/12 [ 0, 24]%     CERTIFIED      AGREE
+    night     S_mixed   PASS  0/12 [ 0, 24]%     CERTIFIED      AGREE
+    low sun   S_mixed   PASS  0/12 [ 0, 24]%     CERTIFIED      AGREE
+
+                                        agreement on scored cells: 6/6
+
+The published study reports 12/12 over twelve direction-level cells; this is 6/6 over six
+condition-level cells, the same outcome at the granularity the redo scored. **The
+published discovery-test result survives the corrected harness**, with the clear-only
+student failing night and low sun and the mixed student holding all four conditions.
+
+### Two bugs found on the way, both of which produced plausible wrong answers
+
+**1. The certifier carried its own copy of the student registry.**
+`certify_sustained_bound.py` defined `STUDENTS` with the PUBLISHED checkpoint names rather
+than reading `config.STUDENTS`, so under `TOWN04_REDO` it certified the published students
+while the ledger drove the redo's. What exposed it: re-running after an unrelated fix
+produced BYTE-IDENTICAL bounds across all twelve cells, which cannot happen when the
+checkpoint changes -- the two mixed checkpoints differ by up to 0.17 in weights and 0.0044
+in output. A registry that exists in config must be read from config.
+
+**2. Neither the certifier nor the ledger called `config.final_student`.**
+Town04's procedure includes student DAgger, so the checkpoint that IS the student is the
+newest DAgger round; both scripts used the distilled intermediate. They therefore agreed
+with each other while neither described the policy. This is precisely what
+`final_student`'s docstring warns about -- "the gate, the certifier and the ledger would
+each have used a model nobody intended to ship" -- and it happened because the function
+existed and was never called from either place.
+
+**Before both fixes the comparison read 5/6 with one CERTIFIED cell failing 10/12** -- an
+apparently unsound certificate, which is the most alarming result this study could
+produce. It was an artefact of comparing one study's certificate against another study's
+driving, on a model neither of them shipped. Recorded because the failure mode is the
+important part: every intermediate number was well-formed, plausible, and wrong.
+
+### Status
+
+Town04 redo complete. Both arms competent, certificate and ledger on the policy
+checkpoints, 6/6 agreement, all under the harness whose two defects T06-F22 measured.
