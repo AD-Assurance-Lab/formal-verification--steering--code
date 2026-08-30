@@ -15,6 +15,7 @@ import sys
 import csv
 import argparse
 import subprocess
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -234,11 +235,22 @@ def main():
             # and dagger.py's teacher loop should be looked at for the same reason.
             if r_local > 0:
                 env.cleanup([camera, vehicle], world, original)
-                # NEVER capture_output on a script that daemonises CARLA: the detached
+                # NOT carla_restart.sh: it pkills client processes by name and
+                # dagger_student.py is on its list, so calling it from in here makes this
+                # script terminate ITSELF mid-round. Measured -- the run died during the
+                # round-0 re-distillation with SIGTERM and no explanation.
+                #
+                # So: stop the SERVER only, then use the single canonical launcher.
+                # NEVER capture_output on a script that daemonises CARLA -- the detached
                 # child inherits the pipe and the call never returns.
                 _rlog = os.path.join(C.REPO_ROOT, "results", "carla_restart_dagger_student.log")
+                _port = os.environ.get("CARLA_PORT", str(C.PORT))
+                subprocess.run(["pkill", "-f",
+                                f"[C]arlaUE4-Linux-Shipping.*rpc-port={_port}"],
+                               stdin=subprocess.DEVNULL)
+                time.sleep(10)
                 with open(_rlog, "a") as _fh:
-                    subprocess.run(["bash", os.path.join(C.REPO_ROOT, "scripts", "carla_restart.sh")],
+                    subprocess.run(["bash", os.path.join(C.REPO_ROOT, "scripts", "carla_launch.sh")],
                                    stdout=_fh, stderr=subprocess.STDOUT,
                                    stdin=subprocess.DEVNULL, timeout=600)
                 client = env.connect()
