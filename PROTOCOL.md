@@ -310,3 +310,52 @@ That check matters because `evaluate.py` RAISES on a condition mismatch, so a th
 crossing would have aborted every run of the affected condition part-way through the
 unattended rebuild rather than at its start.
 
+
+#### A-3. The capture gate is a precondition of certification
+
+**Date:** 2026-08-30. **Requested by:** Zach.
+
+**What changed.** Section 4a names one precondition the certificate assumes but does not
+verify -- clear-weather competence -- and enforces it in code. There is a second, and the
+paper states it as though it were already enforced:
+
+> Before any certificate is computed we require captured steering to match the steering
+> the vehicle actually commanded at the same locations. [...] This check is cheap and it
+> is not optional.
+
+**It was not enforced anywhere.** No script computed it, on either map, and neither
+rebuild ran it. The number quoted in the paper (0.0137 over 1,600 poses) comes from the
+published era. It is now `scripts/capture_driven_gate.py`, it must pass before a
+certificate is computed, and `scripts/audit_repo.py` fails when a certificate exists with
+no gate artifact beside it.
+
+**Why it is a precondition and not a diagnostic.** The bound is computed offline on
+captured frames; the claim is about a driving vehicle. If the capture rig and the driving
+rig differ -- ride height, pitch, field of view -- the bound is sound and describes a
+camera that is not on the car. That is not hypothetical: a ride-height error made one
+direction's captures disagree at 0.202 while the other passed at 0.016, purely because
+its opening stretch happens to be flat. No verdict, interval or agreement rate can reveal
+it, because every one of them is computed downstream of the frames.
+
+**What it invalidates.** Section 9.5 says an amendment made after the corresponding result
+exists invalidates that result. Applied honestly:
+
+  * The certificate **superseded** on 2026-08-30 (`results/town06/_superseded_20260830_1731/`)
+    was computed with no gate artifact and does **not** satisfy this amendment. It is
+    already withdrawn and replaced; this records why it could not simply be reinstated.
+  * The **current** Town06 certificate does satisfy it. The rebuild ran
+    captures -> gate -> certificate -> commit -> drives, so the gate preceded
+    certification rather than following it: worst mean |capture - driven| **0.0261**
+    against the 0.05 threshold, 12/12 cells
+    (`results/town06/captures/capture_gate.json`).
+  * Town04 (discovery test) likewise: worst **0.0065**, gated by
+    `scripts/certify_town04.sh` before its certifier runs.
+
+So no current result is invalidated. That is a fact about the rebuild, not a convenience
+-- had the amendment been adopted a day earlier it would have withdrawn the then-current
+Town06 certificate, and the correct response would have been to rebuild, which is what
+happened anyway.
+
+**What it does NOT change.** No frozen constant in section 3, so `PROTOCOL.lock` is
+unchanged. R1, R2 and R3 are untouched. The gate is deterministic given fixed artifacts
+and has nothing to tune, so it cannot launder a verdict.
