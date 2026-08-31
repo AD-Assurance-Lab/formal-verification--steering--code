@@ -59,12 +59,28 @@ for ROW in "${STUDENT_ROWS[@]}"; do
   for COND in clear fog night shadows; do
     CELL="$REPO/results/town04_v2/ledger/${COND}__${BASE}__closed_loop.json"
     if [ -f "$CELL" ]; then say "SKIP  $COND/$BASE (cell exists)"; continue; fi
-    carla_restart "${COND}_${BASE}" || exit 1
-    rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null
     say "START $COND/$BASE"
-    # Two directions x 6 reps = 12 runs per cell, over the >= 10 floor (standing rule 3).
-    if python3 scripts/closed_loop_ledger.py --student "$BASE" --condition "$COND" \
-         --reps 6 --channels "$CH" --fc "$FC" --w 84 --h 28 \
+    # ONE PROCESS AND ONE SERVER PER RUN -- see run_town06_ledger.sh for why. Two
+    # directions x 6 reps = 12 runs per cell, over the >= 10 floor (standing rule 3),
+    # and now twelve INDEPENDENT trials rather than two chains of six.
+    RUN_OK=1
+    for REP in 0 1 2 3 4 5; do
+      for SEC in eastbound westbound; do
+        RUNF="$REPO/results/town04_v2/ledger/runs/${COND}__${BASE}__${SEC}__rep0${REP}.json"
+        [ -f "$RUNF" ] && { say "SKIP  $COND/$BASE $SEC rep$REP (run exists)"; continue; }
+        carla_restart "${COND}_${BASE}_${SEC}_${REP}" || { RUN_OK=0; break; }
+        rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null
+        if ! python3 scripts/closed_loop_ledger.py --student "$BASE" --condition "$COND" \
+             --channels "$CH" --fc "$FC" --w 84 --h 28 \
+             --only-section "$SEC" --only-rep "$REP" \
+             >>"$LOG_DIR/${COND}_${BASE}.log" 2>&1; then
+            say "FAIL  $COND/$BASE $SEC rep$REP"; RUN_OK=0; break
+        fi
+      done
+      [ $RUN_OK -eq 1 ] || break
+    done
+    if [ $RUN_OK -eq 1 ] && python3 scripts/aggregate_ledger_runs.py \
+         --condition "$COND" --cell "$BASE" --expect 12 \
          >>"$LOG_DIR/${COND}_${BASE}.log" 2>&1; then
         say "OK    $COND/$BASE"
     else

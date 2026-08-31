@@ -61,11 +61,36 @@ for ROW in "${STUDENT_ROWS[@]}"; do
   for COND in clear fog night shadows; do
     CELL="$REPO/results/town06/ledger/${COND}__${STU}__closed_loop.json"
     if [ -f "$CELL" ]; then say "SKIP  $COND/$STU (cell exists)"; continue; fi
-    carla_restart || exit 1
-    rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null
     say "START $COND/$STU"
-    if python3 scripts/closed_loop_ledger.py --student "$STU" --condition "$COND" \
-         --reps 2 --channels "$CH" --fc "$FC" --w "$IN_W" --h "$IN_H" \
+    # ONE PROCESS AND ONE SERVER PER RUN.
+    #
+    # R-SIM-1 says restart before every measurement RUN. This restarted before every CELL
+    # and drove twelve runs on one server with one vehicle, so the twelve repetitions were
+    # two chains of six inheriting each other's physics state -- and a Wilson interval over
+    # dependent trials is not the interval it claims to be.
+    #
+    # The restart is done BETWEEN processes rather than inside one, because killing the
+    # server under a live carla.Client throws from a context Python cannot catch
+    # ("terminate called", core dumped) and releasing every reference was not enough. A
+    # process boundary is the only version that is certainly correct.
+    RUN_OK=1
+    for REP in 0 1; do
+      for SEC in $(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(' '.join(C.SECTIONS))"); do
+        RUNF="$REPO/results/town06/ledger/runs/${COND}__${STU}__${SEC}__rep0${REP}.json"
+        [ -f "$RUNF" ] && { say "SKIP  $COND/$STU $SEC rep$REP (run exists)"; continue; }
+        carla_restart || { RUN_OK=0; break; }
+        rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null
+        if ! python3 scripts/closed_loop_ledger.py --student "$STU" --condition "$COND" \
+             --channels "$CH" --fc "$FC" --w "$IN_W" --h "$IN_H" \
+             --only-section "$SEC" --only-rep "$REP" \
+             >>"$LOG_DIR/ledger_${COND}_${STU}.log" 2>&1; then
+            say "FAIL  $COND/$STU $SEC rep$REP"; RUN_OK=0; break
+        fi
+      done
+      [ $RUN_OK -eq 1 ] || break
+    done
+    if [ $RUN_OK -eq 1 ] && python3 scripts/aggregate_ledger_runs.py \
+         --condition "$COND" --cell "$STU" --expect 12 \
          >>"$LOG_DIR/ledger_${COND}_${STU}.log" 2>&1; then
         say "OK    $COND/$STU"
     else
