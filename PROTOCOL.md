@@ -387,11 +387,14 @@ harness, with a clean server restart and a fresh vehicle for every run:
 Three laps is therefore a REPRODUCIBILITY CHECK, not a sample for estimating a rate. Its
 purpose is to catch a bug, not to measure a probability.
 
-**Conditional on the harness.** Three laps is only defensible while every one of these
-holds, and any relaxation returns the count to ten: a clean server restart before every
-run; a fresh vehicle and camera per run; one process per run; the determinism preflight
-green on each fresh server (D-1..D-6); one client per port; and the capture gate (A-3)
-passed before certification.
+**Conditional on the harness, and the condition is not optional.** Three laps is
+defensible only while every one of these holds: a clean server restart before every run; a
+fresh vehicle and camera per run; one process per run; the determinism preflight green on
+each fresh server (D-1..D-6); one client per port; and the capture gate (A-3) passed
+before certification. If one of them is not being enforced, the answer is to enforce it --
+**not to compensate with more laps.** A larger sample taken through a harness known to be
+wrong measures the harness, and it has the shape of a result, which is worse than having
+no number at all.
 
 **Margin is reported with every verdict.** A cell that passes with every span far below
 budget and a cell that passes at 1% of budget are different results, and a pass/fail bit
@@ -400,10 +403,19 @@ does not distinguish them. **A cell with no margin is a finding in its own right
 its competence precondition -- and adding laps would only characterise a coin flip more
 precisely rather than change that conclusion.
 
-**If the three laps disagree, look for a bug, not for more laps.** Under an enforced
-harness, disagreement between laps means something is wrong with the setup rather than
-that the outcome is genuinely random. Additional laps are then a diagnostic for an
-identified instability, never the first response.
+**If the three laps disagree, that is a BUG until proven otherwise, and more laps are
+never the response.** Under an enforced harness the laps agree -- measured, 0 of 48
+section-pairs disagreed. Disagreement therefore means the setup is wrong, and the correct
+action is to find what is wrong and fix it. Running ten laps instead would convert an
+identified defect into a plausible-looking failure rate and lose it: the number would be
+reported, believed, and wrong. **A cell whose laps disagree is void, not uncertain**, and
+it stays void until the cause is found and written down (standing rule 2).
+
+**Corrected the same day it was written.** The first version of this amendment said
+additional laps could serve as "a diagnostic for an identified instability" and that
+relaxing the harness "returns the count to ten". Zach rejected both: there is no fallback
+to ten. Recorded rather than silently edited, because an amendment that quietly changes
+what it required is the failure this procedure exists to prevent.
 
 **What it invalidates.** Every ledger cell scored as "runs" rather than laps is
 re-aggregated at lap granularity. No drive is re-run: the underlying per-run artifacts are
