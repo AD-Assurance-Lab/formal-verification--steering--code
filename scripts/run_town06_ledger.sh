@@ -17,6 +17,11 @@ export STUDY_MAP=Town06
 export CARLA_PORT=${CARLA_PORT:-3000}
 export PYTHONUNBUFFERED=1
 
+# THREE LAPS (PROTOCOL A-4). A Town06 lap is every scored section driven once; three
+# laps is a reproducibility check, not a rate estimate. This drove TWO.
+LAPS=${LAPS:-3}
+NSEC=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(len(C.SECTIONS))")
+
 LOG_DIR=$REPO/results/town06_logs
 mkdir -p "$LOG_DIR"
 say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/ledger.log"; }
@@ -40,8 +45,14 @@ carla_restart() {
     pkill -f "[C]arlaUE4-Linux-Shipping.*rpc-port=$CARLA_PORT" 2>/dev/null; sleep 8
     # ONE launcher: the determinism flags are launch-time and invisible over RPC,
     # so a second copy of this command is a second chance to omit them.
-    bash "$REPO/scripts/carla_launch.sh"
-    carla_up 60 && { say "CARLA back up"; sleep 10; return 0; }
+    # HONOUR THE LAUNCHER'S EXIT CODE, and prove the server can SERVE. See run_town04.
+    if ! bash "$REPO/scripts/carla_launch.sh"; then
+        say "launcher exit code nonzero"; return 1
+    fi
+    carla_up 60 || { say "port never bound"; return 1; }
+    CARLA_PORT=$CARLA_PORT python3 "$REPO/scripts/wait_carla_ready.py" --timeout 120 \
+        >/dev/null 2>&1 || { say "port bound but simulator will not serve"; return 1; }
+    say "CARLA back up"; sleep 5; return 0
     say "FATAL: CARLA did not return"; return 1; }
 carla_up 12 || carla_restart || exit 1
 
@@ -74,7 +85,7 @@ for ROW in "${STUDENT_ROWS[@]}"; do
     # ("terminate called", core dumped) and releasing every reference was not enough. A
     # process boundary is the only version that is certainly correct.
     RUN_OK=1
-    for REP in 0 1; do
+    for REP in $(seq 0 $((LAPS-1))); do
       for SEC in $(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(' '.join(C.SECTIONS))"); do
         RUNF="$REPO/results/town06/ledger/runs/${COND}__${STU}__${SEC}__rep0${REP}.json"
         [ -f "$RUNF" ] && { say "SKIP  $COND/$STU $SEC rep$REP (run exists)"; continue; }
@@ -90,7 +101,7 @@ for ROW in "${STUDENT_ROWS[@]}"; do
       [ $RUN_OK -eq 1 ] || break
     done
     if [ $RUN_OK -eq 1 ] && python3 scripts/aggregate_ledger_runs.py \
-         --condition "$COND" --cell "$STU" --expect 12 \
+         --condition "$COND" --cell "$STU" --expect $((LAPS*NSEC)) \
          >>"$LOG_DIR/ledger_${COND}_${STU}.log" 2>&1; then
         say "OK    $COND/$STU"
     else
