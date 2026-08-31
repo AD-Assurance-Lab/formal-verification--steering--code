@@ -74,7 +74,30 @@ def load_study_map(client, fresh=True):
     world = client.get_world()
     if world.get_map().name.split("/")[-1] != MAP_NAME:
         return client.load_world(MAP_NAME)      # loads a fresh map
-    return client.reload_world() if fresh else world  # already right map -> reload fresh
+    if not fresh:
+        return world
+
+    # DO NOT RELOAD A SERVER THAT WAS JUST LAUNCHED.
+    #
+    # reload_world() exists to clear actors and state accumulated on a LONG-LIVED server.
+    # On one that started seconds ago the world is already pristine, and the reload is not
+    # merely redundant: issued that early it times out after 120 s, and when that happens
+    # inside a restart loop the exception surfaces from a context Python cannot catch --
+    # "terminate called", core dumped. That is what killed three ledger attempts, and it
+    # read as a client-lifetime problem for two of them.
+    #
+    # Now that R-SIM-1 is enforced per RUN, a freshly restarted server is the normal case
+    # rather than the exception, so this path is the common one.
+    try:
+        import carla_determinism as _cd
+        age = _cd.server_age_s(int(os.environ.get("CARLA_PORT", str(PORT))))
+    except Exception:                                          # noqa: BLE001
+        age = None
+    if age is not None and age < 180.0:
+        print(f"  server is {age:.0f}s old: world is already fresh, skipping reload",
+              flush=True)
+        return world
+    return client.reload_world()
 
 
 # Name kept so existing entry points and the published study read unchanged. It now

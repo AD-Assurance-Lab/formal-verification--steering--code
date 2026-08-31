@@ -287,6 +287,21 @@ def main():
                     help="save every frame the policy saw, with pose/steer/CTE, under DIR. "
                          "Enables trajectory verification: verify the frames the car "
                          "actually met instead of a sample of the dataset (F17/F18).")
+    # ONE RUN PER PROCESS.
+    #
+    # The in-process restart could not be made safe. Killing the server under a live
+    # carla.Client makes it throw carla::client::TimeoutException from a context Python
+    # cannot catch -- "terminate called", core dumped -- and releasing every reference the
+    # caller held was not sufficient; something inside the client library outlives it.
+    #
+    # A process boundary settles it absolutely: the OS reclaims the client, so the next
+    # run cannot inherit a socket, a thread, a vehicle or a physics state. The shell
+    # driver restarts CARLA between invocations, which is R-SIM-1 at the granularity the
+    # rule actually states. Slower, and the only version that is certainly correct.
+    ap.add_argument("--only-section", default=None,
+                    help="drive ONE section and write a per-run artifact instead of a "
+                         "cell. Used with --only-rep by the shell driver.")
+    ap.add_argument("--only-rep", type=int, default=None)
     ap.add_argument("--log-frames-reps", type=int, default=1,
                     help="how many reps per direction to log (default 1). A lap is ~1700 "
                          "frames at ~0.3 MB, so logging all 10 reps costs several GB.")
@@ -347,6 +362,27 @@ def main():
         print(f"budget {C.CTE_BUDGET_M:.3f} m ({C.CTE_BUDGET_FT:.2f} ft), "
               f"{args.reps} reps x {len(C.SECTIONS)} sections "
               f"= {args.reps * len(C.SECTIONS)} runs\n")
+
+        if args.only_section is not None:
+            mx, frac, departed, where = drive_once(
+                world, vehicle, cam_queue, model, device, args.only_section,
+                min(args.max_steps, C.steps_for(args.only_section)))
+            ok = (not departed) and mx <= C.CTE_BUDGET_M
+            rec = dict(rep=args.only_rep, direction=args.only_section, max_cte_m=mx,
+                       frac_over_budget=frac, departed=departed, passed=ok,
+                       max_cte_at=where)
+            rdir = LEDGER / "runs"
+            rdir.mkdir(parents=True, exist_ok=True)
+            cell = args.cell_name or args.student
+            rp = rdir / (f"{args.condition}__{cell}__{args.only_section}"
+                         f"__rep{args.only_rep:02d}.json")
+            rp.write_text(json.dumps(dict(run=rec, student=args.student,
+                                          checkpoint=_ck, condition=args.condition,
+                                          provenance=prov), indent=2))
+            print(f"  {args.only_section} rep {args.only_rep} "
+                  f"max|CTE|={mx * C.M_TO_FT:6.2f} ft {'PASS' if ok else 'FAIL'}")
+            print(f"wrote {rp}")
+            return 0
 
         n_run = 0
         for rep in range(args.reps):
