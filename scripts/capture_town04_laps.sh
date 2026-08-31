@@ -11,7 +11,12 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 REPO=$PWD
-export STUDY_MAP=Town04
+# THIS IS THE REDO'S DRIVER: it writes to results/town04_v2/, so it must run under the
+# REDO's config. It set only STUDY_MAP, so it captured with the PUBLISHED constants while
+# writing into the redo's directory. That was invisible for as long as the two agreed --
+# and the moment LAP_END_M diverged (2,861 published, 2,988 redo) it silently captured
+# 127 m of the wrong road into the redo's artifacts.
+export STUDY_MAP=Town04 TOWN04_REDO=1
 export CARLA_PORT=${CARLA_PORT:-3000}
 export PYTHONUNBUFFERED=1
 export OY_OFFSETS=0.0 OY_YAWS=0.0

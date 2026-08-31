@@ -25,6 +25,7 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO)); sys.path.insert(0, str(REPO / "pipeline"))
 import numpy as np                                            # noqa: E402
 import carla                                                  # noqa: E402
+import carla_determinism as cd                                # noqa: E402
 import carla_env as env                                       # noqa: E402
 import config as C                                            # noqa: E402
 from route import load_route                                  # noqa: E402
@@ -61,6 +62,13 @@ def main():
           f"{100*arc[i]/arc[-1]:.1f}% along)")
     print(f"  position ({x:.1f}, {y:.1f})  yaw {yaw:.1f} deg")
     print(f"  {arc[-1]-arc[i]:.0f} m remain to loop closure\n")
+
+    # R-SIM-2: killing a client without cleanup leaves the world in synchronous mode with
+    # nothing ticking, which wedges the server for everything after it. Python's default
+    # SIGTERM exits WITHOUT unwinding, so `finally` never runs. This tool is meant to be
+    # killed -- that is how you stop looking -- so it must handle it. It wedged the server
+    # once already, and the next job died on a 120 s timeout that looked like its own bug.
+    cd.install_cleanup_handlers()
 
     client = env.connect()
     world = env.load_town04(client)
