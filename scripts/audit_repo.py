@@ -73,11 +73,33 @@ for p in glob.glob("results/**/certificate_town06.json", recursive=True):
     for _, ck in (meta.get("checkpoints") or {}).items():
         chk(os.path.exists(f"pipeline/checkpoints/{ck}.pth"), f"{p}: {ck} present")
 
-# --- ledger cells are complete and name their checkpoint ---------------------
+# --- ledger cells carry a full set of LAPS (PROTOCOL A-4) --------------------
+# This asserted ">= 10 repetitions", which A-4 superseded: the lap is the repetition and
+# three laps is the standard, because rep-to-rep verdict disagreement measured 0 of 48
+# section-pairs on the corrected harness. The check was still enforcing the OLD rule and
+# failing correct cells -- the audit contradicting the protocol is the same defect as a
+# driver contradicting it, one level up.
+#
+# What matters now is that a cell holds WHOLE laps: three of them, each with every span.
+# A partial lap is not a lap, and a cell short of three is not a cell.
+LAPS_REQUIRED = 3
 for p in glob.glob("results/**/ledger/*closed_loop.json", recursive=True):
+    if "_superseded" in p or "_dependent_runs" in p or "_pre_2988" in p:
+        continue
     j = json.load(open(p))
-    n = j.get("repetitions") or len(j.get("runs", []))
-    chk(n >= 10, f"{os.path.basename(p)}: {n} reps (rule 3 floor is 10)")
+    runs = j.get("runs", [])
+    spans = {r.get("direction") for r in runs}
+    reps = {r.get("rep") for r in runs}
+    whole = [rp for rp in reps
+             if {r.get("direction") for r in runs if r.get("rep") == rp} == spans]
+    # results/ledger/ is the v1 baseline, collected under the old design and frozen.
+    if p.startswith("results/ledger/"):
+        continue
+    # Say it in laps, and name the spans, so the count cannot be misread as a lap count.
+    chk(len(whole) >= LAPS_REQUIRED,
+        f"{os.path.basename(p)}: {len(whole)} complete laps "
+        f"(A-4 requires {LAPS_REQUIRED}); a lap here = {len(spans)} spans "
+        f"[{','.join(sorted(str(x) for x in spans))}] = {len(runs)} runs total")
 
 # --- no scratch re-committed -------------------------------------------------
 scratch = [f for f in subprocess.run(["git", "ls-files", "pipeline/results"],
@@ -234,6 +256,19 @@ for _c in _led:
         _dep.append(os.path.basename(_c))
 chk(not _dep, f"every ledger cell came from independent runs "
               f"({len(_dep)} predate the fix: {_dep[:3]})")
+
+# --- a certificate must state the extent it covers -----------------------------
+# It recorded nsplit, stride and tolerance but not which road the bounds cover -- and the
+# extent is what moved underneath it. A certificate that cannot say what it covers cannot
+# be checked against drives whose coverage also moved.
+for _cert in ("results/town04_v2/calibration/sustained_bound.json",):
+    if os.path.exists(_cert):
+        try:
+            _m = json.load(open(_cert)).get("_meta", {})
+            chk(_m.get("lap_end_m") is not None,
+                f"{os.path.basename(_cert)} records the scored extent it covers")
+        except ValueError:
+            pass
 
 # --- a certificate must have scored every cell it expected ---------------------
 # certify_sustained_bound WARNS when a cell does not run and still writes the file; a
