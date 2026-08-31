@@ -41,12 +41,13 @@ def main():
         print(f"no per-run artifacts in {led/'runs'}", file=sys.stderr)
         return 2
 
-    print(f"\n{C.STUDY_MAP} LEDGER AT LAP GRANULARITY (PROTOCOL A-4)")
-    print(f"  a lap = {' + '.join(C.SECTIONS)};  a lap fails if any span departs")
+    print(f"\n{C.STUDY_MAP} LEDGER -- LAPS (PROTOCOL A-4)")
+    print(f"  a lap is one traversal of all the scored road, and fails if any part of it "
+          f"departs")
     print(f"  budget {budget_ft:.2f} ft;  standard is {STANDARD_LAPS} laps\n")
-    print(f"  {'condition':9s} {'student':26s} {'laps':>9s} {'verdict':8s} "
-          f"{'worst span':>11s} {'margin':>8s}  first{STANDARD_LAPS}")
-    print("  " + "-" * 88)
+    print(f"  {'condition':9s} {'student':26s} {'laps failed':>12s} {'verdict':8s} "
+          f"{'worst':>8s} {'margin':>8s}")
+    print("  " + "-" * 80)
     out = {}
     for (cond, stu) in sorted(runs):
         laps = []
@@ -72,16 +73,16 @@ def main():
             flag = "  <-- LAPS DISAGREE: cell is VOID, find the bug (A-4)"
         elif 0 <= margin < 0.10:
             flag = "  <-- NO MARGIN: a finding in itself"
-        print(f"  {cond:9s} {stu:26s} {fails:2d}/{n:2d} fail  {verdict:8s} "
-              f"{worst_overall:8.2f} ft {margin*100:7.1f}%  "
-              f"{'same' if first_same else 'DIFFERS'}{flag}")
+        print(f"  {cond:9s} {stu:26s} {fails:6d} of {n:2d} {verdict:8s} "
+              f"{worst_overall:6.2f} ft {margin*100:7.1f}%{flag}")
         out[f"{cond}/{stu}"] = dict(laps=n, failed=fails, verdict=verdict,
                                     worst_span_ft=worst_overall, margin_frac=margin,
                                     laps_agree=agree, first3_same_verdict=first_same)
     (led / "lap_report.json").write_text(json.dumps(out, indent=2))
     print(f"\n  -> {led/'lap_report.json'}")
-    print("  margin = how far the worst span stayed below budget. Negative means it "
-          "exceeded it.")
+    print("  worst  = the largest |CTE| anywhere in the worst lap")
+    print("  margin = how far that stayed below budget; negative means it exceeded it.")
+    print("  Span-level detail is in the artifact, for when a specific nuance needs it.")
     return 0
 
 

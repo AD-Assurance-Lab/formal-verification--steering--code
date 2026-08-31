@@ -95,11 +95,12 @@ for p in glob.glob("results/**/ledger/*closed_loop.json", recursive=True):
     # results/ledger/ is the v1 baseline, collected under the old design and frozen.
     if p.startswith("results/ledger/"):
         continue
-    # Say it in laps, and name the spans, so the count cannot be misread as a lap count.
+    # LAPS ONLY. Runs and spans are implementation detail; reporting them invites the
+    # count to be misread as a lap count, which it was. Span-level detail stays in the
+    # artifact for when a specific nuance needs it.
     chk(len(whole) >= LAPS_REQUIRED,
-        f"{os.path.basename(p)}: {len(whole)} complete laps "
-        f"(A-4 requires {LAPS_REQUIRED}); a lap here = {len(spans)} spans "
-        f"[{','.join(sorted(str(x) for x in spans))}] = {len(runs)} runs total")
+        f"{os.path.basename(p)}: {len(whole)} complete laps (A-4 requires "
+        f"{LAPS_REQUIRED})")
 
 # --- no scratch re-committed -------------------------------------------------
 scratch = [f for f in subprocess.run(["git", "ls-files", "pipeline/results"],
