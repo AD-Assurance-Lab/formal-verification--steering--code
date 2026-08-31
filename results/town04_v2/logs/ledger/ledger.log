@@ -1,0 +1,229 @@
+[2026-08-31 00:58:49] student S_clear_84x28_v2 -> S_clear_84x28_v2
+[2026-08-31 00:58:49] START clear/S_clear_84x28_v2
+[2026-08-31 00:58:49] restarting CARLA on port 3000 (before clear_S_clear_84x28_v2_eastbound_0)
+[2026-08-31 00:59:39] CARLA back up
+[2026-08-31 01:00:23] restarting CARLA on port 3000 (before clear_S_clear_84x28_v2_westbound_0)
+[2026-08-31 01:01:15] CARLA back up
+[2026-08-31 01:01:59] restarting CARLA on port 3000 (before clear_S_clear_84x28_v2_eastbound_1)
+[2026-08-31 01:02:50] CARLA back up
+[2026-08-31 01:03:36] restarting CARLA on port 3000 (before clear_S_clear_84x28_v2_westbound_1)
+[2026-08-31 01:04:28] CARLA back up
+[2026-08-31 01:05:13] restarting CARLA on port 3000 (before clear_S_clear_84x28_v2_eastbound_2)
+[2026-08-31 01:06:05] CARLA back up
+[2026-08-31 01:06:49] restarting CARLA on port 3000 (before clear_S_clear_84x28_v2_westbound_2)
+[2026-08-31 01:07:40] CARLA back up
+[2026-08-31 01:08:26] restarting CARLA on port 3000 (before clear_S_clear_84x28_v2_eastbound_3)
+[2026-08-31 01:09:24] CARLA back up
+[2026-08-31 01:10:10] restarting CARLA on port 3000 (before clear_S_clear_84x28_v2_westbound_3)
+[2026-08-31 01:11:02] CARLA back up
+[2026-08-31 01:11:47] restarting CARLA on port 3000 (before clear_S_clear_84x28_v2_eastbound_4)
+[2026-08-31 01:12:38] CARLA back up
+[2026-08-31 01:13:24] restarting CARLA on port 3000 (before clear_S_clear_84x28_v2_westbound_4)
+[2026-08-31 01:14:15] CARLA back up
+[2026-08-31 01:14:59] restarting CARLA on port 3000 (before clear_S_clear_84x28_v2_eastbound_5)
+[2026-08-31 01:15:50] CARLA back up
+[2026-08-31 01:16:35] restarting CARLA on port 3000 (before clear_S_clear_84x28_v2_westbound_5)
+[2026-08-31 01:17:28] CARLA back up
+[2026-08-31 01:18:16] OK    clear/S_clear_84x28_v2
+[2026-08-31 01:18:16] START fog/S_clear_84x28_v2
+[2026-08-31 01:18:16] restarting CARLA on port 3000 (before fog_S_clear_84x28_v2_eastbound_0)
+[2026-08-31 01:19:08] CARLA back up
+[2026-08-31 01:19:51] restarting CARLA on port 3000 (before fog_S_clear_84x28_v2_westbound_0)
+[2026-08-31 01:20:46] CARLA back up
+[2026-08-31 01:21:29] restarting CARLA on port 3000 (before fog_S_clear_84x28_v2_eastbound_1)
+[2026-08-31 01:22:21] CARLA back up
+[2026-08-31 01:23:05] restarting CARLA on port 3000 (before fog_S_clear_84x28_v2_westbound_1)
+[2026-08-31 01:23:56] CARLA back up
+[2026-08-31 01:24:39] restarting CARLA on port 3000 (before fog_S_clear_84x28_v2_eastbound_2)
+[2026-08-31 01:25:32] CARLA back up
+[2026-08-31 01:26:16] restarting CARLA on port 3000 (before fog_S_clear_84x28_v2_westbound_2)
+[2026-08-31 01:27:09] CARLA back up
+[2026-08-31 01:27:50] restarting CARLA on port 3000 (before fog_S_clear_84x28_v2_eastbound_3)
+[2026-08-31 01:28:42] CARLA back up
+[2026-08-31 01:29:26] restarting CARLA on port 3000 (before fog_S_clear_84x28_v2_westbound_3)
+[2026-08-31 01:30:18] CARLA back up
+[2026-08-31 01:31:01] restarting CARLA on port 3000 (before fog_S_clear_84x28_v2_eastbound_4)
+[2026-08-31 01:31:52] CARLA back up
+[2026-08-31 01:32:37] restarting CARLA on port 3000 (before fog_S_clear_84x28_v2_westbound_4)
+[2026-08-31 01:33:29] CARLA back up
+[2026-08-31 01:34:12] restarting CARLA on port 3000 (before fog_S_clear_84x28_v2_eastbound_5)
+[2026-08-31 01:35:05] CARLA back up
+[2026-08-31 01:35:48] restarting CARLA on port 3000 (before fog_S_clear_84x28_v2_westbound_5)
+[2026-08-31 01:36:39] CARLA back up
+[2026-08-31 01:37:26] OK    fog/S_clear_84x28_v2
+[2026-08-31 01:37:26] START night/S_clear_84x28_v2
+[2026-08-31 01:37:26] restarting CARLA on port 3000 (before night_S_clear_84x28_v2_eastbound_0)
+[2026-08-31 01:38:17] CARLA back up
+[2026-08-31 01:38:42] restarting CARLA on port 3000 (before night_S_clear_84x28_v2_westbound_0)
+[2026-08-31 01:39:34] CARLA back up
+[2026-08-31 01:40:00] restarting CARLA on port 3000 (before night_S_clear_84x28_v2_eastbound_1)
+[2026-08-31 01:40:52] CARLA back up
+[2026-08-31 01:41:20] restarting CARLA on port 3000 (before night_S_clear_84x28_v2_westbound_1)
+[2026-08-31 01:42:11] CARLA back up
+[2026-08-31 01:42:39] restarting CARLA on port 3000 (before night_S_clear_84x28_v2_eastbound_2)
+[2026-08-31 01:43:31] CARLA back up
+[2026-08-31 01:43:58] restarting CARLA on port 3000 (before night_S_clear_84x28_v2_westbound_2)
+[2026-08-31 01:44:50] CARLA back up
+[2026-08-31 01:45:15] restarting CARLA on port 3000 (before night_S_clear_84x28_v2_eastbound_3)
+[2026-08-31 01:46:11] CARLA back up
+[2026-08-31 01:46:37] restarting CARLA on port 3000 (before night_S_clear_84x28_v2_westbound_3)
+[2026-08-31 01:47:29] CARLA back up
+[2026-08-31 01:47:55] restarting CARLA on port 3000 (before night_S_clear_84x28_v2_eastbound_4)
+[2026-08-31 01:48:47] CARLA back up
+[2026-08-31 01:49:13] restarting CARLA on port 3000 (before night_S_clear_84x28_v2_westbound_4)
+[2026-08-31 01:50:05] CARLA back up
+[2026-08-31 01:50:25] restarting CARLA on port 3000 (before night_S_clear_84x28_v2_eastbound_5)
+[2026-08-31 01:59:42] FATAL: CARLA did not return
+[2026-08-31 01:59:42] FAIL  night/S_clear_84x28_v2 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/logs/ledger/night_S_clear_84x28_v2.log)
+[2026-08-31 02:01:43] restarting CARLA on port 3000 (before boot)
+[2026-08-31 02:02:35] CARLA back up
+[2026-08-31 02:02:45] student S_clear_84x28_v2 -> S_clear_84x28_v2
+[2026-08-31 02:02:45] SKIP  clear/S_clear_84x28_v2 (cell exists)
+[2026-08-31 02:02:45] SKIP  fog/S_clear_84x28_v2 (cell exists)
+[2026-08-31 02:02:45] START night/S_clear_84x28_v2
+[2026-08-31 02:02:45] SKIP  night/S_clear_84x28_v2 eastbound rep0 (run exists)
+[2026-08-31 02:02:45] SKIP  night/S_clear_84x28_v2 westbound rep0 (run exists)
+[2026-08-31 02:02:45] SKIP  night/S_clear_84x28_v2 eastbound rep1 (run exists)
+[2026-08-31 02:02:45] SKIP  night/S_clear_84x28_v2 westbound rep1 (run exists)
+[2026-08-31 02:02:45] SKIP  night/S_clear_84x28_v2 eastbound rep2 (run exists)
+[2026-08-31 02:02:45] SKIP  night/S_clear_84x28_v2 westbound rep2 (run exists)
+[2026-08-31 02:02:45] SKIP  night/S_clear_84x28_v2 eastbound rep3 (run exists)
+[2026-08-31 02:02:45] SKIP  night/S_clear_84x28_v2 westbound rep3 (run exists)
+[2026-08-31 02:02:45] SKIP  night/S_clear_84x28_v2 eastbound rep4 (run exists)
+[2026-08-31 02:02:45] SKIP  night/S_clear_84x28_v2 westbound rep4 (run exists)
+[2026-08-31 02:02:45] restarting CARLA on port 3000 (before night_S_clear_84x28_v2_eastbound_5)
+[2026-08-31 02:03:37] CARLA back up
+[2026-08-31 02:04:03] restarting CARLA on port 3000 (before night_S_clear_84x28_v2_westbound_5)
+[2026-08-31 02:04:54] CARLA back up
+[2026-08-31 02:05:22] OK    night/S_clear_84x28_v2
+[2026-08-31 02:05:22] START shadows/S_clear_84x28_v2
+[2026-08-31 02:05:22] restarting CARLA on port 3000 (before shadows_S_clear_84x28_v2_eastbound_0)
+[2026-08-31 02:06:14] CARLA back up
+[2026-08-31 02:06:39] restarting CARLA on port 3000 (before shadows_S_clear_84x28_v2_westbound_0)
+[2026-08-31 02:07:30] CARLA back up
+[2026-08-31 02:07:47] restarting CARLA on port 3000 (before shadows_S_clear_84x28_v2_eastbound_1)
+[2026-08-31 02:08:39] CARLA back up
+[2026-08-31 02:09:03] restarting CARLA on port 3000 (before shadows_S_clear_84x28_v2_westbound_1)
+[2026-08-31 02:09:56] CARLA back up
+[2026-08-31 02:10:12] restarting CARLA on port 3000 (before shadows_S_clear_84x28_v2_eastbound_2)
+[2026-08-31 02:11:02] CARLA back up
+[2026-08-31 02:11:26] restarting CARLA on port 3000 (before shadows_S_clear_84x28_v2_westbound_2)
+[2026-08-31 02:12:18] CARLA back up
+[2026-08-31 02:12:34] restarting CARLA on port 3000 (before shadows_S_clear_84x28_v2_eastbound_3)
+[2026-08-31 02:13:25] CARLA back up
+[2026-08-31 02:13:49] restarting CARLA on port 3000 (before shadows_S_clear_84x28_v2_westbound_3)
+[2026-08-31 02:14:40] CARLA back up
+[2026-08-31 02:14:55] restarting CARLA on port 3000 (before shadows_S_clear_84x28_v2_eastbound_4)
+[2026-08-31 02:15:47] CARLA back up
+[2026-08-31 02:16:12] restarting CARLA on port 3000 (before shadows_S_clear_84x28_v2_westbound_4)
+[2026-08-31 02:17:04] CARLA back up
+[2026-08-31 02:17:19] restarting CARLA on port 3000 (before shadows_S_clear_84x28_v2_eastbound_5)
+[2026-08-31 02:18:10] CARLA back up
+[2026-08-31 02:18:34] restarting CARLA on port 3000 (before shadows_S_clear_84x28_v2_westbound_5)
+[2026-08-31 02:19:28] CARLA back up
+[2026-08-31 02:19:47] OK    shadows/S_clear_84x28_v2
+[2026-08-31 02:19:47] student S_mixed_84x28_w3_v2 -> S_mixed_84x28_w3_v2_dagger_r00
+[2026-08-31 02:19:47] START clear/S_mixed_84x28_w3_v2
+[2026-08-31 02:19:47] restarting CARLA on port 3000 (before clear_S_mixed_84x28_w3_v2_eastbound_0)
+[2026-08-31 02:20:39] CARLA back up
+[2026-08-31 02:21:27] restarting CARLA on port 3000 (before clear_S_mixed_84x28_w3_v2_westbound_0)
+[2026-08-31 02:22:22] CARLA back up
+[2026-08-31 02:23:07] restarting CARLA on port 3000 (before clear_S_mixed_84x28_w3_v2_eastbound_1)
+[2026-08-31 02:24:00] CARLA back up
+[2026-08-31 02:24:45] restarting CARLA on port 3000 (before clear_S_mixed_84x28_w3_v2_westbound_1)
+[2026-08-31 02:25:36] CARLA back up
+[2026-08-31 02:26:21] restarting CARLA on port 3000 (before clear_S_mixed_84x28_w3_v2_eastbound_2)
+[2026-08-31 02:27:13] CARLA back up
+[2026-08-31 02:27:57] restarting CARLA on port 3000 (before clear_S_mixed_84x28_w3_v2_westbound_2)
+[2026-08-31 02:28:50] CARLA back up
+[2026-08-31 02:29:36] restarting CARLA on port 3000 (before clear_S_mixed_84x28_w3_v2_eastbound_3)
+[2026-08-31 02:30:32] CARLA back up
+[2026-08-31 02:31:16] restarting CARLA on port 3000 (before clear_S_mixed_84x28_w3_v2_westbound_3)
+[2026-08-31 02:32:08] CARLA back up
+[2026-08-31 02:32:53] restarting CARLA on port 3000 (before clear_S_mixed_84x28_w3_v2_eastbound_4)
+[2026-08-31 02:33:47] CARLA back up
+[2026-08-31 02:34:33] restarting CARLA on port 3000 (before clear_S_mixed_84x28_w3_v2_westbound_4)
+[2026-08-31 02:35:24] CARLA back up
+[2026-08-31 02:36:09] restarting CARLA on port 3000 (before clear_S_mixed_84x28_w3_v2_eastbound_5)
+[2026-08-31 02:37:01] CARLA back up
+[2026-08-31 02:37:47] restarting CARLA on port 3000 (before clear_S_mixed_84x28_w3_v2_westbound_5)
+[2026-08-31 02:38:40] CARLA back up
+[2026-08-31 02:40:54] FAIL  clear/S_mixed_84x28_w3_v2 westbound rep5
+[2026-08-31 02:40:54] FAIL  clear/S_mixed_84x28_w3_v2 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/logs/ledger/clear_S_mixed_84x28_w3_v2.log)
+[2026-08-31 02:42:55] restarting CARLA on port 3000 (before boot)
+[2026-08-31 02:43:46] CARLA back up
+[2026-08-31 02:43:56] student S_clear_84x28_v2 -> S_clear_84x28_v2
+[2026-08-31 02:43:56] SKIP  clear/S_clear_84x28_v2 (cell exists)
+[2026-08-31 02:43:56] SKIP  fog/S_clear_84x28_v2 (cell exists)
+[2026-08-31 02:43:56] SKIP  night/S_clear_84x28_v2 (cell exists)
+[2026-08-31 02:43:56] SKIP  shadows/S_clear_84x28_v2 (cell exists)
+[2026-08-31 02:43:56] student S_mixed_84x28_w3_v2 -> S_mixed_84x28_w3_v2_dagger_r00
+[2026-08-31 02:43:56] START clear/S_mixed_84x28_w3_v2
+[2026-08-31 02:43:56] SKIP  clear/S_mixed_84x28_w3_v2 eastbound rep0 (run exists)
+[2026-08-31 02:43:56] SKIP  clear/S_mixed_84x28_w3_v2 westbound rep0 (run exists)
+[2026-08-31 02:43:56] SKIP  clear/S_mixed_84x28_w3_v2 eastbound rep1 (run exists)
+[2026-08-31 02:43:56] SKIP  clear/S_mixed_84x28_w3_v2 westbound rep1 (run exists)
+[2026-08-31 02:43:56] SKIP  clear/S_mixed_84x28_w3_v2 eastbound rep2 (run exists)
+[2026-08-31 02:43:56] SKIP  clear/S_mixed_84x28_w3_v2 westbound rep2 (run exists)
+[2026-08-31 02:43:56] SKIP  clear/S_mixed_84x28_w3_v2 eastbound rep3 (run exists)
+[2026-08-31 02:43:56] SKIP  clear/S_mixed_84x28_w3_v2 westbound rep3 (run exists)
+[2026-08-31 02:43:56] SKIP  clear/S_mixed_84x28_w3_v2 eastbound rep4 (run exists)
+[2026-08-31 02:43:56] SKIP  clear/S_mixed_84x28_w3_v2 westbound rep4 (run exists)
+[2026-08-31 02:43:56] SKIP  clear/S_mixed_84x28_w3_v2 eastbound rep5 (run exists)
+[2026-08-31 02:43:56] restarting CARLA on port 3000 (before clear_S_mixed_84x28_w3_v2_westbound_5)
+[2026-08-31 02:44:49] CARLA back up
+[2026-08-31 02:45:37] OK    clear/S_mixed_84x28_w3_v2
+[2026-08-31 02:45:37] START fog/S_mixed_84x28_w3_v2
+[2026-08-31 02:45:37] restarting CARLA on port 3000 (before fog_S_mixed_84x28_w3_v2_eastbound_0)
+[2026-08-31 02:46:29] CARLA back up
+[2026-08-31 02:47:13] restarting CARLA on port 3000 (before fog_S_mixed_84x28_w3_v2_westbound_0)
+[2026-08-31 02:48:05] CARLA back up
+[2026-08-31 02:48:49] restarting CARLA on port 3000 (before fog_S_mixed_84x28_w3_v2_eastbound_1)
+[2026-08-31 02:49:43] CARLA back up
+[2026-08-31 02:50:25] restarting CARLA on port 3000 (before fog_S_mixed_84x28_w3_v2_westbound_1)
+[2026-08-31 02:51:17] CARLA back up
+[2026-08-31 02:52:01] restarting CARLA on port 3000 (before fog_S_mixed_84x28_w3_v2_eastbound_2)
+[2026-08-31 02:52:53] CARLA back up
+[2026-08-31 02:53:36] restarting CARLA on port 3000 (before fog_S_mixed_84x28_w3_v2_westbound_2)
+[2026-08-31 02:54:27] CARLA back up
+[2026-08-31 02:55:11] restarting CARLA on port 3000 (before fog_S_mixed_84x28_w3_v2_eastbound_3)
+[2026-08-31 02:56:02] CARLA back up
+[2026-08-31 02:56:46] restarting CARLA on port 3000 (before fog_S_mixed_84x28_w3_v2_westbound_3)
+[2026-08-31 02:57:38] CARLA back up
+[2026-08-31 02:58:20] restarting CARLA on port 3000 (before fog_S_mixed_84x28_w3_v2_eastbound_4)
+[2026-08-31 02:59:11] CARLA back up
+[2026-08-31 02:59:55] restarting CARLA on port 3000 (before fog_S_mixed_84x28_w3_v2_westbound_4)
+[2026-08-31 03:00:47] CARLA back up
+[2026-08-31 03:03:02] FAIL  fog/S_mixed_84x28_w3_v2 westbound rep4
+[2026-08-31 03:03:02] FAIL  fog/S_mixed_84x28_w3_v2 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/logs/ledger/fog_S_mixed_84x28_w3_v2.log)
+[2026-08-31 14:20:30] restarting CARLA on port 3000 (before boot)
+[2026-08-31 14:21:22] CARLA back up
+[2026-08-31 14:21:27] student S_clear_84x28_v2 -> S_clear_84x28_v2
+[2026-08-31 14:21:27] SKIP  clear/S_clear_84x28_v2 (cell exists)
+[2026-08-31 14:21:27] SKIP  fog/S_clear_84x28_v2 (cell exists)
+[2026-08-31 14:21:27] SKIP  night/S_clear_84x28_v2 (cell exists)
+[2026-08-31 14:21:27] SKIP  shadows/S_clear_84x28_v2 (cell exists)
+[2026-08-31 14:21:27] student S_mixed_84x28_w3_v2 -> S_mixed_84x28_w3_v2_dagger_r00
+[2026-08-31 14:21:27] SKIP  clear/S_mixed_84x28_w3_v2 (cell exists)
+[2026-08-31 14:21:27] START fog/S_mixed_84x28_w3_v2
+[2026-08-31 14:21:27] SKIP  fog/S_mixed_84x28_w3_v2 eastbound rep0 (run exists)
+[2026-08-31 14:21:27] SKIP  fog/S_mixed_84x28_w3_v2 westbound rep0 (run exists)
+[2026-08-31 14:21:27] SKIP  fog/S_mixed_84x28_w3_v2 eastbound rep1 (run exists)
+[2026-08-31 14:21:27] SKIP  fog/S_mixed_84x28_w3_v2 westbound rep1 (run exists)
+[2026-08-31 14:21:27] SKIP  fog/S_mixed_84x28_w3_v2 eastbound rep2 (run exists)
+[2026-08-31 14:21:27] SKIP  fog/S_mixed_84x28_w3_v2 westbound rep2 (run exists)
+[2026-08-31 14:21:27] SKIP  fog/S_mixed_84x28_w3_v2 eastbound rep3 (run exists)
+[2026-08-31 14:21:27] SKIP  fog/S_mixed_84x28_w3_v2 westbound rep3 (run exists)
+[2026-08-31 14:21:27] SKIP  fog/S_mixed_84x28_w3_v2 eastbound rep4 (run exists)
+[2026-08-31 14:21:27] restarting CARLA on port 3000 (before fog_S_mixed_84x28_w3_v2_westbound_4)
+[2026-08-31 14:22:20] CARLA back up
+[2026-08-31 14:22:58] restarting CARLA on port 3000 (before fog_S_mixed_84x28_w3_v2_eastbound_5)
+[2026-08-31 14:23:49] CARLA back up
+[2026-08-31 14:24:27] restarting CARLA on port 3000 (before fog_S_mixed_84x28_w3_v2_westbound_5)
+[2026-08-31 14:25:19] CARLA back up
+[2026-08-31 14:26:01] OK    fog/S_mixed_84x28_w3_v2
+[2026-08-31 14:26:01] START night/S_mixed_84x28_w3_v2
+[2026-08-31 14:26:01] restarting CARLA on port 3000 (before night_S_mixed_84x28_w3_v2_eastbound_0)
+[2026-08-31 14:26:53] CARLA back up
+[2026-08-31 14:27:45] restarting CARLA on port 3000 (before night_S_mixed_84x28_w3_v2_westbound_0)
+[2026-08-31 14:28:37] CARLA back up

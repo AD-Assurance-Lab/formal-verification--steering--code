@@ -1,13 +1,13 @@
 {
   "threshold": 0.05,
-  "worst": 0.006484341931861631,
+  "worst": 0.006550646821331036,
   "cells": [
     {
       "student": "S_clear",
       "checkpoint": "S_clear_84x28_v2",
       "direction": "eastbound",
       "cond": "clear",
-      "mean_abs_diff": 0.006484341931861631,
+      "mean_abs_diff": 0.006439920853008107,
       "poses": 1421,
       "passed": true
     },
@@ -16,8 +16,8 @@
       "checkpoint": "S_clear_84x28_v2",
       "direction": "westbound",
       "cond": "clear",
-      "mean_abs_diff": 0.006457110092873172,
-      "poses": 1424,
+      "mean_abs_diff": 0.006550646821331036,
+      "poses": 1425,
       "passed": true
     },
     {
@@ -25,7 +25,7 @@
       "checkpoint": "S_mixed_84x28_w3_v2_dagger_r00",
       "direction": "eastbound",
       "cond": "clear",
-      "mean_abs_diff": 0.004830077210084695,
+      "mean_abs_diff": 0.00483892548647116,
       "poses": 1421,
       "passed": true
     },
@@ -34,9 +34,10 @@
       "checkpoint": "S_mixed_84x28_w3_v2_dagger_r00",
       "direction": "westbound",
       "cond": "clear",
-      "mean_abs_diff": 0.005067879306296347,
-      "poses": 1424,
+      "mean_abs_diff": 0.005086265407796753,
+      "poses": 1425,
       "passed": true
     }
-  ]
+  ],
+  "cells_expected": 4
 }

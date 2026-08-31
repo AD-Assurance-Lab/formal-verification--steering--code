@@ -22,3 +22,77 @@ budget 0.668 m (2.19 ft), 6 reps x 2 sections = 12 runs
 ================================================================
 
 wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/night__S_clear_84x28_v2__closed_loop.json
+  server is 57s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'night' (exposure shutter=200)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  eastbound rep 0 max|CTE|= 29.05 ft FAIL
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/night__S_clear_84x28_v2__eastbound__rep00.json
+  server is 58s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'night' (exposure shutter=200)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  westbound rep 0 max|CTE|= 43.90 ft FAIL
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/night__S_clear_84x28_v2__westbound__rep00.json
+  server is 58s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'night' (exposure shutter=200)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  eastbound rep 1 max|CTE|= 29.63 ft FAIL
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/night__S_clear_84x28_v2__eastbound__rep01.json
+  server is 58s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'night' (exposure shutter=200)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  westbound rep 1 max|CTE|= 34.41 ft FAIL
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/night__S_clear_84x28_v2__westbound__rep01.json
+  server is 58s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'night' (exposure shutter=200)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  eastbound rep 2 max|CTE|= 27.98 ft FAIL
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/night__S_clear_84x28_v2__eastbound__rep02.json
+  server is 57s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'night' (exposure shutter=200)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  westbound rep 2 max|CTE|= 30.88 ft FAIL
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/night__S_clear_84x28_v2__westbound__rep02.json
+  server is 62s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'night' (exposure shutter=200)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  eastbound rep 3 max|CTE|= 27.97 ft FAIL
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/night__S_clear_84x28_v2__eastbound__rep03.json
+  server is 57s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'night' (exposure shutter=200)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  westbound rep 3 max|CTE|= 30.51 ft FAIL
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/night__S_clear_84x28_v2__westbound__rep03.json
+  server is 57s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'night' (exposure shutter=200)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  eastbound rep 4 max|CTE|= 29.22 ft FAIL
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/night__S_clear_84x28_v2__eastbound__rep04.json
+  server is 57s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'night' (exposure shutter=200)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  westbound rep 4 max|CTE|= 28.17 ft FAIL
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/night__S_clear_84x28_v2__westbound__rep04.json
+  server is 57s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'night' (exposure shutter=200)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  eastbound rep 5 max|CTE|= 29.15 ft FAIL
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/night__S_clear_84x28_v2__eastbound__rep05.json
+  server is 56s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'night' (exposure shutter=200)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  westbound rep 5 max|CTE|= 30.80 ft FAIL
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/night__S_clear_84x28_v2__westbound__rep05.json
+  night/S_clear_84x28_v2: 12/12 = 100.0% Wilson [75.7%, 100.0%] -> FAIL
+  wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/night__S_clear_84x28_v2__closed_loop.json

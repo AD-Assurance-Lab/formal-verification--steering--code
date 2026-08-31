@@ -1,0 +1,40 @@
+=== capture gate (precondition) ===
+
+CAPTURE GATE -- Town04, condition 'clear', threshold 0.05
+  S_clear   eastbound  mean|capture-driven| 0.0064  (1421 poses)  PASS
+  S_clear   westbound  mean|capture-driven| 0.0066  (1425 poses)  PASS
+  S_mixed   eastbound  mean|capture-driven| 0.0048  (1421 poses)  PASS
+  S_mixed   westbound  mean|capture-driven| 0.0051  (1425 poses)  PASS
+
+  worst 0.0066 against 0.05  over 4/4 cells  -> PASS
+  -> results/town04_v2/calibration/capture_gate.json
+
+=== sustained-bias bound ===
+/home/za/.local/lib/python3.10/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+
+SUSTAINED-BIAS BOUND over s in [0,1]   tolerance 0.0120
+  stride 8, 16-way branch and bound, 12 cells expected
+
+  dir        model     cond      base                 bias bound        x tol  verdict     drive
+/home/za/ad-assurance--workspace/formal-verification--steering--code/scripts/certify_cell.py:423: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return float(lb.min()), float(ub.max())
+  westbound  S_clear   fog       foreign  [-0.00298,+0.00769] [-0.25,+0.64]  CERTIFIED   
+  westbound  S_clear   night     foreign  [-0.04610,+0.00954] [-3.84,+0.79]  FALSIFIED   
+  westbound  S_clear   shadows   foreign  [-0.00761,+0.01819] [-0.63,+1.51]  FALSIFIED   
+  westbound  S_mixed   fog       foreign  [-0.00120,+0.00154] [-0.10,+0.13]  CERTIFIED   
+  westbound  S_mixed   night     foreign  [-0.00214,+0.00343] [-0.18,+0.29]  CERTIFIED   
+  westbound  S_mixed   shadows   foreign  [-0.00209,+0.00085] [-0.17,+0.07]  CERTIFIED   
+  eastbound  S_clear   fog       foreign  [-0.00385,+0.00567] [-0.32,+0.47]  CERTIFIED   
+  eastbound  S_clear   night     foreign  [-0.05186,+0.01123] [-4.32,+0.93]  FALSIFIED   
+  eastbound  S_clear   shadows   foreign  [-0.00916,+0.01839] [-0.76,+1.53]  FALSIFIED   
+  eastbound  S_mixed   fog       foreign  [-0.00082,+0.00196] [-0.07,+0.16]  CERTIFIED   
+  eastbound  S_mixed   night     foreign  [-0.00165,+0.00402] [-0.14,+0.33]  CERTIFIED   
+  eastbound  S_mixed   shadows   foreign  [-0.00197,+0.00152] [-0.16,+0.13]  CERTIFIED   
+
+  12 cells bounded. NO agreement column: these are different
+  students from the published ones, so the hardcoded outcomes do not
+  apply. Agreement comes from this redo's OWN ledger.
+
+CERTIFY TOWN04 DONE -> results/town04_v2/calibration/sustained_bound.json

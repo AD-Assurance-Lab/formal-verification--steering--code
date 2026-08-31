@@ -25,3 +25,15 @@ budget 0.668 m (2.19 ft), 6 reps x 2 sections = 12 runs
 ================================================================
 
 wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/night__S_mixed_84x28_w3_v2__closed_loop.json
+  student 'S_mixed_84x28_w3_v2' resolves to 'S_mixed_84x28_w3_v2_dagger_r00' (student DAgger is part of this study's procedure)
+  server is 52s old: world is already fresh, skipping reload
+S_mixed_84x28_w3_v2 under 'night' (exposure shutter=200)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  eastbound rep 0 max|CTE|=  1.72 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/night__S_mixed_84x28_w3_v2__eastbound__rep00.json
+  student 'S_mixed_84x28_w3_v2' resolves to 'S_mixed_84x28_w3_v2_dagger_r00' (student DAgger is part of this study's procedure)
+  server is 52s old: world is already fresh, skipping reload
+S_mixed_84x28_w3_v2 under 'night' (exposure shutter=200)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+

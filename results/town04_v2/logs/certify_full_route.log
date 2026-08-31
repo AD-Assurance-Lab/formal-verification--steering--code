@@ -1,13 +1,13 @@
 /home/za/.local/lib/python3.10/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
   warnings.warn(
-/home/za/ad-assurance--workspace/formal-verification--steering--code/scripts/certify_cell.py:423: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
-Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
-  return float(lb.min()), float(ub.max())
 
 SUSTAINED-BIAS BOUND over s in [0,1]   tolerance 0.0120
   stride 8, 16-way branch and bound, 12 cells expected
 
   dir        model     cond      base                 bias bound        x tol  verdict     drive
+/home/za/ad-assurance--workspace/formal-verification--steering--code/scripts/certify_cell.py:423: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return float(lb.min()), float(ub.max())
   westbound  S_clear   fog       foreign  [-0.00298,+0.00769] [-0.25,+0.64]  CERTIFIED   
   westbound  S_clear   night     foreign  [-0.04610,+0.00954] [-3.84,+0.79]  FALSIFIED   
   westbound  S_clear   shadows   foreign  [-0.00761,+0.01819] [-0.63,+1.51]  FALSIFIED   
