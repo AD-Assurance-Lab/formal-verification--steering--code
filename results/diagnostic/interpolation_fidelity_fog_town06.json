@@ -1,0 +1,91 @@
+{
+  "n_poses": 1200,
+  "tolerance": 0.012011303577323182,
+  "axis": "fog",
+  "endpoint": 70.0,
+  "unit": "density",
+  "sections": [
+    "s00",
+    "s01",
+    "s02",
+    "s03",
+    "s04",
+    "s05"
+  ],
+  "route_span_m": 3835.0377503517825,
+  "poses_per_section": {
+    "s00": 200,
+    "s01": 200,
+    "s02": 200,
+    "s03": 200,
+    "s04": 200,
+    "s05": 200
+  },
+  "cells": {
+    "S_clear_t06": {
+      "17.5": {
+        "s_star_mean": 0.23830370604991913,
+        "pixel_err": 0.02006821148097515,
+        "steer_mean_err": -0.0018571210093796253,
+        "steer_err_x_tol": -0.1546144427558878,
+        "bias_render": 0.006472936365753412,
+        "bias_chord": 0.004615815356373787,
+        "ratio_chord_over_render": 0.7130945054233563,
+        "ratio_meaningful": true
+      },
+      "35.0": {
+        "s_star_mean": 0.5987293720245361,
+        "pixel_err": 0.007762693800032139,
+        "steer_mean_err": -0.002084620064124465,
+        "steer_err_x_tol": -0.17355485611571228,
+        "bias_render": 0.018917175009846687,
+        "bias_chord": 0.016832558438181877,
+        "ratio_chord_over_render": 0.8898029663213596,
+        "ratio_meaningful": true
+      },
+      "52.5": {
+        "s_star_mean": 0.9889819622039795,
+        "pixel_err": 0.01367503497749567,
+        "steer_mean_err": 0.00536356121301651,
+        "steer_err_x_tol": 0.4465428068226233,
+        "bias_render": 0.023476617410779,
+        "bias_chord": 0.02884017862379551,
+        "ratio_chord_over_render": 1.22846396987983,
+        "ratio_meaningful": true
+      }
+    },
+    "S_mixed_t06": {
+      "17.5": {
+        "s_star_mean": 0.23830370604991913,
+        "pixel_err": 0.02006821148097515,
+        "steer_mean_err": -0.0011646916391327977,
+        "steer_err_x_tol": -0.09696629775736289,
+        "bias_render": 0.0024175464641302824,
+        "bias_chord": 0.0012528547085821629,
+        "ratio_chord_over_render": 0.5182339728195793,
+        "ratio_meaningful": true
+      },
+      "35.0": {
+        "s_star_mean": 0.5987293720245361,
+        "pixel_err": 0.007762693800032139,
+        "steer_mean_err": 0.0042132907547056675,
+        "steer_err_x_tol": 0.35077714317871184,
+        "bias_render": 0.000915195036213845,
+        "bias_chord": 0.005128486081957817,
+        "ratio_chord_over_render": null,
+        "ratio_meaningful": false
+      },
+      "52.5": {
+        "s_star_mean": 0.9889819622039795,
+        "pixel_err": 0.01367503497749567,
+        "steer_mean_err": 0.0008403415558859706,
+        "steer_err_x_tol": 0.06996256072259291,
+        "bias_render": -0.0043923635967075825,
+        "bias_chord": -0.00355202192440629,
+        "ratio_chord_over_render": 0.8086812137020729,
+        "ratio_meaningful": true
+      }
+    }
+  },
+  "map": "Town06"
+}

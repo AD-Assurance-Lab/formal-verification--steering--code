@@ -25,3 +25,98 @@ budget 0.668 m (2.19 ft), 6 reps x 2 sections = 12 runs
 ================================================================
 
 wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/clear__S_mixed_84x28_w3_v2__closed_loop.json
+  student 'S_mixed_84x28_w3_v2' resolves to 'S_mixed_84x28_w3_v2_dagger_r00' (student DAgger is part of this study's procedure)
+  server is 58s old: world is already fresh, skipping reload
+S_mixed_84x28_w3_v2 under 'clear' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  eastbound rep 0 max|CTE|=  0.73 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/clear__S_mixed_84x28_w3_v2__eastbound__rep00.json
+  student 'S_mixed_84x28_w3_v2' resolves to 'S_mixed_84x28_w3_v2_dagger_r00' (student DAgger is part of this study's procedure)
+  server is 61s old: world is already fresh, skipping reload
+S_mixed_84x28_w3_v2 under 'clear' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  westbound rep 0 max|CTE|=  0.35 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/clear__S_mixed_84x28_w3_v2__westbound__rep00.json
+  student 'S_mixed_84x28_w3_v2' resolves to 'S_mixed_84x28_w3_v2_dagger_r00' (student DAgger is part of this study's procedure)
+  server is 59s old: world is already fresh, skipping reload
+S_mixed_84x28_w3_v2 under 'clear' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  eastbound rep 1 max|CTE|=  0.73 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/clear__S_mixed_84x28_w3_v2__eastbound__rep01.json
+  student 'S_mixed_84x28_w3_v2' resolves to 'S_mixed_84x28_w3_v2_dagger_r00' (student DAgger is part of this study's procedure)
+  server is 57s old: world is already fresh, skipping reload
+S_mixed_84x28_w3_v2 under 'clear' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  westbound rep 1 max|CTE|=  0.34 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/clear__S_mixed_84x28_w3_v2__westbound__rep01.json
+  student 'S_mixed_84x28_w3_v2' resolves to 'S_mixed_84x28_w3_v2_dagger_r00' (student DAgger is part of this study's procedure)
+  server is 56s old: world is already fresh, skipping reload
+S_mixed_84x28_w3_v2 under 'clear' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  eastbound rep 2 max|CTE|=  0.72 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/clear__S_mixed_84x28_w3_v2__eastbound__rep02.json
+  student 'S_mixed_84x28_w3_v2' resolves to 'S_mixed_84x28_w3_v2_dagger_r00' (student DAgger is part of this study's procedure)
+  server is 59s old: world is already fresh, skipping reload
+S_mixed_84x28_w3_v2 under 'clear' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  westbound rep 2 max|CTE|=  0.34 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/clear__S_mixed_84x28_w3_v2__westbound__rep02.json
+  student 'S_mixed_84x28_w3_v2' resolves to 'S_mixed_84x28_w3_v2_dagger_r00' (student DAgger is part of this study's procedure)
+  server is 61s old: world is already fresh, skipping reload
+S_mixed_84x28_w3_v2 under 'clear' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  eastbound rep 3 max|CTE|=  0.74 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/clear__S_mixed_84x28_w3_v2__eastbound__rep03.json
+  student 'S_mixed_84x28_w3_v2' resolves to 'S_mixed_84x28_w3_v2_dagger_r00' (student DAgger is part of this study's procedure)
+  server is 57s old: world is already fresh, skipping reload
+S_mixed_84x28_w3_v2 under 'clear' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  westbound rep 3 max|CTE|=  0.35 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/clear__S_mixed_84x28_w3_v2__westbound__rep03.json
+  student 'S_mixed_84x28_w3_v2' resolves to 'S_mixed_84x28_w3_v2_dagger_r00' (student DAgger is part of this study's procedure)
+  server is 59s old: world is already fresh, skipping reload
+S_mixed_84x28_w3_v2 under 'clear' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  eastbound rep 4 max|CTE|=  0.76 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/clear__S_mixed_84x28_w3_v2__eastbound__rep04.json
+  student 'S_mixed_84x28_w3_v2' resolves to 'S_mixed_84x28_w3_v2_dagger_r00' (student DAgger is part of this study's procedure)
+  server is 57s old: world is already fresh, skipping reload
+S_mixed_84x28_w3_v2 under 'clear' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  westbound rep 4 max|CTE|=  0.35 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/clear__S_mixed_84x28_w3_v2__westbound__rep04.json
+  student 'S_mixed_84x28_w3_v2' resolves to 'S_mixed_84x28_w3_v2_dagger_r00' (student DAgger is part of this study's procedure)
+  server is 58s old: world is already fresh, skipping reload
+S_mixed_84x28_w3_v2 under 'clear' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  eastbound rep 5 max|CTE|=  0.74 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/clear__S_mixed_84x28_w3_v2__eastbound__rep05.json
+  student 'S_mixed_84x28_w3_v2' resolves to 'S_mixed_84x28_w3_v2_dagger_r00' (student DAgger is part of this study's procedure)
+Traceback (most recent call last):
+  File "/home/za/ad-assurance--workspace/formal-verification--steering--code/scripts/closed_loop_ledger.py", line 474, in <module>
+    sys.exit(main())
+  File "/home/za/ad-assurance--workspace/formal-verification--steering--code/scripts/closed_loop_ledger.py", line 353, in main
+    world = env.load_town04(client)
+  File "/home/za/ad-assurance--workspace/formal-verification--steering--code/pipeline/carla_env.py", line 74, in load_study_map
+    world = client.get_world()
+RuntimeError: time-out of 120000ms while waiting for the simulator, make sure the simulator is ready and connected to 127.0.0.1:3000
+  student 'S_mixed_84x28_w3_v2' resolves to 'S_mixed_84x28_w3_v2_dagger_r00' (student DAgger is part of this study's procedure)
+  server is 58s old: world is already fresh, skipping reload
+S_mixed_84x28_w3_v2 under 'clear' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  westbound rep 5 max|CTE|=  0.33 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/clear__S_mixed_84x28_w3_v2__westbound__rep05.json
+  clear/S_mixed_84x28_w3_v2: 0/12 = 0.0% Wilson [0.0%, 24.3%] -> PASS
+  wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/clear__S_mixed_84x28_w3_v2__closed_loop.json

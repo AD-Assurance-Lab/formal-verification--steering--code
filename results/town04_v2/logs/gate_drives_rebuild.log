@@ -1,0 +1,40 @@
+
+=== S_clear (S_clear_84x28_v2) / eastbound ===
+
+=== EASTBOUND (network in control) ===
+  loop closed at step 1695
+  [eastbound] PASS | steps=1696 max|CTE|=0.88ft over-budget=0.0%
+
+============================================================
+eastbound : PASS steps=1696 max|CTE|=0.88ft over-budget=0.0%
+  rc=0
+
+=== S_clear (S_clear_84x28_v2) / westbound ===
+
+=== WESTBOUND (network in control) ===
+  loop closed at step 1693
+  [westbound] PASS | steps=1694 max|CTE|=0.57ft over-budget=0.0%
+
+============================================================
+westbound : PASS steps=1694 max|CTE|=0.57ft over-budget=0.0%
+  rc=0
+
+=== S_mixed (S_mixed_84x28_w3_v2_dagger_r00) / eastbound ===
+
+=== EASTBOUND (network in control) ===
+  loop closed at step 1697
+  [eastbound] PASS | steps=1698 max|CTE|=0.83ft over-budget=0.0%
+
+============================================================
+eastbound : PASS steps=1698 max|CTE|=0.83ft over-budget=0.0%
+  rc=0
+
+=== S_mixed (S_mixed_84x28_w3_v2_dagger_r00) / westbound ===
+
+=== WESTBOUND (network in control) ===
+  loop closed at step 1693
+  [westbound] PASS | steps=1694 max|CTE|=0.33ft over-budget=0.0%
+
+============================================================
+westbound : PASS steps=1694 max|CTE|=0.33ft over-budget=0.0%
+  rc=0
