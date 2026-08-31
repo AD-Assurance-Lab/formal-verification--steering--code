@@ -359,3 +359,53 @@ happened anyway.
 **What it does NOT change.** No frozen constant in section 3, so `PROTOCOL.lock` is
 unchanged. R1, R2 and R3 are untouched. The gate is deterministic given fixed artifacts
 and has nothing to tune, so it cannot launder a verdict.
+
+
+#### A-4. The LAP is the repetition, and three laps is the standard
+
+**Date:** 2026-08-31. **Requested by:** Zach.
+
+**What changed.** Section 3 treated SECTIONS as repetitions -- "6 sections x 2 reps = 12
+runs per cell, over the >= 10 floor". A section is a distinct stretch of road, so twelve
+runs were never twelve trials of one experiment; they were six different roads sampled
+twice. A failure rate over them pooled unlike units, and it read misleadingly: two cells
+reported 2/12 = 17% when in fact the SAME section failed in BOTH passes -- a 100% failure
+of every attempt, diluted by five sections that were never in question.
+
+A **lap** is one traversal of all the unique scored road. Town04's lap is eastbound +
+westbound. Town06's is the loop. **The lap is the repetition, and the lap is what passes
+or fails: a lap fails if any scored span departs.** Per-span outcomes are still reported,
+because that is where the diagnostic value is.
+
+**Three laps, not ten.** Standing rule 3's ">= 10 repetitions" was measured on the BROKEN
+harness, where "CARLA pass/fail varies run-to-run near the cliff" and single runs were
+wrong about one time in eight. That premise no longer holds. Measured on the corrected
+harness, with a clean server restart and a fresh vehicle for every run:
+
+    rep0 vs rep1 verdict disagreement: 0 of 48 section-pairs (0.0%)
+
+Three laps is therefore a REPRODUCIBILITY CHECK, not a sample for estimating a rate. Its
+purpose is to catch a bug, not to measure a probability.
+
+**Conditional on the harness.** Three laps is only defensible while every one of these
+holds, and any relaxation returns the count to ten: a clean server restart before every
+run; a fresh vehicle and camera per run; one process per run; the determinism preflight
+green on each fresh server (D-1..D-6); one client per port; and the capture gate (A-3)
+passed before certification.
+
+**Margin is reported with every verdict.** A cell that passes with every span far below
+budget and a cell that passes at 1% of budget are different results, and a pass/fail bit
+does not distinguish them. **A cell with no margin is a finding in its own right** --
+`clear/S_clear_t06` came within 1.0% of the budget in the condition that is supposed to be
+its competence precondition -- and adding laps would only characterise a coin flip more
+precisely rather than change that conclusion.
+
+**If the three laps disagree, look for a bug, not for more laps.** Under an enforced
+harness, disagreement between laps means something is wrong with the setup rather than
+that the outcome is genuinely random. Additional laps are then a diagnostic for an
+identified instability, never the first response.
+
+**What it invalidates.** Every ledger cell scored as "runs" rather than laps is
+re-aggregated at lap granularity. No drive is re-run: the underlying per-run artifacts are
+unchanged and already carry a fresh server and vehicle each. Cells written before the
+process-per-run change do not satisfy this amendment and are superseded.
