@@ -180,6 +180,27 @@ for _d in ("scripts/capture_town04_laps.sh", "scripts/capture_town06_laps.sh",
         chk("carla_restart" in open(_d).read(),
             f"{os.path.basename(_d)} restarts CARLA before measuring (R-SIM-1)")
 
+# --- a driver that writes REDO artifacts must run under REDO config -------------
+# capture_town04_laps.sh wrote into results/town04_v2/ while exporting only STUDY_MAP, so
+# it captured with the PUBLISHED constants. Invisible while the two configs agreed; the
+# moment LAP_END_M diverged it silently captured the wrong extent into the redo's
+# directory. A path and a config that disagree is a defect whatever the values happen to be.
+for _d in glob.glob("scripts/*.sh") + glob.glob("scripts/*.py"):
+    _t = open(_d).read()
+    if "town04_v2" in _t and "STUDY_MAP=Town04" in _t:
+        chk("TOWN04_REDO=1" in _t or "TOWN04_REDO" in _t,
+            f"{os.path.basename(_d)} writes town04_v2 and sets TOWN04_REDO")
+
+# --- anything that can be killed must clean up, or it wedges the server ---------
+# R-SIM-2. Python's default SIGTERM exits without unwinding, so `finally` never runs and
+# the world is left in synchronous mode with nothing ticking. A tool MEANT to be killed
+# (an inspector) is the most likely offender, and it wedged the server once.
+for _d in ("scripts/inspect_lap_bounds.py", "scripts/capture_offset_yaw.py"):
+    if os.path.exists(_d):
+        _t = open(_d).read()
+        chk("install_cleanup_handlers" in _t or "signal.signal" in _t,
+            f"{os.path.basename(_d)} cleans up on SIGTERM (R-SIM-2)")
+
 # --- the ledger drivers must drive the LAP COUNT the protocol states -----------
 # A-4 sets three laps. The drivers had SIX (Town04) and TWO (Town06), both hardcoded
 # alongside a hardcoded --expect 12 from the older "12 runs per cell" framing. A results
