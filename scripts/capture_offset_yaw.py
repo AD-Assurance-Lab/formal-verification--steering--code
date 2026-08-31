@@ -244,6 +244,14 @@ def main():
             cmap = world.get_map()
             ref = None
             attitude, rejected = [], 0
+            # KEEP THE VIEWPORT ALIVE DURING SETTLING TOO.
+            #
+            # The chase camera was only driven inside the capture loop below, so for the
+            # whole settling pass -- minutes, now that a lap is 1,492 poses -- a working
+            # capture looked exactly like a hung one. That is the same failure the capture
+            # loop's spectator call exists to prevent; it just was not applied to the phase
+            # that happens first, which is the phase someone watching actually sees.
+            _settle_seen = 0
             for r in poses:
                 x, y, yaw = float(r["x"]), float(r["y"]), float(r["yaw"])
                 hint = z0 if ref is None else ref
@@ -266,6 +274,16 @@ def main():
                         rejected += 1
                 attitude.append((az, ap, ar))
                 ref = az
+                _settle_seen += 1
+                if _settle_seen % 50 == 0:
+                    try:
+                        v.set_transform(carla.Transform(
+                            carla.Location(x=float(r["x"]), y=float(r["y"]), z=az),
+                            carla.Rotation(yaw=float(r["yaw"]))))
+                        env.update_spectator(world, v)
+                        world.tick()
+                    except Exception:
+                        pass      # cosmetic only; never let the viewport break a capture
             zs = [a[0] for a in attitude]
             ps = [a[1] for a in attitude]
             print(f"  settled {len(attitude)} poses: z {min(zs):.2f}..{max(zs):.2f} m, "
