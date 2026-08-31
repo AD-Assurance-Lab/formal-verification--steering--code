@@ -133,8 +133,14 @@ def main():
                                    pixel_err=pix, steer_err=err, steer_err_x_tol=err/tol)
         out["cells"][nm] = cells
         print()
-    (DIAG / "interpolation_fidelity_night.json").write_text(json.dumps(out, indent=2))
-    print(f"  -> results/diagnostic/interpolation_fidelity_night.json")
+    # MAP-SCOPED FILENAME. This wrote one map-agnostic name, so running Town04 after
+    # Town06 silently overwrote Town06's artifact -- same shape, same keys, different map,
+    # and nothing downstream could tell. Caught because the saved file said
+    # sections=[eastbound, westbound] minutes after the Town06 run reported six sections.
+    _out = DIAG / f"interpolation_fidelity_night_{C.STUDY_MAP.lower()}.json"
+    out["map"] = C.STUDY_MAP
+    _out.write_text(json.dumps(out, indent=2))
+    print(f"  -> {_out.relative_to(REPO)}")
     return 0
 
 

@@ -252,7 +252,10 @@ def main():
                 ratio_meaningful=not weak)
         print()
 
-    outp = DIAG / f"interpolation_fidelity_{args.axis}.json"
+    # Map-scoped, for the same reason as the night script: two maps sharing one filename
+    # means the second run destroys the first with no error and no visible difference.
+    out["map"] = C.STUDY_MAP
+    outp = DIAG / f"interpolation_fidelity_{args.axis}_{C.STUDY_MAP.lower()}.json"
     outp.write_text(json.dumps(out, indent=2))
     print(f"  -> {outp.relative_to(REPO)}")
     print("\n  READ IT THIS WAY. The steering error is what a verdict would inherit if the")
