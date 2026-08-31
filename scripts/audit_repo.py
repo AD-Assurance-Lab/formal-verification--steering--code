@@ -180,6 +180,18 @@ for _d in ("scripts/capture_town04_laps.sh", "scripts/capture_town06_laps.sh",
         chk("carla_restart" in open(_d).read(),
             f"{os.path.basename(_d)} restarts CARLA before measuring (R-SIM-1)")
 
+# --- the ledger drivers must drive the LAP COUNT the protocol states -----------
+# A-4 sets three laps. The drivers had SIX (Town04) and TWO (Town06), both hardcoded
+# alongside a hardcoded --expect 12 from the older "12 runs per cell" framing. A results
+# format stated in the protocol and contradicted by the script is not a format.
+for _drv, _mult in (("scripts/run_town04_ledger.sh", "LAPS*2"),
+                    ("scripts/run_town06_ledger.sh", "LAPS*NSEC")):
+    if os.path.exists(_drv):
+        _t = open(_drv).read()
+        chk("LAPS=${LAPS:-3}" in _t, f"{os.path.basename(_drv)} drives 3 laps (A-4)")
+        chk(_mult in _t,
+            f"{os.path.basename(_drv)} expects laps x spans, not a hardcoded run count")
+
 # --- ledger cells must come from INDEPENDENT runs -----------------------------
 # The ledger restarted per CELL and spawned the vehicle once for all twelve runs, so the
 # runs were two chains of six that inherited each other's physics state on an ageing

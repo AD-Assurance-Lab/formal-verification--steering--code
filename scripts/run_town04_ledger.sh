@@ -25,6 +25,12 @@ export STUDY_MAP=Town04 TOWN04_REDO=1
 export CARLA_PORT=${CARLA_PORT:-3000}
 export PYTHONUNBUFFERED=1
 
+# THREE LAPS (PROTOCOL A-4). A lap is eastbound + westbound; three laps is a
+# REPRODUCIBILITY CHECK, not a sample for estimating a rate -- rep-to-rep verdict
+# disagreement measured 0 of 48 section-pairs on the corrected harness. If the three
+# disagree, that is a bug to find, never a reason to run more.
+LAPS=${LAPS:-3}
+
 LOG_DIR=$REPO/results/town04_v2/logs/ledger
 mkdir -p "$LOG_DIR"
 say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/ledger.log"; }
@@ -40,8 +46,19 @@ carla_up() { for i in $(seq 1 "${1:-60}"); do
 carla_restart() {   # $1 = cell tag, so the restart is auditable per cell
     say "restarting CARLA on port $CARLA_PORT (before $1)"
     pkill -f "[C]arlaUE4-Linux-Shipping.*rpc-port=$CARLA_PORT" 2>/dev/null; sleep 8
-    bash "$REPO/scripts/carla_launch.sh" > "$LOG_DIR/restart_$1.log" 2>&1
-    carla_up 60 && { say "CARLA back up"; sleep 10; return 0; }
+    # HONOUR THE LAUNCHER'S EXIT CODE, and prove the server can SERVE.
+    #
+    # This ignored it, so when carla_launch.sh printed "FATAL: CARLA did not come up" the
+    # next line still saw a bound port and announced "CARLA back up". A bound port is not
+    # a ready simulator -- the launcher's own comment says so -- and the drive then died
+    # on get_world() after 120 s. Three Town04 attempts were lost to that.
+    if ! bash "$REPO/scripts/carla_launch.sh" > "$LOG_DIR/restart_$1.log" 2>&1; then
+        say "launcher exit code nonzero for $1"; return 1
+    fi
+    carla_up 60 || { say "port never bound for $1"; return 1; }
+    CARLA_PORT=$CARLA_PORT python3 "$REPO/scripts/wait_carla_ready.py" --timeout 120 \
+        >/dev/null 2>&1 || { say "port bound but simulator will not serve for $1"; return 1; }
+    say "CARLA back up"; sleep 5; return 0
     say "FATAL: CARLA did not return"; return 1; }
 carla_up 12 || carla_restart boot || exit 1
 
@@ -64,7 +81,7 @@ for ROW in "${STUDENT_ROWS[@]}"; do
     # directions x 6 reps = 12 runs per cell, over the >= 10 floor (standing rule 3),
     # and now twelve INDEPENDENT trials rather than two chains of six.
     RUN_OK=1
-    for REP in 0 1 2 3 4 5; do
+    for REP in $(seq 0 $((LAPS-1))); do
       for SEC in eastbound westbound; do
         RUNF="$REPO/results/town04_v2/ledger/runs/${COND}__${BASE}__${SEC}__rep0${REP}.json"
         [ -f "$RUNF" ] && { say "SKIP  $COND/$BASE $SEC rep$REP (run exists)"; continue; }
@@ -80,7 +97,7 @@ for ROW in "${STUDENT_ROWS[@]}"; do
       [ $RUN_OK -eq 1 ] || break
     done
     if [ $RUN_OK -eq 1 ] && python3 scripts/aggregate_ledger_runs.py \
-         --condition "$COND" --cell "$BASE" --expect 12 \
+         --condition "$COND" --cell "$BASE" --expect $((LAPS*2)) \
          >>"$LOG_DIR/${COND}_${BASE}.log" 2>&1; then
         say "OK    $COND/$BASE"
     else
