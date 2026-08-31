@@ -329,8 +329,27 @@ def main():
               f"comparable to the published 12/12.")
     # Provenance travels with the numbers. NSPLIT and stride both change the result, and a
     # bare JSON of bounds cannot be checked against a paper table without them.
+    # THE EXTENT TRAVELS WITH THE CERTIFICATE.
+    #
+    # This recorded nsplit, stride and tolerance but not WHICH ROAD the bounds cover, and
+    # that is the one thing that changed underneath it: the scored prefix moved from
+    # 2,861 m to 2,988 m. A certificate that does not state its own extent cannot be
+    # compared against drives whose extent also moved -- which is the exact mismatch that
+    # put half of every ledger run's worst |CTE| outside the verified road. Rule 7:
+    # evidence states its own scope.
+    _spans = {}
+    for _d in ("westbound", "eastbound"):
+        _f = cal / f"lap_{_d}_clear.npz"
+        if _f.exists():
+            _z = np.load(_f, allow_pickle=True)
+            if "pose_x" in _z.files:
+                _x, _y = np.asarray(_z["pose_x"], float), np.asarray(_z["pose_y"], float)
+                _spans[_d] = round(float(np.hypot(np.diff(_x), np.diff(_y)).sum()), 1)
     out["_meta"] = dict(nsplit=nsplit, stride=stride, tolerance=tol,
                         cells_expected=n_expected, cells_scored=n, correct=ok,
+                        lap_end_m=float(C.LAP_END_M),
+                        capture_span_m=_spans,
+                        town04_redo=bool(REDO),
                         git_commit=git_head(), device=dev,
                         torch=torch.__version__, numpy=np.__version__)
     (cal / "sustained_bound.json").write_text(json.dumps(out, indent=2))
