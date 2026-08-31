@@ -182,7 +182,21 @@ LANE_WIDTH_M = 3.500
 # intersection past this point is a real ODD boundary, not a route artifact (D-07 withdrawn,
 # D-09 resolved), the lane centreline is undefined through it, and every closed-loop and
 # verification number in the study excludes it. Was duplicated across seven scripts.
-LAP_END_M = 2861.0
+#
+# 2,861 m STOPPED BEFORE THE FINAL TURN. Measured on the route and confirmed by parking the
+# car there and looking: the last 90-degree corner runs 2,880 -> 2,982 m, the junction
+# begins at 2,996 m, and the lane markings end at 3,022 m. So the old cut discarded a full
+# corner of marked road -- the most informative road on the lap for a lane-keeper -- and
+# was in neither the certificate nor, effectively, anything else.
+#
+# 2,988 m is 6 m past the turn's exit (long enough to confirm the car straightens) and 8 m
+# short of the junction, with dashed markings continuing ~34 m ahead of that point.
+#
+# The published Town04 run keeps 2,861 m so its artifacts still reproduce exactly; only the
+# redo moves. The value is not in PROTOCOL section 3's frozen constants.
+# (read the env var directly: TOWN04_REDO is defined further down, and a forward
+# reference here would be a NameError on every import.)
+LAP_END_M = 2988.0 if os.environ.get("TOWN04_REDO", "0") == "1" else 2861.0
 
 # ── The two verifiable students ──────────────────────────────────────────────
 # (name, checkpoint stem, conv channels, FC width). The mixed student is 3x the width of the
@@ -276,13 +290,24 @@ def steps_for(section, margin=1.0):
     pure-pursuit oracle "failed" s03 and s04 at max|CTE| 2.08 m and 7.21 m, both in the
     last few steps. With per-section limits every section passes at <= 0.066 m.
 
-    On Town04 this is a NO-OP by design. Its route is a closed 3042 m loop whose lap
-    ends by loop closure (~1701 steps), while LAP_END_M is the 2861 m SCORED prefix
-    (~1599 steps). Capping there would truncate the published lap and silently change
-    every Town04 number, so section-based maps get a real cap and Town04 gets infinity.
+    On the PUBLISHED Town04 run this is a no-op, deliberately: capping would truncate the
+    lap those artifacts were produced with and silently change every published number.
+
+    On the Town04 REDO it is a real cap, and the absence of one was a defect. The redo
+    drove to loop closure (~1697 steps, 3,035 m) while its certificate covered the scored
+    prefix, so HALF of every mixed-student run took its worst |CTE| beyond the scored road
+    -- in the western junction, where the lane centreline is undefined and the markings
+    leave the camera on approach. One cell was declared failed on a peak measured 174 m
+    past the end of what was verified.
+
+    Certificate and drives must cover the same road, or their agreement compares two
+    different claims. This is the same defect as the 160 m capture, mirrored: there the
+    evidence covered less than it claimed, here the driving covered more.
     """
     if not SECTION_BASED:
-        return 10 ** 9
+        if os.environ.get("TOWN04_REDO", "0") != "1":
+            return 10 ** 9                      # published run: unchanged, on purpose
+        return int(LAP_END_M * margin / (TARGET_SPEED_MS * FIXED_DT))
     length = SECTION_LEN_M.get(section, LAP_END_M)
     return int(length * margin / (TARGET_SPEED_MS * FIXED_DT))
 
