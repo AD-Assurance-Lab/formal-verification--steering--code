@@ -70,16 +70,51 @@ for r in $(seq 1 "$MAX"); do
     # --gate-reps 1: dagger's internal gate is now only a progress signal. The decision
     # is made below, one lap per process on a freshly restarted server, because the
     # teacher's pass/fail is what licenses distilling from it.
+    # Mark where THIS round's output starts in the shared log, and when it started,
+    # so the checkpoint it produced can be told apart from one already on disk.
+    ROUND_START=$(date +%s)
+    LOG_MARK=$(wc -l < "$LOG" 2>/dev/null || echo 0)
     python3 pipeline/dagger.py --base "${WHICH}_t06lap" \
         --init "teacher_${WHICH}_t06lap_bc" --rounds 1 --min-rounds 1 --gate-reps 1 \
         --weathers "$WEATHERS" --dagger-dir "dagger_${WHICH}_t06lap" \
         --out-prefix "teacher_${WHICH}_t06lap_dagger" >>"$LOG" 2>&1
-    say "  round trained (rc=$?)"
+    TRAIN_RC=$?
+    say "  round exited rc=$TRAIN_RC"
 
     NEWEST=$(ls -t "$REPO"/pipeline/checkpoints/teacher_${WHICH}_t06lap_dagger_r*.pth \
              2>/dev/null | head -1)
     [ -n "$NEWEST" ] || { say "  no checkpoint produced; stopping"; exit 1; }
     CK=$(basename "$NEWEST" .pth)
+
+    # A CHECKPOINT ON DISK IS NOT A ROUND THAT RAN.
+    #
+    # `ls -t | head -1` takes the newest file, not this round's output. On 2026-09-01
+    # four consecutive attempts were killed (rc=143) having trained nothing, and the
+    # driver gated teacher_mixed_t06lap_dagger_r00 -- a checkpoint from before the stage
+    # started -- three times over, logging "0/12 laps passed with r00" each time as
+    # though it had measured a fresh round. A fifth attempt exited rc=0 after collecting
+    # data but never training, and gated r00 again at "3/12".
+    #
+    # Two independent facts are required, because either alone has already been wrong:
+    # the file is newer than this round started, AND this round's own log segment says
+    # it trained that exact checkpoint. mtime alone trusts the filesystem; the marker
+    # alone trusts a log that another process also writes to.
+    if [ "$(stat -c %Y "$NEWEST")" -lt "$ROUND_START" ]; then
+        say "  STALE: $CK predates this round (trained $(date -d @$(stat -c %Y "$NEWEST") '+%H:%M'), round began $(date -d @$ROUND_START '+%H:%M'))"
+        say "  the round produced no checkpoint of its own -- not gating a stale one; stopping"
+        exit 3
+    fi
+    if ! tail -n +$((LOG_MARK + 1)) "$LOG" | grep -q -- "-> $CK"; then
+        say "  UNVERIFIED: this round's log never says it trained $CK; stopping"
+        exit 3
+    fi
+    # rc != 0 is now survivable ONLY because the two checks above passed. The observed
+    # failure is a carla::client::TimeoutException thrown in the client's destructor
+    # AFTER "aggregating ... -> <ck>" is written, so the round's work is complete and
+    # the abort is teardown. rc=143 (killed) never gets here: it trains nothing.
+    if [ "$TRAIN_RC" -ne 0 ]; then
+        say "  round completed and saved $CK, then exited rc=$TRAIN_RC at teardown"
+    fi
 
     # THE GATE: three laps, a clean server before EACH, one process per lap.
     PASSES=0
