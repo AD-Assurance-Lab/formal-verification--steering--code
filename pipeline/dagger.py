@@ -203,7 +203,10 @@ def restart_carla_and_reconnect(camera, vehicle, world, original):
     disappears throws from a background thread, which surfaces as SIGABRT that no Python
     `except` can catch.
     """
-    env.cleanup([camera, vehicle], world, original)
+    # The caller has already cleaned up and dropped its references; see the call site.
+    # Accepting them here at all is vestigial, and cleaning up twice is harmless.
+    if camera is not None or vehicle is not None:
+        env.cleanup([camera, vehicle], world, original)
     del camera, vehicle, world, original
     env._CLIENT = None
     gc.collect()
@@ -376,9 +379,21 @@ def main():
             # loop). The teacher results in this study survive only because they were
             # independently re-measured on fresh servers; that was luck, not design.
             if r_local > 0:
+                # RELEASE EVERYTHING IN THIS SCOPE BEFORE THE SERVER DIES.
+                #
+                # `del` inside the helper drops only the HELPER's names; the caller still
+                # holds client, world, vehicle, camera and the image queue, so the old
+                # client outlives the server it was talking to. Its background thread then
+                # throws carla::client::TimeoutException with no handler and the process
+                # dies on "terminate called" -- uncatchable, mid-training, after the round
+                # was already trained. Exactly the failure the ledger had, fixed there and
+                # not carried across.
+                env.cleanup([camera, vehicle], world, original)
+                client = world = original = vehicle = camera = img_queue = None
+                gc.collect()
                 (client, world, original, vehicle,
                  camera, img_queue) = restart_carla_and_reconnect(
-                     camera, vehicle, world, original)
+                     None, None, None, None)
                 print(f"  [R-SIM-1] CARLA restarted before round {r}", flush=True)
             round_dir = os.path.join(dagger_dir, f"round{r:02d}")
             print(f"\n{'#'*64}\n# DAgger round {r} — evaluating policy '{current}'\n{'#'*64}")
