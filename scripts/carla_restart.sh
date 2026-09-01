@@ -119,6 +119,10 @@ rm -f "/tmp/carla-locks/carla-$PORT.lock" 2>/dev/null
 # The LAUNCH half lives in carla_launch.sh, which is the single place that knows the
 # determinism flags. This script owns the STOP half -- the order of which matters
 # (SIGTERM, wait, SIGKILL) and is why the two are separate files.
+# Release the serialisation lock before the LAUNCH. The lock exists to stop two restarts
+# killing each other's processes; once the killing is done the launch is safe to overlap,
+# and holding it through a 45 s launch is what made every other restart wait.
+flock -u 9 2>/dev/null || true
 bash "$REPO/scripts/carla_launch.sh" || exit 1
 
 nvidia-smi --query-gpu=memory.used --format=csv,noheader | sed 's/^/  GPU after restart: /'
