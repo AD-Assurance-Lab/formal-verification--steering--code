@@ -27,9 +27,13 @@ while : ; do
         sleep 60; continue
     fi
     # Pipeline is not running. Is it because everything finished?
-    if [ -f "$REPO/results/town06/certificate_town06.json" ] && \
-       ls "$REPO"/results/town06/ledger/*closed_loop.json >/dev/null 2>&1; then
-        say "pipeline complete (certificate and ledger present); watchdog exiting"
+    # DONE means THIS study's artifacts, not any artifacts. The first version checked
+    # for certificate_town06.json plus ledger cells and exited immediately -- both were
+    # present, left over from the superseded six-section study on a different route. A
+    # stale artifact of the right shape is indistinguishable from a current one, which is
+    # the failure this whole week has been about.
+    if ls "$REPO"/results/town06/ledger/*S_*t06lap*closed_loop.json >/dev/null 2>&1; then
+        say "lap-study ledger cells present; watchdog exiting"
         exit 0
     fi
     n=$((n+1))
