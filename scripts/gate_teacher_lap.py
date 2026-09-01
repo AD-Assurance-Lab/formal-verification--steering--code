@@ -56,7 +56,15 @@ def main():
         env.warmup_to_speed(world, vehicle, q, speed,
                             steer_fn=lambda v: pure_pursuit_route(route, v.get_transform())[0])
         hint, ctes, bridged, departed = None, [], 0, False
-        for step in range(C.steps_for(C.SECTIONS[0]) + 50):
+        # STOP AT THE END OF THE ROUTE, not a step count with slack.
+        #
+        # steps_for() + 50 drove 90 m past the route's last point, where nearest_index has
+        # nothing sensible to return: max|CTE| came out 75 ft while only 1.2% of steps were
+        # over a 2.19 ft budget, which is not a policy that leaves the road -- it is a
+        # measurement running off the end of its own reference. The lap is open (start and
+        # end are 171 m apart), so there is no wrap to absorb it.
+        n_route = len(route)
+        for step in range(C.steps_for(C.SECTIONS[0]) + 20):
             frame = world.tick()
             image = env.grab_frame(q, frame)
             tf = vehicle.get_transform(); loc = tf.location
@@ -82,6 +90,8 @@ def main():
                 throttle=thr, brake=brk, steer=exp_steer if in_bridge else nn_steer))
             if departed:
                 break
+            if hint is not None and hint >= n_route - 2:
+                break                      # reached the end of the lap
         mx = float(max(ctes)) if ctes else float("nan")
         over = float(np.mean([c > C.CTE_BUDGET_M for c in ctes])) if ctes else 1.0
         ok = bool(ctes) and mx <= C.CTE_BUDGET_M and not departed
