@@ -14,6 +14,21 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 REPO=$PWD
 PORT=${CARLA_PORT:-3000}
+
+# SERIALISE RESTARTS. Two restarts overlapping is not a rare race: this script kills
+# CarlaUE4.sh by pattern, so a second invocation SIGTERMs the first one's in-flight
+# launcher, and the log reads "launching CARLA WINDOWED ... Terminated" with no server at
+# the end of it. That is what stopped the DAgger gate: "restart failed before gate lap 0",
+# every lap, forever.
+#
+# flock queues them instead. A restart takes ~50 s, so waiting is cheap next to the
+# alternative of two of them destroying each other's work.
+exec 9>/tmp/carla-restart-${PORT:-3000}.flock
+if ! flock -w 300 9; then
+    echo "FATAL: waited 5 minutes for another CARLA restart to finish; giving up"
+    exit 1
+fi
+
 CARLA_ROOT=${CARLA_ROOT:-$HOME/carla}
 # CARLA_QUALITY defaults to Epic, so every existing caller and the published Town04
 # reproduction are byte-for-byte unaffected. It is a variable only because the
