@@ -98,5 +98,81 @@ def main():
     return 0
 
 
+# --- open-route index arithmetic (G-9) -------------------------------------
+# Every route helper was written for Town04's lap, which closes on itself, so
+# index arithmetic ran modulo len(route). The Town06 lap is open: Zach cut it
+# before a double intersection outside the ODD, leaving start and end 173.8 m
+# apart. There the wrap is a teleport across the gap, and it lands in the last
+# few steps of the lap -- inside the scored region.
+
+def _routes():
+    import numpy as np
+    root = Path(__file__).resolve().parents[1] / "pipeline" / "data"
+    return (np.load(root / "routes_town06" / "lap.npy"),
+            np.load(root / "routes" / "eastbound.npy"))
+
+
+def test_route_closure_is_detected():
+    import sys; sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pipeline"))
+    import route
+    lap, eastbound = _routes()
+    assert route.route_is_closed(eastbound), "Town04's lap closes (7.9 m) and must keep wrapping"
+    assert not route.route_is_closed(lap), "the Town06 lap is open (173.8 m) and must not wrap"
+
+
+def test_open_route_never_wraps_to_the_start():
+    import sys; sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pipeline"))
+    import route
+    lap, eastbound = _routes()
+    n = len(lap)
+    for k in range(1, 8):
+        assert route._step_idx(lap, n - 1, k) == n - 1, "open route advanced past its end"
+        assert route._step_idx(lap, 0, -k) == 0, "open route stepped back past its start"
+    m = len(eastbound)
+    assert route._step_idx(eastbound, m - 1, 3) == 2, "closed route must still wrap"
+
+
+def test_pure_pursuit_does_not_saturate_at_an_open_route_end():
+    """Clamping the lookahead to the last vertex makes the target the vehicle's
+    own position, ld -> 0, and the steer saturate. It must extrapolate instead."""
+    import sys, math; sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pipeline"))
+    import route
+    lap, _ = _routes()
+    n = len(lap)
+
+    class _TF:
+        def __init__(self, x, y, yaw):
+            self.location = type("L", (), {"x": x, "y": y, "z": 0.0})()
+            self.rotation = type("R", (), {"yaw": yaw})()
+
+    for k in (4, 3, 2, 1):
+        i = n - k
+        a, b = lap[i - 1], lap[i]
+        yaw = math.degrees(math.atan2(float(b[1] - a[1]), float(b[0] - a[0])))
+        steer, _, _ = route.pure_pursuit_route(lap, _TF(float(b[0]), float(b[1]), yaw), hint=i)
+        assert abs(steer) < 0.25, (
+            f"pure pursuit commands {steer:+.3f} at i=n-{k} of an open route; "
+            "a vehicle sitting on the path should be steering nearly straight")
+
+
+def main_open_route():
+    """The open-route guards (G-9). These are pure functions, so they run without
+    a simulator -- there is no excuse for them not to run on every commit."""
+    failures = []
+    for fn in (test_route_closure_is_detected,
+               test_open_route_never_wraps_to_the_start,
+               test_pure_pursuit_does_not_saturate_at_an_open_route_end):
+        try:
+            fn()
+            print(f"  PASS  {fn.__name__}")
+        except AssertionError as e:
+            print(f"  FAIL  {fn.__name__}: {e}")
+            failures.append(fn.__name__)
+    return 1 if failures else 0
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    rc = main_open_route()
+    if "--open-route-only" in sys.argv:
+        sys.exit(rc)
+    sys.exit(main() or rc)

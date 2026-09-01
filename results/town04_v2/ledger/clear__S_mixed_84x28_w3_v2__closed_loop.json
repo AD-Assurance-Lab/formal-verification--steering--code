@@ -1,11 +1,34 @@
 {
   "verdict": "PASS",
-  "repetitions": 12,
-  "failures": 0,
-  "failure_rate": 0.0,
+  "laps": 3,
+  "laps_failed": 0,
+  "lap_failure_rate": 0.0,
   "wilson_95": [
     0.0,
-    0.2425007574992425
+    0.5615060804490177
+  ],
+  "worst_cte_m": 0.12364219289747241,
+  "margin_frac": 0.8149068968600711,
+  "lap_spans": [
+    "eastbound",
+    "westbound"
+  ],
+  "laps_detail": [
+    {
+      "lap": 0,
+      "passed": true,
+      "worst_cte_m": 0.1227297745171878
+    },
+    {
+      "lap": 1,
+      "passed": true,
+      "worst_cte_m": 0.12364219289747241
+    },
+    {
+      "lap": 2,
+      "passed": true,
+      "worst_cte_m": 0.12333186744284294
+    }
   ],
   "student": "S_mixed_84x28_w3_v2",
   "checkpoint": "S_mixed_84x28_w3_v2_dagger_r00",
@@ -18,7 +41,7 @@
   },
   "cte_budget_m": 0.6679999999999999,
   "provenance": {
-    "run_started": "2026-08-31T02:20:53-04:00",
+    "run_started": "2026-08-31T19:38:38-04:00",
     "weather": {
       "cloudiness": 80.0,
       "dust_storm": 0.0,
@@ -42,168 +65,90 @@
     },
     "map": "Town04",
     "target_speed_ms": 8.9408,
-    "lap_end_m": 2861.0,
-    "git_sha": "82a7124a92712981a33a30b55869628c45198aae",
+    "lap_end_m": 2988.0,
+    "git_sha": "4e17610cec5c25578fc9793d463897214566ff8e",
     "git_dirty": true,
     "independent_runs": true,
     "restart_granularity": "per_run_process",
-    "aggregated_at": "2026-08-31T02:45:37-04:00"
+    "aggregated_at": "2026-08-31T20:44:10-04:00"
   },
   "runs": [
     {
       "rep": 0,
       "direction": "eastbound",
-      "max_cte_m": 0.22320780065081408,
+      "max_cte_m": 0.1227297745171878,
       "frac_over_budget": 0.0,
       "departed": false,
       "passed": true,
       "max_cte_at": {
-        "step": 1693,
-        "x": -371.53033447265625,
-        "y": 30.333322525024414
+        "step": 389,
+        "x": 346.4969177246094,
+        "y": 34.916996002197266
       }
     },
     {
       "rep": 0,
       "direction": "westbound",
-      "max_cte_m": 0.10634786301970577,
+      "max_cte_m": 0.09116305350183893,
       "frac_over_budget": 0.0,
       "departed": false,
       "passed": true,
       "max_cte_at": {
-        "step": 1691,
-        "x": -382.7366638183594,
-        "y": 12.575458526611328
+        "step": 1544,
+        "x": -119.75880432128906,
+        "y": 12.695261001586914
       }
     },
     {
       "rep": 1,
       "direction": "eastbound",
-      "max_cte_m": 0.22122560422967474,
+      "max_cte_m": 0.12364219289747241,
       "frac_over_budget": 0.0,
       "departed": false,
       "passed": true,
       "max_cte_at": {
-        "step": 1693,
-        "x": -371.531005859375,
-        "y": 30.331344604492188
+        "step": 389,
+        "x": 346.4969787597656,
+        "y": 34.916072845458984
       }
     },
     {
       "rep": 1,
       "direction": "westbound",
-      "max_cte_m": 0.10210864465934644,
+      "max_cte_m": 0.09300579614449662,
       "frac_over_budget": 0.0,
       "departed": false,
       "passed": true,
       "max_cte_at": {
-        "step": 1691,
-        "x": -382.7364807128906,
-        "y": 12.579696655273438
+        "step": 1544,
+        "x": -119.75862121582031,
+        "y": 12.693418502807617
       }
     },
     {
       "rep": 2,
       "direction": "eastbound",
-      "max_cte_m": 0.21986929635256455,
+      "max_cte_m": 0.12333186744284294,
       "frac_over_budget": 0.0,
       "departed": false,
       "passed": true,
       "max_cte_at": {
-        "step": 1693,
-        "x": -371.5343017578125,
-        "y": 30.33000946044922
+        "step": 389,
+        "x": 346.4967041015625,
+        "y": 34.916412353515625
       }
     },
     {
       "rep": 2,
       "direction": "westbound",
-      "max_cte_m": 0.10410545183735051,
+      "max_cte_m": 0.09260065198021941,
       "frac_over_budget": 0.0,
       "departed": false,
       "passed": true,
       "max_cte_at": {
-        "step": 1691,
-        "x": -382.73779296875,
-        "y": 12.57770824432373
-      }
-    },
-    {
-      "rep": 3,
-      "direction": "eastbound",
-      "max_cte_m": 0.22534805265877123,
-      "frac_over_budget": 0.0,
-      "departed": false,
-      "passed": true,
-      "max_cte_at": {
-        "step": 1693,
-        "x": -371.5299987792969,
-        "y": 30.335460662841797
-      }
-    },
-    {
-      "rep": 3,
-      "direction": "westbound",
-      "max_cte_m": 0.10794711435980006,
-      "frac_over_budget": 0.0,
-      "departed": false,
-      "passed": true,
-      "max_cte_at": {
-        "step": 1691,
-        "x": -382.73651123046875,
-        "y": 12.573858261108398
-      }
-    },
-    {
-      "rep": 4,
-      "direction": "eastbound",
-      "max_cte_m": 0.23131585858708636,
-      "frac_over_budget": 0.0,
-      "departed": false,
-      "passed": true,
-      "max_cte_at": {
-        "step": 1693,
-        "x": -371.5309143066406,
-        "y": 30.341434478759766
-      }
-    },
-    {
-      "rep": 4,
-      "direction": "westbound",
-      "max_cte_m": 0.10813941081075217,
-      "frac_over_budget": 0.0,
-      "departed": false,
-      "passed": true,
-      "max_cte_at": {
-        "step": 1691,
-        "x": -382.73779296875,
-        "y": 12.573674201965332
-      }
-    },
-    {
-      "rep": 5,
-      "direction": "eastbound",
-      "max_cte_m": 0.22483487676116526,
-      "frac_over_budget": 0.0,
-      "departed": false,
-      "passed": true,
-      "max_cte_at": {
-        "step": 1693,
-        "x": -371.5306091308594,
-        "y": 30.334951400756836
-      }
-    },
-    {
-      "rep": 5,
-      "direction": "westbound",
-      "max_cte_m": 0.10016867273459615,
-      "frac_over_budget": 0.0,
-      "departed": false,
-      "passed": true,
-      "max_cte_at": {
-        "step": 1691,
-        "x": -382.7330322265625,
-        "y": 12.58161449432373
+        "step": 1544,
+        "x": -119.75636291503906,
+        "y": 12.693826675415039
       }
     }
   ]

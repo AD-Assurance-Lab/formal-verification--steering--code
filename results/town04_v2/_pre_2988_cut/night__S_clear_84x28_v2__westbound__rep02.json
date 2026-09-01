@@ -1,0 +1,54 @@
+{
+  "run": {
+    "rep": 2,
+    "direction": "westbound",
+    "max_cte_m": 9.413505774622916,
+    "frac_over_budget": 0.7875457875457875,
+    "departed": true,
+    "passed": false,
+    "max_cte_at": {
+      "step": 541,
+      "x": -15.414470672607422,
+      "y": 338.1384582519531,
+      "onset": {
+        "step": 19,
+        "x": -439.02374267578125,
+        "y": 15.123810768127441
+      }
+    }
+  },
+  "student": "S_clear_84x28_v2",
+  "checkpoint": "S_clear_84x28_v2",
+  "condition": "night",
+  "provenance": {
+    "run_started": "2026-08-31T01:45:03-04:00",
+    "weather": {
+      "cloudiness": 80.0,
+      "dust_storm": 0.0,
+      "fog_density": 0.0,
+      "fog_distance": 0.0,
+      "fog_falloff": 0.0,
+      "mie_scattering_scale": 0.0,
+      "precipitation": 0.0,
+      "precipitation_deposits": 0.0,
+      "scattering_intensity": 0.0,
+      "sun_altitude_angle": -25.0,
+      "sun_azimuth_angle": 0.0,
+      "wetness": 0.0,
+      "wind_intensity": 0.0
+    },
+    "env_overrides": {},
+    "fixed_delta_seconds": 0.2,
+    "substepping": {
+      "max_substeps": 16,
+      "max_substep_delta_time": 0.0125
+    },
+    "map": "Town04",
+    "target_speed_ms": 8.9408,
+    "lap_end_m": 2861.0,
+    "git_sha": "82a7124a92712981a33a30b55869628c45198aae",
+    "git_dirty": true,
+    "independent_runs": true,
+    "restart_granularity": "per_run"
+  }
+}

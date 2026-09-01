@@ -1,0 +1,40 @@
+
+=== S_clear (S_clear_84x28_v2) / eastbound ===
+  server is 47s old: world is already fresh, skipping reload
+
+=== EASTBOUND (network in control) ===
+  [eastbound] PASS | steps=1670 max|CTE|=0.84ft over-budget=0.0%
+
+============================================================
+eastbound : PASS steps=1670 max|CTE|=0.84ft over-budget=0.0%
+  rc=0
+
+=== S_clear (S_clear_84x28_v2) / westbound ===
+  server is 49s old: world is already fresh, skipping reload
+
+=== WESTBOUND (network in control) ===
+  [westbound] PASS | steps=1670 max|CTE|=0.51ft over-budget=0.0%
+
+============================================================
+westbound : PASS steps=1670 max|CTE|=0.51ft over-budget=0.0%
+  rc=0
+
+=== S_mixed (S_mixed_84x28_w3_v2_dagger_r00) / eastbound ===
+  server is 49s old: world is already fresh, skipping reload
+
+=== EASTBOUND (network in control) ===
+  [eastbound] PASS | steps=1670 max|CTE|=0.39ft over-budget=0.0%
+
+============================================================
+eastbound : PASS steps=1670 max|CTE|=0.39ft over-budget=0.0%
+  rc=0
+
+=== S_mixed (S_mixed_84x28_w3_v2_dagger_r00) / westbound ===
+  server is 48s old: world is already fresh, skipping reload
+
+=== WESTBOUND (network in control) ===
+  [westbound] PASS | steps=1670 max|CTE|=0.31ft over-budget=0.0%
+
+============================================================
+westbound : PASS steps=1670 max|CTE|=0.31ft over-budget=0.0%
+  rc=0

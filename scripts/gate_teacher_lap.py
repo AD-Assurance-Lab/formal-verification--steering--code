@@ -56,6 +56,7 @@ def main():
         env.warmup_to_speed(world, vehicle, q, speed,
                             steer_fn=lambda v: pure_pursuit_route(route, v.get_transform())[0])
         hint, ctes, bridged, departed = None, [], 0, False
+        cte_at_m = []
         # STOP AT THE END OF THE ROUTE, not a step count with slack.
         #
         # steps_for() + 50 drove 90 m past the route's last point, where nearest_index has
@@ -83,6 +84,12 @@ def main():
                 bridged += 1
             elif cte is not None:
                 ctes.append(abs(cte))
+                # WHERE the peak sits decides what a marginal lap means: a single
+                # spot that recurs across laps is a place on the road the policy
+                # cannot do, and more DAgger rounds will not find it by accident.
+                cte_at_m.append(hint * float(C.LAP_META.get("step_m", 2.0))
+                                if getattr(C, "LAP_BASED", False) and hint is not None
+                                else float(step) * 1.788)
                 if abs(cte) > 4.0:
                     departed = True
             thr, brk = speed.control(vehicle)
@@ -93,6 +100,8 @@ def main():
             if hint is not None and hint >= n_route - 2:
                 break                      # reached the end of the lap
         mx = float(max(ctes)) if ctes else float("nan")
+        peak_m = float(cte_at_m[int(np.argmax(ctes))]) if ctes else float("nan")
+        over_at = [round(float(m), 1) for c, m in zip(ctes, cte_at_m) if c > C.CTE_BUDGET_M]
         over = float(np.mean([c > C.CTE_BUDGET_M for c in ctes])) if ctes else 1.0
         ok = bool(ctes) and mx <= C.CTE_BUDGET_M and not departed
         out = Path(args.out or (Path(C.REPO_ROOT) / "results" / "town06_logs" /
@@ -102,10 +111,11 @@ def main():
             checkpoint=args.checkpoint, weather=args.weather, lap=args.lap,
             max_cte_m=mx, max_cte_ft=mx * C.M_TO_FT, frac_over_budget=over,
             departed=departed, passed=ok, bridged_steps=bridged,
+            peak_at_m=peak_m, over_budget_at_m=over_at,
             scored_steps=len(ctes), budget_ft=C.CTE_BUDGET_FT), indent=2))
         print(f"  lap {args.lap} {args.weather}: max|CTE| {mx * C.M_TO_FT:6.2f} ft "
               f"(budget {C.CTE_BUDGET_FT:.2f}) over={over*100:.1f}% "
-              f"bridged={bridged} -> {'PASS' if ok else 'FAIL'}")
+              f"at {peak_m:6.0f} m bridged={bridged} -> {'PASS' if ok else 'FAIL'}")
         return 0 if ok else 1
     finally:
         try:

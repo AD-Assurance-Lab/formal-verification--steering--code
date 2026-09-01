@@ -1,11 +1,34 @@
 {
-  "verdict": "FAIL",
-  "repetitions": 12,
-  "failures": 1,
-  "failure_rate": 0.08333333333333333,
+  "verdict": "PASS",
+  "laps": 3,
+  "laps_failed": 0,
+  "lap_failure_rate": 0.0,
   "wilson_95": [
-    0.014864709450773478,
-    0.35388592179859524
+    0.0,
+    0.5615060804490177
+  ],
+  "worst_cte_m": 0.12274594056245863,
+  "margin_frac": 0.8162485919723672,
+  "lap_spans": [
+    "eastbound",
+    "westbound"
+  ],
+  "laps_detail": [
+    {
+      "lap": 0,
+      "passed": true,
+      "worst_cte_m": 0.12274594056245863
+    },
+    {
+      "lap": 1,
+      "passed": true,
+      "worst_cte_m": 0.12010518489134886
+    },
+    {
+      "lap": 2,
+      "passed": true,
+      "worst_cte_m": 0.12160593164200012
+    }
   ],
   "student": "S_mixed_84x28_w3_v2",
   "checkpoint": "S_mixed_84x28_w3_v2_dagger_r00",
@@ -18,7 +41,7 @@
   },
   "cte_budget_m": 0.6679999999999999,
   "provenance": {
-    "run_started": "2026-08-31T02:46:42-04:00",
+    "run_started": "2026-08-31T19:47:47-04:00",
     "weather": {
       "cloudiness": 80.0,
       "dust_storm": 0.0,
@@ -42,173 +65,90 @@
     },
     "map": "Town04",
     "target_speed_ms": 8.9408,
-    "lap_end_m": 2861.0,
-    "git_sha": "82a7124a92712981a33a30b55869628c45198aae",
+    "lap_end_m": 2988.0,
+    "git_sha": "c938a2f4019e6c4731e4d95e3e6761d6bdaaf180",
     "git_dirty": true,
     "independent_runs": true,
     "restart_granularity": "per_run_process",
-    "aggregated_at": "2026-08-31T14:26:00-04:00"
+    "aggregated_at": "2026-08-31T20:44:18-04:00"
   },
   "runs": [
     {
       "rep": 0,
       "direction": "eastbound",
-      "max_cte_m": 0.6670912597376026,
+      "max_cte_m": 0.12274594056245863,
       "frac_over_budget": 0.0,
       "departed": false,
       "passed": true,
       "max_cte_at": {
-        "step": 1695,
-        "x": -367.98541259765625,
-        "y": 30.754423141479492
+        "step": 388,
+        "x": 344.7246398925781,
+        "y": 34.991512298583984
       }
     },
     {
       "rep": 0,
       "direction": "westbound",
-      "max_cte_m": 0.41035493439552584,
+      "max_cte_m": 0.08387527129380247,
       "frac_over_budget": 0.0,
       "departed": false,
       "passed": true,
       "max_cte_at": {
-        "step": 1690,
-        "x": -380.4136657714844,
-        "y": 12.256508827209473
+        "step": 1248,
+        "x": 387.4273681640625,
+        "y": -24.001659393310547
       }
     },
     {
       "rep": 1,
       "direction": "eastbound",
-      "max_cte_m": 0.6599063094112714,
+      "max_cte_m": 0.12010518489134886,
       "frac_over_budget": 0.0,
       "departed": false,
       "passed": true,
       "max_cte_at": {
-        "step": 1695,
-        "x": -367.98394775390625,
-        "y": 30.747228622436523
+        "step": 388,
+        "x": 344.725341796875,
+        "y": 34.99411392211914
       }
     },
     {
       "rep": 1,
       "direction": "westbound",
-      "max_cte_m": 0.3934131864821686,
+      "max_cte_m": 0.08109217702414467,
       "frac_over_budget": 0.0,
       "departed": false,
       "passed": true,
       "max_cte_at": {
-        "step": 1690,
-        "x": -380.4111328125,
-        "y": 12.27343463897705
+        "step": 1248,
+        "x": 387.4300231933594,
+        "y": -24.00017547607422
       }
     },
     {
       "rep": 2,
       "direction": "eastbound",
-      "max_cte_m": 0.6630073427308718,
+      "max_cte_m": 0.12160593164200012,
       "frac_over_budget": 0.0,
       "departed": false,
       "passed": true,
       "max_cte_at": {
-        "step": 1695,
-        "x": -367.9842834472656,
-        "y": 30.75033187866211
+        "step": 388,
+        "x": 344.724365234375,
+        "y": 34.992671966552734
       }
     },
     {
       "rep": 2,
       "direction": "westbound",
-      "max_cte_m": 0.3937997247317807,
+      "max_cte_m": 0.08055065744063641,
       "frac_over_budget": 0.0,
       "departed": false,
       "passed": true,
       "max_cte_at": {
-        "step": 1690,
-        "x": -380.41815185546875,
-        "y": 12.273093223571777
-      }
-    },
-    {
-      "rep": 3,
-      "direction": "eastbound",
-      "max_cte_m": 0.6686756938840791,
-      "frac_over_budget": 0.0005896226415094339,
-      "departed": false,
-      "passed": false,
-      "max_cte_at": {
-        "step": 1695,
-        "x": -367.9831237792969,
-        "y": 30.755992889404297,
-        "onset": {
-          "step": 1695,
-          "x": -367.9831237792969,
-          "y": 30.755992889404297
-        }
-      }
-    },
-    {
-      "rep": 3,
-      "direction": "westbound",
-      "max_cte_m": 0.39114347908652497,
-      "frac_over_budget": 0.0,
-      "departed": false,
-      "passed": true,
-      "max_cte_at": {
-        "step": 1686,
-        "x": -373.25994873046875,
-        "y": 12.229720115661621
-      }
-    },
-    {
-      "rep": 4,
-      "direction": "eastbound",
-      "max_cte_m": 0.6549633979287962,
-      "frac_over_budget": 0.0,
-      "departed": false,
-      "passed": true,
-      "max_cte_at": {
-        "step": 1695,
-        "x": -367.9814453125,
-        "y": 30.74226951599121
-      }
-    },
-    {
-      "rep": 4,
-      "direction": "westbound",
-      "max_cte_m": 0.3945111130275964,
-      "frac_over_budget": 0.0,
-      "departed": false,
-      "passed": true,
-      "max_cte_at": {
-        "step": 1690,
-        "x": -380.4136962890625,
-        "y": 12.272353172302246
-      }
-    },
-    {
-      "rep": 5,
-      "direction": "eastbound",
-      "max_cte_m": 0.6463346452471607,
-      "frac_over_budget": 0.0,
-      "departed": false,
-      "passed": true,
-      "max_cte_at": {
-        "step": 1695,
-        "x": -367.9808654785156,
-        "y": 30.7336368560791
-      }
-    },
-    {
-      "rep": 5,
-      "direction": "westbound",
-      "max_cte_m": 0.3810569096272936,
-      "frac_over_budget": 0.0,
-      "departed": false,
-      "passed": true,
-      "max_cte_at": {
-        "step": 1690,
-        "x": -380.4176940917969,
-        "y": 12.285833358764648
+        "step": 1248,
+        "x": 387.4303283691406,
+        "y": -23.99765396118164
       }
     }
   ]

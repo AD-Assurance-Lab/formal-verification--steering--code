@@ -117,3 +117,47 @@ budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
 wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/fog__S_mixed_84x28_w3_v2__westbound__rep05.json
   fog/S_mixed_84x28_w3_v2: 1/12 = 8.3% Wilson [1.5%, 35.4%] -> FAIL
   wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/fog__S_mixed_84x28_w3_v2__closed_loop.json
+  student 'S_mixed_84x28_w3_v2' resolves to 'S_mixed_84x28_w3_v2_dagger_r00' (student DAgger is part of this study's procedure)
+  server is 52s old: world is already fresh, skipping reload
+S_mixed_84x28_w3_v2 under 'fog' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  eastbound rep 0 max|CTE|=  0.40 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/fog__S_mixed_84x28_w3_v2__eastbound__rep00.json
+  student 'S_mixed_84x28_w3_v2' resolves to 'S_mixed_84x28_w3_v2_dagger_r00' (student DAgger is part of this study's procedure)
+  server is 52s old: world is already fresh, skipping reload
+S_mixed_84x28_w3_v2 under 'fog' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  westbound rep 0 max|CTE|=  0.28 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/fog__S_mixed_84x28_w3_v2__westbound__rep00.json
+  student 'S_mixed_84x28_w3_v2' resolves to 'S_mixed_84x28_w3_v2_dagger_r00' (student DAgger is part of this study's procedure)
+  server is 52s old: world is already fresh, skipping reload
+S_mixed_84x28_w3_v2 under 'fog' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  eastbound rep 1 max|CTE|=  0.39 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/fog__S_mixed_84x28_w3_v2__eastbound__rep01.json
+  student 'S_mixed_84x28_w3_v2' resolves to 'S_mixed_84x28_w3_v2_dagger_r00' (student DAgger is part of this study's procedure)
+  server is 52s old: world is already fresh, skipping reload
+S_mixed_84x28_w3_v2 under 'fog' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  westbound rep 1 max|CTE|=  0.27 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/fog__S_mixed_84x28_w3_v2__westbound__rep01.json
+  student 'S_mixed_84x28_w3_v2' resolves to 'S_mixed_84x28_w3_v2_dagger_r00' (student DAgger is part of this study's procedure)
+  server is 53s old: world is already fresh, skipping reload
+S_mixed_84x28_w3_v2 under 'fog' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  eastbound rep 2 max|CTE|=  0.40 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/fog__S_mixed_84x28_w3_v2__eastbound__rep02.json
+  student 'S_mixed_84x28_w3_v2' resolves to 'S_mixed_84x28_w3_v2_dagger_r00' (student DAgger is part of this study's procedure)
+  server is 52s old: world is already fresh, skipping reload
+S_mixed_84x28_w3_v2 under 'fog' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  westbound rep 2 max|CTE|=  0.26 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/fog__S_mixed_84x28_w3_v2__westbound__rep02.json
+  fog/S_mixed_84x28_w3_v2: 0/6 = 0.0% Wilson [0.0%, 39.0%] -> PASS
+  wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/fog__S_mixed_84x28_w3_v2__closed_loop.json

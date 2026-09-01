@@ -421,3 +421,52 @@
 [2026-09-01 15:09:49] GATE  dagger_mixed: teacher met budget (*** PASSED at round 12 with policy 'teacher_mixed_t06_dagger_r11' ***)
 [2026-09-01 15:09:49] teachers: clear=teacher_clear_t06lap_dagger_r06 mixed=
 [2026-09-01 15:09:49] FATAL: a DAgger teacher is missing
+[2026-09-01 15:12:34] PROTOCOL lock OK; STUDY_MAP=Town06 CARLA_PORT=3000
+[2026-09-01 15:12:35] carla-determinism rules lock OK
+  determinism preflight OK (lock intact; D-3/D-5 verified on the live server)
+  D-7 floor remains: closed-loop numbers are still RATES over >=10 repetitions
+[2026-09-01 15:12:35] determinism preflight OK on the live server
+[2026-09-01 15:12:35] route fingerprint b5b56f8c993fc9ba
+[2026-09-01 15:12:35] SKIP  collect_clear_t06lap (manifest exists, fingerprint matches)
+[2026-09-01 15:12:35] SKIP  train_clear_bc_t06lap
+[2026-09-01 15:12:35] START dagger_clear_t06lap (attempt 1)
+[2026-09-01 15:20:37] OK    dagger_clear_t06lap
+[2026-09-01 15:20:37] GATE  dagger_clear_t06lap: teacher met budget (*** PASSED at round 8 with policy 'teacher_clear_t06lap_dagger_r06' ***)
+[2026-09-01 15:20:37] SKIP  collect_mixed_t06lap (fingerprint matches)
+[2026-09-01 15:20:37] SKIP  train_mixed_bc_t06lap
+[2026-09-01 15:20:37] START dagger_mixed_t06lap (attempt 1)
+[2026-09-01 15:26:19] PROTOCOL lock OK; STUDY_MAP=Town06 CARLA_PORT=3000
+[2026-09-01 15:26:19] carla-determinism rules lock OK
+  determinism preflight OK (lock intact; D-3/D-5 verified on the live server)
+  D-7 floor remains: closed-loop numbers are still RATES over >=10 repetitions
+[2026-09-01 15:26:19] determinism preflight OK on the live server
+[2026-09-01 15:26:19] route fingerprint b5b56f8c993fc9ba
+[2026-09-01 15:26:19] SKIP  collect_clear_t06lap (manifest exists, fingerprint matches)
+[2026-09-01 15:26:19] SKIP  train_clear_bc_t06lap
+[2026-09-01 15:26:19] START dagger_clear_t06lap (attempt 1)
+[2026-09-01 15:52:23] FAIL  dagger_clear_t06lap attempt 1 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06_logs/dagger_clear_t06lap.log)
+[2026-09-01 15:52:29] START dagger_clear_t06lap (attempt 2)
+[2026-09-01 15:52:41] FAIL  dagger_clear_t06lap attempt 2 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06_logs/dagger_clear_t06lap.log)
+[2026-09-01 15:52:46] FAIL  dagger_clear_t06lap after 2 attempts -- stopping
+[2026-09-01 15:53:49] PROTOCOL lock OK; STUDY_MAP=Town06 CARLA_PORT=3000
+[2026-09-01 15:53:50] carla-determinism rules lock OK
+  determinism preflight OK (lock intact; D-3/D-5 verified on the live server)
+  D-7 floor remains: closed-loop numbers are still RATES over >=10 repetitions
+[2026-09-01 15:53:50] determinism preflight OK on the live server
+[2026-09-01 15:53:50] route fingerprint b5b56f8c993fc9ba
+[2026-09-01 15:53:50] SKIP  collect_clear_t06lap (manifest exists, fingerprint matches)
+[2026-09-01 15:53:50] SKIP  train_clear_bc_t06lap
+[2026-09-01 15:53:50] START dagger_clear_t06lap (attempt 1)
+[2026-09-01 15:58:50] FAIL  dagger_clear_t06lap attempt 1 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06_logs/dagger_clear_t06lap.log)
+[2026-09-01 15:58:55] START dagger_clear_t06lap (attempt 2)
+[2026-09-01 16:02:48] PROTOCOL lock OK; STUDY_MAP=Town06 CARLA_PORT=3000
+[2026-09-01 16:02:48] carla-determinism rules lock OK
+[2026-09-01 16:03:49] restarting CARLA on port 3000
+[2026-09-01 16:04:07] CARLA back up
+  determinism preflight OK (lock intact; D-3/D-5 verified on the live server)
+  D-7 floor remains: closed-loop numbers are still RATES over >=10 repetitions
+[2026-09-01 16:04:17] determinism preflight OK on the live server
+[2026-09-01 16:04:18] route fingerprint b5b56f8c993fc9ba
+[2026-09-01 16:04:18] SKIP  collect_clear_t06lap (manifest exists, fingerprint matches)
+[2026-09-01 16:04:18] SKIP  train_clear_bc_t06lap
+[2026-09-01 16:04:18] START dagger_clear_t06lap (attempt 1)
