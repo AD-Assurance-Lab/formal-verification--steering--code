@@ -38,13 +38,18 @@ fi
 
 if [ "${CARLA_WINDOWED:-0}" = "1" ]; then
     echo "  launching CARLA WINDOWED on DISPLAY=${DISPLAY:-:0} (quality=$QUALITY, extra=[$EXTRA])"
+    # 9>&- : do NOT let the daemonised server inherit the caller's descriptors.
+    # carla_restart.sh holds its serialisation lock on fd 9, and CARLA inheriting that fd
+    # holds the lock for the SERVER's entire lifetime -- so the next restart waits the full
+    # timeout and fails. Same family as this repo's older note about piping
+    # carla_restart.sh: the detached child inherits what the parent had open.
     ( cd "$CARLA_ROOT" && DISPLAY="${DISPLAY:-:0}" setsid nohup ./CarlaUE4.sh \
         -carla-rpc-port="$PORT" -quality-level="$QUALITY" $EXTRA -windowed -ResX=1280 -ResY=720 \
-        >>"$LOG" 2>&1 < /dev/null & )
+        >>"$LOG" 2>&1 < /dev/null 9>&- & )
 else
     echo "  launching CARLA headless (quality=$QUALITY, extra=[$EXTRA])"
     ( cd "$CARLA_ROOT" && setsid nohup ./CarlaUE4.sh -carla-rpc-port="$PORT" \
-        -RenderOffScreen -quality-level="$QUALITY" $EXTRA >>"$LOG" 2>&1 < /dev/null & )
+        -RenderOffScreen -quality-level="$QUALITY" $EXTRA >>"$LOG" 2>&1 < /dev/null 9>&- & )
 fi
 
 # A bound port is not a ready simulator: it binds well before it can serve, and a gate
