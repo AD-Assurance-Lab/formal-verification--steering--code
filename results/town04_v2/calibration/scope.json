@@ -1,0 +1,37 @@
+{
+  "certificate": "results/town04_v2/calibration/sustained_bound.json",
+  "derived_by": "scripts/attest_certificate_scope.py",
+  "note": "Derived from the committed captures, not recorded by the certifier. This certificate predates lap_end_m in _meta and is the pre-registered artifact, so it is not regenerated.",
+  "lap_end_m": 2988.0,
+  "capture_span_m": {
+    "lap_eastbound_clear.npz": 2988.0,
+    "lap_eastbound_fog.npz": 2988.0,
+    "lap_eastbound_night.npz": 2988.0,
+    "lap_eastbound_shadows.npz": 2988.0,
+    "lap_westbound_clear.npz": 2987.9,
+    "lap_westbound_fog.npz": 2987.9,
+    "lap_westbound_night.npz": 2987.9,
+    "lap_westbound_shadows.npz": 2987.9
+  },
+  "capture_requested_m": {
+    "lap_eastbound_clear.npz": 2988.0,
+    "lap_eastbound_fog.npz": 2988.0,
+    "lap_eastbound_night.npz": 2988.0,
+    "lap_eastbound_shadows.npz": 2988.0,
+    "lap_westbound_clear.npz": 2988.0,
+    "lap_westbound_fog.npz": 2988.0,
+    "lap_westbound_night.npz": 2988.0,
+    "lap_westbound_shadows.npz": 2988.0
+  },
+  "capture_sha256_16": {
+    "lap_eastbound_clear.npz": "9e3a19fd60e03ff5",
+    "lap_eastbound_fog.npz": "23f56df0565a787f",
+    "lap_eastbound_night.npz": "2a4ada73c230d13b",
+    "lap_eastbound_shadows.npz": "b58d68c51f565c22",
+    "lap_westbound_clear.npz": "368dc433a70a29e5",
+    "lap_westbound_fog.npz": "c07b5caa4e21f9ef",
+    "lap_westbound_night.npz": "46d02215d96bd2b4",
+    "lap_westbound_shadows.npz": "3f45779f32b0ba92"
+  },
+  "consistent": true
+}
