@@ -210,8 +210,41 @@ CONDITION_DELTAS = {
     "fog":     dict(fog_density=70.0, fog_distance=10.0, fog_falloff=0.2),
     "rain":    dict(precipitation=85.0, precipitation_deposits=70.0, wetness=80.0),
     "night":   dict(sun_altitude_angle=-25.0),
-    "shadows": dict(sun_altitude_angle=_LOW_SUN_DEG.get(C.STUDY_MAP, 15.0)),
+    "low_sun": dict(sun_altitude_angle=_LOW_SUN_DEG.get(C.STUDY_MAP, 15.0)),
 }
+
+# THE CONDITION IS CALLED low_sun. "shadows" was always a bug.
+#
+# PROTOCOL.md's FROZEN section -- the part that wins over every other file in this repo --
+# has said "clear, fog, night, low sun" the whole time. The code key disagreed with it,
+# and by the protocol's own first rule that makes the code wrong, not the protocol. So
+# this is a bug fix and PROTOCOL.lock is untouched.
+#
+# The name also described something that does not happen. "shadows" implies the road is
+# partly occluded; the Town04 rationale was that terrain shadows the road at 15 degrees.
+# Town06's terrain does not, which is why the angle is 5 degrees there -- and at 5 degrees
+# the whole scene is uniformly dark rather than shadowed. Measured on the Town06 lap
+# training frames, mean brightness of the network's input:
+#
+#     clear 0.1371    fog 0.3319    night 0.0897    low sun 0.0401
+#
+# Low sun renders DARKER THAN NIGHT on this route. Calling that "shadows" describes an
+# occlusion that is not there and hides that the lighting axis is not monotonic in the
+# direction the name suggests.
+#
+# Existing artifacts keep the old key and are NOT rewritten: the Town04 certificate is
+# pre-registered under standing rule 1, and renaming a key inside it would place its
+# commit after the drives. Reads accept both; writes emit low_sun.
+_DEPRECATED_CONDITION_ALIASES = {"shadows": "low_sun"}
+
+
+def canonical_condition(name):
+    """Map a possibly-legacy condition name to its canonical form.
+
+    Accepts "shadows" so frozen Town04 artifacts and already-collected Town06 training
+    data stay readable. Nothing NEW is ever written under the old name.
+    """
+    return _DEPRECATED_CONDITION_ALIASES.get(name, name)
 
 
 def _density_override(name, w):
@@ -255,6 +288,7 @@ def _sun_override(name, w):
 
 def weather_params(name):
     """Fully-specified WeatherParameters for a condition. No live state is read."""
+    name = canonical_condition(name)
     if name not in CONDITION_DELTAS:
         raise ValueError(f"unknown condition {name!r}; "
                          f"expected one of {sorted(CONDITION_DELTAS)}")
