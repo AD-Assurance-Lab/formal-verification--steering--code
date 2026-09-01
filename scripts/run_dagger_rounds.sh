@@ -89,7 +89,21 @@ for r in $(seq 1 "$MAX"); do
         rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null
         for W in ${WEATHERS//,/ }; do
             python3 scripts/gate_teacher_lap.py --checkpoint "$CK" --weather "$W" \
-                --lap "$lap" >>"$LOG" 2>&1 && PASSES=$((PASSES+1)) || true
+                --lap "$lap" >>"$LOG" 2>&1
+            rc=$?
+            case $rc in
+                0) PASSES=$((PASSES+1)) ;;
+                1) : ;;                 # drove the lap, missed the budget: a real fail
+                *) # ANY OTHER EXIT IS A BROKEN GATE, NOT A FAILED LAP.
+                   #
+                   # gate_teacher_lap.py died on ModuleNotFoundError for six rounds. Every
+                   # lap "failed", the teacher could never pass, and the driver reported
+                   # "0/3 laps passed" as though it had measured something. I read that as
+                   # a marginal policy and said so. A gate that cannot run has not failed
+                   # the thing it was pointed at.
+                   say "  GATE IS BROKEN (exit $rc), not a failed lap -- stopping"
+                   exit 2 ;;
+            esac
         done
     done
     NEED=$(( 3 * $(echo "$WEATHERS" | tr ',' ' ' | wc -w) ))

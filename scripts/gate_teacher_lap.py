@@ -27,7 +27,7 @@ import carla_env as env                                        # noqa: E402
 import config as C                                             # noqa: E402
 from gpu import require_cuda                                   # noqa: E402
 from evaluate import load_model                                # noqa: E402
-from preprocess import preprocess_for_model                    # noqa: E402
+from imaging import preprocess_for_model                       # noqa: E402
 from route import load_route, signed_cte_route, pure_pursuit_route   # noqa: E402
 
 
