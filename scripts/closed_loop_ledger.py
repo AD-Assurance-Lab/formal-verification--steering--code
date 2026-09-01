@@ -342,9 +342,30 @@ def main():
     if _ck != args.student:
         print(f"  student '{args.student}' resolves to '{_ck}' (student DAgger is part of "
               f"this study's procedure)", flush=True)
+    # WAIT FOR THE GPU, DO NOT RACE CARLA FOR IT.
+    #
+    # The model is moved to the GPU before the CARLA client connects, and CARLA -- just
+    # restarted, because R-SIM-1 restarts before EVERY run now -- is still initialising on
+    # that same device. torch then dies with
+    #     CUDA error: CUDA-capable device(s) is/are busy or unavailable
+    # and the run is lost. Restarting per run turned one race per cell into one per run,
+    # which is how a rare startup collision became a reliable way to lose a ledger.
+    #
+    # Retry rather than sleep a fixed amount: the wait is however long CARLA needs, and a
+    # constant would be either wasteful or wrong on a busier machine.
     model = StudentNet(args.h, args.w,
                        channels=tuple(int(v) for v in args.channels.split(",")),
-                       fc=args.fc).to(device)
+                       fc=args.fc)
+    for _try in range(12):
+        try:
+            model = model.to(device)
+            break
+        except Exception as exc:                              # noqa: BLE001
+            if _try == 11:
+                raise
+            print(f"  GPU busy ({type(exc).__name__}); CARLA is probably still starting "
+                  f"-- retry {_try+1}/12 in 10 s", flush=True)
+            time.sleep(10)
     model.load_state_dict(torch.load(
         os.path.join(C.CHECKPOINT_DIR, f"{_ck}.pth"), map_location=device))
     model.eval()   # StudentNet sets in_h/in_w from its constructor args
