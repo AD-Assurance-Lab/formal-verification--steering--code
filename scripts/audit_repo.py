@@ -446,6 +446,21 @@ chk("ROUND_START" in _rd and "-lt \"$ROUND_START\"" in _rd,
 chk('grep -q -- "-> $CK"' in _rd,
     "run_dagger_rounds.sh: requires the round's own log to name the checkpoint")
 
+# --- a round must actually train, and only one per process ------------------
+# Two ways a round produced no checkpoint while looking like it ran, both of which ended
+# with the driver gating a checkpoint from before the stage began:
+#   * `r == args.rounds` compared an ABSOLUTE round number to a PER-PROCESS budget, so
+#     resuming at round 1 with --rounds 1 broke before training;
+#   * dagger.py's internal ONE-REP gate passed a checkpoint the strict 12-lap gate had
+#     already scored 2/12, and stopped the stage on it.
+_dg = open("pipeline/dagger.py").read()
+chk("for r_local in range(args.rounds):" in _dg,
+    "dagger.py: --rounds is a per-process budget, not an absolute index")
+chk("--external-gate" in _dg and "not args.external_gate" in _dg,
+    "dagger.py: the internal gate can be overridden by an external one")
+chk("--external-gate" in open("scripts/run_dagger_rounds.sh").read(),
+    "run_dagger_rounds.sh: the strict lap gate decides, not dagger's one-rep gate")
+
 # --- a clean server before EVERY lap -----------------------------------------
 # A-4's three laps are conditional on "a clean server restart before every run", and the
 # lap is the run. The teacher gate restarted once per lap INDEX and then drove all four
