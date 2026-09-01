@@ -22,6 +22,27 @@ MAX=${2:-12}
 export STUDY_MAP=Town06 CARLA_PORT=${CARLA_PORT:-3000} PYTHONUNBUFFERED=1
 export CARLA_WINDOWED=${CARLA_WINDOWED:-1} DISPLAY=${DISPLAY:-:0}
 
+# ONE DRIVER AT A TIME.
+#
+# carla_restart.sh kills client processes by name, and dagger.py is on that list. So two
+# of these running at once kill each other's training: every round exited rc=143 (SIGTERM)
+# without producing a checkpoint, the gate then re-scored the previous round forever, and
+# from the outside it looked like a policy that had stopped improving.
+#
+# The second driver was an orphan -- the watchdog restarted the pipeline while a previous
+# pipeline's driver was still alive, and setsid means the child outlives its parent.
+# ONE lock for ALL stages, not one per stage: clear and mixed both drive the single
+# CARLA server, so two of them is the same collision as two of the same one. They were
+# found running together -- an orphaned mixed driver from before the stale-log fix, plus
+# the live clear driver -- each killing the other's dagger.py through carla_restart.
+LOCK=/tmp/dagger_rounds.lock
+if [ -e "$LOCK" ] && kill -0 "$(cat "$LOCK" 2>/dev/null)" 2>/dev/null; then
+    echo "another run_dagger_rounds is alive (pid $(cat "$LOCK")); exiting"
+    exit 0
+fi
+echo $$ > "$LOCK"
+trap 'rm -f "$LOCK"' EXIT
+
 LOG_DIR=$REPO/results/town06_logs
 # The log name carries the study namespace, exactly as the datasets and checkpoints
 # do. It did not, and the six-section study's dagger_mixed.log -- which legitimately says
