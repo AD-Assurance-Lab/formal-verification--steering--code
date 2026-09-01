@@ -55,9 +55,14 @@ for f in ("pipeline/dagger.py", "pipeline/dagger_student.py"):
 
 # --- the gate is a rate, and has a min-rounds floor --------------------------
 chk("--gate-reps" in open("pipeline/dagger.py").read(), "teacher gate can be a RATE (T06-F24)")
-for d in ("scripts/run_town04_pipeline.sh", "scripts/run_town06_pipeline.sh"):
+# Check the file that actually invokes dagger.py. Town06 moved to one round per
+# process, so the flags moved into run_dagger_rounds.sh with it, and asserting them
+# against the orchestrator was checking a file that no longer runs the command.
+for d in ("scripts/run_town04_pipeline.sh", "scripts/run_dagger_rounds.sh"):
     s = open(d).read()
     chk("--min-rounds" in s and "--gate-reps" in s, f"{os.path.basename(d)}: passes both")
+chk("run_dagger_rounds.sh" in open("scripts/run_town06_pipeline.sh").read(),
+    "run_town06_pipeline.sh delegates DAgger to the per-round driver")
 
 # --- competence records are keyed to the weights they describe ---------------
 for p in glob.glob("results/*/competence_clear.json"):
@@ -142,7 +147,16 @@ for cap in glob.glob("results/**/lap_*.npz", recursive=True) + glob.glob("result
     # rather than the capture.
     stem = os.path.basename(cap)[len("lap_"):].rsplit("_", 1)[0]
     want = None
-    if stem in getattr(C, "SECTION_LEN_M", {}):
+    # A capture states the scope it was ASKED for. Prefer it over re-deriving the
+    # length from whatever constants this process happens to have loaded: the audit
+    # runs without TOWN04_REDO=1, so it re-derived 2,861 m and called eight correct
+    # 2,988 m redo captures over-coverage. That is the audit committing the same
+    # error the guard exists to catch -- a default quietly narrowing scope.
+    if "length_m_requested" in z.files:
+        want = float(z["length_m_requested"])
+    if want is not None:
+        pass
+    elif stem in getattr(C, "SECTION_LEN_M", {}):
         want = float(C.SECTION_LEN_M[stem])
     elif stem in ("eastbound", "westbound"):
         try:
@@ -243,7 +257,10 @@ for _drv, _mult in (("scripts/run_town04_ledger.sh", "LAPS*2"),
 # assumes independence. Cells written under the old regime carry neither key.
 # results/ledger/ is the PUBLISHED study's frozen record and is not rebuilt -- it is the
 # baseline the redo is compared against, so it stays as it was collected.
-_led = [f for f in glob.glob("results/*/ledger/*.json")
+# Cells only. lap_report.json is a summary written INTO the ledger directory and has
+# no provenance block of its own, so globbing *.json flagged the report as a dependent
+# cell -- an audit failure with nothing behind it, which is how an audit gets ignored.
+_led = [f for f in glob.glob("results/*/ledger/*closed_loop.json")
         if f.startswith(("results/town06/", "results/town04_v2/"))]
 _dep = []
 for _c in _led:
@@ -253,7 +270,9 @@ for _c in _led:
         _p = json.load(open(_c)).get("provenance", {})
     except ValueError:
         continue
-    if _p.get("restart_granularity") != "per_run":
+    # "per_run_process" (one OS process per run) is the stronger form of "per_run"
+    # and is what the drivers write now. Accept both, or the audit fails correct cells.
+    if _p.get("restart_granularity") not in ("per_run", "per_run_process"):
         _dep.append(os.path.basename(_c))
 chk(not _dep, f"every ledger cell came from independent runs "
               f"({len(_dep)} predate the fix: {_dep[:3]})")
