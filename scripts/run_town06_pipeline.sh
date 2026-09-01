@@ -176,53 +176,61 @@ teacher_gate() {   # teacher_gate <logname>
     return 0
 }
 
+# ── THE LAP REBUILD ──────────────────────────────────────────────────────────
+# Every artifact name carries `t06lap`, not `t06`. Town06 was rebuilt as ONE continuous
+# lap (2,289 m, 93% policy-driven, 2 PPC bridges) after the six discrete sections proved
+# hard to justify -- they are pieces of road 70-500 m apart. The six-section datasets and
+# checkpoints are a valid study on a DIFFERENT route, so they are kept, not overwritten:
+# the route fingerprint guard below would refuse to reuse them anyway, which is exactly
+# what it is for.
+
 cd "$REPO/pipeline"
 
 # ---------------------------------------------------------------- clear policy
-fp_guard "$DATA/clear_t06" clear_t06 || exit 1
-if [ ! -f "$DATA/clear_t06/manifest.csv" ]; then
-    run collect_clear python3 collect_data.py --dataset clear_t06 \
+fp_guard "$DATA/clear_t06lap" clear_t06lap || exit 1
+if [ ! -f "$DATA/clear_t06lap/manifest.csv" ]; then
+    run collect_clear python3 collect_data.py --dataset clear_t06lap \
         --weathers clear --laps 4 --direction all || exit 1
-    fp_stamp "$DATA/clear_t06"
+    fp_stamp "$DATA/clear_t06lap"
 else say "SKIP  collect_clear (manifest exists, fingerprint matches)"; fi
 
-if [ ! -f "$CK_DIR/teacher_clear_t06_bc.pth" ]; then
-    run train_clear_bc python3 train.py --dataset clear_t06 --epochs 120 \
-        --out teacher_clear_t06_bc || exit 1
+if [ ! -f "$CK_DIR/teacher_clear_t06lap_bc.pth" ]; then
+    run train_clear_bc python3 train.py --dataset clear_t06lap --epochs 120 \
+        --out teacher_clear_t06lap_bc || exit 1
 else say "SKIP  train_clear_bc"; fi
 
-if ! ls "$CK_DIR"/teacher_clear_t06_dagger_r*.pth >/dev/null 2>&1; then
-    run dagger_clear python3 dagger.py --base clear_t06 \
-        --init teacher_clear_t06_bc --rounds 12 --min-rounds 8 --gate-reps 3 --weathers clear \
-        --dagger-dir dagger_clear_t06 --out-prefix teacher_clear_t06_dagger || exit 1
+if ! ls "$CK_DIR"/teacher_clear_t06lap_dagger_r*.pth >/dev/null 2>&1; then
+    run dagger_clear python3 dagger.py --base clear_t06lap \
+        --init teacher_clear_t06lap_bc --rounds 12 --min-rounds 8 --gate-reps 3 --weathers clear \
+        --dagger-dir dagger_clear_t06lap --out-prefix teacher_clear_t06lap_dagger || exit 1
     teacher_gate dagger_clear || exit 1
 else say "SKIP  dagger_clear"; teacher_gate dagger_clear || exit 1; fi
 
 # ---------------------------------------------------------------- mixed policy
-fp_guard "$DATA/mixed_t06" mixed_t06 || exit 1
-if [ ! -f "$DATA/mixed_t06/manifest.csv" ]; then
-    run collect_mixed python3 collect_data.py --dataset mixed_t06 \
+fp_guard "$DATA/mixed_t06lap" mixed_t06lap || exit 1
+if [ ! -f "$DATA/mixed_t06lap/manifest.csv" ]; then
+    run collect_mixed python3 collect_data.py --dataset mixed_t06lap \
         --weathers clear,fog,night,shadows --laps 3 --direction all || exit 1
-    fp_stamp "$DATA/mixed_t06"
+    fp_stamp "$DATA/mixed_t06lap"
 else say "SKIP  collect_mixed (fingerprint matches)"; fi
 
-if [ ! -f "$CK_DIR/teacher_mixed_t06_bc.pth" ]; then
-    run train_mixed_bc python3 train.py --dataset mixed_t06 --epochs 120 \
-        --out teacher_mixed_t06_bc || exit 1
+if [ ! -f "$CK_DIR/teacher_mixed_t06lap_bc.pth" ]; then
+    run train_mixed_bc python3 train.py --dataset mixed_t06lap --epochs 120 \
+        --out teacher_mixed_t06lap_bc || exit 1
 else say "SKIP  train_mixed_bc"; fi
 
-if ! ls "$CK_DIR"/teacher_mixed_t06_dagger_r*.pth >/dev/null 2>&1; then
-    run dagger_mixed python3 dagger.py --base mixed_t06 \
-        --init teacher_mixed_t06_bc --rounds 14 --min-rounds 8 --gate-reps 3 --weathers clear,fog,night,shadows \
-        --dagger-dir dagger_mixed_t06 --out-prefix teacher_mixed_t06_dagger || exit 1
+if ! ls "$CK_DIR"/teacher_mixed_t06lap_dagger_r*.pth >/dev/null 2>&1; then
+    run dagger_mixed python3 dagger.py --base mixed_t06lap \
+        --init teacher_mixed_t06lap_bc --rounds 14 --min-rounds 8 --gate-reps 3 --weathers clear,fog,night,shadows \
+        --dagger-dir dagger_mixed_t06lap --out-prefix teacher_mixed_t06lap_dagger || exit 1
     teacher_gate dagger_mixed || exit 1
 else say "SKIP  dagger_mixed"; teacher_gate dagger_mixed || exit 1; fi
 
 # ---------------------------------------------------------------- distillation
 latest() { ls -1 "$CK_DIR"/$1*.pth 2>/dev/null | sort | tail -1 | xargs -r basename | sed 's/\.pth$//'; }
 
-TC=$(latest teacher_clear_t06_dagger_r)
-TM=$(latest teacher_mixed_t06_dagger_r)
+TC=$(latest teacher_clear_t06lap_dagger_r)
+TM=$(latest teacher_mixed_t06lap_dagger_r)
 say "teachers: clear=$TC mixed=$TM"
 [ -n "$TC" ] && [ -n "$TM" ] || { say "FATAL: a DAgger teacher is missing"; exit 1; }
 
@@ -239,8 +247,8 @@ for nm, ck, ch, fc in C.TOWN06_STUDENTS:
 for ROW in "${ROWS[@]}"; do
     read -r NM CK CH FC RELU IN_W IN_H <<<"$ROW"
     case "$NM" in
-        S_clear_t06) TEACH=$TC; DSET=clear_t06; DDIR=dagger_clear_t06 ;;
-        *)           TEACH=$TM; DSET=mixed_t06; DDIR=dagger_mixed_t06 ;;
+        S_clear_t06lap) TEACH=$TC; DSET=clear_t06lap; DDIR=dagger_clear_t06lap ;;
+        *)           TEACH=$TM; DSET=mixed_t06lap; DDIR=dagger_mixed_t06lap ;;
     esac
     if [ ! -f "$CK_DIR/$CK.pth" ]; then
         say "distil $NM -> $CK (${IN_W}x${IN_H}, $RELU ReLU) from $TEACH"
