@@ -1,11 +1,34 @@
 {
   "verdict": "FAIL",
-  "repetitions": 12,
-  "failures": 12,
-  "failure_rate": 1.0,
+  "laps": 3,
+  "laps_failed": 3,
+  "lap_failure_rate": 1.0,
   "wilson_95": [
-    0.7574992425007574,
+    0.43849391955098227,
     1.0
+  ],
+  "worst_cte_m": 9.630045667721282,
+  "margin_frac": -13.41623602952288,
+  "lap_spans": [
+    "eastbound",
+    "westbound"
+  ],
+  "laps_detail": [
+    {
+      "lap": 0,
+      "passed": false,
+      "worst_cte_m": 9.588444762405885
+    },
+    {
+      "lap": 1,
+      "passed": false,
+      "worst_cte_m": 9.630045667721282
+    },
+    {
+      "lap": 2,
+      "passed": false,
+      "worst_cte_m": 9.59633421067574
+    }
   ],
   "student": "S_clear_84x28_v2",
   "checkpoint": "S_clear_84x28_v2",
@@ -18,7 +41,7 @@
   },
   "cte_budget_m": 0.6679999999999999,
   "provenance": {
-    "run_started": "2026-08-31T02:06:27-04:00",
+    "run_started": "2026-08-31T19:25:09-04:00",
     "weather": {
       "cloudiness": 80.0,
       "dust_storm": 0.0,
@@ -42,227 +65,119 @@
     },
     "map": "Town04",
     "target_speed_ms": 8.9408,
-    "lap_end_m": 2861.0,
-    "git_sha": "82a7124a92712981a33a30b55869628c45198aae",
+    "lap_end_m": 2988.0,
+    "git_sha": "038ff0c6a81efaa90ca3a0b0bfaab3ae202e932b",
     "git_dirty": true,
     "independent_runs": true,
     "restart_granularity": "per_run_process",
-    "aggregated_at": "2026-08-31T02:19:47-04:00"
+    "aggregated_at": "2026-08-31T20:44:29-04:00"
   },
   "runs": [
     {
       "rep": 0,
       "direction": "eastbound",
-      "max_cte_m": 9.605105468375852,
+      "max_cte_m": 9.588444762405885,
       "frac_over_budget": 0.046255506607929514,
       "departed": true,
       "passed": false,
       "max_cte_at": {
         "step": 441,
-        "x": 414.4966735839844,
-        "y": -21.27961540222168,
+        "x": 414.4842834472656,
+        "y": -21.347198486328125,
         "onset": {
           "step": 433,
-          "x": 404.1827392578125,
-          "y": -11.710368156433105
+          "x": 404.1996765136719,
+          "y": -11.694677352905273
         }
       }
     },
     {
       "rep": 0,
       "direction": "westbound",
-      "max_cte_m": 9.240160444932652,
-      "frac_over_budget": 0.3389830508474576,
-      "departed": true,
-      "passed": false,
-      "max_cte_at": {
-        "step": 46,
-        "x": -484.67791748046875,
-        "y": 26.750858306884766,
-        "onset": {
-          "step": 39,
-          "x": -472.4078674316406,
-          "y": 26.808881759643555
-        }
-      }
-    },
-    {
-      "rep": 1,
-      "direction": "eastbound",
-      "max_cte_m": 9.604551017308806,
-      "frac_over_budget": 0.048458149779735685,
-      "departed": true,
-      "passed": false,
-      "max_cte_at": {
-        "step": 442,
-        "x": 414.5340576171875,
-        "y": -21.87531280517578,
-        "onset": {
-          "step": 432,
-          "x": 403.38427734375,
-          "y": -10.102132797241211
-        }
-      }
-    },
-    {
-      "rep": 1,
-      "direction": "westbound",
-      "max_cte_m": 9.218645201530297,
-      "frac_over_budget": 0.3389830508474576,
-      "departed": true,
-      "passed": false,
-      "max_cte_at": {
-        "step": 46,
-        "x": -484.66046142578125,
-        "y": 26.764122009277344,
-        "onset": {
-          "step": 39,
-          "x": -472.39508056640625,
-          "y": 26.833341598510742
-        }
-      }
-    },
-    {
-      "rep": 2,
-      "direction": "eastbound",
-      "max_cte_m": 9.595728220196845,
-      "frac_over_budget": 0.046255506607929514,
-      "departed": true,
-      "passed": false,
-      "max_cte_at": {
-        "step": 441,
-        "x": 414.4854736328125,
-        "y": -21.25129508972168,
-        "onset": {
-          "step": 433,
-          "x": 404.14892578125,
-          "y": -11.71353816986084
-        }
-      }
-    },
-    {
-      "rep": 2,
-      "direction": "westbound",
-      "max_cte_m": 9.227007318694426,
-      "frac_over_budget": 0.3389830508474576,
-      "departed": true,
-      "passed": false,
-      "max_cte_at": {
-        "step": 46,
-        "x": -484.68084716796875,
-        "y": 26.77108383178711,
-        "onset": {
-          "step": 39,
-          "x": -472.4140930175781,
-          "y": 26.806135177612305
-        }
-      }
-    },
-    {
-      "rep": 3,
-      "direction": "eastbound",
-      "max_cte_m": 9.598146099309277,
-      "frac_over_budget": 0.046255506607929514,
-      "departed": true,
-      "passed": false,
-      "max_cte_at": {
-        "step": 442,
-        "x": 414.51849365234375,
-        "y": -21.731708526611328,
-        "onset": {
-          "step": 433,
-          "x": 404.1216735839844,
-          "y": -11.724567413330078
-        }
-      }
-    },
-    {
-      "rep": 3,
-      "direction": "westbound",
-      "max_cte_m": 9.216306460771033,
-      "frac_over_budget": 0.3559322033898305,
-      "departed": true,
-      "passed": false,
-      "max_cte_at": {
-        "step": 46,
-        "x": -484.69085693359375,
-        "y": 26.79433250427246,
-        "onset": {
-          "step": 38,
-          "x": -470.68096923828125,
-          "y": 26.69283103942871
-        }
-      }
-    },
-    {
-      "rep": 4,
-      "direction": "eastbound",
-      "max_cte_m": 9.573940651842955,
-      "frac_over_budget": 0.046255506607929514,
-      "departed": true,
-      "passed": false,
-      "max_cte_at": {
-        "step": 442,
-        "x": 414.4937438964844,
-        "y": -21.72393226623535,
-        "onset": {
-          "step": 433,
-          "x": 404.1482849121094,
-          "y": -11.71595573425293
-        }
-      }
-    },
-    {
-      "rep": 4,
-      "direction": "westbound",
-      "max_cte_m": 9.242992687795029,
+      "max_cte_m": 9.301546788006178,
       "frac_over_budget": 0.3389830508474576,
       "departed": true,
       "passed": false,
       "max_cte_at": {
         "step": 47,
-        "x": -484.806640625,
-        "y": 26.861740112304688,
+        "x": -484.9873962402344,
+        "y": 26.94434928894043,
         "onset": {
           "step": 39,
-          "x": -472.4017028808594,
-          "y": 26.81727409362793
+          "x": -472.3996887207031,
+          "y": 26.823368072509766
         }
       }
     },
     {
-      "rep": 5,
+      "rep": 1,
       "direction": "eastbound",
-      "max_cte_m": 9.60063772735655,
+      "max_cte_m": 9.630045667721282,
       "frac_over_budget": 0.046255506607929514,
       "departed": true,
       "passed": false,
       "max_cte_at": {
         "step": 442,
-        "x": 414.52789306640625,
-        "y": -21.840089797973633,
+        "x": 414.5650939941406,
+        "y": -21.96151351928711,
         "onset": {
           "step": 433,
-          "x": 404.1701965332031,
-          "y": -11.701691627502441
+          "x": 404.1304931640625,
+          "y": -11.727505683898926
         }
       }
     },
     {
-      "rep": 5,
+      "rep": 1,
       "direction": "westbound",
-      "max_cte_m": 9.239194222137005,
+      "max_cte_m": 9.21767218220416,
       "frac_over_budget": 0.3559322033898305,
       "departed": true,
       "passed": false,
       "max_cte_at": {
-        "step": 46,
-        "x": -484.67437744140625,
-        "y": 26.748998641967773,
+        "step": 47,
+        "x": -484.80975341796875,
+        "y": 26.89842414855957,
         "onset": {
           "step": 38,
-          "x": -470.6737365722656,
-          "y": 26.693376541137695
+          "x": -470.68475341796875,
+          "y": 26.68277359008789
+        }
+      }
+    },
+    {
+      "rep": 2,
+      "direction": "eastbound",
+      "max_cte_m": 9.59633421067574,
+      "frac_over_budget": 0.046255506607929514,
+      "departed": true,
+      "passed": false,
+      "max_cte_at": {
+        "step": 441,
+        "x": 414.48736572265625,
+        "y": -21.271469116210938,
+        "onset": {
+          "step": 433,
+          "x": 404.1688232421875,
+          "y": -11.708455085754395
+        }
+      }
+    },
+    {
+      "rep": 2,
+      "direction": "westbound",
+      "max_cte_m": 9.285859251420483,
+      "frac_over_budget": 0.3389830508474576,
+      "departed": true,
+      "passed": false,
+      "max_cte_at": {
+        "step": 46,
+        "x": -484.7751770019531,
+        "y": 26.77630043029785,
+        "onset": {
+          "step": 39,
+          "x": -472.4097900390625,
+          "y": 26.809946060180664
         }
       }
     }

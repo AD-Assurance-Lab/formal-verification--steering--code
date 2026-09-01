@@ -96,3 +96,41 @@ budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
 wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/shadows__S_clear_84x28_v2__westbound__rep05.json
   shadows/S_clear_84x28_v2: 12/12 = 100.0% Wilson [75.7%, 100.0%] -> FAIL
   wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/shadows__S_clear_84x28_v2__closed_loop.json
+  server is 53s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'shadows' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  eastbound rep 0 max|CTE|= 31.46 ft FAIL
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/shadows__S_clear_84x28_v2__eastbound__rep00.json
+  server is 50s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'shadows' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  westbound rep 0 max|CTE|= 30.52 ft FAIL
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/shadows__S_clear_84x28_v2__westbound__rep00.json
+  server is 51s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'shadows' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  eastbound rep 1 max|CTE|= 31.59 ft FAIL
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/shadows__S_clear_84x28_v2__eastbound__rep01.json
+  server is 52s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'shadows' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  westbound rep 1 max|CTE|= 30.24 ft FAIL
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/shadows__S_clear_84x28_v2__westbound__rep01.json
+  server is 52s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'shadows' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  eastbound rep 2 max|CTE|= 31.48 ft FAIL
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/shadows__S_clear_84x28_v2__eastbound__rep02.json
+  server is 53s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'shadows' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  westbound rep 2 max|CTE|= 30.47 ft FAIL
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/shadows__S_clear_84x28_v2__westbound__rep02.json
+  shadows/S_clear_84x28_v2: 6/6 = 100.0% Wilson [61.0%, 100.0%] -> FAIL
+  wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/shadows__S_clear_84x28_v2__closed_loop.json

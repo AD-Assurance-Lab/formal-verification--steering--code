@@ -1,7 +1,7 @@
-  --length-m not given: covering the whole SCORED route, 2861 m (route geometry is 3042 m; the tail is outside the scored prefix)
-capturing 1425 frames: 1 cond x 1425 poses x 1 offsets x 1 yaws
-  settled 1425 poses: z -0.00..11.00 m, pitch -3.45..+2.99 deg, 0 fell back
-  fog: 1425 frames
-  route coverage: 2861 m requested, 2862 m actually spanned by 1425 captured poses
+  --length-m not given: covering the whole SCORED route, 2988 m (route geometry is 3042 m; the tail is outside the scored prefix)
+capturing 1492 frames: 1 cond x 1492 poses x 1 offsets x 1 yaws
+  settled 1492 poses: z -0.00..11.00 m, pitch -3.45..+2.99 deg, 0 fell back
+  fog: 1492 frames
+  route coverage: 2988 m requested, 2988 m actually spanned by 1492 captured poses
 
-wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/calibration/lap_eastbound_fog.npz  (33.9 MB)
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/calibration/lap_eastbound_fog.npz  (35.5 MB)

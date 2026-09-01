@@ -73,6 +73,31 @@ def load_route(name):
     return np.roll(route, roll, axis=0) if roll else route
 
 
+# --- open vs closed routes -------------------------------------------------
+# Town04's lap closes on itself (start and end 7.9 m apart) so index arithmetic
+# modulo len(route) is correct there, and every route helper below was written
+# that way. The Town06 lap does NOT close: its start and end are 173.8 m apart,
+# because Zach cut the route before a double intersection that sits outside the
+# ODD. On an open route the wrap is not a wrap, it is a teleport to a point two
+# city blocks away -- pure pursuit aims at it and CTE is measured against a
+# segment that spans the gap. Both happen in the last few steps of every lap,
+# which is exactly where the run is scored.
+CLOSURE_TOL_M = 25.0   # >> Town04's 7.9 m, << Town06's 173.8 m
+
+
+def route_is_closed(route, tol_m=CLOSURE_TOL_M):
+    """True when the route's end rejoins its start, so index wrap is meaningful."""
+    return bool(math.hypot(float(route[0][0] - route[-1][0]),
+                           float(route[0][1] - route[-1][1])) <= tol_m)
+
+
+def _step_idx(route, i, k):
+    """Advance index i by k vertices: wrapping on a closed route, clamped on an
+    open one so we never aim at, or measure against, the far side of the gap."""
+    n = len(route)
+    return (i + k) % n if route_is_closed(route) else max(0, min(n - 1, i + k))
+
+
 def nearest_index(route, x, y, hint=None, window=80):
     """Index of the nearest route vertex. With a hint (previous index), search
     only a local window (handles wraparound) — faster and robust to nearby lanes."""
@@ -80,7 +105,10 @@ def nearest_index(route, x, y, hint=None, window=80):
     if hint is None:
         d2 = (route[:, 0] - x) ** 2 + (route[:, 1] - y) ** 2
         return int(np.argmin(d2))
-    idxs = np.array([(hint + k) % n for k in range(-window, window)])
+    if route_is_closed(route):
+        idxs = np.array([(hint + k) % n for k in range(-window, window)])
+    else:
+        idxs = np.arange(max(0, hint - window), min(n, hint + window))
     seg = route[idxs]
     d2 = (seg[:, 0] - x) ** 2 + (seg[:, 1] - y) ** 2
     return int(idxs[int(np.argmin(d2))])
@@ -91,11 +119,11 @@ def signed_cte_route(route, x, y, hint=None):
     + = left of the route direction, - = right. Returns (cte, nearest_index)."""
     i = nearest_index(route, x, y, hint)
     n = len(route)
-    a, b = route[i], route[(i + 1) % n]
+    a, b = route[i], route[_step_idx(route, i, 1)]
     seg = b - a
     L = math.hypot(seg[0], seg[1])
     if L < 1e-6:
-        a, b = route[(i - 1) % n], route[i]
+        a, b = route[_step_idx(route, i, -1)], route[i]
         seg = b - a
         L = math.hypot(seg[0], seg[1])
     ux, uy = seg[0] / L, seg[1] / L
@@ -111,7 +139,19 @@ def pure_pursuit_route(route, vehicle_transform, hint=None, lookahead=LOOKAHEAD_
     i = nearest_index(route, loc.x, loc.y, hint)
     n = len(route)
     n_ahead = max(1, int(round(lookahead / STEP_M)))
-    tgt = route[(i + n_ahead) % n]
+    if route_is_closed(route) or i + n_ahead <= n - 1:
+        tgt = route[(i + n_ahead) % n] if route_is_closed(route) else route[i + n_ahead]
+    else:
+        # Open route, lookahead past the last vertex. Clamping to route[n-1] is
+        # wrong twice over: it shortens the lookahead, and at i == n-1 the target
+        # IS the vehicle, so ld -> 0 and the steer saturates. Extrapolate along
+        # the final segment instead -- keep going straight past the end, which is
+        # what the road does. The run should already be over by here; this only
+        # keeps the last few steps sane.
+        d = route[n - 1] - route[n - 2]
+        L = math.hypot(float(d[0]), float(d[1])) or 1.0
+        over = (i + n_ahead) - (n - 1)
+        tgt = route[n - 1] + d * (over * STEP_M / L)
 
     dx, dy = tgt[0] - loc.x, tgt[1] - loc.y
     ld = math.hypot(dx, dy)

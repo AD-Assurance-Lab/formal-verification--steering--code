@@ -99,3 +99,41 @@ budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
 wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/clear__S_clear_84x28_v2__westbound__rep05.json
   clear/S_clear_84x28_v2: 0/12 = 0.0% Wilson [0.0%, 24.3%] -> PASS
   wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/clear__S_clear_84x28_v2__closed_loop.json
+  server is 52s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'clear' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  eastbound rep 0 max|CTE|=  0.57 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/clear__S_clear_84x28_v2__eastbound__rep00.json
+  server is 53s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'clear' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  westbound rep 0 max|CTE|=  0.57 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/clear__S_clear_84x28_v2__westbound__rep00.json
+  server is 53s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'clear' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  eastbound rep 1 max|CTE|=  0.58 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/clear__S_clear_84x28_v2__eastbound__rep01.json
+  server is 58s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'clear' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  westbound rep 1 max|CTE|=  0.53 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/clear__S_clear_84x28_v2__westbound__rep01.json
+  server is 54s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'clear' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  eastbound rep 2 max|CTE|=  0.56 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/clear__S_clear_84x28_v2__eastbound__rep02.json
+  server is 52s old: world is already fresh, skipping reload
+S_clear_84x28_v2 under 'clear' (exposure shutter=800)
+budget 0.668 m (2.19 ft), 10 reps x 2 sections = 20 runs
+
+  westbound rep 2 max|CTE|=  0.53 ft PASS
+wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/runs/clear__S_clear_84x28_v2__westbound__rep02.json
+  clear/S_clear_84x28_v2: 0/6 = 0.0% Wilson [0.0%, 39.0%] -> PASS
+  wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town04_v2/ledger/clear__S_clear_84x28_v2__closed_loop.json

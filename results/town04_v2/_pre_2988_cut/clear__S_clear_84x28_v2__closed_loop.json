@@ -1,0 +1,210 @@
+{
+  "verdict": "PASS",
+  "repetitions": 12,
+  "failures": 0,
+  "failure_rate": 0.0,
+  "wilson_95": [
+    0.0,
+    0.2425007574992425
+  ],
+  "student": "S_clear_84x28_v2",
+  "checkpoint": "S_clear_84x28_v2",
+  "condition": "clear",
+  "exposure": {
+    "shutter": 800.0,
+    "iso": 100.0,
+    "fstop": 2.8,
+    "gamma": 2.2
+  },
+  "cte_budget_m": 0.6679999999999999,
+  "provenance": {
+    "run_started": "2026-08-31T00:59:52-04:00",
+    "weather": {
+      "cloudiness": 80.0,
+      "dust_storm": 0.0,
+      "fog_density": 0.0,
+      "fog_distance": 0.0,
+      "fog_falloff": 0.0,
+      "mie_scattering_scale": 0.0,
+      "precipitation": 0.0,
+      "precipitation_deposits": 0.0,
+      "scattering_intensity": 0.0,
+      "sun_altitude_angle": 90.0,
+      "sun_azimuth_angle": 0.0,
+      "wetness": 0.0,
+      "wind_intensity": 0.0
+    },
+    "env_overrides": {},
+    "fixed_delta_seconds": 0.2,
+    "substepping": {
+      "max_substeps": 16,
+      "max_substep_delta_time": 0.0125
+    },
+    "map": "Town04",
+    "target_speed_ms": 8.9408,
+    "lap_end_m": 2861.0,
+    "git_sha": "82a7124a92712981a33a30b55869628c45198aae",
+    "git_dirty": true,
+    "independent_runs": true,
+    "restart_granularity": "per_run_process",
+    "aggregated_at": "2026-08-31T01:18:16-04:00"
+  },
+  "runs": [
+    {
+      "rep": 0,
+      "direction": "eastbound",
+      "max_cte_m": 0.1839434779739366,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 1028,
+        "x": -9.16661548614502,
+        "y": 20.272991180419922
+      }
+    },
+    {
+      "rep": 0,
+      "direction": "westbound",
+      "max_cte_m": 0.1577800954158399,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 680,
+        "x": 8.777608871459961,
+        "y": 40.54008102416992
+      }
+    },
+    {
+      "rep": 1,
+      "direction": "eastbound",
+      "max_cte_m": 0.18449914842653622,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 1028,
+        "x": -9.16719913482666,
+        "y": 20.26744842529297
+      }
+    },
+    {
+      "rep": 1,
+      "direction": "westbound",
+      "max_cte_m": 0.15510960300656831,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 680,
+        "x": 8.774941444396973,
+        "y": 40.54069519042969
+      }
+    },
+    {
+      "rep": 2,
+      "direction": "eastbound",
+      "max_cte_m": 0.17128786194965318,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 1015,
+        "x": -9.244545936584473,
+        "y": -2.964954376220703
+      }
+    },
+    {
+      "rep": 2,
+      "direction": "westbound",
+      "max_cte_m": 0.1538725731954695,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 1411,
+        "x": 118.31187438964844,
+        "y": 13.674971580505371
+      }
+    },
+    {
+      "rep": 3,
+      "direction": "eastbound",
+      "max_cte_m": 0.18302976139247037,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 1015,
+        "x": -9.256293296813965,
+        "y": -2.966322660446167
+      }
+    },
+    {
+      "rep": 3,
+      "direction": "westbound",
+      "max_cte_m": 0.16447741921489933,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 680,
+        "x": 8.78431224822998,
+        "y": 40.541263580322266
+      }
+    },
+    {
+      "rep": 4,
+      "direction": "eastbound",
+      "max_cte_m": 0.17660197433159988,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 1015,
+        "x": -9.24987506866455,
+        "y": -2.968770742416382
+      }
+    },
+    {
+      "rep": 4,
+      "direction": "westbound",
+      "max_cte_m": 0.1611795073029999,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 679,
+        "x": 8.790051460266113,
+        "y": 42.33206558227539
+      }
+    },
+    {
+      "rep": 5,
+      "direction": "eastbound",
+      "max_cte_m": 0.17787410397236122,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 1028,
+        "x": -9.160524368286133,
+        "y": 20.277284622192383
+      }
+    },
+    {
+      "rep": 5,
+      "direction": "westbound",
+      "max_cte_m": 0.16222649361660382,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 679,
+        "x": 8.791098594665527,
+        "y": 42.33209228515625
+      }
+    }
+  ]
+}
