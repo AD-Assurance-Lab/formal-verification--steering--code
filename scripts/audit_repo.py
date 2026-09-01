@@ -363,8 +363,17 @@ for _cert in ("results/town04_v2/calibration/sustained_bound.json",):
     if os.path.exists(_cert):
         try:
             _m = json.load(open(_cert)).get("_meta", {})
-            chk(_m.get("lap_end_m") is not None,
+            # A certificate written before the certifier recorded lap_end_m may state
+            # its extent in a derived scope.json instead. It is NOT regenerated to add
+            # the field: it is the pre-registered artifact, and rewriting it would put
+            # its commit after the drives and break the ordering the field supports.
+            _scope = os.path.join(os.path.dirname(_cert), "scope.json")
+            _sj = json.load(open(_scope)) if os.path.exists(_scope) else {}
+            chk(_m.get("lap_end_m") is not None or _sj.get("lap_end_m") is not None,
                 f"{os.path.basename(_cert)} records the scored extent it covers")
+            if _sj:
+                chk(_sj.get("consistent") is True,
+                    f"{os.path.basename(_cert)}: derived scope is self-consistent")
         except ValueError:
             pass
 
@@ -424,6 +433,18 @@ for d in ("results/town06", "results/town04_v2/calibration"):
        glob.glob(os.path.join(d, "sustained_bound.json")):
         chk(bool(glob.glob(os.path.join(d, "**", "capture_gate.json"), recursive=True)),
             f"{d}: capture gate ran before certification")
+
+# --- standing rule 1 is CHECKED, not merely stated -------------------------------
+# The rule names `python -m study.ledger --check-order`, and the prune deleted that
+# module, so the rule went unchecked here for the whole Town04 redo. A rule that names a
+# command nobody runs is a rule nobody is following.
+chk(os.path.exists("scripts/check_blind_order.py"), "the blind-order check exists")
+if os.path.exists("scripts/check_blind_order.py"):
+    _r = subprocess.run([sys.executable, "scripts/check_blind_order.py"],
+                        capture_output=True, text=True)
+    chk(_r.returncode == 0,
+        "blind protocol: verdicts precede their runs"
+        + ("" if _r.returncode == 0 else f" -- {_r.stdout.strip().splitlines()[0] if _r.stdout.strip() else 'failed'}"))
 
 print("PASS:")
 for m in ok: print("   ", m)
