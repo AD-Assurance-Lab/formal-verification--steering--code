@@ -234,9 +234,10 @@ else say "SKIP  train_clear_bc"; fi
 # DAgger resumes from its newest round by itself, so re-running an unfinished one is
 # cheap and correct.
 if ! grep -q "\*\*\* PASSED at round" "$LOG_DIR/dagger_clear.log" 2>/dev/null; then
-    run dagger_clear python3 dagger.py --base clear_t06lap \
-        --init teacher_clear_t06lap_bc --rounds 12 --min-rounds 8 --gate-reps 3 --weathers clear \
-        --dagger-dir dagger_clear_t06lap --out-prefix teacher_clear_t06lap_dagger || exit 1
+    # ONE ROUND PER PROCESS -- see scripts/run_dagger_rounds.sh. dagger.py
+    # restarting CARLA in-process died with "terminate called" after every
+    # round, with the round already trained.
+    run dagger_clear bash "$REPO/scripts/run_dagger_rounds.sh" clear 12 || exit 1
     teacher_gate dagger_clear || exit 1
 else say "SKIP  dagger_clear"; teacher_gate dagger_clear || exit 1; fi
 
@@ -265,9 +266,10 @@ else say "SKIP  train_mixed_bc"; fi
 # DAgger resumes from its newest round by itself, so re-running an unfinished one is
 # cheap and correct.
 if ! grep -q "\*\*\* PASSED at round" "$LOG_DIR/dagger_mixed.log" 2>/dev/null; then
-    run dagger_mixed python3 dagger.py --base mixed_t06lap \
-        --init teacher_mixed_t06lap_bc --rounds 14 --min-rounds 8 --gate-reps 3 --weathers clear,fog,night,shadows \
-        --dagger-dir dagger_mixed_t06lap --out-prefix teacher_mixed_t06lap_dagger || exit 1
+    # ONE ROUND PER PROCESS -- see scripts/run_dagger_rounds.sh. dagger.py
+    # restarting CARLA in-process died with "terminate called" after every
+    # round, with the round already trained.
+    run dagger_mixed bash "$REPO/scripts/run_dagger_rounds.sh" mixed 12 || exit 1
     teacher_gate dagger_mixed || exit 1
 else say "SKIP  dagger_mixed"; teacher_gate dagger_mixed || exit 1; fi
 
