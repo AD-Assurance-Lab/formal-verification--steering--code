@@ -279,6 +279,17 @@ chk("not r.get(\"bridged\")" in open("pipeline/evaluate.py").read(),
 chk("not in_bridge" in open("scripts/closed_loop_ledger.py").read(),
     "closed_loop_ledger excludes bridged steps from the score")
 
+# --- the strict gate must not share a marker with the loose one ----------------
+# dagger.py prints "*** PASSED at round N ***" from its own 1-rep internal gate. The
+# per-lap gate -- three laps, a clean server each -- wrote and read the same string, so
+# the loose gate silently overrode the strict one: the log read "gate: 0/3 laps passed"
+# and "clear teacher already PASSED" on consecutive lines.
+_rd = open("scripts/run_dagger_rounds.sh").read()
+_pl2 = open("scripts/run_town06_pipeline.sh").read()
+chk("LAP GATE PASSED" in _rd, "the per-lap gate writes its own marker")
+chk('grep -q "\\*\\*\\* PASSED at round"' not in _pl2,
+    "the pipeline gate does not read dagger's internal 1-rep marker")
+
 # --- a study must not read another study's artifacts ---------------------------
 # The lap rebuild namespaced its datasets, checkpoints and DAgger directories as t06lap
 # but not its LOG names -- and the gate reads the log. The six-section study's

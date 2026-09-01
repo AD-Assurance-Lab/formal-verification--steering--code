@@ -188,14 +188,17 @@ teacher_gate() {   # teacher_gate <logname>
         say "       downstream. Refusing to distil. See $log"
         return 1
     fi
-    if ! grep -q "\*\*\* PASSED at round" "$log" 2>/dev/null; then
+    # The STRICT marker, written only by scripts/run_dagger_rounds.sh after three laps
+    # on a clean server each. dagger.py's own "*** PASSED at round N ***" comes from a
+    # 1-rep internal gate and must not decide this.
+    if ! grep -q "\*\*\* LAP GATE PASSED" "$log" 2>/dev/null; then
         say "FATAL: $1 never printed a passing round."
         say "       Its last gate line was:"
         say "       $(grep -E 'gate .*ft\) ->' "$log" | tail -1)"
         say "       A gate that passes because nothing said 'fail' is not a gate."
         return 1
     fi
-    say "GATE  $1: teacher met budget ($(grep '\*\*\* PASSED at round' "$log" | tail -1 | tr -s ' '))"
+    say "GATE  $1: $(grep '\*\*\* LAP GATE PASSED' "$log" | tail -1 | tr -s ' ')"
     return 0
 }
 
@@ -233,7 +236,7 @@ else say "SKIP  train_clear_bc_t06lap"; fi
 # The real question is whether the teacher PASSED, and dagger.py says so in its log.
 # DAgger resumes from its newest round by itself, so re-running an unfinished one is
 # cheap and correct.
-if ! grep -q "\*\*\* PASSED at round" "$LOG_DIR/dagger_clear_t06lap.log" 2>/dev/null; then
+if ! grep -q "\*\*\* LAP GATE PASSED" "$LOG_DIR/dagger_clear_t06lap.log" 2>/dev/null; then
     # ONE ROUND PER PROCESS -- see scripts/run_dagger_rounds.sh. dagger.py
     # restarting CARLA in-process died with "terminate called" after every
     # round, with the round already trained.
@@ -265,7 +268,7 @@ else say "SKIP  train_mixed_bc_t06lap"; fi
 # The real question is whether the teacher PASSED, and dagger.py says so in its log.
 # DAgger resumes from its newest round by itself, so re-running an unfinished one is
 # cheap and correct.
-if ! grep -q "\*\*\* PASSED at round" "$LOG_DIR/dagger_mixed_t06lap.log" 2>/dev/null; then
+if ! grep -q "\*\*\* LAP GATE PASSED" "$LOG_DIR/dagger_mixed_t06lap.log" 2>/dev/null; then
     # ONE ROUND PER PROCESS -- see scripts/run_dagger_rounds.sh. dagger.py
     # restarting CARLA in-process died with "terminate called" after every
     # round, with the round already trained.
