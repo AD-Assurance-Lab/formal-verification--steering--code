@@ -266,6 +266,15 @@ def main():
                          "--base clear,mixed")
     ap.add_argument("--init", default="steering_bc_baseline", help="initial policy checkpoint")
     ap.add_argument("--rounds", type=int, default=6, help="max DAgger retrains")
+    # WHEN AN EXTERNAL GATE DECIDES, THIS ONE MUST NOT STOP THE RUN.
+    # dagger.py evaluates before it trains and exits early if its own gate passes.
+    # That gate is ONE rep; run_dagger_rounds.sh decides on three laps per condition
+    # with a clean server before each. On 2026-09-01 the internal gate passed
+    # teacher_mixed_t06lap_dagger_r05 (0.27/0.92/1.95/0.25 ft) and stopped, on a
+    # checkpoint the strict gate had already scored 2 of 12 laps. The round trained
+    # nothing and the stage halted on a policy the decision-maker had rejected.
+    ap.add_argument("--external-gate", action="store_true",
+                    help="never stop on the internal gate; the caller decides")
     ap.add_argument("--gate-reps", type=int, default=1,
                     help="evaluation passes per cell per round. 1 reproduces the old "
                          "single-run gate. >1 makes the gate a RATE, which standing rule 3 "
@@ -370,7 +379,24 @@ def main():
     try:
         vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
         camera, img_queue = env.spawn_camera(world, vehicle)
-        for r_local in range(args.rounds + 1):
+        # --rounds is THIS PROCESS's budget, and r is an ABSOLUTE round number. They were
+        # compared against each other, which is a category error with two consequences:
+        #
+        #   resuming at round 1 with --rounds 1: `r == args.rounds` was true immediately,
+        #   so the round collected its frames and broke BEFORE training. It printed
+        #   "Exhausted 1 rounds without passing", produced no checkpoint, and the driver
+        #   then gated the PREVIOUS one -- teacher_mixed_t06lap_dagger_r00, from before
+        #   the stage began -- and logged "3/12 laps passed" against it.
+        #
+        #   resuming at round 9 with --rounds 1: the comparison is never true, so nothing
+        #   stopped the process training TWO rounds. One-round-per-process was holding
+        #   only because the teardown TimeoutException killed the process first. Relying
+        #   on a crash to enforce a design invariant is not enforcing it.
+        #
+        # The loop bound is now the budget itself, so `range(args.rounds)` runs exactly
+        # that many rounds wherever it resumes from. Town04's --rounds 16 from a cold
+        # start trains r00..r15 exactly as before.
+        for r_local in range(args.rounds):
             r = r_local + round_offset
             # R-SIM-1 in the TEACHER loop too. This drives len(weathers) x len(sections)
             # times per round with retraining in between, holding one server for the whole
@@ -459,7 +485,7 @@ def main():
             mpath = write_manifest(round_dir, rows)
             history.append((r, current, passed))
 
-            if passed and r >= args.min_rounds:
+            if passed and r >= args.min_rounds and not args.external_gate:
                 print(f"\n*** PASSED at round {r} with policy '{current}' ***")
                 break
             if passed:
@@ -473,10 +499,9 @@ def main():
                 # policy, so they stay correct however the policy drifts.
                 print(f"\n*** passed at round {r}, but --min-rounds {args.min_rounds} "
                       f"means collection continues ***")
-            if r == args.rounds:
-                print(f"\nExhausted {args.rounds} rounds without passing "
-                      f"(last policy '{current}').")
-                break
+            if r_local == args.rounds - 1 and not passed:
+                print(f"\nRound budget of {args.rounds} spent without passing "
+                      f"(last policy '{current}'); training this round, then exiting.")
 
             manifests.append(mpath)
             new = f"{args.out_prefix}_r{r:02d}"
