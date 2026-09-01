@@ -1,0 +1,26 @@
+{
+  "length_m": 2289.037517334472,
+  "n_points": 1147,
+  "step_m": 2.0,
+  "scored_m": 2119.0444132175608,
+  "bridges": [
+    [
+      618.7570114781001,
+      706.7570172515625
+    ],
+    [
+      1548.3202653226288,
+      1630.3133636660777
+    ]
+  ],
+  "start": [
+    660.2,
+    24.29
+  ],
+  "end": [
+    661.19,
+    195.01
+  ],
+  "built_from": "human-driven track, snapped to lane centreline",
+  "note": "lanes chosen by MARKINGS not lane_id: the carriageway gains a lane and shifts 2.3 m laterally across bridge 2, so ids change meaning across it"
+}
