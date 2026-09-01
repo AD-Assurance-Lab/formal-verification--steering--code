@@ -296,9 +296,16 @@ for nm, ck, ch, fc in C.TOWN06_STUDENTS:
 
 for ROW in "${ROWS[@]}"; do
     read -r NM CK CH FC RELU IN_W IN_H <<<"$ROW"
+    # MATCH THE REGISTRY'S ACTUAL NAME. TOWN06_STUDENTS declares "S_clear_t06" and
+    # "S_mixed_t06"; the pattern here was "S_clear_t06lap", which is the CHECKPOINT's
+    # name, not the row's. Nothing matched, both students fell through to the default,
+    # and the CLEAR student would have been distilled from the MIXED teacher on MIXED
+    # data -- silently, producing a plausible checkpoint with the wrong provenance.
+    # Caught before the distil stage ran; no student existed yet.
     case "$NM" in
-        S_clear_t06lap) TEACH=$TC; DSET=clear_t06lap; DDIR=dagger_clear_t06lap ;;
-        *)           TEACH=$TM; DSET=mixed_t06lap; DDIR=dagger_mixed_t06lap ;;
+        S_clear*) TEACH=$TC; DSET=clear_t06lap; DDIR=dagger_clear_t06lap ;;
+        S_mixed*) TEACH=$TM; DSET=mixed_t06lap; DDIR=dagger_mixed_t06lap ;;
+        *) say "FATAL: unrecognised student row '$NM'"; exit 1 ;;
     esac
     if [ ! -f "$CK_DIR/$CK.pth" ]; then
         say "distil $NM -> $CK (${IN_W}x${IN_H}, $RELU ReLU) from $TEACH"
@@ -308,7 +315,32 @@ for ROW in "${ROWS[@]}"; do
     else say "SKIP  distil $NM ($CK exists)"; fi
 done
 
-# ---------------------------------------------------------- NO student DAgger
+# ---------------------------------------------------------- student DAgger
+# RESTORED. T06-F25: this stage was removed on T06-F14, and A-2 discarded T06-F14's data
+# outright. The same finding also made both students the same width, which has since been
+# corrected back to Town04's shape (mixed 32,112 ReLU against clear's 21,408) -- this is
+# the second half of that correction, and it was left undone.
+#
+# Town04 is the reference this deployment test is calibrated against and it runs student
+# DAgger for both students. Running it here restores the procedural match. If it does turn
+# out to hurt at 168x28, the competence gate below and the three-lap ledger will show it
+# ON THE CORRECTED HARNESS, which is the measurement T06-F25 asks for and the one nobody
+# has. Removing a stage on discarded evidence and keeping it removed is not neutral.
+for ROW in "${ROWS[@]}"; do
+    read -r NM CK CH FC RELU IN_W IN_H <<<"$ROW"
+    case "$NM" in
+        S_clear*) TEACH=$TC; DSET=clear_t06lap; W=clear ;;
+        S_mixed*) TEACH=$TM; DSET=mixed_t06lap; W=clear,fog,night,low_sun ;;
+    esac
+    if ! ls "$CK_DIR/${CK}_dagger_r"*.pth >/dev/null 2>&1; then
+        run "dagger_student_$NM" python3 dagger_student.py --student "$CK" \
+            --w "$IN_W" --h "$IN_H" --rounds 3 --weathers "$W" --teacher "$TEACH" \
+            --base "$DSET" --dagger-dir "dagger_student_${NM}_t06lap" \
+            --channels "$CH" --fc "$FC" || exit 1
+    else say "SKIP  dagger_student_$NM (rounds exist)"; fi
+done
+
+# ---------------------------------------------------------- why it was removed
 # T06-F14 removed this stage. It ran student DAgger until the students drove, which was
 # the right call at 84x28 -- the distilled student held 1 of 6 sections at 16.50 ft, so
 # DAgger was rescuing an incompetent policy. At 168x28 distillation alone is already
