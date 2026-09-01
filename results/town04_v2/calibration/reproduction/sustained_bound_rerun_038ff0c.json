@@ -1,73 +1,73 @@
 {
   "westbound/S_clear/fog": {
-    "lo": -0.002978223640186837,
-    "hi": 0.007685697823665339,
+    "lo": -0.002855385320525169,
+    "hi": 0.007904441412616333,
     "verdict": "CERTIFIED",
     "baseline": "foreign"
   },
   "westbound/S_clear/night": {
-    "lo": -0.046102778914881425,
-    "hi": 0.009541398974385258,
+    "lo": -0.04872457644259609,
+    "hi": 0.009495086871040725,
     "verdict": "FALSIFIED",
     "baseline": "foreign"
   },
   "westbound/S_clear/shadows": {
-    "lo": -0.007610714987216923,
-    "hi": 0.018188757049934366,
+    "lo": -0.00789356516679364,
+    "hi": 0.01830866700087091,
     "verdict": "FALSIFIED",
     "baseline": "foreign"
   },
   "westbound/S_mixed/fog": {
-    "lo": -0.0012003980765516568,
-    "hi": 0.0015414371593792237,
+    "lo": -0.0012136851978005695,
+    "hi": 0.0014870972791670395,
     "verdict": "CERTIFIED",
     "baseline": "foreign"
   },
   "westbound/S_mixed/night": {
-    "lo": -0.0021391566934658465,
-    "hi": 0.003429634018957891,
+    "lo": -0.0023239629602322467,
+    "hi": 0.0030172490893652423,
     "verdict": "CERTIFIED",
     "baseline": "foreign"
   },
   "westbound/S_mixed/shadows": {
-    "lo": -0.0020949679628299426,
-    "hi": 0.0008533523901230422,
+    "lo": -0.0021079049217085453,
+    "hi": 0.0008626693041699902,
     "verdict": "CERTIFIED",
     "baseline": "foreign"
   },
   "eastbound/S_clear/fog": {
-    "lo": -0.0038505302119334335,
-    "hi": 0.00566951868869397,
+    "lo": -0.0038715195469296634,
+    "hi": 0.0058633264172508305,
     "verdict": "CERTIFIED",
     "baseline": "foreign"
   },
   "eastbound/S_clear/night": {
-    "lo": -0.05185630976770523,
-    "hi": 0.011225374000215003,
+    "lo": -0.05225895026082623,
+    "hi": 0.01113945958574088,
     "verdict": "FALSIFIED",
     "baseline": "foreign"
   },
   "eastbound/S_clear/shadows": {
-    "lo": -0.009158787144749592,
-    "hi": 0.018393817657586502,
+    "lo": -0.00930261657409124,
+    "hi": 0.01856398380979872,
     "verdict": "FALSIFIED",
     "baseline": "foreign"
   },
   "eastbound/S_mixed/fog": {
-    "lo": -0.0008232455794324083,
-    "hi": 0.0019588626148944375,
+    "lo": -0.0008294154110618375,
+    "hi": 0.0019177158820240763,
     "verdict": "CERTIFIED",
     "baseline": "foreign"
   },
   "eastbound/S_mixed/night": {
-    "lo": -0.0016526990065552566,
-    "hi": 0.004017717537311235,
+    "lo": -0.001823779318666117,
+    "hi": 0.003745337093482448,
     "verdict": "CERTIFIED",
     "baseline": "foreign"
   },
   "eastbound/S_mixed/shadows": {
-    "lo": -0.00197014129711472,
-    "hi": 0.001520510136298286,
+    "lo": -0.002018306731361519,
+    "hi": 0.00148090332527573,
     "verdict": "CERTIFIED",
     "baseline": "foreign"
   },
@@ -78,7 +78,7 @@
     "cells_expected": 12,
     "cells_scored": 12,
     "correct": 0,
-    "git_commit": "6a0200e6385f9052a474bb7cedfee8db7129e89c",
+    "git_commit": "038ff0c6a81efaa90ca3a0b0bfaab3ae202e932b",
     "device": "cuda",
     "torch": "2.13.0+cu130",
     "numpy": "1.26.4"
