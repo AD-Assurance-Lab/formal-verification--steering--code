@@ -118,11 +118,18 @@ for r in $(seq 1 "$MAX"); do
 
     # THE GATE: three laps, a clean server before EACH, one process per lap.
     PASSES=0
+    # A RESTART BEFORE EVERY LAP, not before every group of laps.
+    #
+    # This restarted once per lap INDEX and then drove all four conditions on that one
+    # server -- 3 restarts for 12 laps. A lap is the repetition (A-4), and the clean
+    # server is per repetition: three laps is defensible only while "a clean server
+    # restart before every run" holds, and four laps sharing a server is the ageing-server
+    # coupling the per-run restart exists to break.
     for lap in 0 1 2; do
-        bash scripts/carla_restart.sh > "$LOG_DIR/dagger_${WHICH}_t06lap_restart.log" 2>&1 || {
-            say "  restart failed before gate lap $lap"; break; }
-        rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null
         for W in ${WEATHERS//,/ }; do
+            bash scripts/carla_restart.sh > "$LOG_DIR/dagger_${WHICH}_t06lap_restart.log" 2>&1 || {
+                say "  restart failed before gate lap $lap/$W"; break 2; }
+            rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null
             python3 scripts/gate_teacher_lap.py --checkpoint "$CK" --weather "$W" \
                 --lap "$lap" >>"$LOG" 2>&1
             rc=$?

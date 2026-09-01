@@ -446,6 +446,34 @@ chk("ROUND_START" in _rd and "-lt \"$ROUND_START\"" in _rd,
 chk('grep -q -- "-> $CK"' in _rd,
     "run_dagger_rounds.sh: requires the round's own log to name the checkpoint")
 
+# --- a clean server before EVERY lap -----------------------------------------
+# A-4's three laps are conditional on "a clean server restart before every run", and the
+# lap is the run. The teacher gate restarted once per lap INDEX and then drove all four
+# conditions on that server: 3 restarts for 12 laps. Checked positionally, because the
+# restart being present in the file says nothing about which loop it sits in.
+_g = open("scripts/run_dagger_rounds.sh").read()
+_gate = _g.split("# THE GATE:", 1)[-1]
+_iw = _gate.find("for W in")
+_ir = _gate.find("carla_restart.sh", _iw if _iw >= 0 else 0)
+chk(_iw >= 0 and _ir > _iw,
+    "run_dagger_rounds.sh: restarts CARLA inside the per-condition loop (one per lap)")
+_l = open("scripts/run_town06_ledger.sh").read()
+# Search AFTER the loop opens: line 57's `carla_up 12 || carla_restart || exit 1` is a
+# startup fallback, and matching it made this check fail a script that was correct.
+_isec = _l.find("for SEC in")
+chk(_isec >= 0 and _l.find("carla_restart ||", _isec) > _isec,
+    "run_town06_ledger.sh: restarts CARLA before every lap")
+
+# --- evidence records the harness it was collected under (D-11) ---------------
+# D-11 makes data from a violating harness unusable, which is only enforceable if the
+# data says which harness it ran under. Cells recorded the timestep but not whether
+# deterministic control was on or what flags the server carried.
+_cl = open("scripts/closed_loop_ledger.py").read()
+chk("_determinism_provenance" in _cl,
+    "closed_loop_ledger.py: records the determinism harness in every cell")
+chk("unknown, not absent" in _cl,
+    "closed_loop_ledger.py: an uninspectable server is unknown, not a recorded violation")
+
 # --- a driving loop the user watches must follow the car ---------------------
 # gate_teacher_lap.py drove the entire teacher gate with a stationary spectator, so the
 # window showed empty road while the run was going fine. Zach watches these.

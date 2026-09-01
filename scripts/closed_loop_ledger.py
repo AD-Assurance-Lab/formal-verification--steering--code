@@ -85,7 +85,52 @@ def run_provenance(condition):
         target_speed_ms=C.TARGET_SPEED_MS,
         lap_end_m=C.LAP_END_M,
         git_sha=sha, git_dirty=dirty,
+        # THE HARNESS THIS RAN UNDER, recorded so D-11 is checkable afterwards.
+        #
+        # D-11 says data collected under a violating harness is not reusable. That is
+        # only enforceable if the data says which harness it ran under. The Town04 redo
+        # cells record fixed_delta_seconds and substepping but not whether deterministic
+        # control was on, what flags the server carried, or whether the lock was intact
+        # -- so "was this collected correctly?" had to be answered from the config as it
+        # stands today rather than from the artifact, which is the wrong direction.
+        #
+        # server_cmdline is read from the RUNNING process, not from what we meant to
+        # launch: -notexturestreaming is D-3 and the 168x term, and a flag we intended
+        # but did not pass looks identical in a log to one we did.
+        determinism=_determinism_provenance(),
     )
+
+
+def _determinism_provenance():
+    import carla_determinism as _cd
+    out = dict(deterministic_control=bool(C.DETERMINISTIC_CONTROL),
+               package_version=getattr(_cd, "__version__", None))
+    try:
+        out["rules_digest"] = _cd.digest()
+        out["lock_problems"] = _cd.check_lock()      # [] means the frozen rules are intact
+    except Exception as e:
+        out["rules_digest"] = None
+        out["lock_error"] = str(e)
+    try:
+        argv = _cd.server_cmdline(C.PORT) or []
+        out["server_cmdline"] = argv
+        # None, never False, when the server could not be inspected. Recording
+        # notexturestreaming=false because the lookup returned nothing describes a D-3
+        # violation that did not happen -- and it would be read later as evidence that
+        # one did. "Unknown" and "absent" are different facts and the artifact must not
+        # collapse them.
+        if argv:
+            out["notexturestreaming"] = any("-notexturestreaming" in a for a in argv)
+            q = [a.split("=", 1)[1] for a in argv if a.startswith("-quality-level=")]
+            out["quality_level"] = q[0] if q else None
+        else:
+            out["notexturestreaming"] = None
+            out["quality_level"] = None
+            out["server_cmdline_note"] = (
+                f"no CARLA server found on port {C.PORT}; flags unknown, not absent")
+    except Exception as e:
+        out["server_cmdline_error"] = str(e)
+    return out
 
 
 def wilson(k, n, z=1.96):
