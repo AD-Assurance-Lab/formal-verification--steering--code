@@ -208,9 +208,32 @@ def restart_carla_and_reconnect(camera, vehicle, world, original):
     env._CLIENT = None
     gc.collect()
     port = os.environ.get("CARLA_PORT", str(C.PORT))
+    # KILL, THEN WAIT FOR THE PORT. `sleep 10` is a guess, and when it is wrong the old
+    # server still holds the port, the relaunch cannot bind, and every reconnect times out
+    # -- which is exactly how this died after every round ("could not reach CARLA after
+    # the round restart"), with two CARLA processes alive and one wedged on the socket.
+    import socket as _socket
     subprocess.run(["pkill", "-f", f"[C]arlaUE4-Linux-Shipping.*rpc-port={port}"],
                    stdin=subprocess.DEVNULL)
-    time.sleep(10)
+    subprocess.run(["pkill", "-f", f"[C]arlaUE4.sh.*rpc-port={port}"],
+                   stdin=subprocess.DEVNULL)
+
+    def _port_held():
+        with _socket.socket() as sk:
+            sk.settimeout(1.0)
+            return sk.connect_ex(("127.0.0.1", int(port))) == 0
+
+    for _i in range(25):
+        if not _port_held():
+            break
+        if _i == 12:          # SIGTERM had its chance; escalate rather than hang
+            subprocess.run(["pkill", "-KILL", "-f", f"[C]arlaUE4.*rpc-port={port}"],
+                           stdin=subprocess.DEVNULL)
+        time.sleep(1.0)
+    else:
+        raise RuntimeError(f"port {port} is still held after SIGTERM and SIGKILL; "
+                           f"refusing to launch a second server onto it")
+    time.sleep(3)
     log = os.path.join(C.REPO_ROOT, "results", "carla_restart_dagger.log")
     with open(log, "a") as fh:
         subprocess.run(["bash", os.path.join(C.REPO_ROOT, "scripts", "carla_launch.sh")],

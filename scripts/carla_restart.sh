@@ -75,8 +75,27 @@ for pat in "[e]valuate.py" "[d]agger_student.py" "[d]agger.py" "[c]ollect_data.p
     pkill -KILL -f "$pat" 2>/dev/null      # only after they were asked politely
 done
 
+# KILL, THEN WAIT FOR THE PORT TO ACTUALLY FREE.
+#
+# `pkill; sleep 10` is a guess, and when it is wrong the failure is ugly: the old server
+# still holds :$PORT, the new one cannot bind, and every client then times out against a
+# listener that never serves. Measured -- DAgger died after every round with "could not
+# reach CARLA after the round restart", and two CARLA processes were found alive with one
+# wedged on the port.
+#
+# SIGTERM first (R-SIM-2: a client killed with -9 leaves the world in sync mode), then
+# escalate, then wait for the socket rather than assuming it is gone.
 pkill -f "[C]arlaUE4-Linux-Shipping.*rpc-port=$PORT" 2>/dev/null
-sleep 10
+pkill -f "[C]arlaUE4.sh.*rpc-port=$PORT" 2>/dev/null
+for i in $(seq 1 20); do
+    ss -ltn 2>/dev/null | grep -q ":$PORT " || break
+    [ "$i" = 10 ] && pkill -KILL -f "[C]arlaUE4.*rpc-port=$PORT" 2>/dev/null
+    sleep 1
+done
+if ss -ltn 2>/dev/null | grep -q ":$PORT "; then
+    echo "FATAL: port $PORT is still held after SIGTERM and SIGKILL. Something else owns it."
+    exit 1
+fi
 rm -f "/tmp/carla-locks/carla-$PORT.lock" 2>/dev/null
 
 # CARLA_WINDOWED=1 launches with a visible window on DISPLAY so runs can be WATCHED.
