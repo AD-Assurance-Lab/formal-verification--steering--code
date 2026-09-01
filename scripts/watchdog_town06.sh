@@ -43,7 +43,11 @@ while : ; do
         tail -5 /tmp/t06_pipeline_wd.log 2>/dev/null | sed 's/^/    /' | tee -a "$LOG"
         exit 1
     fi
-    say "pipeline is not running -- restart $n/$MAX_RESTARTS"
+    # BACK OFF. Restarting instantly means a pipeline that dies on startup is restarted
+    # three times a minute, and concurrent pipelines then fight over CARLA -- which is
+    # worse than being stopped. Wait long enough that a fast failure is visible as one.
+    say "pipeline is not running -- restart $n/$MAX_RESTARTS (waiting 60 s first)"
+    sleep 60
     rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null
     setsid nohup bash "$REPO/scripts/run_town06_pipeline.sh" \
         > /tmp/t06_pipeline_wd.log 2>&1 < /dev/null &
