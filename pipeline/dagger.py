@@ -26,6 +26,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import cv2  # noqa: E402
 import torch  # noqa: E402
+
+from gpu import require_cuda  # noqa: E402
 import carla  # noqa: E402
 
 import config as C  # noqa: E402
@@ -251,7 +253,7 @@ def main():
                          "per model, e.g. dagger_mixed, so rounds don't collide)")
     args = ap.parse_args()
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = require_cuda()
     weathers = args.weathers.split(",")
     dagger_dir = os.path.join(C.DATASET_DIR, args.dagger_dir)
     # DAgger aggregates: every prior round's data must stay in the training set. Rounds

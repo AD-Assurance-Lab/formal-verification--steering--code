@@ -28,6 +28,8 @@ import cv2
 import numpy as np
 import torch
 
+from gpu import require_cuda  # noqa: E402
+
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "pipeline"))
 
@@ -192,6 +194,7 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps,
     # with only a scalar max there is no way to tell a recurring bad corner from bad luck
     # -- which is exactly the question D-01 turns on.
     ctes, poses, left, stalled, offroad, departed = [], [], False, 0, 0, False
+    n_bridged = 0
     onset = [None]
     log_rows, frames_dir = [], None
     if log_dir is not None:
@@ -216,7 +219,21 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps,
             steer = max(-1.0, min(1.0, float(model(xin).item())))
 
         cte, hint = signed_cte_route(route, loc.x, loc.y, hint)
-        if cte is not None:
+
+        # ODD BOUNDARY: pure pursuit bridges the intersections, and those steps are
+        # neither driven by the policy nor scored. See pipeline/evaluate.py for why --
+        # briefly: no lane markings means no input signal for a lane-follower, and
+        # scoring the expert's road would compare a verdict against road the certificate
+        # does not cover.
+        in_bridge = False
+        if getattr(C, "LAP_BASED", False) and hint is not None:
+            here_m = hint * float(C.LAP_META.get("step_m", 2.0))
+            in_bridge = any(a <= here_m <= b for a, b in C.BRIDGE_SPANS)
+        if in_bridge:
+            steer, _, _ = pure_pursuit_route(route, tf, hint)
+            n_bridged += 1
+
+        if cte is not None and not in_bridge:
             ctes.append(abs(cte))
             poses.append((float(loc.x), float(loc.y)))
             # ONSET, not peak. max_cte_at records where the LARGEST error occurred, which
@@ -333,7 +350,7 @@ def main():
     prov["independent_runs"] = True
     prov["restart_granularity"] = "per_run"
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = require_cuda()
     # DRIVE THE POLICY, NOT THE DISTILLED INTERMEDIATE -- see certify_sustained_bound.
     # A ledger cell that names a student must be about the checkpoint that IS that
     # student, or the certificate and the drive can agree with each other while both
@@ -342,30 +359,9 @@ def main():
     if _ck != args.student:
         print(f"  student '{args.student}' resolves to '{_ck}' (student DAgger is part of "
               f"this study's procedure)", flush=True)
-    # WAIT FOR THE GPU, DO NOT RACE CARLA FOR IT.
-    #
-    # The model is moved to the GPU before the CARLA client connects, and CARLA -- just
-    # restarted, because R-SIM-1 restarts before EVERY run now -- is still initialising on
-    # that same device. torch then dies with
-    #     CUDA error: CUDA-capable device(s) is/are busy or unavailable
-    # and the run is lost. Restarting per run turned one race per cell into one per run,
-    # which is how a rare startup collision became a reliable way to lose a ledger.
-    #
-    # Retry rather than sleep a fixed amount: the wait is however long CARLA needs, and a
-    # constant would be either wasteful or wrong on a busier machine.
     model = StudentNet(args.h, args.w,
                        channels=tuple(int(v) for v in args.channels.split(",")),
-                       fc=args.fc)
-    for _try in range(12):
-        try:
-            model = model.to(device)
-            break
-        except Exception as exc:                              # noqa: BLE001
-            if _try == 11:
-                raise
-            print(f"  GPU busy ({type(exc).__name__}); CARLA is probably still starting "
-                  f"-- retry {_try+1}/12 in 10 s", flush=True)
-            time.sleep(10)
+                       fc=args.fc).to(device)
     model.load_state_dict(torch.load(
         os.path.join(C.CHECKPOINT_DIR, f"{_ck}.pth"), map_location=device))
     model.eval()   # StudentNet sets in_h/in_w from its constructor args

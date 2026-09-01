@@ -258,13 +258,34 @@ for _c in _led:
 chk(not _dep, f"every ledger cell came from independent runs "
               f"({len(_dep)} predate the fix: {_dep[:3]})")
 
+# --- PPC bridges must be driven by the expert AND excluded from scoring ---------
+# Town06's lap crosses intersections where a lane-follower has no lane to follow. The
+# expert drives those spans; scoring them would score the expert, and would compare a
+# verdict against road the certificate does not cover -- the same scope mismatch that
+# put half of Town04's ledger runs beyond the scored prefix.
+for _f in ("pipeline/evaluate.py", "scripts/closed_loop_ledger.py"):
+    _t = open(_f).read()
+    chk("BRIDGE_SPANS" in _t and "in_bridge" in _t,
+        f"{os.path.basename(_f)} hands bridges to pure pursuit")
+chk("not r.get(\"bridged\")" in open("pipeline/evaluate.py").read(),
+    "evaluate excludes bridged steps from the score")
+chk("not in_bridge" in open("scripts/closed_loop_ledger.py").read(),
+    "closed_loop_ledger excludes bridged steps from the score")
+
 # --- the GPU must be waited for, not raced -------------------------------------
 # Restarting before EVERY run (R-SIM-1 at run granularity) means the client's CUDA init
 # races CARLA's GPU startup once per run instead of once per cell. torch dies with
 # "CUDA-capable device(s) is/are busy or unavailable" and the run is lost.
-_led = open("scripts/closed_loop_ledger.py").read()
-chk("GPU busy" in _led and "retry" in _led,
-    "closed_loop_ledger retries GPU allocation instead of racing CARLA for it")
+# `device = "cuda" if torch.cuda.is_available() else "cpu"` reads like portability and
+# is a silent-failure switch: while CARLA initialises on the same device the flag is
+# False, so the run continues ON THE CPU and says nothing. Caught when a Town06 policy
+# drive printed "CUDA unknown error" and then drove the whole lap anyway.
+for _f in ("pipeline/evaluate.py", "pipeline/dagger.py", "pipeline/dagger_student.py",
+           "scripts/closed_loop_ledger.py"):
+    _t = open(_f).read()
+    chk('torch.cuda.is_available() else "cpu"' not in _t,
+        f"{os.path.basename(_f)} does not fall back to the CPU silently")
+    chk("require_cuda" in _t, f"{os.path.basename(_f)} waits for the GPU")
 
 # --- a certificate must state the extent it covers -----------------------------
 # It recorded nsplit, stride and tolerance but not which road the bounds cover -- and the

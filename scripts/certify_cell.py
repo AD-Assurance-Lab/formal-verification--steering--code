@@ -29,6 +29,8 @@ from pathlib import Path
 import cv2
 import numpy as np
 import torch
+
+from gpu import require_cuda  # noqa: E402
 import torch.nn as nn
 
 REPO = Path(__file__).resolve().parent.parent
@@ -539,7 +541,7 @@ def main():
     args = ap.parse_args()
     LEDGER.mkdir(parents=True, exist_ok=True)
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = require_cuda(allow_cpu=True, verbose=False)
     student = StudentNet(args.h, args.w,
                          channels=tuple(int(v) for v in args.channels.split(",")),
                          fc=args.fc).to(device)
