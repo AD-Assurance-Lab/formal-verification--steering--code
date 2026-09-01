@@ -258,6 +258,14 @@ for _c in _led:
 chk(not _dep, f"every ledger cell came from independent runs "
               f"({len(_dep)} predate the fix: {_dep[:3]})")
 
+# --- the GPU must be waited for, not raced -------------------------------------
+# Restarting before EVERY run (R-SIM-1 at run granularity) means the client's CUDA init
+# races CARLA's GPU startup once per run instead of once per cell. torch dies with
+# "CUDA-capable device(s) is/are busy or unavailable" and the run is lost.
+_led = open("scripts/closed_loop_ledger.py").read()
+chk("GPU busy" in _led and "retry" in _led,
+    "closed_loop_ledger retries GPU allocation instead of racing CARLA for it")
+
 # --- a certificate must state the extent it covers -----------------------------
 # It recorded nsplit, stride and tolerance but not which road the bounds cover -- and the
 # extent is what moved underneath it. A certificate that cannot say what it covers cannot
