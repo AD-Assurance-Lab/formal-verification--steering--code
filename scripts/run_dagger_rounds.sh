@@ -38,8 +38,8 @@ else
 fi
 
 for r in $(seq 1 "$MAX"); do
-    if grep -q "\*\*\* PASSED at round" "$LOG" 2>/dev/null; then
-        say "$WHICH teacher already PASSED; nothing to do"; exit 0
+    if grep -q "\*\*\* LAP GATE PASSED" "$LOG" 2>/dev/null; then
+        say "$WHICH teacher already passed the per-lap gate; nothing to do"; exit 0
     fi
     say "round attempt $r/$MAX"
     bash scripts/carla_restart.sh > "$LOG_DIR/dagger_${WHICH}_t06lap_restart.log" 2>&1 || {
@@ -74,14 +74,18 @@ for r in $(seq 1 "$MAX"); do
     NEED=$(( 3 * $(echo "$WEATHERS" | tr ',' ' ' | wc -w) ))
     say "  gate: $PASSES/$NEED laps passed with $CK"
     if [ "$PASSES" -eq "$NEED" ]; then
-        echo "*** PASSED at round $r with policy '$CK' ***" >> "$LOG"
+        # A marker only THIS gate writes. dagger.py prints "*** PASSED at round N ***"
+        # from its own 1-rep internal gate, and sharing that string let the loose gate
+        # override the strict one: the log read "gate: 0/3 laps passed" and then
+        # "clear teacher already PASSED" on the next line.
+        echo "*** LAP GATE PASSED: $CK ($PASSES/$NEED laps, clean server each) ***" >> "$LOG"
         say "$WHICH teacher PASSED at $CK"
         exit 0
     fi
 done
 
-if grep -q "\*\*\* PASSED at round" "$LOG" 2>/dev/null; then
-    say "$WHICH teacher PASSED"
+if grep -q "\*\*\* LAP GATE PASSED" "$LOG" 2>/dev/null; then
+    say "$WHICH teacher PASSED the per-lap gate"
     exit 0
 fi
 say "$WHICH teacher did NOT pass in $MAX rounds -- refusing to pretend otherwise"
