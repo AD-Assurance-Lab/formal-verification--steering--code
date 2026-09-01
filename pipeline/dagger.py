@@ -41,6 +41,7 @@ from train import train_model  # noqa: E402
 # Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).
 SPAWNS = C.SPAWNS
 FIELDS = ["image", "weather", "direction", "step", "steer", "steer_rad", "nn_steer",
+          "bridged",
           "cte_m", "speed_mph", "x", "y", "yaw"]
 
 
@@ -101,18 +102,34 @@ def drive_collect(world, vehicle, img_queue, model, device, weather, direction,
         cte, hint = signed_cte_route(route, loc.x, loc.y, hint)
         exp_steer, exp_rad, _ = pure_pursuit_route(route, tf, hint)   # LABEL
 
+        # ODD BOUNDARY: pure pursuit bridges the intersections.
+        #
+        # Without this the teacher is asked to drive an intersection with no lane
+        # markings, which a lane-follower cannot do at any beta -- it failed at step ~378
+        # of 1,280 on every attempt, which is 677 m, inside the 619-707 m bridge, at
+        # 62 ft of cross-track error. The policy was not bad; it was being scored on road
+        # that is outside its domain.
+        #
+        # evaluate.py and closed_loop_ledger.py already bridge. dagger.py did not, and
+        # DAgger is where the teacher is BUILT -- so the omission did not merely mismeasure
+        # a policy, it would have trained one on states no policy can recover from.
+        in_bridge = False
+        if getattr(C, "LAP_BASED", False) and hint is not None:
+            here_m = hint * float(C.LAP_META.get("step_m", 2.0))
+            in_bridge = any(a <= here_m <= b for a, b in C.BRIDGE_SPANS)
+
         rel = os.path.join(seg, "frames", f"{step:05d}.png")
         if collect:
             cv2.imwrite(os.path.join(round_dir, rel), bgr)
         rows.append(dict(
             image=rel, weather=weather, direction=direction, step=step,
-            steer=exp_steer, steer_rad=exp_rad, nn_steer=nn_steer,
+            steer=exp_steer, steer_rad=exp_rad, nn_steer=nn_steer, bridged=in_bridge,
             cte_m=cte, speed_mph=env.speed_mph(vehicle), x=loc.x, y=loc.y, yaw=tf.rotation.yaw,
         ))
 
         # DAgger mixing: expert assists with weight beta so the vehicle keeps generating
         # useful states; the recorded LABEL is always the pure expert action.
-        applied = (1.0 - beta) * nn_steer + beta * exp_steer
+        applied = exp_steer if in_bridge else (1.0 - beta) * nn_steer + beta * exp_steer
         thr, brk = speed_ctrl.control(vehicle)
         env.apply_control(vehicle, carla.VehicleControl(throttle=thr, brake=brk,
                                                    steer=float(applied)))
@@ -148,7 +165,12 @@ def drive_collect(world, vehicle, img_queue, model, device, weather, direction,
             hint = None
     if n_recover:
         print(f"    {direction}: {n_recover} recovery reset(s) during collection")
-    return rows, summarize_cte([r["cte_m"] for r in rows])
+    # Score only the policy's road: bridged steps are pure pursuit's, and judging the
+    # teacher on them would fail it for an intersection it is not asked to drive. The
+    # rows still CONTAIN the bridged steps, because their expert labels are exactly what
+    # DAgger should learn from -- they are excluded from the SCORE, not from the data.
+    scored = [r for r in rows if not r.get("bridged")]
+    return rows, summarize_cte([r["cte_m"] for r in scored])
 
 
 def write_manifest(round_dir, rows):

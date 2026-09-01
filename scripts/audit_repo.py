@@ -263,7 +263,14 @@ chk(not _dep, f"every ledger cell came from independent runs "
 # expert drives those spans; scoring them would score the expert, and would compare a
 # verdict against road the certificate does not cover -- the same scope mismatch that
 # put half of Town04's ledger runs beyond the scored prefix.
-for _f in ("pipeline/evaluate.py", "scripts/closed_loop_ledger.py"):
+# EVERY loop that drives a POLICY must bridge -- including the ones that TRAIN it.
+# evaluate and the ledger bridged; dagger.py did not, so the teacher was asked to drive
+# an intersection a lane-follower cannot drive and failed at 62 ft, every attempt, at the
+# same step. Enumerating the loops that "measure" missed the loop that builds.
+for _f in ("pipeline/evaluate.py", "scripts/closed_loop_ledger.py", "pipeline/dagger.py",
+           "pipeline/dagger_student.py"):
+    if not os.path.exists(_f):
+        continue
     _t = open(_f).read()
     chk("BRIDGE_SPANS" in _t and "in_bridge" in _t,
         f"{os.path.basename(_f)} hands bridges to pure pursuit")
