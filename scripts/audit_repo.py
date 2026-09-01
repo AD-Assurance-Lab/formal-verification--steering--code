@@ -279,6 +279,17 @@ chk("not r.get(\"bridged\")" in open("pipeline/evaluate.py").read(),
 chk("not in_bridge" in open("scripts/closed_loop_ledger.py").read(),
     "closed_loop_ledger excludes bridged steps from the score")
 
+# --- a study must not read another study's artifacts ---------------------------
+# The lap rebuild namespaced its datasets, checkpoints and DAgger directories as t06lap
+# but not its LOG names -- and the gate reads the log. The six-section study's
+# dagger_mixed.log legitimately says "PASSED at round 12", so the lap pipeline skipped a
+# stage that had never run and then died on the missing checkpoint. Namespacing three
+# kinds of artifact and not the fourth is exactly how that happens.
+_pl = open("scripts/run_town06_pipeline.sh").read()
+for _stage in ("dagger_clear", "dagger_mixed", "collect_clear", "collect_mixed"):
+    chk(f"{_stage}_t06lap" in _pl and f'"{_stage}.log"' not in _pl,
+        f"pipeline stage {_stage} writes a namespaced log")
+
 # --- gates must FAIL CLOSED ----------------------------------------------------
 # teacher_gate grepped only for "without passing" and passed otherwise, so every way of
 # not printing that string counted as success -- including DAgger crashing. It announced

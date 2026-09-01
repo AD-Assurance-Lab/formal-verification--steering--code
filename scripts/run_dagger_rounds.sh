@@ -23,9 +23,13 @@ export STUDY_MAP=Town06 CARLA_PORT=${CARLA_PORT:-3000} PYTHONUNBUFFERED=1
 export CARLA_WINDOWED=${CARLA_WINDOWED:-1} DISPLAY=${DISPLAY:-:0}
 
 LOG_DIR=$REPO/results/town06_logs
-LOG=$LOG_DIR/dagger_$WHICH.log
+# The log name carries the study namespace, exactly as the datasets and checkpoints
+# do. It did not, and the six-section study's dagger_mixed.log -- which legitimately says
+# "PASSED at round 12" -- was read by the LAP study's gate, which skipped a stage that had
+# never run. Namespacing three kinds of artifact and not the fourth is how that happens.
+LOG=$LOG_DIR/dagger_${WHICH}_t06lap.log
 mkdir -p "$LOG_DIR"
-say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/dagger_rounds_$WHICH.log"; }
+say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/dagger_rounds_${WHICH}_t06lap.log"; }
 
 if [ "$WHICH" = clear ]; then
     WEATHERS=clear
@@ -38,7 +42,7 @@ for r in $(seq 1 "$MAX"); do
         say "$WHICH teacher already PASSED; nothing to do"; exit 0
     fi
     say "round attempt $r/$MAX"
-    bash scripts/carla_restart.sh > "$LOG_DIR/dagger_${WHICH}_restart.log" 2>&1 || {
+    bash scripts/carla_restart.sh > "$LOG_DIR/dagger_${WHICH}_t06lap_restart.log" 2>&1 || {
         say "restart failed; stopping"; exit 1; }
     rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null
     # One round, then exit. The next iteration restarts CARLA and resumes.
@@ -59,7 +63,7 @@ for r in $(seq 1 "$MAX"); do
     # THE GATE: three laps, a clean server before EACH, one process per lap.
     PASSES=0
     for lap in 0 1 2; do
-        bash scripts/carla_restart.sh > "$LOG_DIR/dagger_${WHICH}_restart.log" 2>&1 || {
+        bash scripts/carla_restart.sh > "$LOG_DIR/dagger_${WHICH}_t06lap_restart.log" 2>&1 || {
             say "  restart failed before gate lap $lap"; break; }
         rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null
         for W in ${WEATHERS//,/ }; do

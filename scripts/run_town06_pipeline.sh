@@ -212,15 +212,15 @@ cd "$REPO/pipeline"
 # ---------------------------------------------------------------- clear policy
 fp_guard "$DATA/clear_t06lap" clear_t06lap || exit 1
 if [ ! -f "$DATA/clear_t06lap/manifest.csv" ]; then
-    run collect_clear python3 collect_data.py --dataset clear_t06lap \
+    run collect_clear_t06lap python3 collect_data.py --dataset clear_t06lap \
         --weathers clear --laps 4 --direction all || exit 1
     fp_stamp "$DATA/clear_t06lap"
-else say "SKIP  collect_clear (manifest exists, fingerprint matches)"; fi
+else say "SKIP  collect_clear_t06lap (manifest exists, fingerprint matches)"; fi
 
 if [ ! -f "$CK_DIR/teacher_clear_t06lap_bc.pth" ]; then
-    run train_clear_bc python3 train.py --dataset clear_t06lap --epochs 120 \
+    run train_clear_bc_t06lap python3 train.py --dataset clear_t06lap --epochs 120 \
         --out teacher_clear_t06lap_bc || exit 1
-else say "SKIP  train_clear_bc"; fi
+else say "SKIP  train_clear_bc_t06lap"; fi
 
 # RESUME AN UNFINISHED TEACHER, do not skip it.
 #
@@ -233,26 +233,26 @@ else say "SKIP  train_clear_bc"; fi
 # The real question is whether the teacher PASSED, and dagger.py says so in its log.
 # DAgger resumes from its newest round by itself, so re-running an unfinished one is
 # cheap and correct.
-if ! grep -q "\*\*\* PASSED at round" "$LOG_DIR/dagger_clear.log" 2>/dev/null; then
+if ! grep -q "\*\*\* PASSED at round" "$LOG_DIR/dagger_clear_t06lap.log" 2>/dev/null; then
     # ONE ROUND PER PROCESS -- see scripts/run_dagger_rounds.sh. dagger.py
     # restarting CARLA in-process died with "terminate called" after every
     # round, with the round already trained.
-    run dagger_clear bash "$REPO/scripts/run_dagger_rounds.sh" clear 12 || exit 1
-    teacher_gate dagger_clear || exit 1
-else say "SKIP  dagger_clear"; teacher_gate dagger_clear || exit 1; fi
+    run dagger_clear_t06lap bash "$REPO/scripts/run_dagger_rounds.sh" clear 12 || exit 1
+    teacher_gate dagger_clear_t06lap || exit 1
+else say "SKIP  dagger_clear_t06lap"; teacher_gate dagger_clear_t06lap || exit 1; fi
 
 # ---------------------------------------------------------------- mixed policy
 fp_guard "$DATA/mixed_t06lap" mixed_t06lap || exit 1
 if [ ! -f "$DATA/mixed_t06lap/manifest.csv" ]; then
-    run collect_mixed python3 collect_data.py --dataset mixed_t06lap \
+    run collect_mixed_t06lap python3 collect_data.py --dataset mixed_t06lap \
         --weathers clear,fog,night,shadows --laps 3 --direction all || exit 1
     fp_stamp "$DATA/mixed_t06lap"
-else say "SKIP  collect_mixed (fingerprint matches)"; fi
+else say "SKIP  collect_mixed_t06lap (fingerprint matches)"; fi
 
 if [ ! -f "$CK_DIR/teacher_mixed_t06lap_bc.pth" ]; then
-    run train_mixed_bc python3 train.py --dataset mixed_t06lap --epochs 120 \
+    run train_mixed_bc_t06lap python3 train.py --dataset mixed_t06lap --epochs 120 \
         --out teacher_mixed_t06lap_bc || exit 1
-else say "SKIP  train_mixed_bc"; fi
+else say "SKIP  train_mixed_bc_t06lap"; fi
 
 # RESUME AN UNFINISHED TEACHER, do not skip it.
 #
@@ -265,13 +265,13 @@ else say "SKIP  train_mixed_bc"; fi
 # The real question is whether the teacher PASSED, and dagger.py says so in its log.
 # DAgger resumes from its newest round by itself, so re-running an unfinished one is
 # cheap and correct.
-if ! grep -q "\*\*\* PASSED at round" "$LOG_DIR/dagger_mixed.log" 2>/dev/null; then
+if ! grep -q "\*\*\* PASSED at round" "$LOG_DIR/dagger_mixed_t06lap.log" 2>/dev/null; then
     # ONE ROUND PER PROCESS -- see scripts/run_dagger_rounds.sh. dagger.py
     # restarting CARLA in-process died with "terminate called" after every
     # round, with the round already trained.
-    run dagger_mixed bash "$REPO/scripts/run_dagger_rounds.sh" mixed 12 || exit 1
-    teacher_gate dagger_mixed || exit 1
-else say "SKIP  dagger_mixed"; teacher_gate dagger_mixed || exit 1; fi
+    run dagger_mixed_t06lap bash "$REPO/scripts/run_dagger_rounds.sh" mixed 12 || exit 1
+    teacher_gate dagger_mixed_t06lap || exit 1
+else say "SKIP  dagger_mixed_t06lap"; teacher_gate dagger_mixed_t06lap || exit 1; fi
 
 # ---------------------------------------------------------------- distillation
 latest() { ls -1 "$CK_DIR"/$1*.pth 2>/dev/null | sort | tail -1 | xargs -r basename | sed 's/\.pth$//'; }
