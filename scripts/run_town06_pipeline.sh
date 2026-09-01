@@ -95,10 +95,14 @@ run() {   # run <logname> <cmd...>  -- one retry after a CARLA restart
     local attempt
     for attempt in 1 2; do
         say "START $name (attempt $attempt)"
-        # Truncate: stage logs are append-mode, so teacher_gate would otherwise read a
-        # PREVIOUS run's "without passing" and fail a stage that just succeeded. Do it
-        # here rather than by deleting the file: an unlinked log keeps being written to
-        # an inode with no path, which loses the gate's input entirely.
+        # Truncate so the gate reads THIS attempt, not a previous one -- but keep the
+        # previous attempt first. Truncating outright destroyed the evidence twice today:
+        # a stage failed, the retry cleared the log, and the only record of why was gone
+        # before it could be read. Diagnosis is not a luxury when a stage fails silently.
+        if [ -s "$LOG_DIR/$name.log" ]; then
+            cp "$LOG_DIR/$name.log" \
+               "$LOG_DIR/$name.prev$(date '+%H%M%S').log" 2>/dev/null || true
+        fi
         : > "$LOG_DIR/$name.log"
         if "$@" >>"$LOG_DIR/$name.log" 2>&1; then
             say "OK    $name"
@@ -218,7 +222,18 @@ if [ ! -f "$CK_DIR/teacher_clear_t06lap_bc.pth" ]; then
         --out teacher_clear_t06lap_bc || exit 1
 else say "SKIP  train_clear_bc"; fi
 
-if ! ls "$CK_DIR"/teacher_clear_t06lap_dagger_r*.pth >/dev/null 2>&1; then
+# RESUME AN UNFINISHED TEACHER, do not skip it.
+#
+# The guard used to be "checkpoints exist", which is true after a single round -- so a
+# DAgger run that crashed at round 2 of 12 was treated as complete, and the stage was
+# skipped forever after. Combined with a gate that failed open, that shipped a teacher
+# missing its budget by 13x; combined with a gate that fails closed, it deadlocks: the
+# stage is skipped, the gate refuses, and nothing can ever finish it.
+#
+# The real question is whether the teacher PASSED, and dagger.py says so in its log.
+# DAgger resumes from its newest round by itself, so re-running an unfinished one is
+# cheap and correct.
+if ! grep -q "\*\*\* PASSED at round" "$LOG_DIR/dagger_clear.log" 2>/dev/null; then
     run dagger_clear python3 dagger.py --base clear_t06lap \
         --init teacher_clear_t06lap_bc --rounds 12 --min-rounds 8 --gate-reps 3 --weathers clear \
         --dagger-dir dagger_clear_t06lap --out-prefix teacher_clear_t06lap_dagger || exit 1
@@ -238,7 +253,18 @@ if [ ! -f "$CK_DIR/teacher_mixed_t06lap_bc.pth" ]; then
         --out teacher_mixed_t06lap_bc || exit 1
 else say "SKIP  train_mixed_bc"; fi
 
-if ! ls "$CK_DIR"/teacher_mixed_t06lap_dagger_r*.pth >/dev/null 2>&1; then
+# RESUME AN UNFINISHED TEACHER, do not skip it.
+#
+# The guard used to be "checkpoints exist", which is true after a single round -- so a
+# DAgger run that crashed at round 2 of 12 was treated as complete, and the stage was
+# skipped forever after. Combined with a gate that failed open, that shipped a teacher
+# missing its budget by 13x; combined with a gate that fails closed, it deadlocks: the
+# stage is skipped, the gate refuses, and nothing can ever finish it.
+#
+# The real question is whether the teacher PASSED, and dagger.py says so in its log.
+# DAgger resumes from its newest round by itself, so re-running an unfinished one is
+# cheap and correct.
+if ! grep -q "\*\*\* PASSED at round" "$LOG_DIR/dagger_mixed.log" 2>/dev/null; then
     run dagger_mixed python3 dagger.py --base mixed_t06lap \
         --init teacher_mixed_t06lap_bc --rounds 14 --min-rounds 8 --gate-reps 3 --weathers clear,fog,night,shadows \
         --dagger-dir dagger_mixed_t06lap --out-prefix teacher_mixed_t06lap_dagger || exit 1
