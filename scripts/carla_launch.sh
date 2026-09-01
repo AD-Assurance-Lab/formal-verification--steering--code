@@ -57,5 +57,8 @@ CARLA_PORT=$PORT timeout 300 python3 "$REPO/scripts/wait_carla_ready.py" --timeo
 # Prove the flags actually landed, rather than trusting that they did. This reads the
 # server's real /proc argv, so a server left running by something else -- a stale one on
 # the same port, a hand-started one -- is caught here instead of poisoning a measurement.
+# The GPU must be USABLE, not merely present -- see scripts/check_gpu_usable.py.
+python3 "$REPO/scripts/check_gpu_usable.py" || exit 1
+
 python3 -m carla_determinism --port "$PORT" || {
     echo "FATAL: the server on $PORT violates the determinism rules (above)."; exit 1; }
