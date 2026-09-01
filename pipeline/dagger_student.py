@@ -22,6 +22,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import cv2
 import torch
+
+from gpu import require_cuda  # noqa: E402
 import carla
 
 import config as C
@@ -196,7 +198,7 @@ def main():
                     help="per-round multiplicative decay of the mixing weight")
     args = ap.parse_args()
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = require_cuda()
     weathers = args.weathers.split(",")
     channels = tuple(int(x) for x in args.channels.split(","))
     dagger_student_dir = os.path.join(C.DATASET_DIR, args.dagger_dir)

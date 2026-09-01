@@ -30,8 +30,12 @@ REPO = Path(__file__).resolve().parent.parent
 TARGETS = [
     ("certify_sustained_bound", "certify_sustained_bound",
      dict(STUDY_MAP="Town04", TOWN04_REDO="1"), "eastbound", 2861.0),
+    # Town06 is now ONE LAP, not six sections, so the cell name and scored length come
+    # from the route rather than being hardcoded -- a test pinned to s00/894 m started
+    # failing the moment the map's layout changed, which is the test being stale rather
+    # than the guard being wrong.
     ("certify_town06", "certify_town06",
-     dict(STUDY_MAP="Town06"), "s00", 894.0),
+     dict(STUDY_MAP="Town06"), "lap", 2289.0),
 ]
 
 

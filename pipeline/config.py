@@ -244,9 +244,43 @@ if STUDY_MAP != "Town04":
     with open(_meta_path) as _f:
         ROUTE_META = _json.load(_f)
     ROUTES_SUBDIR = f"routes_{STUDY_MAP.lower()}"
-    SECTION_BASED = "sections" in ROUTE_META
-    if SECTION_BASED:
-        # Section-based route (Town06). Town06's outer loop has no dedicated opposing
+
+    # ── ONE LAP, with PPC bridges (Town06, from 2026-08-31) ──────────────────
+    # If lap_meta.json exists it supersedes the section layout. The six sections were
+    # disjoint pieces of road 70-500 m apart; the lap is a single continuous drive whose
+    # intersections are bridged by pure pursuit because the policy is a lane-follower and
+    # there is no lane to follow through them. See docs/design/town06_lap_control.png.
+    _lap_meta = os.path.join(_rd, "lap_meta.json")
+    LAP_BASED = os.path.exists(_lap_meta)
+    if LAP_BASED:
+        with open(_lap_meta) as _f:
+            LAP_META = _json.load(_f)
+        # BRIDGE_SPANS are arc-length ranges where PURE PURSUIT drives and NOTHING is
+        # scored: the ODD boundary, made explicit and machine-readable rather than left
+        # as prose. Everything outside them is the policy's, and is measured.
+        BRIDGE_SPANS = [tuple(b) for b in LAP_META["bridges"]]
+        LAP_TOTAL_M = float(LAP_META["length_m"])
+        LAP_SCORED_M = float(LAP_META["scored_m"])
+        SECTIONS = ["lap"]
+        # Spawn ON the route's first point with the route's own heading. Taking the
+        # marked start x/y with yaw 0 would place the car across the lane: the lap begins
+        # heading south-west, not east, and warmup would start by driving off the road.
+        import numpy as _np
+        _lap0 = _np.load(os.path.join(_rd, "lap.npy"))[0]
+        SPAWNS = {"lap": {"x": float(_lap0[0]), "y": float(_lap0[1]), "z": 0.5,
+                          "yaw": float(_lap0[2])}}
+        SECTION_LEN_M = {"lap": LAP_TOTAL_M}
+        TOTAL_SCORED_M = LAP_SCORED_M
+        SPAWN_EASTBOUND = SPAWN_WESTBOUND = SPAWNS["lap"]
+        LAP_END_M = LAP_TOTAL_M
+        SECTION_BASED = True          # per-span step caps still apply
+
+    SECTION_BASED = locals().get("LAP_BASED", False) or "sections" in ROUTE_META
+    if LAP_BASED:
+        pass
+    elif SECTION_BASED:
+        # Section-based route (Town06, superseded by the lap). Town06's outer loop has
+        # no dedicated opposing
         # carriageways, so the route is a set of disjoint clean sections rather than one
         # lap driven both ways. "Direction" generalises to "section" throughout.
         SECTIONS = [x["name"] for x in ROUTE_META["sections"]]
