@@ -434,6 +434,26 @@ for d in ("results/town06", "results/town04_v2/calibration"):
         chk(bool(glob.glob(os.path.join(d, "**", "capture_gate.json"), recursive=True)),
             f"{d}: capture gate ran before certification")
 
+# --- a step's output must be a step's output ---------------------------------
+# run_dagger_rounds.sh took `ls -t | head -1` as "the checkpoint this round trained".
+# Four killed attempts in a row then gated a checkpoint from before the stage began,
+# reporting a lap count against it each time as though a round had run. The same shape
+# as the three stale-artifact incidents before it: an artifact on disk read as though
+# the current step produced it.
+_rd = open("scripts/run_dagger_rounds.sh").read()
+chk("ROUND_START" in _rd and "-lt \"$ROUND_START\"" in _rd,
+    "run_dagger_rounds.sh: refuses a checkpoint older than the round")
+chk('grep -q -- "-> $CK"' in _rd,
+    "run_dagger_rounds.sh: requires the round's own log to name the checkpoint")
+
+# --- a driving loop the user watches must follow the car ---------------------
+# gate_teacher_lap.py drove the entire teacher gate with a stationary spectator, so the
+# window showed empty road while the run was going fine. Zach watches these.
+for _f in ("pipeline/evaluate.py", "pipeline/dagger.py", "pipeline/dagger_student.py",
+           "scripts/closed_loop_ledger.py", "scripts/gate_teacher_lap.py"):
+    chk("update_spectator" in open(_f).read(),
+        f"{os.path.basename(_f)}: keeps the view on the vehicle")
+
 # --- standing rule 1 is CHECKED, not merely stated -------------------------------
 # The rule names `python -m study.ledger --check-order`, and the prune deleted that
 # module, so the rule went unchecked here for the whole Town04 redo. A rule that names a

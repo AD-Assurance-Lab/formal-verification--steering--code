@@ -470,3 +470,8 @@
 [2026-09-01 16:04:18] SKIP  collect_clear_t06lap (manifest exists, fingerprint matches)
 [2026-09-01 16:04:18] SKIP  train_clear_bc_t06lap
 [2026-09-01 16:04:18] START dagger_clear_t06lap (attempt 1)
+[2026-09-01 16:28:24] OK    dagger_clear_t06lap
+[2026-09-01 16:28:24] GATE  dagger_clear_t06lap: *** LAP GATE PASSED: teacher_clear_t06lap_dagger_r06 (3/3 laps, clean server each) ***
+[2026-09-01 16:28:24] SKIP  collect_mixed_t06lap (fingerprint matches)
+[2026-09-01 16:28:24] SKIP  train_mixed_bc_t06lap
+[2026-09-01 16:28:24] START dagger_mixed_t06lap (attempt 1)
