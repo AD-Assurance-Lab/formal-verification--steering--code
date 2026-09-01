@@ -279,6 +279,17 @@ chk("not r.get(\"bridged\")" in open("pipeline/evaluate.py").read(),
 chk("not in_bridge" in open("scripts/closed_loop_ledger.py").read(),
     "closed_loop_ledger excludes bridged steps from the score")
 
+# --- gates must FAIL CLOSED ----------------------------------------------------
+# teacher_gate grepped only for "without passing" and passed otherwise, so every way of
+# not printing that string counted as success -- including DAgger crashing. It announced
+# "teacher met budget" for a teacher whose last round missed by 29.57 ft against a
+# 2.19 ft budget. A gate that passes because nothing said "fail" is not a gate.
+_pl = open("scripts/run_town06_pipeline.sh").read()
+chk("PASSED at round" in _pl,
+    "teacher_gate requires positive evidence of a passing round")
+chk('[ ! -s "$log" ]' in _pl,
+    "teacher_gate refuses an empty or missing log rather than assuming a pass")
+
 # --- a restart must WAIT for the port, not sleep and hope ----------------------
 # `pkill; sleep 10` lets the old server keep :3000, so the relaunch cannot bind and every
 # client times out against a listener that never serves. DAgger died after every round on
