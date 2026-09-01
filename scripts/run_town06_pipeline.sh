@@ -165,14 +165,33 @@ fp_guard() {  # fp_guard <dataset-dir> <label> -- refuse a foreign-route dataset
 # treated it as OK. A teacher that cannot drive clear weather is a precondition
 # failure, not a stage to continue past.
 teacher_gate() {   # teacher_gate <logname>
+    # FAIL CLOSED. This used to grep only for "without passing" and pass otherwise, so
+    # any way of NOT printing that string counted as success -- and DAgger crashing is
+    # one. It did exactly that: the port-release bug killed DAgger after two rounds, the
+    # log never said "without passing", and the gate announced "teacher met budget" for a
+    # teacher whose last round missed by 29.57 ft against a 2.19 ft budget.
+    #
+    # The gate that exists to stop a bad teacher propagating downstream must require
+    # POSITIVE evidence, because the absence of a failure message is not a pass.
     local log="$LOG_DIR/$1.log"
+    if [ ! -s "$log" ]; then
+        say "FATAL: $1 has no log. Refusing to assume it passed."
+        return 1
+    fi
     if grep -q "without passing" "$log" 2>/dev/null; then
         say "FATAL: $1 exhausted its rounds WITHOUT the teacher meeting budget."
         say "       A teacher that cannot drive clear weather invalidates everything"
         say "       downstream. Refusing to distil. See $log"
         return 1
     fi
-    say "GATE  $1: teacher met budget"
+    if ! grep -q "\*\*\* PASSED at round" "$log" 2>/dev/null; then
+        say "FATAL: $1 never printed a passing round."
+        say "       Its last gate line was:"
+        say "       $(grep -E 'gate .*ft\) ->' "$log" | tail -1)"
+        say "       A gate that passes because nothing said 'fail' is not a gate."
+        return 1
+    fi
+    say "GATE  $1: teacher met budget ($(grep '\*\*\* PASSED at round' "$log" | tail -1 | tr -s ' '))"
     return 0
 }
 
