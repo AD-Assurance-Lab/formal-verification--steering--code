@@ -342,3 +342,58 @@ Two details worth keeping:
 The fog result remains the exception, and it is the one where an interior failure was
 actually found. That is consistent rather than coincidental: a chord that understates the
 real disturbance is a chord whose interior the closed loop can still fail in.
+
+---
+
+## T04-R12  Lap verdicts reproduce 24/24, but no cell was near the cliff
+
+Recorded because PROTOCOL A-4 rests on a reproducibility measurement and the number it
+cites ("0 of 48 section-pairs") appears only in PROTOCOL.md prose, with no findings entry
+and no script. A rule that supersedes a repetition floor should rest on something anyone
+can recompute. This does, from committed artifacts:
+
+```python
+import json, glob, os
+from collections import defaultdict
+pairs = dis = 0
+for f in sorted(glob.glob("results/town04_v2/ledger/*closed_loop.json")):
+    runs = json.load(open(f)).get("runs", [])
+    laps = defaultdict(list)
+    for r in runs:                       # a LAP passes only if every scored span passed
+        laps[r["rep"]].append(bool(r["passed"]))
+    v = [all(x) for _, x in sorted(laps.items())]
+    pairs += len(v) * (len(v) - 1) // 2
+    dis   += sum(v[i] != v[k] for i in range(len(v)) for k in range(i + 1, len(v)))
+print(dis, "of", pairs)                  # -> 0 of 24
+```
+
+**0 of 24 lap-pairs disagreed**, across eight cells, on the corrected harness. Three cells
+failed unanimously, so the agreement is not an artifact of every cell being easy.
+
+### The part that limits what this supports
+
+Distance from the 0.668 m budget, worst lap per cell, with the lap-to-lap spread:
+
+    night__S_mixed        +36.1%   spread 0.612 ft   (28% of budget)
+    fog__S_clear          +38.2%   spread 0.252 ft
+    low sun__S_mixed      +62.7%   spread 0.358 ft
+    clear__S_clear        +73.5%   spread 0.054 ft
+    clear__S_mixed        +81.5%   spread 0.107 ft
+    fog__S_mixed          +81.6%   spread 0.138 ft
+    low sun__S_clear    -1341.6%   spread 1.353 ft
+    night__S_clear      -1789.7%   spread 14.124 ft
+
+**No cell sits near the cliff.** The tightest margin is +36.1% and the largest spread among
+passing cells is 28% of budget. So this measures that the harness is stable; it does NOT
+measure that verdicts near the boundary are stable, because none were tested there. Those
+two numbers are close enough that a cell with materially less margin could flip between
+laps -- which is exactly why A-4 requires the margin to be reported with every verdict and
+treats a cell with no margin as a finding rather than a pass.
+
+More laps would not repair a near-cliff cell. It would characterise a coin flip more
+precisely, and the coin flip is the finding.
+
+This is the measurement cited in `docs/PROPOSED_AMENDMENT_D7.md`, which proposes replacing
+D-7's ten-repetition floor with three-under-an-enforced-harness. Town06's 24 laps have not
+been driven yet and are the next chance to produce the case that would falsify it: three
+laps disagreeing where the cause traces to renderer noise rather than a harness defect.
