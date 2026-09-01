@@ -279,6 +279,15 @@ chk("not r.get(\"bridged\")" in open("pipeline/evaluate.py").read(),
 chk("not in_bridge" in open("scripts/closed_loop_ledger.py").read(),
     "closed_loop_ledger excludes bridged steps from the score")
 
+# --- a restart must WAIT for the port, not sleep and hope ----------------------
+# `pkill; sleep 10` lets the old server keep :3000, so the relaunch cannot bind and every
+# client times out against a listener that never serves. DAgger died after every round on
+# exactly this, with two CARLA processes alive and one wedged on the socket.
+for _f in ("scripts/carla_restart.sh", "pipeline/dagger.py", "pipeline/dagger_student.py"):
+    _t = open(_f).read()
+    chk("connect_ex" in _t or "ss -ltn" in _t,
+        f"{os.path.basename(_f)} waits for the port to free before relaunching")
+
 # --- the GPU must be waited for, not raced -------------------------------------
 # Restarting before EVERY run (R-SIM-1 at run granularity) means the client's CUDA init
 # races CARLA's GPU startup once per run instead of once per cell. torch dies with

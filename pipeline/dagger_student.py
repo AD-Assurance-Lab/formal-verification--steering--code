@@ -294,10 +294,26 @@ def main():
                 # child inherits the pipe and the call never returns.
                 _rlog = os.path.join(C.REPO_ROOT, "results", "carla_restart_dagger_student.log")
                 _port = os.environ.get("CARLA_PORT", str(C.PORT))
+                # Kill, then WAIT for the port -- see pipeline/dagger.py. A fixed sleep
+                # lets the old server keep the socket, the relaunch fail to bind, and
+                # every reconnect time out against a listener that never serves.
+                import socket as _socket
                 subprocess.run(["pkill", "-f",
                                 f"[C]arlaUE4-Linux-Shipping.*rpc-port={_port}"],
                                stdin=subprocess.DEVNULL)
-                time.sleep(10)
+                subprocess.run(["pkill", "-f", f"[C]arlaUE4.sh.*rpc-port={_port}"],
+                               stdin=subprocess.DEVNULL)
+                for _i in range(25):
+                    with _socket.socket() as _sk:
+                        _sk.settimeout(1.0)
+                        if _sk.connect_ex(("127.0.0.1", int(_port))) != 0:
+                            break
+                    if _i == 12:
+                        subprocess.run(["pkill", "-KILL", "-f",
+                                        f"[C]arlaUE4.*rpc-port={_port}"],
+                                       stdin=subprocess.DEVNULL)
+                    time.sleep(1.0)
+                time.sleep(3)
                 with open(_rlog, "a") as _fh:
                     subprocess.run(["bash", os.path.join(C.REPO_ROOT, "scripts", "carla_launch.sh")],
                                    stdout=_fh, stderr=subprocess.STDOUT,
