@@ -58,8 +58,11 @@ def apply_control(vehicle, control):
     between reps at the same step. With the acknowledged batch command, pose, velocity,
     gear and applied control are bit-identical for every step.
 
-    Gated by C.DETERMINISTIC_CONTROL, which is off for Town04 so the published artifact
-    keeps reproducing exactly.
+    Gated by C.DETERMINISTIC_CONTROL, which is ON for every map as of the Town04 redo.
+    It defaulted off while the published Town04 artifact had to keep reproducing
+    byte-for-byte; that gate has served its purpose. (This comment said "off for Town04"
+    long after config.py stopped doing that -- a stale comment about a determinism gate
+    is worse than none, because it is exactly what someone checks instead of the code.)
     """
     cd.apply_control(vehicle, control, enabled=C.DETERMINISTIC_CONTROL)
 
