@@ -232,8 +232,17 @@ def main():
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(dict(map=C.STUDY_MAP, students=report,
                                    all_competent=all_ok,
-                                   checkpoint_digests={ck: checkpoint_digest(ck)
-                                                       for _, ck, _, _ in STUDENTS},
+                                   # DIGEST WHAT WAS DRIVEN. This digested the
+                                   # registry's distilled checkpoint while the gate
+                                   # drives C.final_student(ck) -- so once student
+                                   # DAgger runs, the record would attest to a model
+                                   # this gate never tested, and the precondition check
+                                   # in finish_town06_deployment.sh would have verified
+                                   # the wrong file and passed.
+                                   checkpoint_digests={
+                                       C.final_student(ck): checkpoint_digest(
+                                           C.final_student(ck))
+                                       for _, ck, _, _ in STUDENTS},
                                    cte_budget_ft=C.CTE_BUDGET_FT,
                                    git_commit=head,
                                    reps=args.reps,

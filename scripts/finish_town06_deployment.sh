@@ -73,6 +73,10 @@ if not have:
     sys.exit("FATAL: competence record predates checkpoint digests, so it cannot be "
              "shown to describe the students on disk. Re-run the competence gate.")
 for _, ck, _, _ in C.TOWN06_STUDENTS:
+    # The checkpoint that IS the student, which after student DAgger is not the
+    # distilled one. Checking the distilled file here would verify a model the gate
+    # never drove and the ledger will never run.
+    ck = C.final_student(ck)
     now = checkpoint_digest(ck)
     if have.get(ck) != now:
         sys.exit(f"FATAL: competence record is STALE for {ck} "
