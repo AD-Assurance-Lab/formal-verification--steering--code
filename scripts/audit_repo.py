@@ -513,12 +513,19 @@ chk("--external-gate" in open("scripts/run_dagger_rounds.sh").read(),
 # lap is the run. The teacher gate restarted once per lap INDEX and then drove all four
 # conditions on that server: 3 restarts for 12 laps. Checked positionally, because the
 # restart being present in the file says nothing about which loop it sits in.
+# The restart is now made through restart_carla_retrying (a slow boot must not abandon a
+# twelve-lap gate), so match either the helper or a direct call -- the property is WHERE
+# the restart happens, not which spelling performs it.
 _g = open("scripts/run_dagger_rounds.sh").read()
 _gate = _g.split("# THE GATE:", 1)[-1]
 _iw = _gate.find("for W in")
-_ir = _gate.find("carla_restart.sh", _iw if _iw >= 0 else 0)
+_ir = min([i for i in (_gate.find("carla_restart.sh", _iw if _iw >= 0 else 0),
+                       _gate.find("restart_carla_retrying", _iw if _iw >= 0 else 0))
+           if i >= 0] or [-1])
 chk(_iw >= 0 and _ir > _iw,
     "run_dagger_rounds.sh: restarts CARLA inside the per-condition loop (one per lap)")
+chk("restart_carla_retrying" in _g and "for i in 1 2 3" in _g,
+    "run_dagger_rounds.sh: a slow CARLA boot is retried, not treated as a stage failure")
 _l = open("scripts/run_town06_ledger.sh").read()
 # Search AFTER the loop opens: line 57's `carla_up 12 || carla_restart || exit 1` is a
 # startup fallback, and matching it made this check fail a script that was correct.

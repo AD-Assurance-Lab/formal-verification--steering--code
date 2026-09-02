@@ -58,14 +58,39 @@ else
     WEATHERS=clear,fog,night,low_sun
 fi
 
+
+# A SLOW BOOT MUST NOT ABANDON A STAGE.
+#
+# carla_restart.sh gives the server 300 s to become ready and fails if it does not. That
+# is right for the restart; it is wrong as a stage-level verdict. The drivers treated one
+# failure as terminal -- "restart failed; stopping" -- and threw away the whole round or
+# the whole twelve-lap gate. Measured 2026-09-02: a boot exceeded 300 s while a
+# distillation was using the GPU, and nine completed student-DAgger rounds were abandoned
+# because the tenth restart was slow.
+#
+# The retry is bounded and it is LOUD. A restart that fails three times in a row is a
+# genuine problem and still stops the stage.
+restart_carla_retrying() {   # restart_carla_retrying <logfile> <label>
+    local logf=$1 label=$2 i
+    for i in 1 2 3; do
+        if bash scripts/carla_restart.sh > "$logf" 2>&1; then
+            [ "$i" -gt 1 ] && say "  restart succeeded on attempt $i ($label)"
+            rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null
+            return 0
+        fi
+        say "  restart attempt $i/3 FAILED ($label); $(tail -1 "$logf" | tr -s ' ' | cut -c1-80)"
+        sleep 20
+    done
+    say "  restart FAILED three times ($label) -- that is not a slow boot"
+    return 1
+}
+
 for r in $(seq 1 "$MAX"); do
     if grep -q "\*\*\* LAP GATE PASSED" "$LOG" 2>/dev/null; then
         say "$WHICH teacher already passed the per-lap gate; nothing to do"; exit 0
     fi
     say "round attempt $r/$MAX"
-    bash scripts/carla_restart.sh > "$LOG_DIR/dagger_${WHICH}_t06lap_restart.log" 2>&1 || {
-        say "restart failed; stopping"; exit 1; }
-    rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null
+    restart_carla_retrying "$LOG_DIR/dagger_${WHICH}_t06lap_restart.log" "round $r" || exit 1
     # One round, then exit. The next iteration restarts CARLA and resumes.
     # --gate-reps 1: dagger's internal gate is now only a progress signal. The decision
     # is made below, one lap per process on a freshly restarted server, because the
@@ -127,9 +152,8 @@ for r in $(seq 1 "$MAX"); do
     # coupling the per-run restart exists to break.
     for lap in 0 1 2; do
         for W in ${WEATHERS//,/ }; do
-            bash scripts/carla_restart.sh > "$LOG_DIR/dagger_${WHICH}_t06lap_restart.log" 2>&1 || {
-                say "  restart failed before gate lap $lap/$W"; break 2; }
-            rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null
+            restart_carla_retrying "$LOG_DIR/dagger_${WHICH}_t06lap_restart.log" \
+                "gate lap $lap/$W" || break 2
             python3 scripts/gate_teacher_lap.py --checkpoint "$CK" --weather "$W" \
                 --lap "$lap" >>"$LOG" 2>&1
             rc=$?

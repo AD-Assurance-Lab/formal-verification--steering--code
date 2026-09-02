@@ -60,13 +60,38 @@ if grep -q "\*\*\* STUDENT DAGGER COMPLETE" "$LOG" 2>/dev/null; then
     say "$CK student DAgger already complete"; exit 0
 fi
 
+
+# A SLOW BOOT MUST NOT ABANDON A STAGE.
+#
+# carla_restart.sh gives the server 300 s to become ready and fails if it does not. That
+# is right for the restart; it is wrong as a stage-level verdict. The drivers treated one
+# failure as terminal -- "restart failed; stopping" -- and threw away the whole round or
+# the whole twelve-lap gate. Measured 2026-09-02: a boot exceeded 300 s while a
+# distillation was using the GPU, and nine completed student-DAgger rounds were abandoned
+# because the tenth restart was slow.
+#
+# The retry is bounded and it is LOUD. A restart that fails three times in a row is a
+# genuine problem and still stops the stage.
+restart_carla_retrying() {   # restart_carla_retrying <logfile> <label>
+    local logf=$1 label=$2 i
+    for i in 1 2 3; do
+        if bash scripts/carla_restart.sh > "$logf" 2>&1; then
+            [ "$i" -gt 1 ] && say "  restart succeeded on attempt $i ($label)"
+            rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null
+            return 0
+        fi
+        say "  restart attempt $i/3 FAILED ($label); $(tail -1 "$logf" | tr -s ' ' | cut -c1-80)"
+        sleep 20
+    done
+    say "  restart FAILED three times ($label) -- that is not a slow boot"
+    return 1
+}
+
 for r in $(seq 1 "$ROUNDS"); do
     HAVE=$(n_rounds)
     if [ "$HAVE" -ge "$ROUNDS" ]; then break; fi
     say "student round attempt $r/$ROUNDS (rounds on disk: $HAVE)"
-    bash scripts/carla_restart.sh > "$LOG_DIR/dagger_student_restart.log" 2>&1 || {
-        say "  restart failed; stopping"; exit 1; }
-    rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null
+    restart_carla_retrying "$LOG_DIR/dagger_student_restart.log" "round $r" || exit 1
 
     ROUND_START=$(date +%s)
     python3 pipeline/dagger_student.py --student "$CK" --w "$IN_W" --h "$IN_H" \
