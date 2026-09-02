@@ -2940,3 +2940,33 @@ argument that the determinism preflight verifies the launch and `verify_conditio
 the weather struct, and neither looks at brightness. It has now stopped the exact defect
 it was written for, at server launch, before any frame reached a dataset -- which is the
 only place it could have been stopped.
+
+## T06-F47  The dark server is RARE, and it did not reproduce on either map in a quiet period
+
+Zach asked whether Town04 sees the T06-F46 defect too, and whether CARLA might simply be
+unwell after being exercised this hard. `scripts/probe_dark_server.py` launches a fresh
+server per sample and measures the same fixed-pose frame the gate uses.
+
+    Town06   5 servers   min 0.257108  max 0.257110   spread 0.00%
+    Town04   4 servers   min 0.241813  max 0.241813   spread 0.00%
+                         (a fifth Town04 measurement failed to return)
+
+Nine consecutive clean launches, both maps, no bimodality. Against two bad servers
+observed earlier the same day out of on the order of fifty launches, the incidence is a
+few percent at most.
+
+**This does not clear Town04.** Nine samples cannot distinguish "immune" from "rare", and
+the two bad servers were seen during sustained heavy use -- hours of restart-per-lap
+campaigning -- while this probe ran in a quiet period. Zach's suggestion that the server
+degrades under exercise is consistent with everything observed and is not established by
+it. What can be said: the defect is not frequent, not obviously map-specific, and not
+reproducible on demand.
+
+Which is the argument for the gate rather than against it. A defect at a few percent per
+launch is invisible in any single run and near-certain across a campaign of hundreds of
+restarts -- which is exactly how T06-F42's contamination came to be split across DAgger
+rounds, each round internally consistent and the set as a whole ruined. Two seconds per
+launch buys immunity to it whatever its cause turns out to be.
+
+A Town04 photometry reference is now committed (0.241813) so the same gate protects the
+published study's re-measurement.
