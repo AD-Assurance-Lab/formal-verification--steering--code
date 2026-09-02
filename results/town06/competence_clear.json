@@ -2,97 +2,21 @@
   "map": "Town06",
   "students": {
     "S_clear_t06": {
-      "checkpoint": "S_clear_t06_168x28_w2",
-      "sections": {
-        "s00": {
-          "passed": true,
-          "n_pass": 3,
-          "reps": 3,
-          "max_cte_ft": 1.03
-        },
-        "s01": {
-          "passed": true,
-          "n_pass": 3,
-          "reps": 3,
-          "max_cte_ft": 0.86
-        },
-        "s02": {
-          "passed": true,
-          "n_pass": 3,
-          "reps": 3,
-          "max_cte_ft": 0.6
-        },
-        "s03": {
-          "passed": true,
-          "n_pass": 3,
-          "reps": 3,
-          "max_cte_ft": 0.64
-        },
-        "s04": {
-          "passed": true,
-          "n_pass": 3,
-          "reps": 3,
-          "max_cte_ft": 0.57
-        },
-        "s05": {
-          "passed": true,
-          "n_pass": 3,
-          "reps": 3,
-          "max_cte_ft": 0.5
-        }
-      },
-      "competent": true
+      "error": "2/3 runs completed",
+      "harness_faults": []
     },
     "S_mixed_t06": {
-      "checkpoint": "S_mixed_t06_168x28_w3",
-      "sections": {
-        "s00": {
-          "passed": true,
-          "n_pass": 3,
-          "reps": 3,
-          "max_cte_ft": 0.72
-        },
-        "s01": {
-          "passed": true,
-          "n_pass": 3,
-          "reps": 3,
-          "max_cte_ft": 0.43
-        },
-        "s02": {
-          "passed": true,
-          "n_pass": 3,
-          "reps": 3,
-          "max_cte_ft": 0.84
-        },
-        "s03": {
-          "passed": true,
-          "n_pass": 3,
-          "reps": 3,
-          "max_cte_ft": 0.43
-        },
-        "s04": {
-          "passed": true,
-          "n_pass": 3,
-          "reps": 3,
-          "max_cte_ft": 0.59
-        },
-        "s05": {
-          "passed": true,
-          "n_pass": 3,
-          "reps": 3,
-          "max_cte_ft": 0.33
-        }
-      },
-      "competent": true
+      "error": "0/3 runs completed",
+      "harness_faults": []
     }
   },
-  "all_competent": true,
+  "all_competent": false,
   "checkpoint_digests": {
-    "S_clear_t06_168x28_w2": "aedc6ad038d98fb9",
-    "S_mixed_t06_168x28_w3": "899413813fd52ccb"
+    "S_clear_t06lap_168x28_w2_dagger_r02": "61d0f77b264168e3",
+    "S_mixed_t06lap_168x28_w3_dagger_r02": "d44774c412f4057b"
   },
   "cte_budget_ft": 2.1916011199999996,
-  "git_commit": "4f7371003c7dadd50970c521b9d932475caa5e64",
+  "git_commit": "3380b04280a03b5d41d5b92e59077427cdf53c7c",
   "reps": 3,
   "note": "clear weather only; s=0 anchor, not a disturbance cell, not a scored ledger cell; every section must hold on every rep"
 }

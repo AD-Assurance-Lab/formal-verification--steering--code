@@ -35,7 +35,7 @@ from expert import pure_pursuit_steer  # noqa: E402
 from metrics import summarize_cte  # noqa: E402
 from model import CarlaSteeringNet  # noqa: E402
 from route import load_route, signed_cte_route, pure_pursuit_route  # noqa: E402
-from route import lap_finished  # noqa: E402
+from route import lap_finished, arc_lengths  # noqa: E402
 
 # Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).
 SPAWNS = C.SPAWNS
@@ -84,8 +84,14 @@ def drive_nn(world, world_map, vehicle, img_queue, model, device, direction, max
     # steps_for's own docstring already names this failure mode -- "it fails there for
     # reasons that have nothing to do with the policy" -- and fixes it with a step cap.
     # A step cap is the wrong instrument for a distance bound. This is the right one.
-    seg_len = np.linalg.norm(np.diff(route, axis=0), axis=1)
-    arc = np.concatenate([[0.0], np.cumsum(seg_len)])
+    # route.arc_lengths takes x and y ONLY. This computed the norm over the whole route
+    # array, and the Town06 lap's third column is yaw in DEGREES -- so seg_len averaged
+    # 4.62 "m" per index instead of 2.00, travelled_m accrued 2.3x too fast, and the
+    # scored-distance cap below stopped every run at 1,006 m of a 2,289 m lap. The
+    # vehicle was on the road at 20 mph with 0.5 ft of CTE when the run ended, and the
+    # competence gate read the truncated drive as a PASS.
+    arc = arc_lengths(route)
+    seg_len = np.diff(arc)
     scored_m = C.SECTION_LEN_M.get(direction) if getattr(C, "SECTION_BASED", False) else None
 
     prev_hint, travelled_m = None, 0.0

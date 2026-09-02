@@ -28,3 +28,29 @@
 [2026-09-02 09:54:49] START dagger_student_S_clear_t06 (attempt 1)
 [2026-09-02 10:01:45] FAIL  dagger_student_S_clear_t06 attempt 1 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06_logs/dagger_student_S_clear_t06.log)
 [2026-09-02 10:01:51] START dagger_student_S_clear_t06 (attempt 2)
+[2026-09-02 10:06:36] PROTOCOL lock OK; STUDY_MAP=Town06 CARLA_PORT=3000
+[2026-09-02 10:06:36] carla-determinism rules lock OK
+  determinism preflight OK (lock intact; D-3/D-5 verified on the live server)
+  D-7 floor remains: closed-loop numbers are still RATES over >=10 repetitions
+[2026-09-02 10:06:36] determinism preflight OK on the live server
+[2026-09-02 10:06:36] route fingerprint b5b56f8c993fc9ba
+[2026-09-02 10:06:36] SKIP  collect_clear_t06lap (manifest exists, fingerprint matches)
+[2026-09-02 10:06:36] SKIP  train_clear_bc_t06lap
+[2026-09-02 10:06:36] SKIP  dagger_clear_t06lap
+[2026-09-02 10:06:36] GATE  dagger_clear_t06lap: *** LAP GATE PASSED: teacher_clear_t06lap_dagger_r03 (3/3 laps, clean server each) ***
+[2026-09-02 10:06:36] SKIP  collect_mixed_t06lap (fingerprint matches)
+[2026-09-02 10:06:36] SKIP  train_mixed_bc_t06lap
+[2026-09-02 10:06:36] SKIP  dagger_mixed_t06lap
+[2026-09-02 10:06:36] GATE  dagger_mixed_t06lap: *** LAP GATE PASSED: teacher_mixed_t06lap_dagger_r03 (12/12 laps, clean server each) ***
+[2026-09-02 10:06:36] teachers: clear=teacher_clear_t06lap_dagger_r03 mixed=teacher_mixed_t06lap_dagger_r03
+[2026-09-02 10:06:37] SKIP  distil S_clear_t06 (S_clear_t06lap_168x28_w2 exists)
+[2026-09-02 10:06:37] SKIP  distil S_mixed_t06 (S_mixed_t06lap_168x28_w3 exists)
+[2026-09-02 10:06:37] START dagger_student_S_clear_t06 (attempt 1)
+[2026-09-02 10:09:10] OK    dagger_student_S_clear_t06
+[2026-09-02 10:09:10] GATE  dagger_student_S_clear_t06: *** STUDENT DAGGER COMPLETE: S_clear_t06lap_168x28_w2_dagger_r02 (3 round(s)) ***
+[2026-09-02 10:09:10] START dagger_student_S_mixed_t06 (attempt 1)
+[2026-09-02 10:22:28] OK    dagger_student_S_mixed_t06
+[2026-09-02 10:22:28] GATE  dagger_student_S_mixed_t06: *** STUDENT DAGGER COMPLETE: S_mixed_t06lap_168x28_w3_dagger_r02 (3 round(s)) ***
+[2026-09-02 10:22:28] START competence (attempt 1)
+[2026-09-02 10:29:34] FAIL  competence attempt 1 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06_logs/competence.log)
+[2026-09-02 10:29:39] START competence (attempt 2)
