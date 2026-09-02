@@ -69,7 +69,7 @@ for ROW in "${STUDENT_ROWS[@]}"; do
   # Drive the FINAL student (newest student-DAgger round), not the distilled base.
   STU=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(C.final_student('$BASE'))")
   say "student $BASE -> $STU"
-  for COND in clear fog night shadows; do
+  for COND in clear fog night low_sun; do
     CELL="$REPO/results/town06/ledger/${COND}__${STU}__closed_loop.json"
     if [ -f "$CELL" ]; then say "SKIP  $COND/$STU (cell exists)"; continue; fi
     say "START $COND/$STU"

@@ -55,7 +55,7 @@ say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/dagger_rounds_${WHICH}_t
 if [ "$WHICH" = clear ]; then
     WEATHERS=clear
 else
-    WEATHERS=clear,fog,night,shadows
+    WEATHERS=clear,fog,night,low_sun
 fi
 
 for r in $(seq 1 "$MAX"); do

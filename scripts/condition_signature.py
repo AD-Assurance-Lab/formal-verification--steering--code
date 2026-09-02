@@ -10,15 +10,23 @@ separable by simple image statistics, measured over the training set:
     clear       0.3039   0.0636   0.0471     1.0%
     fog         0.2803   0.0601   0.1804     0.0%
     night       0.2002   0.1380   0.0000    13.8%
-    shadows     0.1842   0.0559   0.0157     2.8%
+    low_sun     0.1842   0.0559   0.0157     2.8%
+
+    Re-measured on the Town06 lap, 2026-09-02 (T06-F42), same view, one pure-pursuit lap
+    per condition with a clean server each -- every discriminator still has margin:
+
+    clear       0.3064   0.0616   0.0641     0.9%
+    fog         0.2840   0.0610   0.1855     0.0%
+    night       0.1844   0.1393   0.0002    21.6%
+    low_sun     0.1264   0.0389   0.0111     4.2%
 
 Two of those are near-perfect discriminators and neither is brightness:
   - NIGHT is the only high-CONTRAST condition, sigma >= 0.10 against <= 0.065.
   - FOG is the only condition with NO dark pixels: airlight lifts the floor, p01 >= 0.12
     against <= 0.05. That is the veil, and it is what makes fog identifiable.
-Clear and shadows are then separated by mean, 0.304 against 0.184.
+Clear and low sun are then separated by mean, 0.304 against 0.184.
 
-Note that brightness alone would NOT work: shadows is DARKER than night.
+Note that brightness alone would NOT work: low sun is DARKER than night.
 
     python3 scripts/condition_signature.py                 # validate on the captures
     from condition_signature import identify, assert_condition
@@ -46,13 +54,25 @@ def identify(frame):
         return "night", s
     if s["p01"] >= 0.120:                   # fog: airlight lifts the black floor
         return "fog", s
-    if s["mean"] >= 0.250:                  # clear vs shadows, on mean
+    if s["mean"] >= 0.250:                  # clear vs low sun, on mean
         return "clear", s
-    return "shadows", s
+    return "low_sun", s
+
+
+# "shadows" was the old key for low_sun (see carla_env._DEPRECATED_CONDITION_ALIASES).
+# Both sides of the comparison are canonicalised so a caller may pass either: frozen
+# Town04 artifacts and already-collected data still name it "shadows", and a mismatch
+# here would RAISE mid-run on a condition that rendered correctly.
+_ALIASES = {"shadows": "low_sun"}
+
+
+def _canon(name):
+    return _ALIASES.get(name, name)
 
 
 def assert_condition(frame, want):
     """Raise unless the frame looks like `want`. Use after set_condition."""
+    want = _canon(want)
     got, s = identify(frame)
     if got != want:
         raise RuntimeError(
@@ -74,9 +94,9 @@ def main():
     print(f"{'file':28s} {'want':9s} {'got':9s} {'mean':>7s} {'sigma':>7s} "
           f"{'p01':>7s} {'dark':>6s}")
     for p in caps:
-        want = p.stem.rsplit("_", 1)[1]
+        want = _canon(p.stem.rsplit("_", 1)[1])
         z = np.load(p, allow_pickle=True)
-        conds = [str(c) for c in z["conds"]]
+        conds = [_canon(str(c)) for c in z["conds"]]
         if want not in conds:
             continue
         fr = z["frames"][conds.index(want)]
