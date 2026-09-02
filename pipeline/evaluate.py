@@ -234,7 +234,9 @@ def main():
                     help="section name, or 'both'/'all' for every section")
     ap.add_argument("--max-steps", type=int, default=2000)
     ap.add_argument("--weather", default="clear",
-                    choices=["clear", "fog", "rain", "night", "shadows"],
+                    # "shadows" stays accepted: Town04's frozen artifacts and its
+                    # drivers name it that, and canonical_condition maps it through.
+                    choices=["clear", "fog", "rain", "night", "low_sun", "shadows"],
                     help="rendered CARLA condition; night switches the ego headlights on")
     args = ap.parse_args()
 

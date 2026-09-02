@@ -181,7 +181,11 @@ def main():
 
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     tol = C.CLOSED_LOOP_TOLERANCE
-    conds = ("fog", "night", "shadows")
+    # THE CONDITION IS low_sun. The capture rig writes lap_<sec>_low_sun.npz, and this
+    # asked for lap_<sec>_shadows.npz -- so with --allow-missing it would have certified
+    # fog and night and silently dropped a third of the study, and without it the
+    # certification stage would have died after every capture had already been taken.
+    conds = ("fog", "night", "low_sun")
 
     need = [f"lap_{d}_{c}.npz" for d in D.SECTIONS for c in conds]
     need += [f"lap_{d}_clear.npz" for d in D.SECTIONS]
