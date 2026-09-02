@@ -27,16 +27,47 @@ import numpy as np
 REPO = Path(__file__).resolve().parent.parent
 
 # (label, certifier module, env, cell, scored length of that cell)
+def _scored_len(study_map, cell, **env):
+    """Ask the study what road it CLAIMS on `cell`. Not typed in here.
+
+    The previous version said the length should come from the route rather than being
+    hardcoded, and then hardcoded 2289.0 anyway -- which is the lap's GEOMETRY, not its
+    scored road. The two differ by the 170 m of bridged intersection, so this test
+    asserted that a capture covering 170 m of unscored road must be ACCEPTED, and it
+    failed the moment the guard was corrected to refuse exactly that.
+    """
+    code = ("import os,sys;"
+            + "".join(f"os.environ[{k!r}]={v!r};" for k, v in
+                      dict(STUDY_MAP=study_map, **env).items())
+            + "sys.path.insert(0,'pipeline');import config as C;"
+              f"print(C.scored_len_m({cell!r}))")
+    out = subprocess.run([sys.executable, "-c", code], cwd=str(REPO),
+                         capture_output=True, text=True, check=True)
+    return float(out.stdout.strip())
+
+
 TARGETS = [
     ("certify_sustained_bound", "certify_sustained_bound",
-     dict(STUDY_MAP="Town04", TOWN04_REDO="1"), "eastbound", 2861.0),
-    # Town06 is now ONE LAP, not six sections, so the cell name and scored length come
-    # from the route rather than being hardcoded -- a test pinned to s00/894 m started
-    # failing the moment the map's layout changed, which is the test being stale rather
-    # than the guard being wrong.
+     dict(STUDY_MAP="Town04", TOWN04_REDO="1"), "eastbound",
+     _scored_len("Town04", "eastbound", TOWN04_REDO="1")),
+    # Town06 is ONE LAP, and its scored road is the route MINUS the two bridged
+    # intersections: pure pursuit drives them and nothing scores them, so a certificate
+    # that covered them would not be comparable to the drives it is validated against.
     ("certify_town06", "certify_town06",
-     dict(STUDY_MAP="Town06"), "lap", 2289.0),
+     dict(STUDY_MAP="Town06"), "lap", _scored_len("Town06", "lap")),
 ]
+
+
+def _bridged_m(study_map, cell, env):
+    """Metres of `cell` that are driven by pure pursuit and scored by nothing."""
+    code = ("import os,sys;"
+            + "".join(f"os.environ[{k!r}]={v!r};" for k, v in
+                      dict(env, STUDY_MAP=study_map).items())
+            + "sys.path.insert(0,'pipeline');import config as C;"
+              f"print(sum(b-a for a,b in C.bridge_spans_for({cell!r})))")
+    out = subprocess.run([sys.executable, "-c", code], cwd=str(REPO),
+                         capture_output=True, text=True, check=True)
+    return float(out.stdout.strip())
 
 
 def make_capture(path, span_m, claimed_span=None, n=200):
@@ -76,7 +107,14 @@ def main():
                 ("the 160 m defect",   160.0,         None,     True),
                 ("over-coverage",      scored + 200,  None,     True),
                 ("lies about itself",  scored + 1.0,  scored * 1.4, True),
+                # The lap's specific version of over-coverage: a capture that spans the
+                # bridged intersections as well as the scored road. On Town04, where
+                # there are no bridges, this is the same as "full coverage" and must be
+                # accepted -- the case is generated from the map, not asserted blindly.
             ]
+            bridged = _bridged_m(env.get("STUDY_MAP", "Town04"), cell, env)
+            if bridged > 25.0:
+                cases.append(("the bridged road as well", scored + bridged, None, True))
             for name, span, claimed, must_reject in cases:
                 q = Path(td) / f"lap_{cell}_clear.npz"
                 make_capture(q, span, claimed)

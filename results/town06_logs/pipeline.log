@@ -7,3 +7,5 @@
 [2026-09-02 06:32:35] START collect_clear_t06lap (attempt 1)
 [2026-09-02 06:36:04] OK    collect_clear_t06lap
 [2026-09-02 06:36:04] START train_clear_bc_t06lap (attempt 1)
+[2026-09-02 06:37:59] OK    train_clear_bc_t06lap
+[2026-09-02 06:37:59] START dagger_clear_t06lap (attempt 1)
