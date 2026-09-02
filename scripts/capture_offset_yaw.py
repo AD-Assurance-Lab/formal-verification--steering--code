@@ -131,7 +131,15 @@ def main():
         dy = np.diff(rt[:, 1], append=rt[0, 1])
         yaw_deg = np.degrees(np.arctan2(dy, dx))
         rows = [dict(x=rt[i, 0], y=rt[i, 1], yaw=yaw_deg[i]) for i in range(len(rt))]
-        xy = rt
+        # X AND Y ONLY. Town04's routes are (N, 2) and this read them whole; Town06's LAP
+        # route is (N, 3) and the third column is YAW IN DEGREES. Feeding all three
+        # columns to a Euclidean norm made the lap's arc-length 5,299 m instead of
+        # 2,289 m -- so every "metres along the route" lookup landed at roughly 40% of the
+        # distance it named, and the capture would have covered the first ~920 m of a
+        # 2,119 m scored road while its recorded span (computed from x and y alone) said
+        # so. It would have been caught by the certifier's coverage floor rather than
+        # silently, but only after a full capture run.
+        xy = rt[:, :2]
     else:
         base = REPO / "pipeline" / "data" / "live_pairs"
         with open(base / "manifest.csv") as fh:
@@ -150,11 +158,16 @@ def main():
         # full loop would certify 181 m of road the study does not claim, and the
         # certificate would not be comparable to the drives it is validated against.
         #
-        # Town06's section routes are already built to their scored length, so there the
-        # two agree and this changes nothing.
+        # Town06's SIX SECTIONS were already built to their scored length, so there the
+        # two agreed and this changed nothing. THE LAP IS DIFFERENT and the comment above
+        # stopped being true when the route became one: the lap's geometry is 2,289 m and
+        # its SCORED road is 2,119 m, because the two intersections are driven by pure
+        # pursuit and excluded from every CTE. Capturing the geometry would certify 170 m
+        # of intersection that no closed-loop cell scores -- the same error as Town04's
+        # 181 m ODD-boundary tail, in the same direction, on the other map.
         seg = np.linalg.norm(np.diff(np.asarray(xy, dtype=float), axis=0), axis=1)
         geom = float(seg.sum())
-        scored = float(getattr(C, "SECTION_LEN_M", {}).get(args.direction, geom))
+        scored = C.scored_len_m(args.direction) or geom
         args.length_m = min(scored, geom)
         note = "" if abs(geom - args.length_m) < 1.0 else \
             f" (route geometry is {geom:.0f} m; the tail is outside the scored prefix)"
@@ -163,9 +176,70 @@ def main():
     if len(xy) < 2:
         sys.exit(f"no poses for direction '{args.direction}' -- refusing to capture")
     d = np.concatenate([[0], np.cumsum(np.linalg.norm(np.diff(xy, axis=0), axis=1))])
-    want = np.linspace(args.start_m, args.start_m + args.length_m, args.poses)
-    idx = sorted({int(np.argmin(np.abs(d - w))) for w in want})
+
+    # SAMPLE THE SCORED ROAD, NOT THE ROUTE.
+    #
+    # `linspace` over route arc-length puts poses inside the bridged intersections, which
+    # are not scored and therefore must not be certified. Sampling uniformly over SCORED
+    # arc-length and mapping each sample back through the bridges keeps the poses evenly
+    # spread over exactly the road the drives are graded on.
+    bridges = sorted(C.bridge_spans_for(args.direction))
+
+    def _to_route(s_scored):
+        """scored arc-length -> route arc-length, stepping over each bridge."""
+        r = args.start_m + s_scored
+        for a, b in bridges:
+            if r >= a:
+                r += (b - a)
+            else:
+                break
+        return r
+
+    skipped_m = float(sum(b - a for a, b in bridges))
+    if bridges:
+        want = np.array([_to_route(s) for s in
+                         np.linspace(0.0, args.length_m, args.poses)])
+        print(f"  excluding {len(bridges)} bridged span(s), {skipped_m:.0f} m: poses are "
+              f"spread over the {args.length_m:.0f} m of SCORED road, not the "
+              f"{args.length_m + skipped_m:.0f} m of route", flush=True)
+    else:
+        want = np.linspace(args.start_m, args.start_m + args.length_m, args.poses)
+
+    if bridges:
+        # Snapping a target to the NEAREST route point can still land inside a bridge
+        # when the target sits within a step of its edge. Mask the bridged points out of
+        # the candidate set instead of hoping the snap misses them.
+        ok = np.ones(len(d), dtype=bool)
+        for a, b in bridges:
+            ok &= ~((d >= a) & (d <= b))
+        cand = np.flatnonzero(ok)
+        idx = sorted({int(cand[np.argmin(np.abs(d[cand] - w))]) for w in want})
+    else:
+        idx = sorted({int(np.argmin(np.abs(d - w))) for w in want})
     poses = [rows[i] for i in idx]
+
+    # REFUSE rather than warn. A pose inside a bridge is road the study does not claim,
+    # and by the time it reaches the certificate nothing downstream can tell.
+    if bridges:
+        inside = [float(d[i]) for i in idx if any(a <= d[i] <= b for a, b in bridges)]
+        if inside:
+            sys.exit(f"REFUSING to capture: {len(inside)} pose(s) fall inside a bridged "
+                     f"span at {['%.0f' % m for m in inside[:5]]} m. Bridged road is "
+                     f"driven by pure pursuit and scored by nothing, so certifying it "
+                     f"would not be comparable to the drives.")
+    # A capture stores every CONTROL-RATE pose; the frozen stride of 8 is applied by the
+    # certifier when it consumes them. So `--poses` is routinely larger than the number
+    # of route points available (the lap asks for 1,280 against 1,147 points at 2 m), and
+    # deduplicating to fewer is normal, not a fault. What is NOT normal is selecting far
+    # fewer than the route can offer, which is what a broken arc-length lookup looks
+    # like -- so the floor is measured against what is AVAILABLE, not what was asked.
+    n_avail = int(np.count_nonzero(
+        (d >= args.start_m) & (d <= args.start_m + args.length_m + skipped_m)
+    )) - int(sum(np.count_nonzero((d >= a) & (d <= b)) for a, b in bridges))
+    if len(poses) < 0.9 * min(args.poses, n_avail):
+        sys.exit(f"REFUSING to capture: selected {len(poses)} poses, against "
+                 f"{args.poses} requested and {n_avail} available on the scored road. "
+                 f"That gap is what a broken arc-length lookup looks like.")
 
     n = len(CONDS) * len(poses) * len(OFFSETS) * len(YAWS)
     frames = np.zeros((len(CONDS), len(poses), len(OFFSETS), len(YAWS), 3, IN_H, IN_W),
@@ -353,11 +427,25 @@ def main():
     # The 160 m captures were caught solely because they predate the field.
     _pxy = np.array([[float(r["x"]), float(r["y"])] for r in poses], dtype=float)
     _cov = float(np.linalg.norm(np.diff(_pxy, axis=0), axis=1).sum()) if len(_pxy) > 1 else 0.0
-    print(f"  route coverage: {args.length_m:.0f} m requested, {_cov:.0f} m actually "
-          f"spanned by {len(poses)} captured poses", flush=True)
+    # With bridges excluded the pose track jumps each gap, so the straight-line sum
+    # between consecutive poses OVERSTATES nothing but understates the road covered by
+    # the bridge chords. Subtract the chord of each skipped span so route_span_m stays
+    # what it claims to be: the SCORED road these poses span.
+    if bridges and len(_pxy) > 1:
+        for a, b in bridges:
+            before = [i for i in idx if d[i] <= a]
+            after = [i for i in idx if d[i] >= b]
+            if before and after:
+                i0, i1 = max(before), min(after)
+                _cov -= float(np.hypot(xy[i1][0] - xy[i0][0], xy[i1][1] - xy[i0][1]))
+    print(f"  scored-road coverage: {args.length_m:.0f} m requested, {_cov:.0f} m "
+          f"actually spanned by {len(poses)} captured poses"
+          + (f" (excluding {skipped_m:.0f} m of bridge)" if bridges else ""),
+          flush=True)
     np.savez_compressed(
         OUT, frames=frames, offsets=OFFSETS, yaws=YAWS, conds=np.array(CONDS),
         route_span_m=_cov, length_m_requested=args.length_m,
+        bridged_m_excluded=skipped_m,
         pose_x=np.array([float(r["x"]) for r in poses]),
         pose_y=np.array([float(r["y"]) for r in poses]),
         pose_yaw=np.array([float(r["yaw"]) for r in poses]))

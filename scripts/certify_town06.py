@@ -81,7 +81,12 @@ def check_coverage(path, sec):
     if claimed is not None and abs(claimed - span) > 25.0:
         sys.exit(f"REFUSING to certify from {path.name}: it records route_span_m "
                  f"{claimed:.0f} m but its poses span {span:.0f} m.")
-    want = float(getattr(C, "SECTION_LEN_M", {}).get(sec, 0.0))
+    # THE SCORED LENGTH, which on the lap is not the route's geometry: the two bridged
+    # intersections (170 m) are driven by pure pursuit and scored by nothing, so the
+    # capture excludes them and this must expect that. Comparing a correctly-scoped
+    # capture against the raw geometry made this refuse a good capture at 93% of a
+    # length it was right not to cover.
+    want = C.scored_len_m(sec)
     if want <= 0:
         return
     if span < MIN_ROUTE_COVERAGE * want:
@@ -90,7 +95,9 @@ def check_coverage(path, sec):
                  f"scripts/capture_town06_laps.sh.")
     if span > want + 25.0:
         sys.exit(f"REFUSING to certify from {path.name}: it spans {span:.0f} m against a "
-                 f"{want:.0f} m scored section -- road the study does not claim.")
+                 f"{want:.0f} m SCORED section -- road the study does not claim. On the "
+                 f"lap this is what a capture that included the bridged intersections "
+                 f"would look like.")
 
 
 def nominal(path, cond):

@@ -346,6 +346,37 @@ if STUDY_MAP == "Town04":
     SECTION_LEN_M = {"eastbound": LAP_END_M, "westbound": LAP_END_M}
     TOTAL_SCORED_M = LAP_END_M * 2.0
 
+def bridge_spans_for(section):
+    """Arc-length ranges on `section` where PURE PURSUIT drives and nothing is scored.
+
+    Empty on every map but Town06's lap. The lane centreline is undefined through an
+    intersection, so a lane-follower asked to drive one is being scored outside its
+    domain -- the spans are driven by the expert and excluded from every CTE.
+    """
+    if not globals().get("LAP_BASED", False) or section != SECTIONS[0]:
+        return []
+    return [tuple(b) for b in BRIDGE_SPANS]
+
+
+def scored_len_m(section):
+    """The road this study CLAIMS on `section`, in metres.
+
+    NOT the route's geometry. On Town06's lap they differ by the 170 m of bridged
+    intersection: geometry 2,289 m, scored 2,119 m.
+
+    One definition, because the two consumers must agree or the certificate stops being
+    comparable to the drives. The capture rig samples poses over THIS length and the
+    certifier checks coverage against it; when the capture excluded bridges and the
+    certifier still compared against geometry, the certifier refused a correct capture --
+    and the other way round it would have certified 170 m of road no closed-loop cell
+    scores. Standing rule 7 is two-sided: covering more than the study scopes is the same
+    error as covering less.
+    """
+    if globals().get("LAP_BASED", False) and section == SECTIONS[0]:
+        return float(LAP_SCORED_M)
+    return float(SECTION_LEN_M.get(section, 0.0))
+
+
 def steps_for(section, margin=1.0):
     """Control steps to drive exactly one section, at the fixed study speed.
 

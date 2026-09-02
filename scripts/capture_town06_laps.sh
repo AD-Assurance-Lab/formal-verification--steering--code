@@ -28,7 +28,9 @@ SECTIONS=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline')
 echo "sections: $SECTIONS"
 
 for SEC in $SECTIONS; do
-  LEN=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(f\"{C.SECTION_LEN_M['$SEC']:.1f}\")")
+  # THE SCORED LENGTH. SECTION_LEN_M is the route's GEOMETRY, and on the lap the two
+  # differ by the 170 m of bridged intersection that no closed-loop cell scores.
+  LEN=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(f\"{C.scored_len_m('$SEC'):.1f}\")")
   POSES=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(C.steps_for('$SEC'))")
   for COND in clear fog night low_sun; do
     OUT="results/town06/captures/lap_${SEC}_${COND}.npz"
