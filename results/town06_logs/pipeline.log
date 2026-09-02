@@ -5,3 +5,5 @@
 [2026-09-02 07:24:36] determinism preflight OK on the live server
 [2026-09-02 07:24:37] route fingerprint b5b56f8c993fc9ba
 [2026-09-02 07:24:37] START collect_clear_t06lap (attempt 1)
+[2026-09-02 07:27:59] OK    collect_clear_t06lap
+[2026-09-02 07:27:59] START train_clear_bc_t06lap (attempt 1)
