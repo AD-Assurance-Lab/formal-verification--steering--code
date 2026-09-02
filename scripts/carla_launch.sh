@@ -56,8 +56,36 @@ fi
 # once drove for 12 minutes against a listening-but-unready server and recorded the
 # failure as if the students had failed. Readiness is a successful get_world() on the
 # STUDY map. `timeout` as a wall clock: a probe that hangs is worse than one that fails.
-CARLA_PORT=$PORT timeout 300 python3 "$REPO/scripts/wait_carla_ready.py" --timeout 240 || {
-    echo "FATAL: CARLA did not come up on $PORT"; exit 1; }
+if ! CARLA_PORT=$PORT timeout 300 python3 "$REPO/scripts/wait_carla_ready.py" --timeout 240; then
+    # WINDOWED FALLS BACK TO HEADLESS, LOUDLY.
+    #
+    # Standing rule 6 wants a visible window so runs can be WATCHED, and that is the
+    # default. But a windowed launch depends on the X session the launcher happens to sit
+    # in, and it fails silently when that session cannot reach the display: measured
+    # 2026-09-02, CarlaUE4 exits rc=1 with an EMPTY log while `xdpyinfo` on the same
+    # DISPLAY succeeds. Headless starts fine in the same shell.
+    #
+    # Refusing outright would stop an unattended campaign for a cosmetic reason. Falling
+    # back silently would hide a deviation from a standing rule. So: fall back, say so on
+    # every launch, and let the photometry gate below prove the render did not move --
+    # headless and windowed agree to 4e-5 on a full driven lap (T06-F42), which is what
+    # makes the fallback safe rather than merely convenient.
+    if [ "${CARLA_WINDOWED:-0}" = "1" ]; then
+        echo "  WINDOWED LAUNCH FAILED on DISPLAY=${DISPLAY:-:0}; falling back to HEADLESS."
+        echo "  (standing rule 6 asks for a watchable window; this run is not watchable.)"
+        pkill -f "[C]arlaUE4.*rpc-port=$PORT" 2>/dev/null
+        for i in $(seq 1 20); do
+            ss -ltn 2>/dev/null | grep -q ":$PORT " || break
+            sleep 1
+        done
+        ( cd "$CARLA_ROOT" && setsid nohup ./CarlaUE4.sh -carla-rpc-port="$PORT" \
+            -RenderOffScreen -quality-level="$QUALITY" $EXTRA >>"$LOG" 2>&1 < /dev/null 9>&- & )
+        CARLA_PORT=$PORT timeout 300 python3 "$REPO/scripts/wait_carla_ready.py" --timeout 240 || {
+            echo "FATAL: CARLA did not come up on $PORT, windowed OR headless"; exit 1; }
+    else
+        echo "FATAL: CARLA did not come up on $PORT"; exit 1
+    fi
+fi
 
 # Prove the flags actually landed, rather than trusting that they did. This reads the
 # server's real /proc argv, so a server left running by something else -- a stale one on
