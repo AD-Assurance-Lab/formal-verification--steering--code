@@ -348,12 +348,24 @@ for ROW in "${ROWS[@]}"; do
         S_clear*) TEACH=$TC; DSET=clear_t06lap; W=clear ;;
         S_mixed*) TEACH=$TM; DSET=mixed_t06lap; W=clear,fog,night,low_sun ;;
     esac
-    if ! ls "$CK_DIR/${CK}_dagger_r"*.pth >/dev/null 2>&1; then
-        run "dagger_student_$NM" python3 dagger_student.py --student "$CK" \
-            --w "$IN_W" --h "$IN_H" --rounds 3 --weathers "$W" --teacher "$TEACH" \
-            --base "$DSET" --dagger-dir "dagger_student_${NM}_t06lap" \
-            --channels "$CH" --fc "$FC" || exit 1
-    else say "SKIP  dagger_student_$NM (rounds exist)"; fi
+    # ONE ROUND PER PROCESS, and a COMPLETION MARKER rather than "a checkpoint exists".
+    #
+    # dagger_student.py restarts CARLA in-process between rounds and dies doing it -- the
+    # same teardown TimeoutException the teacher stage moved to a process boundary to
+    # escape. With the old guard (`ls <ck>_dagger_r*.pth`) that crash left 1 of 3 rounds
+    # done and the stage was SKIPPED as complete on every later run, which is verbatim
+    # the defect the teacher stage fixed. Measured here on 2026-09-02, round 0 of the
+    # clear student.
+    SLOG="$LOG_DIR/dagger_student_${CK}.log"
+    if ! grep -q "\*\*\* STUDENT DAGGER COMPLETE" "$SLOG" 2>/dev/null; then
+        run "dagger_student_$NM" env TEACHER="$TEACH" BASE="$DSET" \
+            DDIR="dagger_student_${NM}_t06lap" \
+            bash "$REPO/scripts/run_student_dagger_rounds.sh" \
+            "$CK" 3 "$W" "$CH" "$FC" "$IN_W" "$IN_H" || exit 1
+        grep -q "\*\*\* STUDENT DAGGER COMPLETE" "$SLOG" 2>/dev/null || {
+            say "FATAL: dagger_student_$NM did not complete its rounds."; exit 1; }
+    else say "SKIP  dagger_student_$NM (complete)"; fi
+    say "GATE  dagger_student_$NM: $(grep '\*\*\* STUDENT DAGGER COMPLETE' "$SLOG" | tail -1 | tr -s ' ')"
 done
 
 # ---------------------------------------------------------- why it was removed

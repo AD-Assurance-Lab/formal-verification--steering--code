@@ -262,7 +262,19 @@ def main():
         if _offset:
             print(f"resuming: found {len(_prior)} prior student round(s), continuing at round {_offset}",
                   flush=True)
-        for r_local in range(args.rounds + 1):
+        # --rounds is THIS PROCESS's budget and r is an ABSOLUTE round number; comparing
+        # them is a category error, and it is the same one d8c97a6 fixed in dagger.py and
+        # did not mirror here. Resuming at round 1 with --rounds 1 made `r == args.rounds`
+        # true immediately, so the round drove its laps and broke BEFORE re-distilling --
+        # producing no checkpoint while reporting "Exhausted 1 rounds". Resuming at round
+        # 9 with --rounds 1 made it never true, so nothing stopped the process training
+        # two rounds; one-round-per-process held only because the teardown
+        # TimeoutException killed the process first, and relying on a crash to enforce a
+        # design invariant is not enforcing it.
+        #
+        # The loop bound is the budget itself, so range(args.rounds) runs exactly that
+        # many rounds wherever it resumes from.
+        for r_local in range(args.rounds):
             r = r_local + _offset
             # R-SIM-1: RESTART CARLA BEFORE EVERY ROUND.
             #
@@ -375,8 +387,17 @@ def main():
             if passed:
                 print(f"\n*** student PASSED at round {r} with '{current}' ***", flush=True)
                 break
-            if r == args.rounds:
-                print(f"\nExhausted {args.rounds} rounds (last '{current}').", flush=True)
+            if r_local == args.rounds - 1:
+                print(f"\nExhausted this process's budget of {args.rounds} round(s) "
+                      f"(last '{current}'); re-distilling before exit so the round is "
+                      f"not lost.", flush=True)
+                new = f"{args.student}_dagger_r{r:02d}"
+                print(f"  re-distilling (warm-start from '{current}') -> {new}", flush=True)
+                distill_student(args.w, args.h, new, teacher_name=args.teacher,
+                                base=args.base, dagger_dirs=distill_dirs,
+                                weathers=weathers, channels=channels, fc=args.fc,
+                                init_from=current, lr=args.lr, epochs=args.epochs,
+                                quiet=True, balance=args.balance)
                 break
             new = f"{args.student}_dagger_r{r:02d}"
             print(f"  re-distilling (warm-start from '{current}') -> {new}", flush=True)

@@ -8,3 +8,27 @@ loading Town04 (server is on Carla/Maps/Town10HD_Opt)
 CARLA ready on 3000 after 44s (map Carla/Maps/Town04)
   determinism preflight OK (lock intact; D-3/D-5 verified on the live server)
   D-7 floor remains: closed-loop numbers are still RATES over >=10 repetitions
+  launching CARLA headless (quality=Epic, extra=[-notexturestreaming])
+loading Town06 (server is on Carla/Maps/Town10HD_Opt)
+CARLA ready on 3000 after 43s (map Carla/Maps/Town06)
+  determinism preflight OK (lock intact; D-3/D-5 verified on the live server)
+  D-7 floor remains: closed-loop numbers are still RATES over >=10 repetitions
+  server is 50s old: world is already fresh, skipping reload
+Traceback (most recent call last):
+  File "/home/za/ad-assurance--workspace/formal-verification--steering--code/scripts/check_render_photometry.py", line 175, in <module>
+    sys.exit(main())
+  File "/home/za/ad-assurance--workspace/formal-verification--steering--code/scripts/check_render_photometry.py", line 129, in main
+    mean, std, labels = measure(args.condition)
+  File "/home/za/ad-assurance--workspace/formal-verification--steering--code/scripts/check_render_photometry.py", line 72, in measure
+    env.enable_sync_mode(world)
+  File "/home/za/ad-assurance--workspace/formal-verification--steering--code/pipeline/carla_env.py", line 128, in enable_sync_mode
+    world.apply_settings(settings)
+RuntimeError: time-out of 120000ms while waiting for the simulator, make sure the simulator is ready and connected to 127.0.0.1:3000
+FATAL: the server on 3000 renders at a different brightness (above).
+Terminated
+  launching CARLA headless (quality=Epic, extra=[-notexturestreaming])
+loading Town06 (server is on Carla/Maps/Town10HD_Opt)
+CARLA ready on 3000 after 43s (map Carla/Maps/Town06)
+  determinism preflight OK (lock intact; D-3/D-5 verified on the live server)
+  D-7 floor remains: closed-loop numbers are still RATES over >=10 repetitions
+  server is 49s old: world is already fresh, skipping reload

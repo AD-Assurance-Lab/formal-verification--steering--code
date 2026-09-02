@@ -9,3 +9,22 @@
 [2026-09-02 07:27:59] START train_clear_bc_t06lap (attempt 1)
 [2026-09-02 07:29:53] OK    train_clear_bc_t06lap
 [2026-09-02 07:29:53] START dagger_clear_t06lap (attempt 1)
+[2026-09-02 07:56:24] OK    dagger_clear_t06lap
+[2026-09-02 07:56:24] GATE  dagger_clear_t06lap: *** LAP GATE PASSED: teacher_clear_t06lap_dagger_r03 (3/3 laps, clean server each) ***
+[2026-09-02 07:56:24] START collect_mixed_t06lap (attempt 1)
+[2026-09-02 08:07:24] OK    collect_mixed_t06lap
+[2026-09-02 08:07:24] START train_mixed_bc_t06lap (attempt 1)
+[2026-09-02 08:11:42] OK    train_mixed_bc_t06lap
+[2026-09-02 08:11:42] START dagger_mixed_t06lap (attempt 1)
+[2026-09-02 09:42:10] OK    dagger_mixed_t06lap
+[2026-09-02 09:42:10] GATE  dagger_mixed_t06lap: *** LAP GATE PASSED: teacher_mixed_t06lap_dagger_r03 (12/12 laps, clean server each) ***
+[2026-09-02 09:42:10] teachers: clear=teacher_clear_t06lap_dagger_r03 mixed=teacher_mixed_t06lap_dagger_r03
+[2026-09-02 09:42:10] distil S_clear_t06 -> S_clear_t06lap_168x28_w2 (168x28, 21408 ReLU) from teacher_clear_t06lap_dagger_r03
+[2026-09-02 09:42:10] START distill_S_clear_t06 (attempt 1)
+[2026-09-02 09:44:34] OK    distill_S_clear_t06
+[2026-09-02 09:44:34] distil S_mixed_t06 -> S_mixed_t06lap_168x28_w3 (168x28, 32112 ReLU) from teacher_mixed_t06lap_dagger_r03
+[2026-09-02 09:44:34] START distill_S_mixed_t06 (attempt 1)
+[2026-09-02 09:54:49] OK    distill_S_mixed_t06
+[2026-09-02 09:54:49] START dagger_student_S_clear_t06 (attempt 1)
+[2026-09-02 10:01:45] FAIL  dagger_student_S_clear_t06 attempt 1 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06_logs/dagger_student_S_clear_t06.log)
+[2026-09-02 10:01:51] START dagger_student_S_clear_t06 (attempt 2)
