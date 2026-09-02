@@ -2970,3 +2970,53 @@ launch buys immunity to it whatever its cause turns out to be.
 
 A Town04 photometry reference is now committed (0.241813) so the same gate protects the
 published study's re-measurement.
+
+## T06-F48  The Town06 students train on a THIRD of the data Town04's did
+
+Zach, after the mixed student failed fog at every width and resolution tried: "formal
+verification is supposed to be able to predict both models' performance in clear, fog,
+night and low sun ... I would just look at the data used to train Town04 models."
+
+                          base frames   DAgger frames        total   base per condition
+    Town04 mixed              27,112    61,175 (5 rounds)   88,287       ~6,778
+    Town06 mixed              15,288    14,921 (4 rounds)   30,209       ~3,822
+    Town04 clear                   -    23,084 (7 rounds)   23,084            -
+    Town06 clear               3,823     4,967 (5 rounds)    8,790        3,823
+
+**The Town06 mixed student has 34% of the data the Town04 mixed student had, and the
+clear student 38%.** Two causes compound:
+
+1. Town04 collects TWO laps in TWO DIRECTIONS per condition -- four traversals, ~6,778
+   frames. Town06 collects three traversals of a one-way route, 3,822. "Three laps per
+   condition" sounds like more than Town04's two and is 56% of it.
+2. Each Town04 DAgger round yields ~12,235 frames against Town06's ~3,730, because its
+   scored road is 5,722 m against 2,289 m.
+
+### Why this is the explanation and the architecture was not
+
+Every architectural lever was tried and none of them moved fog:
+
+    168x28 w4   fog 6.85 ft      168x56 w4   fog 11.15 ft     168x56 w6   fog 11.64 ft
+
+while the same 168x56 w4 student holds clear 0.83, night 0.68 and low sun 0.70 ft. And
+the KD split says distillation is not failing on fog either -- fog's RMSE (0.0272) is
+BETTER than night's (0.0333), which passes. What distinguishes fog is its tail: p99 error
+0.121, ten times the steering tolerance.
+
+A heavy tail on a condition whose mean error is unremarkable is what too little data looks
+like. So is a student that regresses toward zero output under re-distillation, which is
+what the DAgger collapse turned out to be: after ONE re-distillation the student's output
+magnitude fell from 0.0591 to 0.0143 against a teacher at 0.0615 -- it stopped steering.
+distill.py's own comment predicts exactly that failure on this route, where 83.8% of the
+lap needs |steer| <= 0.01 and a student without enough signal learns to emit ~0 with a
+small offset.
+
+### What is being done
+
+Base sets go to six laps per condition (7,644 frames, just over Town04's 6,778), matching
+Town04's per-condition VOLUME rather than its lap count -- the lap is a different length,
+so copying the count copies the wrong thing. The DAgger pool is the larger gap and is
+addressed by rounds rather than laps.
+
+**This supersedes "three laps per condition"**, which was set before these numbers existed
+and which makes Town06 a materially smaller experiment than the study it is compared to.
