@@ -226,15 +226,49 @@ teacher_gate() {   # teacher_gate <logname>
 # the route fingerprint guard below would refuse to reuse them anyway, which is exactly
 # what it is for.
 
+# HOW MANY LAPS EACH POLICY'S BASE SET SHOULD HAVE, per condition.
+#
+# Declared here rather than buried in a flag, because it is a lever the study pulls: the
+# mixed student failed clear-weather competence with 3 laps per condition (3,822 frames)
+# while the clear student had 4 (5,098), and PROTOCOL A-2's own precedent (T06-F28, "the
+# capacity crisis was the data") says data before architecture.
+CLEAR_LAPS=${CLEAR_LAPS:-4}
+MIXED_LAPS=${MIXED_LAPS:-6}
+
+# TOP UP, DO NOT SKIP.
+#
+# The guard was "a manifest exists", so raising the lap count changed nothing on a
+# machine that already had a dataset -- the stage skipped and the study silently kept the
+# old sample size. collect_data.py appends (it continues lap numbering from what is on
+# disk), so the resumable form is to count what is there and collect the difference.
+laps_on_disk() {   # laps_on_disk <dataset-dir> <weather>
+    ls -d "$1"/"$2"_*_lap* 2>/dev/null | wc -l
+}
+
+collect_to() {   # collect_to <name> <dataset> <weathers-csv> <target-laps>
+    local name=$1 ds=$2 weathers=$3 target=$4
+    local have short first_w
+    first_w=${weathers%%,*}
+    have=$(laps_on_disk "$DATA/$ds" "$first_w")
+    if [ "$have" -ge "$target" ]; then
+        say "SKIP  $name ($have/$target laps per condition already on disk)"
+        return 0
+    fi
+    short=$(( target - have ))
+    say "$name: $have/$target laps per condition on disk; collecting $short more"
+    run "$name" python3 collect_data.py --dataset "$ds" --weathers "$weathers" \
+        --laps "$short" --direction all || return 1
+    fp_stamp "$DATA/$ds"
+    return 0
+}
+
 cd "$REPO/pipeline"
 
 # ---------------------------------------------------------------- clear policy
 fp_guard "$DATA/clear_t06lap" clear_t06lap || exit 1
 if [ ! -f "$DATA/clear_t06lap/manifest.csv" ]; then
-    run collect_clear_t06lap python3 collect_data.py --dataset clear_t06lap \
-        --weathers clear --laps 4 --direction all || exit 1
-    fp_stamp "$DATA/clear_t06lap"
-else say "SKIP  collect_clear_t06lap (manifest exists, fingerprint matches)"; fi
+    collect_to collect_clear_t06lap clear_t06lap clear "$CLEAR_LAPS" || exit 1
+else collect_to collect_clear_t06lap clear_t06lap clear "$CLEAR_LAPS" || exit 1; fi
 
 if [ ! -f "$CK_DIR/teacher_clear_t06lap_bc.pth" ]; then
     run train_clear_bc_t06lap python3 train.py --dataset clear_t06lap --epochs 120 \
@@ -263,10 +297,8 @@ else say "SKIP  dagger_clear_t06lap"; teacher_gate dagger_clear_t06lap || exit 1
 # ---------------------------------------------------------------- mixed policy
 fp_guard "$DATA/mixed_t06lap" mixed_t06lap || exit 1
 if [ ! -f "$DATA/mixed_t06lap/manifest.csv" ]; then
-    run collect_mixed_t06lap python3 collect_data.py --dataset mixed_t06lap \
-        --weathers clear,fog,night,low_sun --laps 3 --direction all || exit 1
-    fp_stamp "$DATA/mixed_t06lap"
-else say "SKIP  collect_mixed_t06lap (fingerprint matches)"; fi
+    collect_to collect_mixed_t06lap mixed_t06lap clear,fog,night,low_sun "$MIXED_LAPS" || exit 1
+else collect_to collect_mixed_t06lap mixed_t06lap clear,fog,night,low_sun "$MIXED_LAPS" || exit 1; fi
 
 if [ ! -f "$CK_DIR/teacher_mixed_t06lap_bc.pth" ]; then
     run train_mixed_bc_t06lap python3 train.py --dataset mixed_t06lap --epochs 120 \
