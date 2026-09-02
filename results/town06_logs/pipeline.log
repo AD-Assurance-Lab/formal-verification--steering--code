@@ -93,3 +93,39 @@
 [2026-09-02 13:11:24] START dagger_clear_t06lap (attempt 1)
 [2026-09-02 13:16:24] FAIL  dagger_clear_t06lap attempt 1 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06_logs/dagger_clear_t06lap.log)
 [2026-09-02 13:16:29] START dagger_clear_t06lap (attempt 2)
+[2026-09-02 13:18:34] FAIL  dagger_clear_t06lap attempt 2 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06_logs/dagger_clear_t06lap.log)
+[2026-09-02 13:18:39] FAIL  dagger_clear_t06lap after 2 attempts -- stopping
+[2026-09-02 13:19:54] PROTOCOL lock OK; STUDY_MAP=Town06 CARLA_PORT=3000
+[2026-09-02 13:19:54] carla-determinism rules lock OK
+  determinism preflight OK (lock intact; D-3/D-5 verified on the live server)
+  D-7 floor remains: closed-loop numbers are still RATES over >=10 repetitions
+[2026-09-02 13:19:54] determinism preflight OK on the live server
+[2026-09-02 13:19:54] route fingerprint b5b56f8c993fc9ba
+[2026-09-02 13:19:54] SKIP  collect_clear_t06lap (3/3 laps per condition already on disk)
+[2026-09-02 13:19:54] SKIP  train_clear_bc_t06lap
+[2026-09-02 13:19:54] START dagger_clear_t06lap (attempt 1)
+[2026-09-02 13:21:30] PROTOCOL lock OK; STUDY_MAP=Town06 CARLA_PORT=3000
+[2026-09-02 13:21:30] carla-determinism rules lock OK
+  determinism preflight OK (lock intact; D-3/D-5 verified on the live server)
+  D-7 floor remains: closed-loop numbers are still RATES over >=10 repetitions
+[2026-09-02 13:21:30] determinism preflight OK on the live server
+[2026-09-02 13:21:30] route fingerprint b5b56f8c993fc9ba
+[2026-09-02 13:21:30] SKIP  collect_clear_t06lap (3/3 laps per condition already on disk)
+[2026-09-02 13:21:30] SKIP  train_clear_bc_t06lap
+[2026-09-02 13:21:30] START dagger_clear_t06lap (attempt 1)
+[2026-09-02 13:54:18] OK    dagger_clear_t06lap
+[2026-09-02 13:54:18] GATE  dagger_clear_t06lap: *** LAP GATE PASSED: teacher_clear_t06lap_dagger_r04 (3/3 laps, clean server each) ***
+[2026-09-02 13:54:18] SKIP  collect_mixed_t06lap (3/3 laps per condition already on disk)
+[2026-09-02 13:54:18] SKIP  train_mixed_bc_t06lap
+[2026-09-02 13:54:18] SKIP  dagger_mixed_t06lap
+[2026-09-02 13:54:18] GATE  dagger_mixed_t06lap: *** LAP GATE PASSED: teacher_mixed_t06lap_dagger_r03 (12/12 laps, clean server each) ***
+[2026-09-02 13:54:18] teachers: clear=teacher_clear_t06lap_dagger_r04 mixed=teacher_mixed_t06lap_dagger_r03
+[2026-09-02 13:54:18] distil S_clear_t06 -> S_clear_t06lap_168x28_w2 (168x28, 21408 ReLU) from teacher_clear_t06lap_dagger_r04
+[2026-09-02 13:54:18] START distill_S_clear_t06 (attempt 1)
+[2026-09-02 13:56:13] OK    distill_S_clear_t06
+[2026-09-02 13:56:13] distil S_mixed_t06 -> S_mixed_t06lap_168x28_w4 (168x28, 42816 ReLU) from teacher_mixed_t06lap_dagger_r03
+[2026-09-02 13:56:13] START distill_S_mixed_t06 (attempt 1)
+[2026-09-02 13:59:39] OK    distill_S_mixed_t06
+[2026-09-02 13:59:39] START dagger_student_S_clear_t06 (attempt 1)
+[2026-09-02 14:22:37] FAIL  dagger_student_S_clear_t06 attempt 1 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06_logs/dagger_student_S_clear_t06.log)
+[2026-09-02 14:22:42] START dagger_student_S_clear_t06 (attempt 2)
