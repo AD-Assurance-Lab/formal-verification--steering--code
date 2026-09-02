@@ -25,7 +25,7 @@ from distill import aggregated_manifests  # noqa: E402
 from dataset import load_manifests  # noqa: E402
 from student import StudentNet, student_preprocess  # noqa: E402
 
-CONDS = ["clear", "fog", "night", "shadows"]
+CONDS = ["clear", "fog", "night", "low_sun", "shadows"]
 
 
 def main():

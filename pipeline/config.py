@@ -509,6 +509,18 @@ TOWN06_STUDENTS = (
     # the gap is student capacity and width is the direct lever. This is the same
     # conclusion Town04 reached at 4b2ad73, where w1 failed all four conditions, w2 failed
     # night 10/10 and w3 passed everything.
+    # w4 = 2.0x the clear student. w6 (3.0x, Town04's ratio) was tried and did NOT fix
+    # fog either -- 11.64 ft against w4's 11.15 -- so the extra 50,000 ReLU buys nothing
+    # here and the smaller model is preferred. Fog is not a capacity problem:
+    # (clear (8,16,16)/fc32 -> mixed (24,48,48)/fc96). At 168x56 the w4 mixed student held
+    # clear 0.83 ft, night 0.68 and low sun 0.70 -- all with 62-69% margin -- and failed
+    # FOG alone at 11.15 ft, on 22-25% of the lap. Fog is the one condition where more
+    # pixels cannot help: airlight lifts the black floor (p01 0.186), so the lane markings
+    # lose contrast against the road rather than resolution, and 168x28 -> 168x56 moved fog
+    # the wrong way (6.85 -> 11.15 ft) while fixing night and low sun.
+    #
+    # So the remaining lever is capacity for the condition the network cannot separate,
+    # which is the same conclusion Town04 reached when it put its mixed student at 3x.
     ("S_mixed_t06", "S_mixed_t06lap_168x56_w4", (32, 64, 64), 128),
 )
 
