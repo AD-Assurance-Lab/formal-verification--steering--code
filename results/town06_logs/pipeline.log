@@ -152,3 +152,5 @@
 [2026-09-02 14:31:02] OK    dagger_student_S_clear_t06
 [2026-09-02 14:31:02] GATE  dagger_student_S_clear_t06: *** STUDENT DAGGER COMPLETE: S_clear_t06lap_168x28_w2_dagger_r11 (12 round(s)) ***
 [2026-09-02 14:31:02] START dagger_student_S_mixed_t06 (attempt 1)
+[2026-09-02 14:41:38] FAIL  dagger_student_S_mixed_t06 attempt 1 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06_logs/dagger_student_S_mixed_t06.log)
+[2026-09-02 14:41:43] START dagger_student_S_mixed_t06 (attempt 2)

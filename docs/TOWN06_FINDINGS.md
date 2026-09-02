@@ -2898,6 +2898,30 @@ The trigger is still unidentified. What is now established is that it is decided
 LAUNCH, that it survives for the life of the server, and that a windowed launch can land
 on either side of it.
 
+### CORRECTION, same day: it happens HEADLESS too
+
+The section below concluded "every headless launch today has passed the gate; a windowed
+launch has now failed it" and moved the campaign to headless on that basis. Two hours
+later a HEADLESS launch failed it:
+
+    restart attempt 1/3 FAILED (round 2); FATAL: the server on 3000 renders at a
+    different brightness
+
+So the mode is not the trigger. Windowed was over-represented in the first sample because
+only two windowed servers had ever been measured, one of which was bad. The defect is
+intermittent across launches in BOTH modes, and the trigger remains unidentified.
+
+What survives from the reasoning below is the part that matters: the state is decided at
+LAUNCH and constant for the server's life, so it is detectable in two seconds and curable
+by throwing that server away. `carla_launch.sh` now relaunches on a photometry rejection,
+up to four times, instead of failing the restart -- which is what turned a two-second
+retry into a stopped campaign. Four bad servers in a row is a different problem and still
+stops everything.
+
+The headless decision stands anyway, on the unchanged measurement that a windowed server
+gives no benefit here (nobody is watching an unattended overnight run) and one more thing
+to go wrong.
+
 ### Decision: headless, and the deviation from standing rule 6 is deliberate
 
 Standing rule 6 asks for a visible window so runs can be watched. Every headless launch
