@@ -2374,3 +2374,85 @@ rule -- captures taken in violation of R-SIM-1 are suspect by definition, and th
 frame moved 1.39x tolerance -- but the evidence now says the original captures were
 probably sound. The rebuild turned "probably" into "measured", which is the only form
 that belongs in a paper.
+
+---
+
+## T06-F41  The conditions were calibrated on the six-section route and did not move with the lap
+
+Zach's read, before any of this was measured: "This route I think is easier than Town04 so
+not converging says to me that there is a bug." He was right, and the bug is not in code.
+
+The mixed teacher's gate laps localise the failure completely:
+
+    clear     20/29 laps passed
+    low sun   15/27
+    fog        3/29
+    night      0/29        <- never once, in 29 laps
+
+Night has never passed. That is not slow convergence.
+
+### What was ruled out first
+
+* **Train/test rendering mismatch.** Every driving loop -- collection, teacher DAgger,
+  student DAgger, evaluate, the gate and the ledger -- goes through `env.set_condition`,
+  which respawns the camera with the condition's declared exposure. Measured on the
+  frames themselves, the expert's view and the policy's view agree to four decimals:
+
+        clear   BC 0.2074 +/- 0.0040   DAgger 0.2075 +/- 0.0040
+        fog     BC 0.3095              DAgger 0.3094
+        night   BC 0.0759 +/- 0.0154   DAgger 0.0758 +/- 0.0153
+        low sun BC 0.0649              DAgger 0.0667
+
+* **Headlights.** `set_condition` passes the vehicle, so `headlights_on(alt < 0)` fires at
+  night. The night frames carry the headlight cone's variance (sigma 0.0154) against low
+  sun's flat 0.0012, so the lights are on.
+
+* **The sun in frame.** Real -- sun azimuth 0 at 5 degrees elevation, and 504 of 1,146 lap
+  steps head into azimuth 0 (44% of the route). But `preprocess_for_model` crops sky and
+  hood, and the blown-pixel fraction of the network's input under low sun is 0.0002. The
+  glare Zach saw in the viewport does not reach the network directly. It still backlights
+  the scene, which is part of what follows.
+
+### The measurement
+
+Identical preprocessing, identical camera, crop and exposure (git confirms none of them
+changed between the two collections), both collected under the corrected harness after
+A-2. The ONLY difference is the route:
+
+    cond       six-section       lap          change
+    clear        0.2624        0.2054        -21.7%
+    fog          0.3295        0.3044         -7.6%
+    night        0.1153        0.0765        -33.7%
+    low sun      0.1053        0.0654        -37.8%
+
+**The lap route is darker than the six-section route in every condition, and night and low
+sun are hit twice as hard as clear.** T06-F20 chose Town06's 5 degrees to make low sun's
+rendered outcome match Town04's, and night's shutter of 200 was chosen to place night at a
+particular ratio to clear. Both were calibrated on the six-section route. The route changed
+under them and the constants did not move.
+
+Against the calibration targets, on the lap:
+
+    low sun / clear   0.300   (T06-F20 target 0.410, Town04 0.463)
+    night   / clear   0.373   (intended ~0.69)
+
+Night on Town06's lap is roughly half as bright, relative to its own clear, as the night
+the criterion was calibrated against. A deployment test whose night is twice as dark as
+the discovery study's night is not comparing like with like, and the 0/29 says so.
+
+### Why this follows T06-F20's own rule rather than contradicting it
+
+T06-F20 states it directly: "LOW SUN IS DECLARED BY ITS RENDERED OUTCOME, NOT BY ITS SUN
+ANGLE ... the angle is MAP-SPECIFIC and the CONDITION is what is held fixed." A route
+change inside a map is the same kind of change as a map change. The rule already says what
+to do; nobody applied it when the route moved.
+
+### What it costs
+
+Re-deriving the angle and night's exposure changes the rendered conditions, and A-2/D-11
+say data collected under a superseded rendering is not reusable. The mixed teacher's 64,946
+frames were collected under the current constants and would have to be recollected. That is
+the honest price, and it is smaller than certifying a night the study cannot compare to
+Town04's.
+
+Not acted on: re-deriving a frozen-section condition is Zach's call.
