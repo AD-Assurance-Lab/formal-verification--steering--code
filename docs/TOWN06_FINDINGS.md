@@ -2856,3 +2856,63 @@ does not exist is a lie whatever else is true about it.
 
 No teacher, student, certificate or scored cell was built on the truncated manifest: the
 failure landed between a collection and the distillation that consumes it.
+
+## T06-F46  A WINDOWED server sometimes renders 14% darker, and the photometry gate caught it before a frame was collected
+
+Zach came back to the machine and asked for a watchable window (standing rule 6). The
+campaign was switched to `CARLA_WINDOWED=1`, which now starts -- the SDL failure recorded
+in T06-F42 was a property of the session, not of the machine.
+
+The first windowed launch passed the photometry gate at **0.002% off** reference. The
+second, three minutes later, same script, same flags, same map:
+
+    photometry Town06/clear: 0.220557 vs reference 0.257106 (14.215% off, tol 1.0%)
+    FATAL: THE SERVER IS RENDERING AT A DIFFERENT BRIGHTNESS.
+
+**0.220557 / 0.257106 = 0.858.** T06-F42's contamination ratio was 0.846. It is the same
+defect, and this is the first time it has been caught in the act.
+
+### It is a property of the SERVER INSTANCE, not of the frame
+
+Five consecutive measurements against that one live server:
+
+    0.220562  0.220565  0.220566  0.220566  0.220566
+
+A spread of 4e-6. So this is not per-frame noise and not something that drifts during a
+run: a server comes up either right or 14% dark, stays that way for its whole life, and
+answers every RPC identically either way. That is exactly the shape T06-F42 measured
+across DAgger rounds -- rounds 00-05 at 0.2508-0.2537 and rounds 06-14 at 0.2140-0.2141,
+each round internally consistent.
+
+### What is NOT the cause
+
+* Not headless vs windowed as such. A windowed lap on 2026-09-01 measured 0.2525015
+  against a headless 0.2524913 -- 4e-5 -- and a windowed launch passed at 0.002% minutes
+  before this one failed.
+* Not the launch flags: `/proc` argv is identical between a passing and a failing windowed
+  launch, and the determinism preflight (D-1..D-11) is green on both.
+* Not the map, the weather, the camera or the exposure: all constructed identically, and
+  `verify_condition` reads the weather struct back on every run.
+
+The trigger is still unidentified. What is now established is that it is decided at
+LAUNCH, that it survives for the life of the server, and that a windowed launch can land
+on either side of it.
+
+### Decision: headless, and the deviation from standing rule 6 is deliberate
+
+Standing rule 6 asks for a visible window so runs can be watched. Every headless launch
+today has passed the photometry gate; a windowed launch has now failed it by 14%. A window
+that changes the image the network sees by 14% is not a viewing convenience, it is a
+second copy of the defect that cost this study two rebuilds.
+
+So the campaign runs headless. **The runs are not watchable, and that is the price of the
+frames being comparable.** Recorded here rather than taken silently, and reversible the
+moment the trigger is identified.
+
+### What this validates
+
+`scripts/check_render_photometry.py` was written after the fact for T06-F42, on the
+argument that the determinism preflight verifies the launch and `verify_condition` reads
+the weather struct, and neither looks at brightness. It has now stopped the exact defect
+it was written for, at server launch, before any frame reached a dataset -- which is the
+only place it could have been stopped.
