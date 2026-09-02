@@ -240,8 +240,8 @@ teacher_gate() {   # teacher_gate <logname>
 #
 # Declared here rather than buried in a flag so a reader can see what sample each policy
 # was built on without reading the collection stage.
-CLEAR_LAPS=${CLEAR_LAPS:-3}
-MIXED_LAPS=${MIXED_LAPS:-3}
+CLEAR_LAPS=${CLEAR_LAPS:-6}
+MIXED_LAPS=${MIXED_LAPS:-6}
 
 # STUDENT DAGGER ROUND BUDGET. Was 3, and 3 was cutting it off mid-improvement: the clear
 # student's own full-lap gate went 12.29 ft (distilled) -> 4.28 ft after two rounds, still
