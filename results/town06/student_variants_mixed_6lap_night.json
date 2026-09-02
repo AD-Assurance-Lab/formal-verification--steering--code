@@ -1,0 +1,39 @@
+{
+  "weather": "night",
+  "reps": 3,
+  "budget_ft": 2.1916011199999996,
+  "results": {
+    "S_mixed_t06lap_168x56_w4": [
+      {
+        "max_cte_ft": 7.78,
+        "over": 0.022000000000000002,
+        "steps": 1180,
+        "full_steps": 1280,
+        "departed": false,
+        "passed": false,
+        "rep": 0,
+        "sec": 41.0
+      },
+      {
+        "max_cte_ft": 7.88,
+        "over": 0.026000000000000002,
+        "steps": 1180,
+        "full_steps": 1280,
+        "departed": false,
+        "passed": false,
+        "rep": 1,
+        "sec": 42.4
+      },
+      {
+        "max_cte_ft": 9.83,
+        "over": 0.024,
+        "steps": 1180,
+        "full_steps": 1280,
+        "departed": false,
+        "passed": false,
+        "rep": 2,
+        "sec": 39.6
+      }
+    ]
+  }
+}
