@@ -91,6 +91,39 @@ def route_is_closed(route, tol_m=CLOSURE_TOL_M):
                            float(route[0][1] - route[-1][1])) <= tol_m)
 
 
+def arc_lengths(route):
+    """Cumulative arc length along a route, in metres. ONE definition.
+
+    A route array is (N, 2) on Town04 and (N, 3) on the Town06 lap, where the third
+    column is YAW IN DEGREES. Every caller that wrote
+    `np.linalg.norm(np.diff(route, axis=0), axis=1)` therefore measured a distance in a
+    mixed metres-and-degrees space on the lap and a correct one on Town04 -- so the bug
+    is invisible on the map with published results and silent on the one being measured.
+
+    Found three times in three files before it was given a name:
+
+      * capture_offset_yaw.py: the lap's length read 5,299 m instead of 2,289 m, so every
+        metres-along-the-route lookup landed at ~40% of the distance it named.
+      * evaluate.py: `travelled_m` accrued 4.62 m per route index instead of 2.00, so the
+        scored-distance cap tripped at 1,006 m of a 2,289 m lap -- 44% -- and every run
+        stopped there with the vehicle still on the road. The clear student was declared
+        COMPETENT on that.
+      * certify_sustained_bound.py: harmless today only because Town04's routes are (N, 2).
+
+    Take x and y. Nothing else is a position.
+    """
+    xy = np.asarray(route, dtype=float)[:, :2]
+    if len(xy) < 2:
+        return np.zeros(len(xy))
+    return np.concatenate([[0.0], np.cumsum(np.linalg.norm(np.diff(xy, axis=0), axis=1))])
+
+
+def route_length_m(route):
+    """Total arc length of a route, in metres."""
+    a = arc_lengths(route)
+    return float(a[-1]) if len(a) else 0.0
+
+
 def lap_finished(route, hint, margin=2):
     """Has the vehicle reached the usable end of an OPEN route?
 

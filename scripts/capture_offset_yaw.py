@@ -125,7 +125,7 @@ def main():
     # difference of the redo, not a defect: it is the same road, sampled from the
     # definition of the road rather than from one drive along it.
     if True:
-        from route import load_route
+        from route import load_route, arc_lengths, route_length_m
         rt = np.asarray(load_route(args.direction), dtype=float)
         dx = np.diff(rt[:, 0], append=rt[0, 0])
         dy = np.diff(rt[:, 1], append=rt[0, 1])
@@ -165,8 +165,7 @@ def main():
         # pursuit and excluded from every CTE. Capturing the geometry would certify 170 m
         # of intersection that no closed-loop cell scores -- the same error as Town04's
         # 181 m ODD-boundary tail, in the same direction, on the other map.
-        seg = np.linalg.norm(np.diff(np.asarray(xy, dtype=float), axis=0), axis=1)
-        geom = float(seg.sum())
+        geom = route_length_m(xy)
         scored = C.scored_len_m(args.direction) or geom
         args.length_m = min(scored, geom)
         note = "" if abs(geom - args.length_m) < 1.0 else \
@@ -175,7 +174,7 @@ def main():
               f"{args.length_m:.0f} m{note}", flush=True)
     if len(xy) < 2:
         sys.exit(f"no poses for direction '{args.direction}' -- refusing to capture")
-    d = np.concatenate([[0], np.cumsum(np.linalg.norm(np.diff(xy, axis=0), axis=1))])
+    d = arc_lengths(xy)
 
     # SAMPLE THE SCORED ROAD, NOT THE ROUTE.
     #

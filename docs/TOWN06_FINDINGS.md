@@ -2725,3 +2725,80 @@ because nothing looked at the labels.
 `clear_t06lap`, `mixed_t06lap`, `dagger_clear_t06lap` and the clear teacher trained on
 them, all collected earlier the same day. Archived, not deleted. No certificate exists and
 no cell has been scored.
+
+## T06-F44  Every evaluate.py run on the lap stopped at 44% of it, and the competence gate called that a PASS
+
+The mixed student failed the clear-weather competence gate at 17.88 ft. Chasing that
+turned up something worse about the gate itself.
+
+### The measurement that did not add up
+
+Driving the DISTILLED mixed student, `scripts/compare_student_variants.py`:
+
+    lap1  max|CTE| 12.46 ft  steps 511
+    lap2  max|CTE|  4.33 ft  steps 510
+
+511 steps of a 1,280-step lap, twice, within one step of each other. The trace says the
+run did not depart -- at its final recorded step the vehicle is at **0.52 ft of CTE, on
+the road, at 20.0 mph**, with the network and the expert commanding almost the same
+steering. It is not a policy leaving the road. It is the measurement stopping.
+
+Neither stop condition explains it. The vehicle is 982 m from the start, so the
+loop-closure test (`left_start and d0 < 12`) cannot fire; the route index is 501 of
+1,147, so `lap_finished` cannot fire; speed is 20 mph and |CTE| is 0.5 ft, so neither
+the stall nor the off-road counter can fire.
+
+### The cause
+
+`drive_nn` bounds a run by distance as well as by steps -- correctly, and for a good
+reason recorded in its own comment (a step cap is the wrong instrument for a distance
+bound, and runs were overshooting section boundaries). It computed that distance as
+
+    seg_len = np.linalg.norm(np.diff(route, axis=0), axis=1)
+
+**The Town06 lap's route array is (N, 3) and the third column is YAW IN DEGREES.** So
+`seg_len` averages 4.62 "m" per index instead of 2.00, `travelled_m` accrues 2.3x too
+fast, and the cap at `SECTION_LEN_M = 2,289 m` trips at route index 501 -- **1,006 m of
+the 2,289 m lap, 44%**.
+
+    at route index 501:  true arc 1,006 m,  yaw-inflated arc 2,478 m
+
+Town04's routes are (N, 2), so the same line is correct there. The defect is invisible on
+the map that has published results and silent on the one being measured.
+
+### What it invalidates
+
+**The clear student's COMPETENT verdict.** It was measured over the first 1,006 m of the
+lap, three times, and the last 1,283 m -- including the 1,700 m region where the clear
+TEACHER takes its own worst |CTE| -- was never driven. `results/town06/competence_clear.json`
+from 10:29 is withdrawn.
+
+Everything else built on `evaluate.py` on this lap is truncated the same way, including
+the driven traces `capture_gate_drives.py` produces for the A-3 capture gate: the gate
+matches captured poses to driven poses and keeps those within 2 m, so it would have
+gated on the first 44% of the road and reported a pass over `keep.sum()` poses without
+saying which road they were.
+
+No scored ledger cell and no certificate exists, so nothing downstream is affected.
+
+### The third instance of one defect
+
+This is the same defect as the capture rig's, in a different file, found four hours
+later:
+
+| file | symptom |
+|---|---|
+| `capture_offset_yaw.py` | the lap measured 5,299 m instead of 2,289 m, so every metres-along-the-route lookup landed at ~40% of the distance it named |
+| `evaluate.py` | `travelled_m` accrued 2.3x too fast; every run stopped at 44% of the lap with the vehicle still on the road |
+| `certify_sustained_bound.py` | harmless today only because Town04's routes are (N, 2) |
+
+Each caller computed arc length for itself. That is the whole cause: there was no
+definition of "how long is this route" to be wrong in only one place.
+
+### Fixed
+
+`route.arc_lengths()` and `route.route_length_m()` -- x and y only, one definition, used
+by the driver and the capture rig. `tests/test_route_arc_length.py` asserts that a wild
+third column cannot change a route's length, that the lap measures its declared 2,289 m,
+and -- by source inspection -- that no driver measures a route distance over every column
+again.
