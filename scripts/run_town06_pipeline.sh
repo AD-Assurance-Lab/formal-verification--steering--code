@@ -59,20 +59,22 @@ carla_up() {
 # unattended run that is a certainty, not a risk, so the driver restarts it rather than
 # losing the campaign to it.
 carla_restart() {
+    # DELEGATE. This used to be a second launcher written out inline, and it drifted:
+    # it once lacked -notexturestreaming (D-3), which would have relaunched a
+    # non-compliant server part-way through an unattended multi-hour campaign and made
+    # every stage after the first restart quietly noisier than the ones before it.
+    #
+    # Adding the flag back fixed that instance and left the class of defect in place. A
+    # copy of the launch sequence cannot inherit anything added to the real one, and
+    # something WAS added: scripts/carla_launch.sh now checks render photometry on every
+    # fresh server (T06-F42, where a 15% render drift went unnoticed for half a day and
+    # both teachers trained on it). This copy would have skipped that check for every
+    # restart the unattended driver makes -- which is most of them.
     say "restarting CARLA on port $CARLA_PORT"
-    pkill -f "[C]arlaUE4-Linux-Shipping.*rpc-port=$CARLA_PORT" 2>/dev/null
-    sleep 8
-    # -notexturestreaming is REQUIRED (carla-determinism D-3) and this inline restart
-    # is a second launcher, so it can drift from scripts/carla_restart.sh. It already
-    # did: this line lacked the flag, which would have relaunched a non-compliant server
-    # part-way through an unattended multi-hour campaign and silently made every stage
-    # after the first restart noisier than the ones before it. Exactly the failure the
-    # preflight exists to catch, arriving from inside our own driver.
-    ( cd "$CARLA_ROOT" && setsid nohup ./CarlaUE4.sh -carla-rpc-port="$CARLA_PORT" \
-        -RenderOffScreen -quality-level=Epic -notexturestreaming \
-        >>"$CARLA_LOG" 2>&1 < /dev/null & )
-    if carla_up 60; then say "CARLA back up"; sleep 10; return 0; fi
-    say "FATAL: CARLA did not come back on port $CARLA_PORT"
+    if bash "$REPO/scripts/carla_restart.sh" >>"$LOG_DIR/pipeline_restart.log" 2>&1; then
+        say "CARLA back up"; return 0
+    fi
+    say "FATAL: CARLA did not come back on port $CARLA_PORT (see pipeline_restart.log)"
     return 1
 }
 
@@ -248,7 +250,7 @@ else say "SKIP  dagger_clear_t06lap"; teacher_gate dagger_clear_t06lap || exit 1
 fp_guard "$DATA/mixed_t06lap" mixed_t06lap || exit 1
 if [ ! -f "$DATA/mixed_t06lap/manifest.csv" ]; then
     run collect_mixed_t06lap python3 collect_data.py --dataset mixed_t06lap \
-        --weathers clear,fog,night,shadows --laps 3 --direction all || exit 1
+        --weathers clear,fog,night,low_sun --laps 3 --direction all || exit 1
     fp_stamp "$DATA/mixed_t06lap"
 else say "SKIP  collect_mixed_t06lap (fingerprint matches)"; fi
 

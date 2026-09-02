@@ -37,9 +37,9 @@ REFERENCE = {
     "clear":   dict(mean=0.3039, sigma=0.0636, p01=0.0471),
     "fog":     dict(mean=0.2803, sigma=0.0601, p01=0.1804),
     "night":   dict(mean=0.2002, sigma=0.1380, p01=0.0000),
-    "shadows": dict(mean=0.1842, sigma=0.0559, p01=0.0157),
+    "low_sun": dict(mean=0.1842, sigma=0.0559, p01=0.0157),
 }
-CONDITIONS = ("clear", "fog", "night", "shadows")
+CONDITIONS = ("clear", "fog", "night", "low_sun")
 
 
 def main(sections=None):

@@ -141,10 +141,8 @@ def main():
                 break
 
         want = env.canonical_condition(args.condition)
-        # condition_signature still speaks the pre-rename vocabulary for low sun.
-        want_label = "shadows" if want == "low_sun" else want
-        frac_as_self = float(np.mean([l == want_label for l in labels]))
-        misread = sorted({l for l in labels if l != want_label})
+        frac_as_self = float(np.mean([l == want for l in labels]))
+        misread = sorted({l for l in labels if l != want})
 
         out = dict(
             condition=want, sun_azimuth=sun_az,

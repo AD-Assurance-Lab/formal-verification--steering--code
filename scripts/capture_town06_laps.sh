@@ -30,7 +30,7 @@ echo "sections: $SECTIONS"
 for SEC in $SECTIONS; do
   LEN=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(f\"{C.SECTION_LEN_M['$SEC']:.1f}\")")
   POSES=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(C.steps_for('$SEC'))")
-  for COND in clear fog night shadows; do
+  for COND in clear fog night low_sun; do
     OUT="results/town06/captures/lap_${SEC}_${COND}.npz"
     if [ -f "$REPO/$OUT" ]; then echo "SKIP  $OUT"; continue; fi
     echo "[$(date '+%F %T')] capture $SEC/$COND  (${LEN} m, ${POSES} poses)"
