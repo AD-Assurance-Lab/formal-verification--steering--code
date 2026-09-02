@@ -36,7 +36,8 @@ sys.path.insert(0, str(REPO / "pipeline"))
 import carla  # noqa: E402
 import carla_env as env  # noqa: E402
 import config as C  # noqa: E402
-from route import load_route, signed_cte_route, pure_pursuit_route  # noqa: E402
+from route import (load_route, signed_cte_route, pure_pursuit_route,  # noqa: E402
+                   lap_finished)
 from student import StudentNet, student_preprocess  # noqa: E402
 
 # Map-scoped, and now REDO-scoped. Town04 keeps results/ledger; the Town06 deployment
@@ -278,6 +279,23 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps,
         if in_bridge:
             steer, _, _ = pure_pursuit_route(route, tf, hint)
             n_bridged += 1
+
+        # STOP AT THE END OF AN OPEN ROUTE, BEFORE SCORING THIS STEP.
+        #
+        # The lap ends here and the loop-closure test below cannot fire (start and end
+        # are 174 m apart), so the only other bound is the STEP budget -- and steps_for()
+        # runs slightly hot. evaluate.py carries a distance cap for exactly this reason:
+        # "runs overshot: fog failures on s02 peaked at 639 m and 634 m of a 628 m
+        # section ... the excursion it finds there was being recorded as that section's
+        # max |CTE|". gate_teacher_lap.py stops at `hint >= n_route - 2` and records what
+        # happens without it: "max|CTE| came out 75 ft while only 1.2% of steps were over
+        # a 2.19 ft budget, which is not a policy that leaves the road -- it is a
+        # measurement running off the end of its own reference."
+        #
+        # Both fixes were applied to loops that measure a policy for DIAGNOSIS. This is
+        # the loop that produces the SCORED RESULT, and it had neither.
+        if lap_finished(route, hint):
+            break
 
         if cte is not None and not in_bridge:
             ctes.append(abs(cte))
