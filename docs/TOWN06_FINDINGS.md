@@ -2631,3 +2631,97 @@ it, reported by the DAgger driver as "restart failed before gate lap N" -- which
 a 12-lap gate that was passing at the time. Round 13 died that way with 5 of 5 laps passed.
 Now fixed: a candidate must be a python interpreter AND must not be this script or any of
 its ancestors.
+
+## T06-F43  Every collected lap ended with a garbage expert LABEL, because an open route has no loop to close
+
+Found on the first mixed collection of the rebuild, before its teacher was trained.
+
+`collect_data.py` reported the mixed set's steering range as `[-0.754, 0.079]` where the
+clear set's was `[-0.086, 0.079]`. The expert is pure pursuit driving from GROUND-TRUTH
+pose and never reads the camera, so a steering label that depends on the weather is
+impossible by construction. It was not the weather.
+
+### The measurement
+
+Every outlier is in the last three steps of a lap, at the route's end point, with the
+vehicle perfectly on the line:
+
+    low_sun/lap1  step 1277  steer -0.754  |CTE| 0.002 m  speed 20.0
+    fog/lap2      step 1278  steer -0.639  |CTE| 0.001 m  speed 20.0
+    night/lap0    step 1277  steer -0.623  |CTE| 0.001 m  speed 20.0
+
+13 frames of 15,360, at steps 1277, 1278 and 1279 only. The steering column across the
+last six steps of every lap:
+
+    weather/lap      1274     1275     1276     1277     1278     1279
+    clear/0        -0.045   -0.016   -0.002    0.028   -0.030   -0.010
+    fog/0          -0.030    0.007    0.037   -0.546   -0.058   -0.111
+    night/0        -0.030    0.007    0.036   -0.623   -0.059   -0.116
+    low_sun/1      -0.030    0.007    0.037   -0.754   -0.061   -0.116
+
+### The cause
+
+Every driving loop ends a lap with the same test: leave the start, then come back to it.
+
+    d0 = loc.distance(start)
+    if d0 > 50.0: left_start = True
+    if left_start and d0 < 12.0: break
+
+**On an open route that test can never fire.** The Town06 lap's start and end are 174 m
+apart -- the route was cut before a double intersection outside the ODD -- so the loop
+runs to its step budget instead and drives past the last vertex, where pure pursuit's
+lookahead is clamped onto the final point (`_step_idx` clamps rather than wraps on an
+open route, correctly) and the commanded steering degenerates.
+
+Whether a given lap reaches that vertex within its step budget depends on millimetres of
+accumulated pose, which is why the clear laps escaped and the others did not. That is
+also why it looked like a weather effect.
+
+`gate_teacher_lap.py` already stopped at `hint >= n_route - 2`, and its comment says why:
+"STOP AT THE END OF THE ROUTE, not a step count with slack ... The lap is open (start and
+end are 171 m apart), so there is no wrap to absorb it." The fix was applied to the loop
+that MEASURES a policy and not to the three that BUILD one -- the same shape as T06-F41's
+bridging omission, where evaluate.py and the ledger bridged the intersections and
+dagger.py did not.
+
+### Why 0.08% of frames is worth a rebuild
+
+They are behaviour-cloning LABELS, not measurements; they are all at ONE place; and that
+place is the end of the scored road. A policy trained on them learns to jerk in the last
+few metres of every lap -- and would then be diagnosed as "the teacher cannot hold the end
+of the lap", which is exactly the kind of story this study has spent a week not telling
+itself again.
+
+The cost of not fixing it is a defect at the boundary of the scored region in every
+dataset and every DAgger round, forever. The cost of fixing it was 35 minutes of clear
+teacher.
+
+### Fixed
+
+`route.lap_finished(route, hint, margin=2)` -- one definition, true only on an OPEN route,
+so Town04's closed loop is unaffected and its behaviour is byte-for-byte unchanged.
+Called by `collect_data.py`, `dagger.py` and `dagger_student.py` **before the frame is
+written**, so the bad frame is never recorded rather than recorded and filtered.
+
+`scripts/audit_training_data.py` now flags any expert label above 0.25 -- pure pursuit
+commands at most ~0.09 on these routes at 20 mph, so an order of magnitude above that is
+the lookahead degenerating, not a corner. It is checked on the DATA, not on the source.
+
+### It was never lap-specific
+
+Running that check over the archive shows the same signature in the SIX-SECTION era
+datasets, at the end of individual sections:
+
+    clear_t06  clear/s00/lap3   max |steer| 0.337
+    mixed_t06  fog/s02/lap0     max |steer| 0.268   (2 frames)
+    mixed_t06  night/s00/lap1   max |steer| 0.336
+
+Those are superseded for a different reason (the route) and are not being repaired. But
+the defect predates the lap, survived A-2's full recollection, and was never visible
+because nothing looked at the labels.
+
+### What it invalidates
+
+`clear_t06lap`, `mixed_t06lap`, `dagger_clear_t06lap` and the clear teacher trained on
+them, all collected earlier the same day. Archived, not deleted. No certificate exists and
+no cell has been scored.

@@ -37,6 +37,21 @@ MPH_TO_MS = 0.44704
 SPEED_AGREEMENT_FLOOR = 0.80      # actual/reported below this is the degradation tell
 LENGTH_FLOOR = 0.80               # of the section's scored length
 
+# A LABEL THE EXPERT COULD NOT HAVE MEANT.
+#
+# Pure pursuit on this study's routes commands at most ~0.09 at 20 mph; the physical
+# demand of the tightest curve is far below the actuator limit. A label an order of
+# magnitude above that is not a hard corner, it is the lookahead degenerating -- on the
+# open Town06 lap it clamps onto the final vertex and the label blows up while |CTE| is
+# 0.001 m, i.e. the car is perfectly on the line. 13 of 15,360 frames, all in the last
+# three steps of a lap, all at the route end.
+#
+# 0.08% of a dataset sounds ignorable and is not: they are behaviour-cloning LABELS, they
+# are all at ONE place, and that place is the end of the scored road. route.lap_finished()
+# stops the collectors before recording them; this is the check that says so on the data
+# rather than on the source.
+STEER_LABEL_CEILING = 0.25
+
 
 def audit(ds_dir):
     man = ds_dir / "manifest.csv"
@@ -59,7 +74,10 @@ def audit(ds_dir):
         ratio = actual / reported if reported > 1e-6 else float("nan")
         want = getattr(C, "SECTION_LEN_M", {}).get(key[1])
         cover = path / want if want else float("nan")
-        rows.append((key, len(recs), path, actual, reported, ratio, cover))
+        st = np.array([abs(float(r["steer"])) for r in recs])
+        n_wild = int((st > STEER_LABEL_CEILING).sum())
+        rows.append((key, len(recs), path, actual, reported, ratio, cover, n_wild,
+                     float(st.max())))
     return rows
 
 
@@ -73,9 +91,12 @@ def main():
             continue
         print(f"\n{ds.name}  ({len(rows)} laps)")
         print(f"  {'weather':8s} {'sec':6s} {'lap':4s} {'frames':>7s} {'path m':>8s} "
-              f"{'actual':>7s} {'report':>7s} {'ratio':>6s} {'cover':>6s}")
-        for key, n, path, actual, reported, ratio, cover in rows:
+              f"{'actual':>7s} {'report':>7s} {'ratio':>6s} {'cover':>6s} {'|st|max':>8s}")
+        for key, n, path, actual, reported, ratio, cover, n_wild, st_max in rows:
             flag = ""
+            if n_wild:
+                flag += f"  <-- {n_wild} WILD LABEL(S), max |steer| {st_max:.3f}"
+                bad.append((ds.name, key, "steer_label", st_max))
             if ratio == ratio and ratio < SPEED_AGREEMENT_FLOOR:
                 flag += "  <-- SPEED DISAGREES"
                 bad.append((ds.name, key, "speed", ratio))
@@ -84,11 +105,11 @@ def main():
                 bad.append((ds.name, key, "length", cover))
             print(f"  {key[0]:8s} {key[1]:6s} {key[2]:4s} {n:7d} {path:8.0f} "
                   f"{actual:7.2f} {reported:7.2f} {ratio:6.2f} "
-                  f"{cover if cover == cover else float('nan'):6.2f}{flag}")
+                  f"{cover if cover == cover else float('nan'):6.2f} {st_max:8.3f}{flag}")
 
     print("\n" + "=" * 70)
     if bad:
-        print(f"  {len(bad)} lap(s) carry the degraded-server signature:")
+        print(f"  {len(bad)} lap(s) carry a defect signature:")
         for ds, key, kind, val in bad[:20]:
             print(f"    {ds} {key} {kind}={val:.2f}")
         print("\n  These datasets should be recollected before anything trained on them\n"

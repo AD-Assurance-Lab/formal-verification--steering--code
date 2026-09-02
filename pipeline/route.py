@@ -91,6 +91,34 @@ def route_is_closed(route, tol_m=CLOSURE_TOL_M):
                            float(route[0][1] - route[-1][1])) <= tol_m)
 
 
+def lap_finished(route, hint, margin=2):
+    """Has the vehicle reached the usable end of an OPEN route?
+
+    On a CLOSED route the lap ends when the vehicle returns to its start, and every
+    driving loop tests that with `left_start and distance_to_start < 12 m`.
+
+    ON AN OPEN ROUTE THAT TEST CAN NEVER FIRE. The Town06 lap's start and end are 174 m
+    apart, so the loop runs to its step budget instead and drives past the last vertex --
+    where pure pursuit's lookahead is clamped onto the final point and the commanded
+    steering degenerates. Measured on the mixed collection: 13 of 15,360 frames carried
+    |steer| up to 0.754 against a lap maximum of 0.086, every one of them in the last
+    three steps, at the route's end point, with |CTE| of 0.001 m. The vehicle was
+    perfectly on the line and the EXPERT LABEL was garbage.
+
+    That is 0.08% of frames, and it is not harmless: they are all at one place, they are
+    behaviour-cloning LABELS, and the place is the end of the scored road. A policy
+    trained on them learns to jerk in the last few metres of every lap.
+
+    gate_teacher_lap.py already stopped at `hint >= n_route - 2` for exactly this reason.
+    The collectors did not, so every dataset and every DAgger round carried it.
+
+    `margin` is the number of trailing vertices treated as unusable, matching the gate.
+    """
+    if hint is None or route_is_closed(route):
+        return False
+    return int(hint) >= len(route) - int(margin)
+
+
 def _step_idx(route, i, k):
     """Advance index i by k vertices: wrapping on a closed route, clamped on an
     open one so we never aim at, or measure against, the far side of the gap."""

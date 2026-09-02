@@ -1,0 +1,32 @@
+manifests=1 total=15360 train=13060 val=2300 | balance=False augment=False | device=cuda
+  epoch   0 | train 2.351e-03 | val 4.964e-04 | rmse 0.0223 *
+  epoch   4 | train 5.511e-04 | val 4.510e-04 | rmse 0.0212 *
+  epoch   6 | train 5.049e-04 | val 4.216e-04 | rmse 0.0205 *
+  epoch   7 | train 4.852e-04 | val 3.769e-04 | rmse 0.0194 *
+  epoch   8 | train 4.395e-04 | val 3.146e-04 | rmse 0.0177 *
+  epoch   9 | train 3.475e-04 | val 2.067e-04 | rmse 0.0144 *
+  epoch  10 | train 2.901e-04 | val 2.401e-04 | rmse 0.0155
+  epoch  12 | train 2.662e-04 | val 1.673e-04 | rmse 0.0129 *
+  epoch  14 | train 2.519e-04 | val 1.616e-04 | rmse 0.0127 *
+  epoch  15 | train 2.393e-04 | val 1.469e-04 | rmse 0.0121 *
+  epoch  16 | train 2.447e-04 | val 1.411e-04 | rmse 0.0119 *
+  epoch  20 | train 2.195e-04 | val 1.384e-04 | rmse 0.0118 *
+  epoch  21 | train 2.183e-04 | val 1.277e-04 | rmse 0.0113 *
+  epoch  25 | train 2.206e-04 | val 1.247e-04 | rmse 0.0112 *
+  epoch  26 | train 2.065e-04 | val 1.195e-04 | rmse 0.0109 *
+  epoch  30 | train 2.012e-04 | val 1.288e-04 | rmse 0.0113
+  epoch  31 | train 2.029e-04 | val 1.183e-04 | rmse 0.0109 *
+  epoch  33 | train 1.956e-04 | val 1.160e-04 | rmse 0.0108 *
+  epoch  34 | train 2.033e-04 | val 1.110e-04 | rmse 0.0105 *
+  epoch  39 | train 1.918e-04 | val 1.058e-04 | rmse 0.0103 *
+  epoch  40 | train 1.889e-04 | val 1.120e-04 | rmse 0.0106
+  epoch  47 | train 1.700e-04 | val 9.735e-05 | rmse 0.0099 *
+  epoch  50 | train 1.533e-04 | val 1.140e-04 | rmse 0.0107
+  epoch  52 | train 1.242e-04 | val 8.713e-05 | rmse 0.0093 *
+  epoch  54 | train 8.270e-05 | val 5.561e-05 | rmse 0.0075 *
+  epoch  58 | train 8.082e-05 | val 5.356e-05 | rmse 0.0073 *
+  epoch  59 | train 7.305e-05 | val 5.100e-05 | rmse 0.0071 *
+  epoch  60 | train 8.702e-05 | val 8.488e-05 | rmse 0.0092
+  epoch  65 | train 8.297e-05 | val 4.798e-05 | rmse 0.0069 *
+  epoch  66 | train 8.201e-05 | val 4.641e-05 | rmse 0.0068 *
+  epoch  70 | train 7.096e-05 | val 4.270e-05 | rmse 0.0065 *

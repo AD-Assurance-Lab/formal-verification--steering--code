@@ -24,7 +24,8 @@ import carla  # noqa: E402
 
 import config as C  # noqa: E402
 import carla_env as env  # noqa: E402
-from route import load_route, signed_cte_route, pure_pursuit_route  # noqa: E402
+from route import (load_route, signed_cte_route, pure_pursuit_route,  # noqa: E402
+                   lap_finished)
 
 # Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).
 SPAWNS = C.SPAWNS
@@ -58,6 +59,20 @@ def collect_lap(world, world_map, vehicle, img_queue, weather, direction, lap, o
         loc = tf.location
         cte, hint = signed_cte_route(route, loc.x, loc.y, hint)
         steer, steer_rad, _ = pure_pursuit_route(route, tf, hint)  # label[t]
+
+        # STOP AT THE END OF AN OPEN ROUTE, BEFORE RECORDING.
+        #
+        # The loop-closure test below cannot fire on the Town06 lap (start and end are
+        # 174 m apart), so this ran to its step budget and drove past the last vertex,
+        # where pure pursuit's lookahead is clamped onto the final point and the label
+        # degenerates. Measured on the mixed collection: 13 of 15,360 frames carried
+        # |steer| up to 0.754 against a lap maximum of 0.086, all in the last three
+        # steps, at |CTE| 0.001 m -- perfectly on the line, and the label garbage.
+        # The break is BEFORE the write, so the bad frame is never recorded at all.
+        if lap_finished(route, hint):
+            print(f"    reached the end of the open route at step {step} "
+                  f"({len(rows)} frames)")
+            break
 
         rel = os.path.join(seg, "frames", f"{step:05d}.png")
         cv2.imwrite(os.path.join(out_dir, rel), env.raw_to_bgr(image))
