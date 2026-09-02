@@ -192,6 +192,27 @@ def main():
     ap.add_argument("--h", type=int, default=28)
     ap.add_argument("--rounds", type=int, default=3)
     ap.add_argument("--epochs", type=int, default=120)
+    # RE-DISTIL FROM SCRATCH BY DEFAULT.
+    #
+    # Warm-starting each round from the previous student was described as stabilising the
+    # multi-condition re-distill. Measured on the Town06 lap it does the opposite, and
+    # catastrophically: ONE warm-started round took the mixed student's output magnitude
+    # from 0.0591 to 0.0143 against a teacher at 0.0615 -- it stopped steering -- and the
+    # same collapse reproduced at three architectures (w3/168x28, w4/168x28, w4/168x56).
+    # Twelve further rounds never recovered.
+    #
+    # Distilling the SAME data from scratch instead: fog 10.90 ft -> 2.83 ft, over-budget
+    # 8.7% -> 0.9%. The student-DAgger DATA was helping the whole time; the warm start was
+    # destroying the model that consumed it.
+    #
+    # The likely mechanism, and the reason the flag survives rather than the behaviour:
+    # 83.8% of this lap needs |steer| <= 0.01, so a near-zero predictor scores well on the
+    # validation KD-MSE that selects the checkpoint. From a random init the optimiser does
+    # not find that basin; starting inside it, 120 epochs at a reduced learning rate does
+    # not leave.
+    ap.add_argument("--warm-start", action="store_true",
+                    help="re-distil each round from the previous student instead of from "
+                         "scratch (measured harmful on Town06; see T06-F50)")
     ap.add_argument("--lr", type=float, default=5e-4,
                     help="LR for warm-start re-distill (gentle fine-tune from prior student)")
     ap.add_argument("--max-steps", type=int, default=2000)
@@ -396,14 +417,17 @@ def main():
                 distill_student(args.w, args.h, new, teacher_name=args.teacher,
                                 base=args.base, dagger_dirs=distill_dirs,
                                 weathers=weathers, channels=channels, fc=args.fc,
-                                init_from=current, lr=args.lr, epochs=args.epochs,
+                                init_from=(current if args.warm_start else None),
+                                lr=args.lr, epochs=args.epochs,
                                 quiet=True, balance=args.balance)
                 break
             new = f"{args.student}_dagger_r{r:02d}"
-            print(f"  re-distilling (warm-start from '{current}') -> {new}", flush=True)
+            print(f"  re-distilling ({'warm-start from ' + current if args.warm_start else 'FROM SCRATCH'}) "
+                  f"-> {new}", flush=True)
             distill_student(args.w, args.h, new, teacher_name=args.teacher, base=args.base,
                             dagger_dirs=distill_dirs, weathers=weathers, channels=channels, fc=args.fc,
-                            init_from=current, lr=args.lr, epochs=args.epochs, quiet=True, balance=args.balance)
+                            init_from=(current if args.warm_start else None),
+                            lr=args.lr, epochs=args.epochs, quiet=True, balance=args.balance)
             model = load_student(new, args.w, args.h, device, channels=channels, fc=args.fc)
             current = new
     finally:
