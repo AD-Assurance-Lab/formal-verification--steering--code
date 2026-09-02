@@ -105,6 +105,17 @@ for r in $(seq 1 "$ROUNDS"); do
     # the checkpoint is written -- so require positive evidence that this invocation
     # actually advanced, exactly as the teacher driver does.
     NOW=$(n_rounds)
+    # THE BUDGET BEING MET IS SUCCESS, NOT A STALLED ROUND.
+    #
+    # This checked "did this invocation add a round?" before checking "is the budget
+    # already met?", so the run that completed round 12 of 12 was followed by one more
+    # invocation which correctly did nothing -- and that was reported as
+    # "no new round on disk (12 -> 12) ... stopping", exit 3, and the pipeline failed a
+    # stage whose twelve rounds were all on disk and all trained.
+    if [ "$NOW" -ge "$ROUNDS" ]; then
+        say "  budget of $ROUNDS round(s) met ($NOW on disk)"
+        break
+    fi
     if [ "$NOW" -le "$HAVE" ]; then
         say "  no new round on disk ($HAVE -> $NOW); not pretending otherwise -- stopping"
         exit 3
