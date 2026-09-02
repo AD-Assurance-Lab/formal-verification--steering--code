@@ -1,0 +1,101 @@
+[2026-09-02 07:29:53] round attempt 1/12
+base datasets: ['clear_t06lap']
+  server is 56s old: world is already fresh, skipping reload
+
+################################################################
+# DAgger round 0 — evaluating policy 'teacher_clear_t06lap_bc'
+################################################################
+    lap: aborted at step 368 (stall/offroad)
+  [clear/lap] over-budget= 66.4%  max|CTE|=19.33ft  (gate 2.19ft) -> FAIL
+  collected 369 frames at beta=0.00
+
+Round budget of 1 spent without passing (last policy 'teacher_clear_t06lap_bc'); training this round, then exiting.
+  aggregating 2 manifests, warm-start from 'teacher_clear_t06lap_bc' -> teacher_clear_t06lap_dagger_r00
+
+===== DAgger summary =====
+  round 0: teacher_clear_t06lap_bc  FAIL
+[2026-09-02 07:32:05]   round exited rc=0
+  server is 56s old: world is already fresh, skipping reload
+  lap 0 clear: max|CTE|  13.14 ft (budget 2.19) over=58.6% at     52 m bridged=0 -> FAIL
+  server is 54s old: world is already fresh, skipping reload
+  lap 1 clear: max|CTE|  13.50 ft (budget 2.19) over=58.6% at     52 m bridged=0 -> FAIL
+  server is 54s old: world is already fresh, skipping reload
+  lap 2 clear: max|CTE|  13.46 ft (budget 2.19) over=58.6% at     52 m bridged=0 -> FAIL
+[2026-09-02 07:35:14]   gate: 0/3 laps passed with teacher_clear_t06lap_dagger_r00
+[2026-09-02 07:35:14] round attempt 2/12
+base datasets: ['clear_t06lap']
+resuming: found 1 prior DAgger round(s) in dagger_clear_t06lap, continuing at round 1
+resuming from 'teacher_clear_t06lap_dagger_r00', the newest policy this run actually trained (round 0); not 'teacher_clear_t06lap_bc'
+  server is 56s old: world is already fresh, skipping reload
+
+################################################################
+# DAgger round 1 — evaluating policy 'teacher_clear_t06lap_dagger_r00'
+################################################################
+  [clear/lap] over-budget= 52.9%  max|CTE|=16.95ft  (gate 2.19ft) -> FAIL
+  collected 1277 frames at beta=0.00
+
+Round budget of 1 spent without passing (last policy 'teacher_clear_t06lap_dagger_r00'); training this round, then exiting.
+  aggregating 3 manifests, warm-start from 'teacher_clear_t06lap_dagger_r00' -> teacher_clear_t06lap_dagger_r01
+
+===== DAgger summary =====
+  round 1: teacher_clear_t06lap_dagger_r00 FAIL
+[2026-09-02 07:37:55]   round exited rc=0
+  server is 55s old: world is already fresh, skipping reload
+  lap 0 clear: max|CTE|   4.88 ft (budget 2.19) over=2.4% at   1698 m bridged=95 -> FAIL
+  server is 54s old: world is already fresh, skipping reload
+  lap 1 clear: max|CTE|   4.28 ft (budget 2.19) over=1.9% at   1696 m bridged=95 -> FAIL
+  server is 61s old: world is already fresh, skipping reload
+  lap 2 clear: max|CTE|   4.33 ft (budget 2.19) over=2.0% at   1696 m bridged=95 -> FAIL
+[2026-09-02 07:42:18]   gate: 0/3 laps passed with teacher_clear_t06lap_dagger_r01
+[2026-09-02 07:42:18] round attempt 3/12
+base datasets: ['clear_t06lap']
+resuming: found 2 prior DAgger round(s) in dagger_clear_t06lap, continuing at round 2
+resuming from 'teacher_clear_t06lap_dagger_r01', the newest policy this run actually trained (round 1); not 'teacher_clear_t06lap_bc'
+  server is 54s old: world is already fresh, skipping reload
+
+################################################################
+# DAgger round 2 — evaluating policy 'teacher_clear_t06lap_dagger_r01'
+################################################################
+  [clear/lap] over-budget=  2.0%  max|CTE|= 4.60ft  (gate 2.19ft) -> FAIL
+  collected 1274 frames at beta=0.00
+
+Round budget of 1 spent without passing (last policy 'teacher_clear_t06lap_dagger_r01'); training this round, then exiting.
+  aggregating 4 manifests, warm-start from 'teacher_clear_t06lap_dagger_r01' -> teacher_clear_t06lap_dagger_r02
+
+===== DAgger summary =====
+  round 2: teacher_clear_t06lap_dagger_r01 FAIL
+[2026-09-02 07:45:11]   round exited rc=0
+  server is 55s old: world is already fresh, skipping reload
+  lap 0 clear: max|CTE|   4.83 ft (budget 2.19) over=0.7% at   1710 m bridged=95 -> FAIL
+  server is 56s old: world is already fresh, skipping reload
+  lap 1 clear: max|CTE|   3.94 ft (budget 2.19) over=0.5% at   1708 m bridged=95 -> FAIL
+  server is 54s old: world is already fresh, skipping reload
+  lap 2 clear: max|CTE|   3.81 ft (budget 2.19) over=0.6% at   1708 m bridged=95 -> FAIL
+[2026-09-02 07:49:29]   gate: 0/3 laps passed with teacher_clear_t06lap_dagger_r02
+[2026-09-02 07:49:29] round attempt 4/12
+base datasets: ['clear_t06lap']
+resuming: found 3 prior DAgger round(s) in dagger_clear_t06lap, continuing at round 3
+resuming from 'teacher_clear_t06lap_dagger_r02', the newest policy this run actually trained (round 2); not 'teacher_clear_t06lap_bc'
+  server is 54s old: world is already fresh, skipping reload
+
+################################################################
+# DAgger round 3 — evaluating policy 'teacher_clear_t06lap_dagger_r02'
+################################################################
+  [clear/lap] over-budget=  0.7%  max|CTE|= 4.56ft  (gate 2.19ft) -> FAIL
+  collected 1274 frames at beta=0.00
+
+Round budget of 1 spent without passing (last policy 'teacher_clear_t06lap_dagger_r02'); training this round, then exiting.
+  aggregating 5 manifests, warm-start from 'teacher_clear_t06lap_dagger_r02' -> teacher_clear_t06lap_dagger_r03
+
+===== DAgger summary =====
+  round 3: teacher_clear_t06lap_dagger_r02 FAIL
+[2026-09-02 07:52:05]   round exited rc=0
+  server is 55s old: world is already fresh, skipping reload
+  lap 0 clear: max|CTE|   0.99 ft (budget 2.19) over=0.0% at   1706 m bridged=95 -> PASS
+  server is 56s old: world is already fresh, skipping reload
+  lap 1 clear: max|CTE|   1.21 ft (budget 2.19) over=0.0% at   1706 m bridged=95 -> PASS
+  server is 55s old: world is already fresh, skipping reload
+  lap 2 clear: max|CTE|   0.97 ft (budget 2.19) over=0.0% at   1706 m bridged=95 -> PASS
+[2026-09-02 07:56:24]   gate: 3/3 laps passed with teacher_clear_t06lap_dagger_r03
+*** LAP GATE PASSED: teacher_clear_t06lap_dagger_r03 (3/3 laps, clean server each) ***
+[2026-09-02 07:56:24] clear teacher PASSED at teacher_clear_t06lap_dagger_r03

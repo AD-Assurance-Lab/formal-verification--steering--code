@@ -228,20 +228,20 @@ teacher_gate() {   # teacher_gate <logname>
 
 # HOW MANY LAPS EACH POLICY'S BASE SET SHOULD HAVE, per condition.
 #
-# Declared here rather than buried in a flag, because it is a lever the study pulls: the
-# students failed clear-weather competence over the FULL lap while both teachers held it
-# (T06-F44): clear 6.57 ft and mixed 17.35 ft against a 2.19 ft budget, teachers 1.21 and
-# 1.62 ft. That is a distillation gap, and T06-F28 names the mechanism -- the distillation
-# set is "67% DAgger recovery data by construction", and "the clear student's relative
-# error was worst precisely because its small base set left the recovery states dominating
-# its distillation mix".
+# THREE. Not a tuning knob: three laps per condition per model is the study's declared
+# sample, the same unit PROTOCOL A-4 makes the repetition everywhere else.
 #
-# The lap's base set was 4 laps = 5,098 frames, against roughly 12,000 in the six-section
-# era where this architecture reached 6/6. 8 laps puts each policy at ~10,192 frames per
-# condition and shifts the mix back toward nominal driving, which is where these students
-# drift. Data before architecture is the study's own precedent (T06-F28).
-CLEAR_LAPS=${CLEAR_LAPS:-8}
-MIXED_LAPS=${MIXED_LAPS:-8}
+# Recorded because it was briefly raised to 8 on the theory that the students' full-lap
+# failures (T06-F44) were a data-volume problem -- T06-F28's "the capacity crisis was the
+# data" read as "collect more". It is not what F28 measured: F28 changed the HARNESS the
+# data came from, not the number of laps. Zach: "we only need 3 laps per condition, per
+# model." The levers for a student that cannot drive are its width and its DAgger rounds,
+# both of which are below.
+#
+# Declared here rather than buried in a flag so a reader can see what sample each policy
+# was built on without reading the collection stage.
+CLEAR_LAPS=${CLEAR_LAPS:-3}
+MIXED_LAPS=${MIXED_LAPS:-3}
 
 # STUDENT DAGGER ROUND BUDGET. Was 3, and 3 was cutting it off mid-improvement: the clear
 # student's own full-lap gate went 12.29 ft (distilled) -> 4.28 ft after two rounds, still
