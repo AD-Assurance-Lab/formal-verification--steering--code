@@ -32,19 +32,29 @@ FROZEN_FROM_TOWN04 = (
 DERIVED_FROM_MAP = ("LANE_WIDTH_M", "CTE_BUDGET_M", "CLOSED_LOOP_TOLERANCE")
 
 STUDENTS = ("S_clear_t06", "S_mixed_t06")
-CONDITIONS = ("clear", "fog", "night", "shadows")
+# THE CONDITION IS low_sun. "shadows" was the code's name for it and never the
+# protocol's; consumers accept both, and nothing new is written under the old one.
+CONDITIONS = ("clear", "fog", "night", "low_sun")
 
-# Town06's outer loop has no dedicated opposing carriageways -- it is a ring whose lanes
-# wrap, so "the opposing carriageway" is a LOCAL property and requiring both directions
-# over one stretch caps usable road at 430 m. The route is therefore a set of disjoint
-# clean SECTIONS instead of one lap driven both ways. Read from the committed route
-# artifact so this module and the route cannot disagree.
+# THE ROUTE IS ONE CONTINUOUS LAP, and this module reads it from the same place the
+# pipeline does.
+#
+# It used to read `sections` out of routes_town06/route_meta.json, which describes the
+# SIX-SECTION route the lap superseded on 2026-08-31. That artifact still exists, so the
+# stale read succeeded and returned ('s00'..'s05') -- and certify_town06.py builds its
+# capture filenames from this tuple, so it would have demanded lap_s00_fog.npz and the
+# other 23 six-section captures, none of which any driver writes any more. The
+# certification stage would have refused with 24 files missing, after every capture had
+# already been taken.
+#
+# Reading config means this module and the route CANNOT disagree, which is what the
+# original comment claimed the route_meta read was for.
 def _sections():
-    import json, os
+    import sys, os
     here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    meta = os.path.join(here, "pipeline", "data", "routes_town06", "route_meta.json")
-    with open(meta) as f:
-        return tuple(x["name"] for x in json.load(f)["sections"])
+    sys.path.insert(0, os.path.join(here, "pipeline"))
+    import config as _C
+    return tuple(_C.SECTIONS)
 
 
 SECTIONS = _sections()
@@ -77,17 +87,17 @@ def expected(student, condition):
 
 
 def cells():
-    """Every cell: (condition, student). Sections are REPETITIONS WITHIN a cell.
+    """Every cell: (condition, student). LAPS are the repetitions within a cell.
 
-    This mirrors Town04 exactly. There, a cell is (condition, student) and the two
-    driven directions are repetitions inside it -- 5 per direction, 10 total. Here the
-    six sections play the same role, 2 reps each for 12 total, comfortably over the
-    MIN_CLOSED_LOOP_REPS floor.
+    PROTOCOL A-4 replaced the arithmetic this docstring used to carry. It said the six
+    sections were repetitions -- "2 reps each for 12 total, comfortably over the
+    MIN_CLOSED_LOOP_REPS floor" -- and A-4 is the finding that this pooled unlike units:
+    a section is a distinct stretch of road, so twelve runs were six different roads
+    sampled twice, and two cells reported 2/12 = 17% when the SAME section had failed in
+    both passes, a 100% failure diluted by five roads that were never in question.
 
-    The alternative -- one cell per (condition, student, section) -- would give 36
-    scored cells and 360 closed-loop runs for no extra information, and would also
-    misreport precision: six sections of one condition are not six independent
-    conditions, any more than Town04's two directions are.
+    A lap is one traversal of all the unique scored road, and the lap is what passes or
+    fails. The route is now a single lap, so a cell is three laps.
     """
     for cond in CONDITIONS:
         for student in STUDENTS:
@@ -99,27 +109,45 @@ def scored_cells():
     return [c for c in cells() if c[0] not in VACUOUS_CELLS]
 
 
-# Repetitions per cell: each section driven this many times. 6 sections x 2 = 12 >= 10.
-REPS_PER_SECTION = 2
+# Repetitions per cell. PROTOCOL A-4: the LAP is the repetition and THREE laps is the
+# standard -- a reproducibility check, not a sample for estimating a rate. Measured on the
+# corrected harness, rep-to-rep verdict disagreement was 0 of 48 section-pairs.
+LAPS_PER_CELL = 3
+REPS_PER_SECTION = LAPS_PER_CELL      # name kept so existing call sites keep working
 
 
 # ── The risk that this experiment is uninformative, declared in advance ─────
-# The Town06 sections total 3874 m against Town04's 5722 m, and several are far
-# straighter (max steering demand 0.000-0.064 against Town04's 0.047). An easier route
-# is easier to hold, so it is possible every cell passes and every cell certifies.
+# Town06's lap is 2,289 m with 2,119 m scored, against Town04's 5,722 m over two
+# directions, and the window is 74-79% straight (R > 500 m) against Town04's 51-56%
+# (PROTOCOL section 4.1). An easier route is easier to hold, so it is possible every
+# cell passes and every cell certifies.
 #
 # If that happens the experiment has measured SENSITIVITY ONLY and not specificity,
 # exactly as the withdrawn rain condition did (4/4, but all four cells shared a
 # verdict). It must be reported that way. Writing it here, before the result, is what
 # stops it being argued about afterwards.
+#
+# The count is COMPUTED. It read "a uniform 16/16", which was never this design's cell
+# count -- there are 3 non-vacuous conditions x 2 students = 6 scored cells -- and a
+# declared risk quoting a number the study cannot produce is one nobody can hold it to.
 DEGENERATE_IF_ALL_AGREE = (
     "If every scored cell returns the same verdict pair, report sensitivity only. "
-    "A uniform 16/16 is NOT evidence that the certificate discriminates."
+    f"A uniform {len(CONDITIONS) - len(VACUOUS_CELLS)} x {len(STUDENTS)} = "
+    f"{(len(CONDITIONS) - len(VACUOUS_CELLS)) * len(STUDENTS)}/"
+    f"{(len(CONDITIONS) - len(VACUOUS_CELLS)) * len(STUDENTS)} is NOT evidence that the "
+    "certificate discriminates."
 )
 
-# Minimum repetitions per closed-loop verdict, inherited. Near the cliff a single run
-# is wrong about 1 in 8 times.
-MIN_CLOSED_LOOP_REPS = 10
+# Minimum repetitions per closed-loop verdict. The floor of 10 was measured on the BROKEN
+# harness, where single runs were wrong about 1 in 8 times; PROTOCOL A-4 replaced it with
+# three laps under a FULLY ENFORCED harness -- a clean server before every run, a fresh
+# vehicle per run, one process per run, the determinism preflight green on each fresh
+# server, one client per port, and the capture gate passed before certification.
+#
+# A-4 is explicit that this is conditional and that there is no fallback to ten: where the
+# harness is not enforced the answer is to enforce it, never to compensate with more laps.
+# And if the three laps disagree, that is a BUG -- the cell is void, not uncertain.
+MIN_CLOSED_LOOP_REPS = LAPS_PER_CELL
 
 RESULTS_SUBDIR = os.path.join("results", "town06")
 CERT_ARTIFACT = os.path.join(RESULTS_SUBDIR, "certificate_town06.json")
