@@ -176,6 +176,18 @@ rm -f "/tmp/carla-locks/carla-$PORT.lock" 2>/dev/null
 # while the second's server comes up healthy behind it.
 #
 # Restarts are meant to be serialised; serialising only half of one is not serialising it.
-bash "$REPO/scripts/carla_launch.sh" || exit 1
+# 9>&- : the LAUNCHER must not inherit the serialisation lock.
+#
+# fd 9 is this script's flock. carla_launch.sh is a child, so it inherited fd 9 and every
+# process IT spawns did too -- and an orphaned launcher then holds the lock forever. That
+# is not hypothetical: a launcher left behind by a stopped campaign held it for nine
+# minutes and every restart after it died with "waited 5 minutes for another CARLA restart
+# to finish", including ones with no other restart running at all. The DAgger driver read
+# that as "restart failed; stopping" and gave up its round.
+#
+# The lock belongs to THIS script, whose lifetime is the restart. Closing the descriptor
+# for the child means the lock is released when the restart process ends, however it ends.
+# (carla_launch.sh already does the same for the daemonised SERVER, for the same reason.)
+bash "$REPO/scripts/carla_launch.sh" 9>&- || exit 1
 
 nvidia-smi --query-gpu=memory.used --format=csv,noheader | sed 's/^/  GPU after restart: /'
