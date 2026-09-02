@@ -65,13 +65,21 @@ def test_every_collector_stops_before_it_records(driver):
 
 
 def test_the_data_auditor_would_catch_a_recurrence():
+    """And catches it by the CONJUNCTION, not by the label alone.
+
+    A large expert label is not by itself wrong: in a DAgger set the policy drives, so a
+    big correction is the recovery label the round exists to collect. Measured on the
+    first clean round, 217 of 369 frames carry |steer| > 0.25 and every one is at |CTE|
+    between 0.53 and 5.89 m. The defect is a large correction with the car ON THE LINE.
+    """
     src = open(os.path.join(REPO, "scripts", "audit_training_data.py")).read()
-    assert "STEER_LABEL_CEILING" in src
     ns = {}
     for line in src.splitlines():
-        if line.startswith("STEER_LABEL_CEILING"):
+        if line.startswith(("STEER_LABEL_CEILING", "STEER_LABEL_CTE_FLOOR_M")):
             exec(line, ns)
     assert 0.09 < ns["STEER_LABEL_CEILING"] <= STEER_CEILING
+    assert 0.0 < ns["STEER_LABEL_CTE_FLOOR_M"] <= 0.5
+    assert "degenerate = (st > STEER_LABEL_CEILING) & (ct < STEER_LABEL_CTE_FLOOR_M)" in src
 
 
 @pytest.mark.parametrize("path", ["pipeline/evaluate.py", "scripts/closed_loop_ledger.py"])
