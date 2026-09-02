@@ -53,7 +53,8 @@ SPAWNS = C.SPAWNS
 # would otherwise overwrite a canonical cell with a different disturbance and leave
 # no trace in the JSON or in git -- the same shape as the weather-preset trap, with
 # the process environment as the carrier.
-OVERRIDE_VARS = ("FOG_DENSITY_OVERRIDE", "SUN_ALTITUDE_OVERRIDE", "ROUTE_ROLL")
+OVERRIDE_VARS = ("FOG_DENSITY_OVERRIDE", "SUN_ALTITUDE_OVERRIDE", "SUN_AZIMUTH_OVERRIDE",
+                 "EXPOSURE_SHUTTER_OVERRIDE", "ROUTE_ROLL")
 
 
 def run_provenance(condition):

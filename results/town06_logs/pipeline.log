@@ -492,3 +492,5 @@
 [2026-09-01 17:52:22] SKIP  collect_mixed_t06lap (fingerprint matches)
 [2026-09-01 17:52:22] SKIP  train_mixed_bc_t06lap
 [2026-09-01 17:52:22] START dagger_mixed_t06lap (attempt 1)
+[2026-09-01 20:03:55] FAIL  dagger_mixed_t06lap attempt 1 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06_logs/dagger_mixed_t06lap.log)
+[2026-09-01 20:04:00] START dagger_mixed_t06lap (attempt 2)

@@ -223,14 +223,25 @@ CONDITION_DELTAS = {
 # The name also described something that does not happen. "shadows" implies the road is
 # partly occluded; the Town04 rationale was that terrain shadows the road at 15 degrees.
 # Town06's terrain does not, which is why the angle is 5 degrees there -- and at 5 degrees
-# the whole scene is uniformly dark rather than shadowed. Measured on the Town06 lap
-# training frames, mean brightness of the network's input:
+# the whole scene is uniformly dark rather than shadowed.
 #
-#     clear 0.1371    fog 0.3319    night 0.0897    low sun 0.0401
+# Measured on the Town06 lap, one pure-pursuit lap per condition with a clean server each
+# (scripts/measure_lap_condition.py), on the STUDENT's view -- rows 240:450 at 168x28,
+# which is the view condition_signature's thresholds were derived on and the view
+# evaluate.py asserts:
 #
-# Low sun renders DARKER THAN NIGHT on this route. Calling that "shadows" describes an
-# occlusion that is not there and hides that the lighting axis is not monotonic in the
-# direction the name suggests.
+#     clear 0.3064    fog 0.2840    night 0.1844    low sun 0.1264
+#
+# So the axis IS ordered: low sun is the darkest condition, below night, and every
+# condition classifies as itself. Calling it "shadows" describes an occlusion that is not
+# there.
+#
+# An earlier version of this comment read "clear 0.1371 fog 0.3319 night 0.0897 low sun
+# 0.0401" and concluded low sun renders DARKER THAN NIGHT. Both halves were artefacts:
+# those frames came from the contaminated collection of T06-F42, and they were measured on
+# the TEACHER's view, whose crop keeps ~60 rows of a sky that renders black on this lap.
+# Left recorded rather than quietly deleted -- three inconsistent brightness tables
+# accumulated in this repo precisely because each was replaced without saying so.
 #
 # Existing artifacts keep the old key and are NOT rewritten: the Town04 certificate is
 # pre-registered under standing rule 1, and renaming a key inside it would place its
@@ -286,6 +297,30 @@ def _sun_override(name, w):
     return w
 
 
+def _azimuth_override(name, w):
+    """SUN_AZIMUTH_OVERRIDE exposes the parameter nobody chose.
+
+    sun_azimuth_angle has always been 0.0, inherited from CLEAR_BASELINE. For `clear` the
+    sun is overhead at 90 degrees and azimuth cannot matter; at night it is below the
+    horizon and barely matters. For LOW SUN at 5 degrees it is the dominant parameter, and
+    it was never a decision -- it was a default.
+
+    Measured on the Town06 lap at azimuth 0: the sun sits inside the camera's horizontal
+    FOV for 44.0% of the route and within 20 degrees of dead ahead for 42.1%, including one
+    unbroken 1,008 m stretch. Town04, which this deployment test is calibrated against, is
+    28.2%/26.4% eastbound and 24.7%/14.9% westbound. Azimuth 0 is in the worst band the lap
+    has, and 30 degrees either side is no better.
+
+    Scoped to skip `clear` for the same reason as the altitude override: clear is the s = 0
+    anchor the sweep is measured against, not a point to be swept.
+    """
+    import os
+    v = os.environ.get("SUN_AZIMUTH_OVERRIDE")
+    if v and name != "clear":
+        w.sun_azimuth_angle = float(v) % 360.0
+    return w
+
+
 def weather_params(name):
     """Fully-specified WeatherParameters for a condition. No live state is read."""
     name = canonical_condition(name)
@@ -295,7 +330,7 @@ def weather_params(name):
     w = carla.WeatherParameters()
     for field, value in {**CLEAR_BASELINE, **CONDITION_DELTAS[name]}.items():
         setattr(w, field, value)
-    return _sun_override(name, _density_override(name, w))
+    return _azimuth_override(name, _sun_override(name, _density_override(name, w)))
 
 
 def set_clear_weather(world):
@@ -481,13 +516,10 @@ def _apply_exposure(bp, shutter=None, iso=None, fstop=None, gamma=None, mode=Non
     bp.set_attribute("gamma", str(gamma if gamma is not None else C.EXPOSURE_GAMMA))
 
 
-def spawn_camera(world, vehicle, exposure=None, condition=None):
-    """Spawn the RGB camera.
-
-    `exposure` overrides everything (used by the calibration sweeps). Otherwise
-    `condition` selects the declared per-condition exposure; omitting both gives the
-    daylight setting.
-    """
+def _camera_blueprint(world, exposure=None, condition=None):
+    """The study's RGB camera blueprint. ONE definition, so an unattached camera cannot
+    drift from the one bolted to the car -- which is the whole point of a photometric
+    reference measured without a vehicle."""
     if exposure is None and condition is not None:
         exposure = C.exposure_for(condition)
     bp = world.get_blueprint_library().find("sensor.camera.rgb")
@@ -495,8 +527,38 @@ def spawn_camera(world, vehicle, exposure=None, condition=None):
     bp.set_attribute("image_size_y", str(CAM_HEIGHT))
     bp.set_attribute("fov", str(CAM_FOV))
     _apply_exposure(bp, **(exposure or {}))
+    return bp
+
+
+def spawn_camera(world, vehicle, exposure=None, condition=None):
+    """Spawn the RGB camera.
+
+    `exposure` overrides everything (used by the calibration sweeps). Otherwise
+    `condition` selects the declared per-condition exposure; omitting both gives the
+    daylight setting.
+    """
+    bp = _camera_blueprint(world, exposure, condition)
     tf = carla.Transform(carla.Location(x=CAM_X, y=CAM_Y, z=CAM_Z))
     camera = world.spawn_actor(bp, tf, attach_to=vehicle)
+    img_queue = queue.Queue()
+    camera.listen(img_queue.put)
+    return camera, img_queue
+
+
+def spawn_camera_at(world, transform, exposure=None, condition=None):
+    """The same camera, at a WORLD transform, attached to nothing.
+
+    For measuring the renderer rather than a drive: no vehicle means no physics, no
+    spawn collision and no settling, so the only thing that can move the number is the
+    render path. Used by scripts/check_render_photometry.py.
+
+    NOTE for night: `set_weather` turns headlights on through the VEHICLE, so an
+    unattached camera sees an unlit night. That is fine for a photometric reference --
+    it is a fixed, repeatable scene either way -- but it is not the frame a driving
+    policy sees, and it must not be compared against one.
+    """
+    bp = _camera_blueprint(world, exposure, condition)
+    camera = world.spawn_actor(bp, transform)
     img_queue = queue.Queue()
     camera.listen(img_queue.put)
     return camera, img_queue

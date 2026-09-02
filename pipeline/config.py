@@ -151,7 +151,38 @@ CONDITION_EXPOSURE = {
 
 def exposure_for(condition):
     """Exposure settings for a condition. Unknown conditions get the daylight setting."""
-    return dict(CONDITION_EXPOSURE.get(condition, _DAYLIGHT_EXPOSURE))
+    exp = dict(CONDITION_EXPOSURE.get(condition, _DAYLIGHT_EXPOSURE))
+    return _shutter_override(condition, exp)
+
+
+def _shutter_override(condition, exp):
+    """EXPOSURE_SHUTTER_OVERRIDE exposes the knob a condition's exposure was CHOSEN with.
+
+    Format is `<condition>:<shutter>`, e.g. `night:60`, and it is scoped ON PURPOSE. The
+    other sweep knobs (FOG_DENSITY_OVERRIDE, SUN_ALTITUDE_OVERRIDE) are scalars that skip
+    `clear` by a rule inside them; a bare scalar here would silently move the ANCHOR too,
+    and every ratio this study calibrates against is a ratio TO clear. A sweep that moves
+    its own reference measures nothing, and it would still print a number.
+
+    So the variable names the condition it applies to and touches no other. That also
+    makes a stray export visible in a log line rather than inferable from one.
+
+    This is a SWEEP knob, never a setting: the committed value lives in
+    CONDITION_EXPOSURE, PROTOCOL section 3 freezes that table by name, and
+    closed_loop_ledger.py refuses a canonical cell while this is set.
+    """
+    v = os.environ.get("EXPOSURE_SHUTTER_OVERRIDE")
+    if not v:
+        return exp
+    if ":" not in v:
+        raise ValueError(
+            f"EXPOSURE_SHUTTER_OVERRIDE must be '<condition>:<shutter>', got {v!r}. "
+            "A bare number would move `clear` as well, and clear is the anchor every "
+            "calibrated ratio is measured against.")
+    want, shutter = v.split(":", 1)
+    if want.strip() == condition:
+        exp["shutter"] = float(shutter)
+    return exp
 
 
 def exposure_ratio(condition):

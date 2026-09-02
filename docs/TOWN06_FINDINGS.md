@@ -2456,3 +2456,178 @@ the honest price, and it is smaller than certifying a night the study cannot com
 Town04's.
 
 Not acted on: re-deriving a frozen-section condition is Zach's call.
+
+## T06-F42  THE BLOCKER: the server rendered 15% darker for half a day, and both teachers trained on it. T06-F41 is WITHDRAWN.
+
+The mixed teacher would not converge on the lap route -- night 0/29 gate laps, fog 3/29 --
+and T06-F41 concluded the lap route renders darker than the six-section route the
+conditions were calibrated on, so the condition constants had to be re-derived. That
+conclusion is wrong. The route is fine, the constants are fine, and the frozen section of
+PROTOCOL.md does not move.
+
+### What is actually true
+
+`pipeline/data/dagger_clear_t06lap` contains TWO RENDERINGS of the same road under the
+same declared condition, aggregated into one training set:
+
+    round00-05   (07:55-13:21)   clear mean 0.2508 - 0.2537
+    round06-14   (14:10-16:23)   clear mean 0.2140 - 0.2141
+
+`dagger_mixed_t06lap` is interleaved rather than split -- rounds 00,01,02,04,06,07,08,09
+dark; rounds 03,05,10,11,12,13 bright. Both BC sets, which seed both teachers, are dark:
+`clear_t06lap` 0.2136, `mixed_t06lap` 0.2147. A collection run on 2026-09-02 with
+unchanged code produces 0.2526.
+
+At matched poses the two renderings are the same picture at a different exposure. Round05
+against round06, same step indices, vehicle within 0.5 m:
+
+    idx     pose                       round05   round06   ratio
+       0    (656.9, 15.4)                43.16     36.22   0.839
+     200    (314.9,-17.2)                41.40     34.37   0.830
+     600    (-362.9, 61.7)               44.95     38.98   0.867
+    1000    (190.1, 241.2)               41.00     34.53   0.842
+
+Per-pixel on lit pixels the ratio is 0.830 with median 0.831 -- a photometric gain, flat
+across the tonal range, with identical geometry, identical content and no LOD difference.
+
+### Why this is the blocker, and not a subtlety
+
+Every Town06 lap teacher was trained on frames systematically darker than the frames it is
+scored on. That is a train/test shift in the images themselves -- the same class of defect
+as A-2's texture streaming, and the reason A-2 forced RECOLLECTION rather than
+re-evaluation.
+
+It also predicts the failure pattern exactly. Clear has the most headroom and passed
+throughout (20/29). Night and low sun sit where a 15% gain matters most, and they are what
+never passed. And the gate results track the rendering round by round: the mixed teacher's
+gate went 0/12, 2/12, 3/12 through the dark rounds and reached 6/12 at rounds 10-13, which
+are precisely the four consecutive BRIGHT rounds. Round 13 passed every lap it was given --
+clear 0.85/0.74 ft, fog 0.44, night 0.96, low sun 1.53, against a 2.19 ft budget -- and was
+stopped by an infrastructure failure, not by a policy failure.
+
+Zach's read before any of this was measured -- "this route I think is easier than Town04 so
+not converging says to me that there is a bug" -- was right, and T06-F41 agreed with him
+for the wrong reason.
+
+### Why nothing caught it
+
+Three checks were green throughout and none of them looks at brightness:
+
+* the determinism preflight verifies HOW THE SERVER WAS LAUNCHED (`/proc` argv, D-1..D-11);
+* `verify_condition()` reads the WEATHER STRUCT back after the tick lands;
+* `condition_signature.identify()` asserts the condition CLASSIFIES as itself, and a
+  uniform 0.84 gain does not move night's sigma or fog's p01 across a threshold.
+
+A 15% photometric drift passes all three, and nothing downstream of the frames can reveal
+it. This is R-SIM-4's own argument -- "the struct is what was asked for, not what the
+camera sees" -- one level deeper: the classifier is what the camera saw, not how bright it
+saw it.
+
+**Fixed by `scripts/check_render_photometry.py`,** run from `carla_launch.sh` on every
+fresh server. A fixed camera transform at the study spawn, no vehicle and no physics, so
+only the render path can move it; ~2 s. Reproducibility across fresh servers is 0.001%,
+and headless against windowed on a full driven lap is 4e-5, so the 1% gate is ~250x the
+noise floor and ~15x below the drift it exists to catch. A map with no recorded reference
+prints `photometry NOT CHECKED` on every launch rather than passing quietly.
+
+The cause of the drift itself is NOT identified. It is not the code (no exposure, camera
+or weather constant changed in git across the flip), not headless-vs-windowed (measured
+identical, below), and not quality or texture streaming (those change content, and the
+content is identical). It flipped twice in one day on one machine. That is exactly why the
+guard measures the OUTCOME rather than any suspected cause.
+
+### What T06-F41 got wrong, mechanically
+
+F41 compared the SIX-SECTION dataset's frame means against the LAP dataset's frame means
+and attributed the difference to the route. The six-section sets were collected 2026-08-28
+(bright); the lap sets 2026-09-01 (dark). The comparison measured the render drift and
+named it the route.
+
+Driving one instrument over the lap does not reproduce F41's numbers. A pure-pursuit lap,
+clean server each, `scripts/measure_lap_condition.py`:
+
+| | F41 claimed (lap) | measured, driven | six-section reference |
+|---|---|---|---|
+| clear | 0.2054 | 0.2525 | 0.2528 |
+| fog | 0.3044 | 0.3365 | 0.3361 |
+| night | 0.0765 | 0.1008 | 0.1031 |
+| low sun | 0.0654 | 0.1045 | 0.1037 |
+
+A driven lap of the LAP route reproduces the SIX-SECTION dataset to within 0.4%. The route
+did not get darker. The collection did.
+
+### The conditions HOLD on the lap. No constant moves.
+
+Measured on the STUDENT's view -- rows 240:450 at 168x28, which is the view
+`condition_signature`'s thresholds were derived on and the view `evaluate.py` asserts.
+(The teacher's view crops 180:400 and keeps ~60 rows of sky; on this lap the sky renders
+black, so CLEAR carries 12% dead pixels and sigma 0.123 there and "classifies as night".
+That is a fact about which crop you measure, not about the condition, and it is why three
+mutually inconsistent brightness tables accumulated in this repo.)
+
+| condition | mean | sigma | p01 | dark | classifies as itself |
+|---|---|---|---|---|---|
+| clear | 0.3064 | 0.0616 | 0.0641 | 0.009 | 97.2% |
+| fog | 0.2840 | 0.0610 | 0.1855 | 0.000 | 100% |
+| night | 0.1844 | 0.1393 | 0.0002 | 0.216 | 100% |
+| low sun | 0.1264 | 0.0389 | 0.0111 | 0.042 | 100% |
+
+Against the thresholds, with margin on every discriminator: night's sigma 0.1393 against
+0.100 with no other condition above 0.062; fog's p01 0.1855 against 0.120 with no other
+above 0.064; clear's mean 0.3064 against 0.250 with low sun at 0.1264. The 2.8% of clear
+frames that misclassify are mid-lap; the assert fires once per run on the fixed spawn
+frame, which is deterministic and classifies correctly, so it cannot abort runs at random.
+
+Against A-2's re-derivation on the six sections (low sun 0.1204, night - low sun 0.0921):
+
+* **low sun 0.1264 is 5.0% from A-2's 0.1204.** T06-F20 accepted 9%. The 5-degree angle
+  HOLDS on the lap, and A-2's re-derivation clause is satisfied a second time.
+* **night 0.1844 sits 0.0580 above low sun.** Narrower than the six sections' 0.0921 and
+  than Town04's 0.0958, and it is a declared route difference rather than a defect: the
+  axis stays ORDERED and both ends classify as themselves 100% of the time, which is the
+  property T06-F20 required and the property whose loss would have collapsed the axis.
+
+So the night shutter does not move, the low-sun angle does not move, PROTOCOL section 3 is
+untouched and `PROTOCOL.lock` is unchanged. **F41's proposed re-derivation is withdrawn
+before it was acted on**, which is the only reason this costs nothing: F41 recorded it as
+"not acted on: re-deriving a frozen-section condition is Zach's call", and that was right.
+
+### Headless is measured, not assumed
+
+Windowed CARLA will not start in the session running this rebuild (SDL init fails, empty
+log, rc=1), so the rebuild runs `-RenderOffScreen`. That is a harness change and it is
+measured rather than declared safe. The same pure-pursuit clear lap, windowed on 09-01
+against headless on 09-02:
+
+    windowed   mean 0.2525015   std 0.0119831   sun-in-FOV 44.13%   n=639
+    headless   mean 0.2524913   std 0.0119834   sun-in-FOV 44.13%   n=639
+
+4e-5 relative, with identical sample count and identical sun-in-FOV fraction, so the
+trajectory is the same to the sampling resolution. This is far below the D-7 render floor
+and it is what licenses the photometry gate's 1% tolerance. Standing rule 6 asks for a
+windowed server so runs can be watched; that is not available here and the deviation is
+recorded rather than silently taken.
+
+### What it invalidates
+
+Every Town06 LAP artifact produced by driving: `clear_t06lap`, `mixed_t06lap`,
+`dagger_clear_t06lap`, `dagger_mixed_t06lap`, and every `teacher_*_t06lap_*` checkpoint.
+Under A-2's own reasoning these are not re-evaluable, only recollectable. Nothing is
+contaminated downstream: no lap certificate exists and no lap cell has been scored.
+
+The six-section era (2026-08-28) is unaffected by this defect and is superseded for a
+different reason -- the route.
+
+### A second, independent defect found on the way
+
+`scripts/carla_restart.sh` killed its own caller. It stops clients with
+`pkill -f collect_data.py` and friends, which matches EVERY process whose command line
+contains that string, including the shell that invoked the restart. The `[c]ollect` bracket
+trick only stops pkill matching its own pattern argument; it does nothing about an ancestor.
+
+That is the previous session's unexplained failure: a restart log ending
+`GPU after restart: 5693 MiB` followed by `Terminated`, with a healthy server at the end of
+it, reported by the DAgger driver as "restart failed before gate lap N" -- which discarded
+a 12-lap gate that was passing at the time. Round 13 died that way with 5 of 5 laps passed.
+Now fixed: a candidate must be a python interpreter AND must not be this script or any of
+its ancestors.

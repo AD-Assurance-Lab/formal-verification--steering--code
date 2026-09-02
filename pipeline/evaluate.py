@@ -291,7 +291,8 @@ def main():
         # the rendered condition is on the record rather than merely unchecked.
         _sig_frame = student_preprocess(env.raw_to_bgr(_img), 168, 28)
         _ovr = {k: os.environ[k] for k in
-                ("FOG_DENSITY_OVERRIDE", "SUN_ALTITUDE_OVERRIDE") if os.environ.get(k)}
+                ("FOG_DENSITY_OVERRIDE", "SUN_ALTITUDE_OVERRIDE", "SUN_AZIMUTH_OVERRIDE",
+                 "EXPOSURE_SHUTTER_OVERRIDE") if os.environ.get(k)}
         if _ovr:
             _got, _st = identify(_sig_frame)
             print(f"  OVERRIDE ACTIVE {_ovr}: preset assert skipped by design. "
