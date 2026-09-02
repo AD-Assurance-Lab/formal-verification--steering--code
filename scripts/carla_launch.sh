@@ -106,9 +106,46 @@ python3 -m carla_determinism --port "$PORT" || {
 # indistinguishable from a checked one, which is how this was missed.
 PHOTO_REF="$REPO/results/photometry_reference.json"
 if [ -f "$PHOTO_REF" ] && grep -q "\"${STUDY_MAP:-Town04}/clear\"" "$PHOTO_REF" 2>/dev/null; then
-    STUDY_MAP="${STUDY_MAP:-Town04}" CARLA_PORT="$PORT" \
-        python3 "$REPO/scripts/check_render_photometry.py" || {
-        echo "FATAL: the server on $PORT renders at a different brightness (above)."; exit 1; }
+    # A DARK SERVER IS RELAUNCHED, NOT ACCEPTED AND NOT FATAL.
+    #
+    # T06-F46 measured what this defect is: a server comes up either correct or ~14% dark,
+    # the state is decided at LAUNCH, it is constant for that server's whole life (five
+    # measurements, spread 4e-6), and -- corrected 2026-09-02 -- it happens HEADLESS as
+    # well as windowed. It is not a property of the flags, the map, the weather or the
+    # camera, and the trigger is still unidentified.
+    #
+    # That combination is unusually kind: the bad state is per-instance and detectable in
+    # about two seconds, so the cure is to throw the server away and start another.
+    # Failing the whole restart instead turned a two-second retry into a stopped campaign,
+    # and before this check existed, into two contaminated rebuilds.
+    _photo_ok=0
+    for _try in 1 2 3 4; do
+        if STUDY_MAP="${STUDY_MAP:-Town04}" CARLA_PORT="$PORT" \
+               python3 "$REPO/scripts/check_render_photometry.py"; then
+            _photo_ok=1; break
+        fi
+        echo "  photometry REJECTED this server (attempt $_try/4); relaunching a new one."
+        pkill -f "[C]arlaUE4.*rpc-port=$PORT" 2>/dev/null
+        for _i in $(seq 1 25); do
+            ss -ltn 2>/dev/null | grep -q ":$PORT " || break
+            sleep 1
+        done
+        if [ "${CARLA_WINDOWED:-0}" = "1" ]; then
+            ( cd "$CARLA_ROOT" && DISPLAY="${DISPLAY:-:0}" setsid nohup ./CarlaUE4.sh \
+                -carla-rpc-port="$PORT" -quality-level="$QUALITY" $EXTRA -windowed \
+                -ResX=1280 -ResY=720 >>"$LOG" 2>&1 < /dev/null 9>&- & )
+        else
+            ( cd "$CARLA_ROOT" && setsid nohup ./CarlaUE4.sh -carla-rpc-port="$PORT" \
+                -RenderOffScreen -quality-level="$QUALITY" $EXTRA >>"$LOG" 2>&1 < /dev/null 9>&- & )
+        fi
+        CARLA_PORT=$PORT timeout 300 python3 "$REPO/scripts/wait_carla_ready.py" --timeout 240 \
+            || { echo "FATAL: relaunched CARLA did not come up on $PORT"; exit 1; }
+        python3 -m carla_determinism --port "$PORT" >/dev/null || {
+            echo "FATAL: relaunched server on $PORT violates the determinism rules"; exit 1; }
+    done
+    [ "$_photo_ok" = 1 ] || {
+        echo "FATAL: four servers in a row rendered at the wrong brightness on $PORT."
+        echo "  That is not the intermittent launch defect; something has changed."; exit 1; }
 else
     echo "  photometry NOT CHECKED: no reference for ${STUDY_MAP:-Town04} in results/photometry_reference.json"
 fi
