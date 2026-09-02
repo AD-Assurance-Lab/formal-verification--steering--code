@@ -1,68 +1,77 @@
 # Start here
 
-Updated 2026-08-28. **The determinism question from T06-F21 is RESOLVED** — see
-`docs/TOWN06_FINDINGS.md` T06-F22 for the full record, and `CARLA_DETERMINISM.md` for the
-rules that came out of it.
+Updated 2026-09-02.
 
-## What was wrong, and what changed
+## Where the study is
 
-Two independent causes, both measured open loop with the feedback cut:
+The Town06 deployment test is being **rebuilt from step 0** on the continuous lap. The
+blocker that stopped the previous session is found, measured and fixed: see
+`docs/TOWN06_FINDINGS.md` **T06-F42**.
 
-1. **`vehicle.apply_control()` lost a race with `world.tick()`.** Synchronous mode
-   synchronises the tick, not the command queue feeding it. Up to 60 m of divergence over
-   200 steps from an identical scripted command sequence. **Fixed** — every driving loop
-   now goes through `env.apply_control()`, which issues an acknowledged batch command.
-   Physics is now bit-identical across reps.
-2. **Texture streaming.** `-notexturestreaming` cut the steering noise the renderer
-   injects by 168x and removed the cold-server first-run outlier. Now default for Town06.
+**What was wrong.** The CARLA server rendered the identical scene ~15% darker for part of
+2026-09-01. Both Town06 lap BC sets and most DAgger rounds were collected on the dark side,
+so both teachers trained on frames systematically darker than the frames they are scored
+on — and DAgger aggregated both renderings into one set. Clear had the headroom to survive
+it; night and low sun did not, which is exactly the failure that was read as "the mixed
+teacher will not converge" and, in T06-F41, as "the lap route is darker than the route the
+conditions were calibrated on".
 
-**Residual, and it is irreducible:** a frozen scene still renders ~30 differing pixels
-per frame across reps. In closed loop that 2.6e-6 steering perturbation grows to 4-8 ft
-of CTE over 349 steps. So **standing rule 3 stands**: every closed-loop number is still a
-rate over >=10 reps — now justified by measurement, with the noise 168x smaller.
+**T06-F41 is withdrawn.** Driving one instrument over the lap does not reproduce it: a
+pure-pursuit lap of the LAP route matches the SIX-SECTION dataset to within 0.4%. The route
+did not get darker; the collection did. **No frozen constant moves and `PROTOCOL.lock` is
+untouched** — low sun measures 5.0% from A-2's re-derivation against the 9% T06-F20
+accepted, and the night/low-sun axis stays ordered with all four conditions classifying as
+themselves.
 
-**Town04 is untouched and stays that way.** `DETERMINISTIC_CONTROL` is off there,
-`-notexturestreaming` is Town06-only, the preflight runs on the Town06 path only.
+## What is new, and why it is there
 
-## Harness self-check, before trusting anything
+| | |
+|---|---|
+| `scripts/check_render_photometry.py` | The guard. A fixed camera at the study spawn, no vehicle, ~2 s, run from `carla_launch.sh` on **every fresh server**. The determinism preflight checks the launch argv, `verify_condition()` reads the weather struct back, `identify()` checks which condition it is — a uniform photometric gain passes all three. |
+| `scripts/measure_lap_condition.py` | ONE instrument for a condition's rendered outcome, recording both the teacher's and the student's view. Three mutually inconsistent brightness tables had accumulated here, and one of them named a condition. |
+| `scripts/calibrate_lap_conditions.sh` | Drives all four, clean server each. |
+| `results/photometry_reference.json` | The committed reference. Reproducible across fresh servers to 0.001%. |
 
-Drive the oracle twice and compare. It never reads the camera, so under the corrected
-harness it is bit-identical, and anything else means the harness has regressed:
+Two harness defects fixed alongside it:
 
-    bash scripts/carla_restart.sh > /tmp/r.log 2>&1     # never pipe this; it daemonises
-    cd pipeline && python3 drive_expert.py --direction all
-    # copy results/oracle_s0*.csv, restart, repeat, then cmp
+* **`carla_restart.sh` killed its own caller.** It stopped clients with
+  `pkill -f collect_data.py`, which matches any ancestor whose command line names the
+  script — the `[c]ollect` bracket trick only protects against pkill's own argument. That
+  is the previous session's "restart failed before gate lap N" with a healthy server in
+  the log, which discarded a 12-lap gate that was passing at the time.
+* **The drivers asked for `shadows`, the classifier answered `low_sun`.** Harmless while
+  both were wrong together; renaming one alone would have aborted every low-sun lap of the
+  rebuild, hours in, on a condition that rendered correctly.
 
-Verified 2026-08-28: all six sections bit-identical across fresh servers.
+## Running it
 
-## Do this next
+    export STUDY_MAP=Town06 CARLA_PORT=3000 CARLA_WINDOWED=0
+    setsid nohup bash scripts/watchdog_town06.sh > /tmp/t06_watchdog.log 2>&1 &
 
-1. **The capacity decision, still open and still addressed to Zach**
-   (`TOWN06_STATUS.md`). The determinism fix does NOT make a marginal student competent.
-   Options unchanged: widen both students, widen the mixed only, or collect more base
-   data first. T06-F22 sharpens the argument — run-to-run spread is now readable as a
-   stability-margin measurement, so "held 5/6, then 6/6" says the student has no margin.
-2. **Re-run the competence gate** under the corrected harness once capacity is decided.
-   Every closed-loop student number from the previous session remains untrusted.
-3. Then resume the order in `TOWN06_STATUS.md` from step 5.
+The watchdog restarts the pipeline if it dies and stops when the lap ledger exists.
+`results/town06_logs/pipeline.log` is the stage log.
 
-## Running the simulator
+**CARLA runs HEADLESS here** (`-RenderOffScreen`). Standing rule 6 asks for a windowed
+server so runs can be watched; windowed will not start from this session (SDL init fails,
+empty log, rc=1). The deviation is measured rather than assumed: the same pure-pursuit
+clear lap gives mean 0.2525015 windowed against 0.2524913 headless, with identical sample
+count and identical sun-in-FOV fraction — 4e-5, far below the D-7 render floor. Recorded in
+T06-F42. **If you can launch windowed, do; nothing else changes.**
 
-The `carla-determinism` package is now the authority on determinism and is hash-locked;
-`CLAUDE.md` keeps the operational hygiene rules (R-SIM-1..6). Both still apply.
+**Never pipe or capture the output of `carla_restart.sh`** — it daemonises CARLA and the
+detached child inherits the pipe. Redirect to a file.
 
-    python3 -m carla_determinism --port 3000       # preflight; entry points call it too
-    bash scripts/carla_restart.sh                  # before EVERY measurement run
+## After the pipeline
 
-**Never pipe or capture the output of `carla_restart.sh`** — it daemonises CARLA, the
-detached child inherits the pipe, and the call dies or hangs. Redirect to a file. This
-cost time again this session, having already cost a night once.
+    bash scripts/finish_town06_deployment.sh
 
-## Instruments added this session
+Capture → certify blind → **commit the certificate** → drive the scored ledger → compare.
+Steps 3 and 4 cannot be reordered: `check_order_town06.py` enforces R1 against commit
+timestamps, and `closed_loop_ledger.py` refuses a cell whose certificate is missing,
+untracked or dirty.
 
-- `scripts/determinism_tier0_model.py` — inference bit-exactness, no simulator needed
-- `scripts/determinism_tier1_openloop.py` — the diagnostic that worked: feedback cut,
-  physics / render / injected-steering separated
-- `scripts/determinism_static_scene.py` — frozen scene, cross-run; measures the floor
-- `scripts/check_carla_determinism.py` — preflight, reads the server's real `/proc` argv
-- `scripts/determinism_probe.py` — closed-loop, now able to fail correctly
+## Standing hygiene
+
+    python3 -m carla_determinism --port 3000      # preflight; entry points call it too
+    bash scripts/carla_restart.sh                 # before EVERY measurement run
+    python3 scripts/audit_repo.py                 # before any release

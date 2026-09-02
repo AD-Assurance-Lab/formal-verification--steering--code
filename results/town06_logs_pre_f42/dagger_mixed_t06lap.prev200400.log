@@ -1,0 +1,230 @@
+[2026-09-01 17:52:22] round attempt 1/12
+base datasets: ['mixed_t06lap']
+resuming: found 7 prior DAgger round(s) in dagger_mixed_t06lap, continuing at round 7
+resuming from 'teacher_mixed_t06lap_dagger_r05', the newest policy this run actually trained (round 5); not 'teacher_mixed_t06lap_bc'
+  server is 50s old: world is already fresh, skipping reload
+
+################################################################
+# DAgger round 7 — evaluating policy 'teacher_mixed_t06lap_dagger_r05'
+################################################################
+  [clear/lap] over-budget=  0.0%  max|CTE|= 0.29ft  (gate 2.19ft) -> PASS
+  [fog/lap] over-budget=  0.0%  max|CTE|= 0.59ft  (gate 2.19ft) -> PASS
+  [night/lap] over-budget=  1.4%  max|CTE|=12.02ft  (gate 2.19ft) -> FAIL
+  [shadows/lap] over-budget=  0.0%  max|CTE|= 0.29ft  (gate 2.19ft) -> PASS
+  collected 5120 frames at beta=0.00
+  aggregating 9 manifests, warm-start from 'teacher_mixed_t06lap_dagger_r05' -> teacher_mixed_t06lap_dagger_r07
+  server is 49s old: world is already fresh, skipping reload
+terminate called after throwing an instance of 'carla::client::TimeoutException'
+  what():  time-out of 120000ms while waiting for the simulator, make sure the simulator is ready and connected to 127.0.0.1:3000
+/home/za/ad-assurance--workspace/formal-verification--steering--code/scripts/run_dagger_rounds.sh: line 61: 1779304 Aborted                 (core dumped) python3 pipeline/dagger.py --base "${WHICH}_t06lap" --init "teacher_${WHICH}_t06lap_bc" --rounds 1 --min-rounds 1 --gate-reps 1 --weathers "$WEATHERS" --dagger-dir "dagger_${WHICH}_t06lap" --out-prefix "teacher_${WHICH}_t06lap_dagger" >> "$LOG" 2>&1
+[2026-09-01 18:01:12]   round exited rc=134
+[2026-09-01 18:01:12]   round completed and saved teacher_mixed_t06lap_dagger_r07, then exited rc=134 at teardown
+  server is 51s old: world is already fresh, skipping reload
+  lap 0 clear: max|CTE|   0.31 ft (budget 2.19) over=0.0% at   1026 m bridged=95 -> PASS
+  server is 50s old: world is already fresh, skipping reload
+  lap 0 fog: max|CTE|  11.01 ft (budget 2.19) over=3.8% at    774 m bridged=95 -> FAIL
+  server is 51s old: world is already fresh, skipping reload
+  lap 0 night: max|CTE|  13.60 ft (budget 2.19) over=18.4% at   1808 m bridged=96 -> FAIL
+  server is 53s old: world is already fresh, skipping reload
+  lap 0 shadows: max|CTE|   5.08 ft (budget 2.19) over=7.1% at   2052 m bridged=95 -> FAIL
+  server is 51s old: world is already fresh, skipping reload
+  lap 1 clear: max|CTE|   0.33 ft (budget 2.19) over=0.0% at   1026 m bridged=95 -> PASS
+  server is 52s old: world is already fresh, skipping reload
+  lap 1 fog: max|CTE|  10.98 ft (budget 2.19) over=3.8% at    774 m bridged=95 -> FAIL
+  server is 52s old: world is already fresh, skipping reload
+  lap 1 night: max|CTE|  13.16 ft (budget 2.19) over=1.2% at   1864 m bridged=95 -> FAIL
+  server is 52s old: world is already fresh, skipping reload
+  lap 1 shadows: max|CTE|   0.29 ft (budget 2.19) over=0.0% at   2286 m bridged=95 -> PASS
+  server is 51s old: world is already fresh, skipping reload
+  lap 2 clear: max|CTE|  11.76 ft (budget 2.19) over=8.4% at   2100 m bridged=96 -> FAIL
+  server is 52s old: world is already fresh, skipping reload
+  lap 2 fog: max|CTE|  11.09 ft (budget 2.19) over=3.1% at    774 m bridged=95 -> FAIL
+  server is 54s old: world is already fresh, skipping reload
+  lap 2 night: max|CTE|  12.85 ft (budget 2.19) over=1.9% at   1858 m bridged=95 -> FAIL
+  server is 52s old: world is already fresh, skipping reload
+  lap 2 shadows: max|CTE|   5.57 ft (budget 2.19) over=6.4% at   2056 m bridged=95 -> FAIL
+[2026-09-01 18:18:22]   gate: 3/12 laps passed with teacher_mixed_t06lap_dagger_r07
+[2026-09-01 18:18:22] round attempt 2/12
+base datasets: ['mixed_t06lap']
+resuming: found 8 prior DAgger round(s) in dagger_mixed_t06lap, continuing at round 8
+resuming from 'teacher_mixed_t06lap_dagger_r07', the newest policy this run actually trained (round 7); not 'teacher_mixed_t06lap_bc'
+  server is 52s old: world is already fresh, skipping reload
+
+################################################################
+# DAgger round 8 — evaluating policy 'teacher_mixed_t06lap_dagger_r07'
+################################################################
+  [clear/lap] over-budget=  0.0%  max|CTE|= 0.37ft  (gate 2.19ft) -> PASS
+  [fog/lap] over-budget=  0.0%  max|CTE|= 0.64ft  (gate 2.19ft) -> PASS
+  [night/lap] over-budget=  1.5%  max|CTE|= 5.76ft  (gate 2.19ft) -> FAIL
+  [shadows/lap] over-budget=  0.0%  max|CTE|= 0.81ft  (gate 2.19ft) -> PASS
+  collected 5120 frames at beta=0.00
+  aggregating 10 manifests, warm-start from 'teacher_mixed_t06lap_dagger_r07' -> teacher_mixed_t06lap_dagger_r08
+  server is 48s old: world is already fresh, skipping reload
+terminate called after throwing an instance of 'carla::client::TimeoutException'
+  what():  time-out of 120000ms while waiting for the simulator, make sure the simulator is ready and connected to 127.0.0.1:3000
+/home/za/ad-assurance--workspace/formal-verification--steering--code/scripts/run_dagger_rounds.sh: line 61: 1805546 Aborted                 (core dumped) python3 pipeline/dagger.py --base "${WHICH}_t06lap" --init "teacher_${WHICH}_t06lap_bc" --rounds 1 --min-rounds 1 --gate-reps 1 --weathers "$WEATHERS" --dagger-dir "dagger_${WHICH}_t06lap" --out-prefix "teacher_${WHICH}_t06lap_dagger" >> "$LOG" 2>&1
+[2026-09-01 18:27:07]   round exited rc=134
+[2026-09-01 18:27:07]   round completed and saved teacher_mixed_t06lap_dagger_r08, then exited rc=134 at teardown
+  server is 53s old: world is already fresh, skipping reload
+  lap 0 clear: max|CTE|   0.47 ft (budget 2.19) over=0.0% at    142 m bridged=95 -> PASS
+  server is 52s old: world is already fresh, skipping reload
+  lap 0 fog: max|CTE|  13.62 ft (budget 2.19) over=4.5% at   1760 m bridged=96 -> FAIL
+  server is 53s old: world is already fresh, skipping reload
+  lap 0 night: max|CTE|   5.25 ft (budget 2.19) over=0.5% at   2272 m bridged=95 -> FAIL
+  server is 53s old: world is already fresh, skipping reload
+  lap 0 shadows: max|CTE|   0.37 ft (budget 2.19) over=0.0% at   2286 m bridged=95 -> PASS
+  server is 52s old: world is already fresh, skipping reload
+  lap 1 clear: max|CTE|   0.50 ft (budget 2.19) over=0.0% at    142 m bridged=95 -> PASS
+  server is 51s old: world is already fresh, skipping reload
+  lap 1 fog: max|CTE|  14.30 ft (budget 2.19) over=2.6% at   1758 m bridged=96 -> FAIL
+  server is 51s old: world is already fresh, skipping reload
+  lap 1 night: max|CTE|   3.57 ft (budget 2.19) over=0.3% at   2272 m bridged=95 -> FAIL
+  server is 50s old: world is already fresh, skipping reload
+  lap 1 shadows: max|CTE|   0.34 ft (budget 2.19) over=0.0% at   2286 m bridged=95 -> PASS
+  server is 51s old: world is already fresh, skipping reload
+  lap 2 clear: max|CTE|   0.46 ft (budget 2.19) over=0.0% at    142 m bridged=95 -> PASS
+  server is 51s old: world is already fresh, skipping reload
+  lap 2 fog: max|CTE|  13.84 ft (budget 2.19) over=3.2% at   1758 m bridged=95 -> FAIL
+  server is 54s old: world is already fresh, skipping reload
+  lap 2 night: max|CTE|  11.83 ft (budget 2.19) over=19.1% at   2170 m bridged=95 -> FAIL
+  server is 53s old: world is already fresh, skipping reload
+  lap 2 shadows: max|CTE|   0.36 ft (budget 2.19) over=0.0% at   2286 m bridged=95 -> PASS
+[2026-09-01 18:44:21]   gate: 6/12 laps passed with teacher_mixed_t06lap_dagger_r08
+[2026-09-01 18:44:21] round attempt 3/12
+base datasets: ['mixed_t06lap']
+resuming: found 9 prior DAgger round(s) in dagger_mixed_t06lap, continuing at round 9
+resuming from 'teacher_mixed_t06lap_dagger_r08', the newest policy this run actually trained (round 8); not 'teacher_mixed_t06lap_bc'
+  server is 52s old: world is already fresh, skipping reload
+
+################################################################
+# DAgger round 9 — evaluating policy 'teacher_mixed_t06lap_dagger_r08'
+################################################################
+  [clear/lap] over-budget=  0.0%  max|CTE|= 0.94ft  (gate 2.19ft) -> PASS
+  [fog/lap] over-budget= 24.3%  max|CTE|=17.04ft  (gate 2.19ft) -> FAIL
+  [night/lap] over-budget=  0.5%  max|CTE|= 5.12ft  (gate 2.19ft) -> FAIL
+  [shadows/lap] over-budget=  0.0%  max|CTE|= 0.46ft  (gate 2.19ft) -> PASS
+  collected 5120 frames at beta=0.00
+  aggregating 11 manifests, warm-start from 'teacher_mixed_t06lap_dagger_r08' -> teacher_mixed_t06lap_dagger_r09
+  server is 46s old: world is already fresh, skipping reload
+terminate called after throwing an instance of 'carla::client::TimeoutException'
+  what():  time-out of 120000ms while waiting for the simulator, make sure the simulator is ready and connected to 127.0.0.1:3000
+/home/za/ad-assurance--workspace/formal-verification--steering--code/scripts/run_dagger_rounds.sh: line 61: 1831415 Aborted                 (core dumped) python3 pipeline/dagger.py --base "${WHICH}_t06lap" --init "teacher_${WHICH}_t06lap_bc" --rounds 1 --min-rounds 1 --gate-reps 1 --weathers "$WEATHERS" --dagger-dir "dagger_${WHICH}_t06lap" --out-prefix "teacher_${WHICH}_t06lap_dagger" >> "$LOG" 2>&1
+[2026-09-01 18:53:19]   round exited rc=134
+[2026-09-01 18:53:19]   round completed and saved teacher_mixed_t06lap_dagger_r09, then exited rc=134 at teardown
+  server is 52s old: world is already fresh, skipping reload
+  lap 0 clear: max|CTE|   0.48 ft (budget 2.19) over=0.0% at     54 m bridged=95 -> PASS
+  server is 52s old: world is already fresh, skipping reload
+  lap 0 fog: max|CTE|  12.28 ft (budget 2.19) over=15.0% at   1478 m bridged=95 -> FAIL
+  server is 52s old: world is already fresh, skipping reload
+  lap 0 night: max|CTE|   4.80 ft (budget 2.19) over=1.1% at   2284 m bridged=95 -> FAIL
+  server is 49s old: world is already fresh, skipping reload
+  lap 0 shadows: max|CTE|   0.35 ft (budget 2.19) over=0.0% at     38 m bridged=95 -> PASS
+  server is 52s old: world is already fresh, skipping reload
+  lap 1 clear: max|CTE|   0.53 ft (budget 2.19) over=0.0% at     54 m bridged=95 -> PASS
+  server is 53s old: world is already fresh, skipping reload
+  lap 1 fog: max|CTE|  11.45 ft (budget 2.19) over=12.8% at   1512 m bridged=96 -> FAIL
+  server is 52s old: world is already fresh, skipping reload
+  lap 1 night: max|CTE|   8.42 ft (budget 2.19) over=18.0% at     74 m bridged=94 -> FAIL
+  server is 51s old: world is already fresh, skipping reload
+  lap 1 shadows: max|CTE|   0.64 ft (budget 2.19) over=0.0% at   2290 m bridged=95 -> PASS
+  server is 54s old: world is already fresh, skipping reload
+  lap 2 clear: max|CTE|   8.69 ft (budget 2.19) over=7.6% at   2070 m bridged=95 -> FAIL
+  server is 52s old: world is already fresh, skipping reload
+  lap 2 fog: max|CTE|  12.50 ft (budget 2.19) over=12.9% at   1472 m bridged=95 -> FAIL
+  server is 53s old: world is already fresh, skipping reload
+  lap 2 night: max|CTE|   3.70 ft (budget 2.19) over=0.9% at   2284 m bridged=95 -> FAIL
+[2026-09-01 19:10:09]   restart failed before gate lap 2/shadows
+[2026-09-01 19:10:09]   gate: 4/12 laps passed with teacher_mixed_t06lap_dagger_r09
+[2026-09-01 19:10:09] round attempt 4/12
+base datasets: ['mixed_t06lap']
+resuming: found 10 prior DAgger round(s) in dagger_mixed_t06lap, continuing at round 10
+resuming from 'teacher_mixed_t06lap_dagger_r09', the newest policy this run actually trained (round 9); not 'teacher_mixed_t06lap_bc'
+  server is 55s old: world is already fresh, skipping reload
+
+################################################################
+# DAgger round 10 — evaluating policy 'teacher_mixed_t06lap_dagger_r09'
+################################################################
+  [clear/lap] over-budget= 10.8%  max|CTE|= 8.89ft  (gate 2.19ft) -> FAIL
+  [fog/lap] over-budget=  2.2%  max|CTE|= 9.92ft  (gate 2.19ft) -> FAIL
+  [night/lap] over-budget= 19.4%  max|CTE|=10.34ft  (gate 2.19ft) -> FAIL
+  [shadows/lap] over-budget=  0.3%  max|CTE|= 2.75ft  (gate 2.19ft) -> FAIL
+  collected 5120 frames at beta=0.00
+  aggregating 12 manifests, warm-start from 'teacher_mixed_t06lap_dagger_r09' -> teacher_mixed_t06lap_dagger_r10
+  server is 47s old: world is already fresh, skipping reload
+terminate called after throwing an instance of 'carla::client::TimeoutException'
+  what():  time-out of 120000ms while waiting for the simulator, make sure the simulator is ready and connected to 127.0.0.1:3000
+/home/za/ad-assurance--workspace/formal-verification--steering--code/scripts/run_dagger_rounds.sh: line 61: 1856762 Aborted                 (core dumped) python3 pipeline/dagger.py --base "${WHICH}_t06lap" --init "teacher_${WHICH}_t06lap_bc" --rounds 1 --min-rounds 1 --gate-reps 1 --weathers "$WEATHERS" --dagger-dir "dagger_${WHICH}_t06lap" --out-prefix "teacher_${WHICH}_t06lap_dagger" >> "$LOG" 2>&1
+[2026-09-01 19:19:29]   round exited rc=134
+[2026-09-01 19:19:29]   round completed and saved teacher_mixed_t06lap_dagger_r10, then exited rc=134 at teardown
+  server is 52s old: world is already fresh, skipping reload
+  lap 0 clear: max|CTE|   0.51 ft (budget 2.19) over=0.0% at     62 m bridged=95 -> PASS
+  server is 52s old: world is already fresh, skipping reload
+  lap 0 fog: max|CTE|   4.81 ft (budget 2.19) over=0.9% at    532 m bridged=96 -> FAIL
+  server is 52s old: world is already fresh, skipping reload
+  lap 0 night: max|CTE|   6.71 ft (budget 2.19) over=3.0% at   2272 m bridged=96 -> FAIL
+  server is 51s old: world is already fresh, skipping reload
+  lap 0 shadows: max|CTE|   0.68 ft (budget 2.19) over=0.0% at   2272 m bridged=95 -> PASS
+  server is 52s old: world is already fresh, skipping reload
+  lap 1 clear: max|CTE|   0.49 ft (budget 2.19) over=0.0% at     62 m bridged=95 -> PASS
+  server is 50s old: world is already fresh, skipping reload
+  lap 1 fog: max|CTE|   5.41 ft (budget 2.19) over=1.0% at    532 m bridged=96 -> FAIL
+  server is 51s old: world is already fresh, skipping reload
+  lap 1 night: max|CTE|   7.15 ft (budget 2.19) over=2.5% at   2274 m bridged=96 -> FAIL
+  server is 53s old: world is already fresh, skipping reload
+  lap 1 shadows: max|CTE|   0.75 ft (budget 2.19) over=0.0% at   1014 m bridged=95 -> PASS
+  server is 53s old: world is already fresh, skipping reload
+  lap 2 clear: max|CTE|   0.46 ft (budget 2.19) over=0.0% at     62 m bridged=95 -> PASS
+  server is 53s old: world is already fresh, skipping reload
+  lap 2 fog: max|CTE|   6.45 ft (budget 2.19) over=0.8% at    534 m bridged=96 -> FAIL
+  server is 52s old: world is already fresh, skipping reload
+  lap 2 night: max|CTE|  14.05 ft (budget 2.19) over=6.7% at   1738 m bridged=96 -> FAIL
+  server is 51s old: world is already fresh, skipping reload
+  lap 2 shadows: max|CTE|   0.40 ft (budget 2.19) over=0.0% at   2272 m bridged=95 -> PASS
+[2026-09-01 19:36:46]   gate: 6/12 laps passed with teacher_mixed_t06lap_dagger_r10
+[2026-09-01 19:36:46] round attempt 5/12
+base datasets: ['mixed_t06lap']
+resuming: found 11 prior DAgger round(s) in dagger_mixed_t06lap, continuing at round 11
+resuming from 'teacher_mixed_t06lap_dagger_r10', the newest policy this run actually trained (round 10); not 'teacher_mixed_t06lap_bc'
+  server is 51s old: world is already fresh, skipping reload
+
+################################################################
+# DAgger round 11 — evaluating policy 'teacher_mixed_t06lap_dagger_r10'
+################################################################
+  [clear/lap] over-budget=  0.2%  max|CTE|= 2.52ft  (gate 2.19ft) -> FAIL
+  [fog/lap] over-budget=  0.2%  max|CTE|= 2.34ft  (gate 2.19ft) -> FAIL
+  [night/lap] over-budget= 18.9%  max|CTE|=19.47ft  (gate 2.19ft) -> FAIL
+  [shadows/lap] over-budget=  1.8%  max|CTE|=11.78ft  (gate 2.19ft) -> FAIL
+  collected 5120 frames at beta=0.00
+  aggregating 13 manifests, warm-start from 'teacher_mixed_t06lap_dagger_r10' -> teacher_mixed_t06lap_dagger_r11
+  server is 47s old: world is already fresh, skipping reload
+terminate called after throwing an instance of 'carla::client::TimeoutException'
+  what():  time-out of 120000ms while waiting for the simulator, make sure the simulator is ready and connected to 127.0.0.1:3000
+/home/za/ad-assurance--workspace/formal-verification--steering--code/scripts/run_dagger_rounds.sh: line 61: 1883230 Aborted                 (core dumped) python3 pipeline/dagger.py --base "${WHICH}_t06lap" --init "teacher_${WHICH}_t06lap_bc" --rounds 1 --min-rounds 1 --gate-reps 1 --weathers "$WEATHERS" --dagger-dir "dagger_${WHICH}_t06lap" --out-prefix "teacher_${WHICH}_t06lap_dagger" >> "$LOG" 2>&1
+[2026-09-01 19:46:13]   round exited rc=134
+[2026-09-01 19:46:13]   round completed and saved teacher_mixed_t06lap_dagger_r11, then exited rc=134 at teardown
+  server is 50s old: world is already fresh, skipping reload
+  lap 0 clear: max|CTE|   0.50 ft (budget 2.19) over=0.0% at   1010 m bridged=95 -> PASS
+  server is 52s old: world is already fresh, skipping reload
+  lap 0 fog: max|CTE|   4.15 ft (budget 2.19) over=1.1% at     28 m bridged=96 -> FAIL
+  server is 50s old: world is already fresh, skipping reload
+  lap 0 night: max|CTE|   4.68 ft (budget 2.19) over=0.7% at   2216 m bridged=95 -> FAIL
+  server is 51s old: world is already fresh, skipping reload
+  lap 0 shadows: max|CTE|   0.49 ft (budget 2.19) over=0.0% at   1990 m bridged=95 -> PASS
+  server is 53s old: world is already fresh, skipping reload
+  lap 1 clear: max|CTE|   0.47 ft (budget 2.19) over=0.0% at   1010 m bridged=95 -> PASS
+  server is 52s old: world is already fresh, skipping reload
+  lap 1 fog: max|CTE|   4.16 ft (budget 2.19) over=1.1% at     32 m bridged=95 -> FAIL
+  server is 52s old: world is already fresh, skipping reload
+  lap 1 night: max|CTE|   4.24 ft (budget 2.19) over=0.7% at   2214 m bridged=95 -> FAIL
+  server is 50s old: world is already fresh, skipping reload
+  lap 1 shadows: max|CTE|   0.85 ft (budget 2.19) over=0.0% at     60 m bridged=95 -> PASS
+  server is 51s old: world is already fresh, skipping reload
+  lap 2 clear: max|CTE|   0.65 ft (budget 2.19) over=0.0% at    534 m bridged=95 -> PASS
+  server is 51s old: world is already fresh, skipping reload
+  lap 2 fog: max|CTE|   2.84 ft (budget 2.19) over=0.3% at     64 m bridged=96 -> FAIL
+  server is 50s old: world is already fresh, skipping reload
+  lap 2 night: max|CTE|   3.26 ft (budget 2.19) over=0.4% at   2208 m bridged=95 -> FAIL
+  server is 52s old: world is already fresh, skipping reload
+  lap 2 shadows: max|CTE|   0.85 ft (budget 2.19) over=0.0% at     60 m bridged=95 -> PASS
+[2026-09-01 20:03:30]   gate: 6/12 laps passed with teacher_mixed_t06lap_dagger_r11
+[2026-09-01 20:03:30] round attempt 6/12

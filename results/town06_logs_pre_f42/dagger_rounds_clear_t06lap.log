@@ -1,0 +1,40 @@
+[2026-09-01 15:12:35] round attempt 1/12
+[2026-09-01 15:14:28]   round trained (rc=0)
+[2026-09-01 15:20:37]   restart failed before gate lap 2
+[2026-09-01 15:20:37]   gate: 0/3 laps passed with teacher_clear_t06lap_dagger_r06
+[2026-09-01 15:20:37] clear teacher already PASSED; nothing to do
+[2026-09-01 15:26:19] round attempt 1/12
+[2026-09-01 15:27:32]   round trained (rc=143)
+[2026-09-01 15:30:52]   gate: 0/3 laps passed with teacher_clear_t06lap_dagger_r06
+[2026-09-01 15:30:52] round attempt 2/12
+[2026-09-01 15:32:01]   round trained (rc=143)
+[2026-09-01 15:35:18]   gate: 0/3 laps passed with teacher_clear_t06lap_dagger_r06
+[2026-09-01 15:35:18] round attempt 3/12
+[2026-09-01 15:36:36]   round trained (rc=143)
+[2026-09-01 15:39:56]   gate: 0/3 laps passed with teacher_clear_t06lap_dagger_r06
+[2026-09-01 15:39:56] round attempt 4/12
+[2026-09-01 15:41:06]   round trained (rc=143)
+[2026-09-01 15:44:03]   gate: 0/3 laps passed with teacher_clear_t06lap_dagger_r06
+[2026-09-01 15:44:03] round attempt 5/12
+[2026-09-01 15:45:57]   round trained (rc=0)
+[2026-09-01 15:46:51]   restart failed before gate lap 0
+[2026-09-01 15:46:51]   gate: 0/3 laps passed with teacher_clear_t06lap_dagger_r06
+[2026-09-01 15:46:51] round attempt 6/12
+[2026-09-01 15:48:41]   round trained (rc=0)
+[2026-09-01 15:52:29] round attempt 1/12
+[2026-09-01 15:53:50] round attempt 1/12
+[2026-09-01 15:58:50] restart failed; stopping
+[2026-09-01 15:58:55] round attempt 1/12
+[2026-09-01 16:04:18] round attempt 1/12
+[2026-09-01 16:06:22]   round trained (rc=0)
+[2026-09-01 16:10:34]   gate: 0/3 laps passed with teacher_clear_t06lap_dagger_r06
+[2026-09-01 16:10:34] round attempt 2/12
+[2026-09-01 16:12:23]   round trained (rc=0)
+[2026-09-01 16:16:32]   gate: 0/3 laps passed with teacher_clear_t06lap_dagger_r06
+[2026-09-01 16:16:32] round attempt 3/12
+[2026-09-01 16:18:25]   round trained (rc=0)
+[2026-09-01 16:22:31]   gate: 2/3 laps passed with teacher_clear_t06lap_dagger_r06
+[2026-09-01 16:22:31] round attempt 4/12
+[2026-09-01 16:24:22]   round trained (rc=0)
+[2026-09-01 16:28:24]   gate: 3/3 laps passed with teacher_clear_t06lap_dagger_r06
+[2026-09-01 16:28:24] clear teacher PASSED at teacher_clear_t06lap_dagger_r06
