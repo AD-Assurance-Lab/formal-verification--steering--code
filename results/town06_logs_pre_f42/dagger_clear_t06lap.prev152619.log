@@ -1,0 +1,28 @@
+[2026-09-01 15:12:35] round attempt 1/12
+base datasets: ['clear_t06lap']
+resuming: found 8 prior DAgger round(s) in dagger_clear_t06lap, continuing at round 8
+resuming from 'teacher_clear_t06lap_dagger_r06', the newest policy this run actually trained (round 6); not 'teacher_clear_t06lap_bc'
+  server is 50s old: world is already fresh, skipping reload
+
+################################################################
+# DAgger round 8 — evaluating policy 'teacher_clear_t06lap_dagger_r06'
+################################################################
+  [clear/lap] over-budget=  0.0%  max|CTE|= 1.37ft  (gate 2.19ft) -> PASS
+  collected 1280 frames at beta=0.00
+
+*** PASSED at round 8 with policy 'teacher_clear_t06lap_dagger_r06' ***
+
+===== DAgger summary =====
+  round 8: teacher_clear_t06lap_dagger_r06 PASS
+[2026-09-01 15:14:28]   round trained (rc=0)
+Traceback (most recent call last):
+  File "/home/za/ad-assurance--workspace/formal-verification--steering--code/scripts/gate_teacher_lap.py", line 30, in <module>
+    from preprocess import preprocess_for_model                    # noqa: E402
+ModuleNotFoundError: No module named 'preprocess'
+Traceback (most recent call last):
+  File "/home/za/ad-assurance--workspace/formal-verification--steering--code/scripts/gate_teacher_lap.py", line 30, in <module>
+    from preprocess import preprocess_for_model                    # noqa: E402
+ModuleNotFoundError: No module named 'preprocess'
+[2026-09-01 15:20:37]   restart failed before gate lap 2
+[2026-09-01 15:20:37]   gate: 0/3 laps passed with teacher_clear_t06lap_dagger_r06
+[2026-09-01 15:20:37] clear teacher already PASSED; nothing to do

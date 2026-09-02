@@ -1,7 +1,6 @@
 # Town06 deployment test — status
 
-Branch `validation/town06-deployment-test`. Nothing here is on `main`; the released
-v1.0.0 artifact repo is untouched.
+On `main`, alongside the Town04 redo. The released v1.0.0 tag is untouched.
 
 **Read `PROTOCOL.md` first.** It wins over every other file, including this one.
 
@@ -16,84 +15,75 @@ first, certificate committed before the drive, then drive.
 
 ---
 
-## PAUSED — students are marginal, and a capacity decision is needed
+## REBUILDING from step 0 on the continuous lap
 
-Nothing is contaminated: no certificate exists and nothing has been driven as a scored
-cell. Everything upstream is built and verified.
+Nothing is contaminated: no lap certificate exists and no lap cell has been scored.
 
-### Where it stopped
+### What stopped the last attempt, and what it actually was
 
-Both Town06 students hover ON the CTE budget rather than inside it, and the competence
-gate's verdict is therefore not repeatable. The SAME checkpoint
-`S_clear_t06_84x28_dagger_r08` scored **5/6, then 6/6, then 5/6** on three consecutive
-gate runs with nothing changed between them. Worst |CTE| ranged 1.71 to 2.92 ft against
-a 2.19 ft budget: precisely the cliff where standing rule 3 says pass/fail is a coin
-flip.
+The mixed teacher would not converge on the lap -- night 0 of 29 gate laps, fog 3 of 29 --
+while clear passed 20 of 29. **The cause was the simulator, not the models, the route or
+the conditions.** `docs/TOWN06_FINDINGS.md` T06-F42:
 
-Ten student-DAgger rounds each produced no margin:
+The CARLA server rendered the identical scene ~15% darker for part of 2026-09-01. Both BC
+sets, which seed both teachers, were collected on the dark side; the DAgger sets hold BOTH
+renderings, interleaved. At matched poses 0.5 m apart the frames are the same picture at a
+different exposure -- per-pixel ratio 0.830, median 0.831, flat across the tonal range,
+identical geometry and content. A collection run on 2026-09-02 with unchanged code
+reproduces the bright side.
 
-| student | ReLU | conditions | trajectory over ~10 rounds |
+So every lap teacher trained on frames systematically darker than the frames it is scored
+on. It predicts the failure pattern exactly: clear has the most headroom and passed
+throughout, night and low sun are where a 15% gain bites, and the mixed teacher's gate
+reached 6/12 at rounds 10-13 -- precisely the four consecutive BRIGHT rounds. Round 13
+passed every lap it was given (clear 0.85/0.74 ft, fog 0.44, night 0.96, low sun 1.53,
+against 2.19 ft) and was stopped by an infrastructure failure, not a policy failure.
+
+Nothing caught it because nothing looked at brightness. The determinism preflight checks
+how the server was LAUNCHED, `verify_condition()` reads the WEATHER STRUCT back, and
+`identify()` asks WHICH CONDITION it is. A uniform photometric gain passes all three.
+
+Fixed by `scripts/check_render_photometry.py`, run from `carla_launch.sh` on every fresh
+server. Every Town06 lap artifact produced by driving is archived to the drive and
+recollected, under A-2's own reasoning (`docs/ARCHIVE_2026-09-02.md`).
+
+### The capacity question is CLOSED
+
+`TOWN06_STATUS.md` carried an open decision addressed to Zach -- widen both students,
+widen the mixed only, or collect more base data -- raised because both students hovered ON
+the CTE budget. T06-F28 answered it before the lap rebuild: **the capacity crisis was the
+data.** T06-F30 then measured the w3 mixed student at 24/24 across all four conditions with
+58% margin. The widths are declared in `config.TOWN06_STUDENTS` and the pipeline distils at
+them. Nothing here is waiting on a decision.
+
+### T06-F41's proposed re-derivation is WITHDRAWN
+
+F41 concluded the lap route renders 37.8% darker under low sun than the six-section route
+the conditions were calibrated on, and that the frozen condition constants therefore had to
+move. It compared the six-section DATASET's frame means against the lap DATASET's; the
+first was collected 08-28 (bright), the second 09-01 (dark). It measured the render drift
+and named it the route.
+
+Driving one instrument over the lap does not reproduce it. `scripts/measure_lap_condition.py`,
+one pure-pursuit lap per condition, clean server each:
+
+| | F41 claimed (lap) | measured, driven | six-section reference |
 |---|---|---|---|
-| `S_clear_t06` | 5,152 | 1 | 4/6, 5/6, 6/6, 5/6 — flat, noisy |
-| `S_mixed_t06` | 15,456 | 4 | 4/6, 4/6, 5/6, 4/6, 3/6 — flat, noisy |
+| clear | 0.2054 | 0.2525 | 0.2528 |
+| fog | 0.3044 | 0.3365 | 0.3361 |
+| night | 0.0765 | 0.1008 | 0.1031 |
+| low sun | 0.0654 | 0.1045 | 0.1037 |
 
-### What a competent student looks like
+A driven lap of the LAP route reproduces the SIX-SECTION dataset to within 0.4%.
 
-Town04's published mixed student passed at student-DAgger **round 0**, needing no
-rounds at all (commit `4b2ad73`):
+**The conditions hold and no frozen constant moves.** On the student's view -- the view
+`condition_signature`'s thresholds were derived on and the view `evaluate.py` asserts --
+low sun measures 0.1264 against A-2's 0.1204, 5.0% away where T06-F20 accepted 9%; the
+night/low-sun axis stays ordered (night 0.1844); and all four conditions classify as
+themselves with margin on every discriminator. `PROTOCOL.lock` is untouched.
 
-| condition | max \|CTE\| both directions |
-|---|---|
-| clear | 1.27 / 0.53 ft |
-| fog | 0.64 / 1.36 ft |
-| night | 0.62 / 0.98 ft |
-| low sun | — / 1.61 ft |
-
-Comfortably inside the same 2.19 ft budget, 0 % over. The verdict was never in question.
-That is the bar, and Town06's students are not at it.
-
-### Why not just add rounds or reps
-
-Both are ways of shopping for a verdict rather than earning one:
-
-* **More rounds** repeats F7 (`5be6862`), which blamed student-DAgger for a gap that
-  M3 (`4b2ad73`) then showed was capacity: w1 failed all four conditions, w2 failed
-  night 10/10, w3 passed everything.
-* **More reps** would eventually stabilise the verdict, but a student that needs ten
-  repetitions to prove it can hold clear weather is not one worth certifying.
-
-### Why Town06 is harder for the same architectures
-
-The straight sections punish residual bias. On s03 (dead straight, steering demand
-0.0000) the student's CTE runs -0.18 → -1.24 → -8.59 with the sign never changing: a
-constant steering bias integrating into departure. The teacher on the same section
-oscillates about zero (-0.01 → +0.05 → -0.21). On curved sections the commanded
-steering is large enough that the same bias is proportionally invisible.
-
-Incidentally this reproduces the paper's own thesis in a new setting: a small persistent
-bias walks the vehicle out of its lane while a large oscillating one integrates to
-nothing.
-
-### The decision
-
-Widening needs **no protocol amendment** — capacity is a property of the model under
-test, not of the criterion, and PROTOCOL section 3 does not freeze it. F12 (`387f62e`)
-shows it is close to free for verifiability: 5,152 ReLU gives 0.78 % UNKNOWN, 15,456
-gives 2.5 %, against ~11 % where certification stops being useful, because what binds
-is input dimension and ours is one-dimensional.
-
-Options, for Zach:
-
-1. **Widen both** (clear to w2, mixed to w4), re-distil, re-run. Costs hours; gives
-   students with margin, which every downstream number depends on.
-2. **Widen the mixed student only**, accept a marginal clear student.
-3. **Collect more base data first** — 4 laps x 6 sections may be thin for a route with
-   this much straight.
-
-Recommendation: (1). A marginal student makes the ledger, the certificate and the
-comparison all noisy. But it is a larger departure from the published pair than option
-2, and the paper reports the mixed student as 3x width, so whichever is chosen becomes
-a declared difference.
+F41 recorded its proposal as "not acted on: re-deriving a frozen-section condition is
+Zach's call". That is the only reason this cost nothing.
 
 ## The order, and where we are
 
@@ -103,22 +93,37 @@ a declared difference.
 | 2 | Route chosen on geometry alone, committed | **done** |
 | 3 | Pipeline made map-aware (`STUDY_MAP`) | **done** |
 | 4 | Oracle validated on the route | **done** |
-| 5 | Train teachers → distil students (both policies) | **running** |
-| 6 | Full-lap captures, 8 of them | pending |
-| 7 | Certify, blind | pending |
-| 8 | **Commit the certificate** | pending |
-| 9 | Scored closed-loop ledger, ≥10 reps/cell | pending |
-| 10 | Compare, dispose, write up | pending |
+| 5 | Harness: photometry guard, restart self-kill, condition naming | **done** (T06-F42) |
+| 6 | Train teachers -> distil students (both policies) | **running, from step 0** |
+| 7 | Full-lap captures | pending |
+| 8 | Certify, blind | pending |
+| 9 | **Commit the certificate** | pending |
+| 10 | Scored closed-loop ledger, 3 laps per cell (A-4) | pending |
+| 11 | Compare, dispose, write up | pending |
 
-Steps 8 and 9 cannot be reordered: `closed_loop_ledger.py` refuses to run a Town06 cell
+Steps 9 and 10 cannot be reordered: `closed_loop_ledger.py` refuses to run a Town06 cell
 whose certificate is missing, untracked, or dirty.
 
 ---
 
 ## What was decided, and on what evidence
 
-**Route.** Town06 outer highway loop, 2861 m scored, both carriageways of the same
-physical road. Chosen by `scripts/build_town06_routes.py` on map geometry only.
+**Route — the LAP, which superseded the six sections.** One continuous loop of
+**2,289 m, of which 2,119 m is scored**, 93% policy-driven with two pure-pursuit bridges
+across the intersections (`config.BRIDGE_SPANS`, 619-707 m and 1,548-1,630 m). Bridged
+spans are driven by the expert and **excluded from scoring**: the lane centreline is
+undefined through an intersection, and a lane-follower asked to drive one is being scored
+outside its domain. Built by `scripts/build_town06_lap_from_track.py` from a human-driven
+track snapped to the lane centreline; lanes chosen by MARKINGS rather than `lane_id`,
+because the carriageway gains a lane and shifts 2.3 m laterally across bridge 2, so ids
+change meaning across it.
+
+It replaced six discrete sections, which were pieces of road 70-500 m apart and hard to
+justify as repetitions of one experiment — the same argument PROTOCOL A-4 makes when it
+says the LAP is the repetition.
+
+**The six-section selection below is the historical record of how the road was chosen**,
+on map geometry alone and before any Town06 model existed. The lap runs on that road.
 
 | | Town04 | Town06 chosen |
 |---|---|---|
@@ -193,13 +198,12 @@ genuinely blind. Nobody may look at mixed-model training telemetry and adjust an
 ## Running it
 
 ```bash
-export CARLA_PORT=3000 STUDY_MAP=Town06
-bash scripts/run_town06_pipeline.sh      # resumable; skips completed stages
-bash scripts/capture_town06_laps.sh
-python3 scripts/certify_town06.py
-git add results/town06/certificate_town06.json && git commit -m "Town06 certificate (pre-drive)"
-# only now:
-python3 scripts/closed_loop_ledger.py --student S_clear_t06_84x28 --condition night --reps 10
+export STUDY_MAP=Town06 CARLA_PORT=3000 CARLA_WINDOWED=0
+setsid nohup bash scripts/watchdog_town06.sh > /tmp/t06_watchdog.log 2>&1 &
+# then, once the pipeline reports students competent in clear:
+bash scripts/finish_town06_deployment.sh   # capture -> certify -> COMMIT -> drive
 ```
 
-Logs: `results/town06_logs/`. CARLA runs headless (`-RenderOffScreen`) on port 3000.
+Logs: `results/town06_logs/pipeline.log`. CARLA runs headless (`-RenderOffScreen`) on port
+3000 -- see `NEXT_SESSION.md` for why, and for the measurement showing headless and
+windowed render the same lap to 4e-5.

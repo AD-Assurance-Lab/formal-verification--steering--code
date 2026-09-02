@@ -1,0 +1,60 @@
+[2026-09-01 15:20:37] round attempt 1/12
+[2026-09-01 15:26:20]   round trained (rc=143)
+[2026-09-01 15:29:57]   gate: 0/12 laps passed with teacher_mixed_t06lap_dagger_r00
+[2026-09-01 15:29:57] round attempt 2/12
+[2026-09-01 15:30:52]   round trained (rc=143)
+[2026-09-01 15:34:22]   gate: 0/12 laps passed with teacher_mixed_t06lap_dagger_r00
+[2026-09-01 15:34:22] round attempt 3/12
+[2026-09-01 15:35:19]   round trained (rc=143)
+[2026-09-01 15:38:58]   gate: 0/12 laps passed with teacher_mixed_t06lap_dagger_r00
+[2026-09-01 15:38:58] round attempt 4/12
+[2026-09-01 15:39:56]   round trained (rc=143)
+[2026-09-01 16:28:24] round attempt 1/12
+[2026-09-01 16:31:17]   round trained (rc=0)
+[2026-09-01 16:37:42]   gate: 3/12 laps passed with teacher_mixed_t06lap_dagger_r00
+[2026-09-01 16:37:42] round attempt 2/12
+[2026-09-01 16:44:24]   round trained (rc=134)
+[2026-09-01 16:51:36]   gate: 0/12 laps passed with teacher_mixed_t06lap_dagger_r02
+[2026-09-01 16:51:36] round attempt 3/12
+[2026-09-01 16:58:19]   round trained (rc=134)
+[2026-09-01 17:04:02]   gate: 2/12 laps passed with teacher_mixed_t06lap_dagger_r03
+[2026-09-01 17:04:02] round attempt 4/12
+[2026-09-01 17:12:44]   round trained (rc=134)
+[2026-09-01 17:21:36]   gate: 9/12 laps passed with teacher_mixed_t06lap_dagger_r04
+[2026-09-01 17:21:36] round attempt 5/12
+[2026-09-01 17:22:02] round attempt 1/12
+[2026-09-01 17:29:38]   round exited rc=134
+[2026-09-01 17:29:38]   round completed and saved teacher_mixed_t06lap_dagger_r05, then exited rc=134 at teardown
+[2026-09-01 17:46:29]   gate: 2/12 laps passed with teacher_mixed_t06lap_dagger_r05
+[2026-09-01 17:46:29] round attempt 2/12
+[2026-09-01 17:51:11]   round exited rc=0
+[2026-09-01 17:51:11]   STALE: teacher_mixed_t06lap_dagger_r05 predates this round (trained 17:26, round began 17:47)
+[2026-09-01 17:51:11]   the round produced no checkpoint of its own -- not gating a stale one; stopping
+[2026-09-01 17:52:22] round attempt 1/12
+[2026-09-01 18:01:12]   round exited rc=134
+[2026-09-01 18:01:12]   round completed and saved teacher_mixed_t06lap_dagger_r07, then exited rc=134 at teardown
+[2026-09-01 18:18:22]   gate: 3/12 laps passed with teacher_mixed_t06lap_dagger_r07
+[2026-09-01 18:18:22] round attempt 2/12
+[2026-09-01 18:27:07]   round exited rc=134
+[2026-09-01 18:27:07]   round completed and saved teacher_mixed_t06lap_dagger_r08, then exited rc=134 at teardown
+[2026-09-01 18:44:21]   gate: 6/12 laps passed with teacher_mixed_t06lap_dagger_r08
+[2026-09-01 18:44:21] round attempt 3/12
+[2026-09-01 18:53:19]   round exited rc=134
+[2026-09-01 18:53:19]   round completed and saved teacher_mixed_t06lap_dagger_r09, then exited rc=134 at teardown
+[2026-09-01 19:10:09]   restart failed before gate lap 2/shadows
+[2026-09-01 19:10:09]   gate: 4/12 laps passed with teacher_mixed_t06lap_dagger_r09
+[2026-09-01 19:10:09] round attempt 4/12
+[2026-09-01 19:19:29]   round exited rc=134
+[2026-09-01 19:19:29]   round completed and saved teacher_mixed_t06lap_dagger_r10, then exited rc=134 at teardown
+[2026-09-01 19:36:46]   gate: 6/12 laps passed with teacher_mixed_t06lap_dagger_r10
+[2026-09-01 19:36:46] round attempt 5/12
+[2026-09-01 19:46:13]   round exited rc=134
+[2026-09-01 19:46:13]   round completed and saved teacher_mixed_t06lap_dagger_r11, then exited rc=134 at teardown
+[2026-09-01 20:03:30]   gate: 6/12 laps passed with teacher_mixed_t06lap_dagger_r11
+[2026-09-01 20:03:30] round attempt 6/12
+[2026-09-01 20:04:00] round attempt 1/12
+[2026-09-01 20:11:12]   round exited rc=0
+[2026-09-01 20:23:49]   restart failed before gate lap 1/night
+[2026-09-01 20:23:49]   gate: 6/12 laps passed with teacher_mixed_t06lap_dagger_r12
+[2026-09-01 20:23:49] round attempt 2/12
+[2026-09-01 20:33:03]   round exited rc=0

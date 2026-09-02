@@ -88,7 +88,7 @@ if ls results/town06/captures/*.npz >/dev/null 2>&1; then
     say "SKIP capture (npz present)"
 else
     carla_up 6 || carla_start || exit 1
-    say "capturing 24 laps (6 sections x 4 conditions) at the students' resolution"
+    say "capturing $(STUDY_MAP=Town06 python3 -c \"import sys;sys.path.insert(0,'pipeline');import config as C;print(len(C.SECTIONS)*4)\") captures (sections x 4 conditions) at the students' resolution"
     bash scripts/capture_town06_laps.sh >>"$LOG_DIR/capture.log" 2>&1 \
         || { say "FATAL: capture failed, see capture.log"; exit 1; }
 fi
@@ -130,11 +130,17 @@ PROTOCOL R1. This is what makes the verdicts a prediction rather than a descript
 no closed-loop cell has been driven, and no truth table was read to produce it.
 
 Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_01ShU3GkJPKyadKYYmn82com
+Claude-Session: https://claude.ai/code/session_01RZSRHb9mJhzPz6BooMK9eM
 MSG
     say "committed the certificate"
 fi
-git push -q origin validation/town06-deployment-test && say "pushed"
+# PUSH THE BRANCH THIS WORK IS ON, not a name hardcoded when it was on another one.
+# The lap rebuild is on `main`; this line named validation/town06-deployment-test, which
+# still exists and is stale, so it would have pushed a branch WITHOUT the certificate
+# while reporting "pushed" -- and R1's whole point is that the prediction is on the
+# record before the drives.
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+git push -q origin "$BRANCH" && say "pushed $BRANCH" || say "WARNING: push of $BRANCH failed"
 
 python3 scripts/check_order_town06.py >/dev/null || {
     say "FATAL: R1 still not satisfied after commit. Refusing to drive."; exit 1; }
@@ -142,7 +148,7 @@ say "R1 satisfied. The prediction is on the record; driving may begin."
 
 # ---------------------------------------------------------------- 4. drive, 5. compare
 carla_start || exit 1
-say "running the scored ledger: 8 cells x 12 runs"
+say "running the scored ledger: 8 cells (2 students x 4 conditions), 3 laps each (A-4)"
 bash scripts/run_town06_ledger.sh >>"$LOG_DIR/ledger_run.log" 2>&1 \
     || say "WARNING: ledger exited nonzero, see ledger_run.log"
 
