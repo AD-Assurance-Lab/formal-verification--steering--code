@@ -1,0 +1,39 @@
+{
+  "weather": "fog",
+  "reps": 3,
+  "budget_ft": 2.1916011199999996,
+  "results": {
+    "S_mixed_t06lap_168x56_w4": [
+      {
+        "max_cte_ft": 11.15,
+        "over": 0.24600000000000002,
+        "steps": 1181,
+        "full_steps": 1280,
+        "departed": false,
+        "passed": false,
+        "rep": 0,
+        "sec": 27.6
+      },
+      {
+        "max_cte_ft": 10.85,
+        "over": 0.221,
+        "steps": 1181,
+        "full_steps": 1280,
+        "departed": false,
+        "passed": false,
+        "rep": 1,
+        "sec": 28.0
+      },
+      {
+        "max_cte_ft": 10.83,
+        "over": 0.242,
+        "steps": 1180,
+        "full_steps": 1280,
+        "departed": false,
+        "passed": false,
+        "rep": 2,
+        "sec": 27.2
+      }
+    ]
+  }
+}
