@@ -1,0 +1,16 @@
+resuming from 'S_clear_t06lap_168x28_w2_dagger_r01', the newest policy this run actually trained (round 1); not 'S_clear_t06lap_168x28_w2'
+  server is 53s old: world is already fresh, skipping reload
+resuming: found 2 prior student round(s), continuing at round 2
+
+################################################################
+# student DAgger round 2 — policy 'S_clear_t06lap_168x28_w2_dagger_r01'
+################################################################
+  [clear/lap] over-budget=  0.5%  max|CTE|= 4.28ft  -> FAIL
+
+Exhausted this process's budget of 1 round(s) (last 'S_clear_t06lap_168x28_w2_dagger_r01'); re-distilling before exit so the round is not lost.
+  re-distilling (warm-start from 'S_clear_t06lap_168x28_w2_dagger_r01') -> S_clear_t06lap_168x28_w2_dagger_r02
+all 5098 teacher targets cached
+
+===== student DAgger summary =====
+  round 2: S_clear_t06lap_168x28_w2_dagger_r01 FAIL
+*** STUDENT DAGGER COMPLETE: S_clear_t06lap_168x28_w2_dagger_r02 (3 round(s)) ***

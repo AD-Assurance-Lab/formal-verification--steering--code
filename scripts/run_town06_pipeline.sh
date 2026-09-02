@@ -229,11 +229,27 @@ teacher_gate() {   # teacher_gate <logname>
 # HOW MANY LAPS EACH POLICY'S BASE SET SHOULD HAVE, per condition.
 #
 # Declared here rather than buried in a flag, because it is a lever the study pulls: the
-# mixed student failed clear-weather competence with 3 laps per condition (3,822 frames)
-# while the clear student had 4 (5,098), and PROTOCOL A-2's own precedent (T06-F28, "the
-# capacity crisis was the data") says data before architecture.
-CLEAR_LAPS=${CLEAR_LAPS:-4}
-MIXED_LAPS=${MIXED_LAPS:-6}
+# students failed clear-weather competence over the FULL lap while both teachers held it
+# (T06-F44): clear 6.57 ft and mixed 17.35 ft against a 2.19 ft budget, teachers 1.21 and
+# 1.62 ft. That is a distillation gap, and T06-F28 names the mechanism -- the distillation
+# set is "67% DAgger recovery data by construction", and "the clear student's relative
+# error was worst precisely because its small base set left the recovery states dominating
+# its distillation mix".
+#
+# The lap's base set was 4 laps = 5,098 frames, against roughly 12,000 in the six-section
+# era where this architecture reached 6/6. 8 laps puts each policy at ~10,192 frames per
+# condition and shifts the mix back toward nominal driving, which is where these students
+# drift. Data before architecture is the study's own precedent (T06-F28).
+CLEAR_LAPS=${CLEAR_LAPS:-8}
+MIXED_LAPS=${MIXED_LAPS:-8}
+
+# STUDENT DAGGER ROUND BUDGET. Was 3, and 3 was cutting it off mid-improvement: the clear
+# student's own full-lap gate went 12.29 ft (distilled) -> 4.28 ft after two rounds, still
+# heading for the 2.19 ft budget when the budget ran out. The TEACHER driver gets 12 and
+# stops early when its gate passes; there is no reason the student driver gets 3.
+# run_student_dagger_rounds.sh already stops as soon as the student passes its own gate,
+# so a larger budget costs nothing when it is not needed.
+STUDENT_DAGGER_ROUNDS=${STUDENT_DAGGER_ROUNDS:-12}
 
 # TOP UP, DO NOT SKIP.
 #
@@ -393,7 +409,7 @@ for ROW in "${ROWS[@]}"; do
         run "dagger_student_$NM" env TEACHER="$TEACH" BASE="$DSET" \
             DDIR="dagger_student_${NM}_t06lap" \
             bash "$REPO/scripts/run_student_dagger_rounds.sh" \
-            "$CK" 3 "$W" "$CH" "$FC" "$IN_W" "$IN_H" || exit 1
+            "$CK" "$STUDENT_DAGGER_ROUNDS" "$W" "$CH" "$FC" "$IN_W" "$IN_H" || exit 1
         grep -q "\*\*\* STUDENT DAGGER COMPLETE" "$SLOG" 2>/dev/null || {
             say "FATAL: dagger_student_$NM did not complete its rounds."; exit 1; }
     else say "SKIP  dagger_student_$NM (complete)"; fi
