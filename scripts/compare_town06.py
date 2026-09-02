@@ -38,7 +38,7 @@ STU = {}
 for _nm, _ck, _, _ in C.TOWN06_STUDENTS:
     STU[_ck] = _nm
     STU[C.final_student(_ck)] = _nm
-COND_LABEL = {"shadows": "low sun"}
+COND_LABEL = {"shadows": "low sun", "low_sun": "low sun"}
 
 
 def wilson(k, n, z=1.96):
