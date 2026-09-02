@@ -23,6 +23,30 @@ PORT=${CARLA_PORT:-3000}
 #
 # flock queues them instead. A restart takes ~50 s, so waiting is cheap next to the
 # alternative of two of them destroying each other's work.
+# WHO KILLED THIS RESTART? Record it, do not infer it.
+#
+# "restart failed" has now been diagnosed twice from circumstantial evidence -- once
+# correctly (pkill -f matching an ancestor) and once wrongly. A restart that dies takes a
+# DAgger gate with it, and the log said only "Terminated", which names neither the signal
+# nor the sender. So the script says so itself, with the process tree at the moment it
+# happened, and the next occurrence is evidence instead of a hypothesis.
+_diag=/tmp/carla-restart-signals.log
+_on_signal() {
+    { echo "=== $(date '+%F %T') carla_restart.sh pid=$$ got SIG$1 (ppid=$PPID)"
+      echo "--- ancestry"
+      _p=$$; while [ -n "$_p" ] && [ "$_p" != 1 ]; do
+          echo "    $_p $(tr '\0' ' ' < /proc/$_p/cmdline 2>/dev/null | cut -c1-110)"
+          _p=$(ps -o ppid= -p "$_p" 2>/dev/null | tr -d ' ')
+      done
+      echo "--- live drivers"
+      pgrep -af 'run_town06_pipeline|run_dagger_rounds|watchdog_town|carla_restart' 2>/dev/null | cut -c1-110
+    } >> "$_diag" 2>&1
+    exit 143
+}
+trap '_on_signal TERM' TERM
+trap '_on_signal INT' INT
+trap '_on_signal HUP' HUP
+
 exec 9>/tmp/carla-restart-${PORT:-3000}.flock
 if ! flock -w 300 9; then
     echo "FATAL: waited 5 minutes for another CARLA restart to finish; giving up"
@@ -144,10 +168,14 @@ rm -f "/tmp/carla-locks/carla-$PORT.lock" 2>/dev/null
 # The LAUNCH half lives in carla_launch.sh, which is the single place that knows the
 # determinism flags. This script owns the STOP half -- the order of which matters
 # (SIGTERM, wait, SIGKILL) and is why the two are separate files.
-# Release the serialisation lock before the LAUNCH. The lock exists to stop two restarts
-# killing each other's processes; once the killing is done the launch is safe to overlap,
-# and holding it through a 45 s launch is what made every other restart wait.
-flock -u 9 2>/dev/null || true
+# HOLD THE LOCK THROUGH THE LAUNCH. It used to be released here, on the reasoning that
+# "once the killing is done the launch is safe to overlap" -- which is false in the one
+# direction that matters: a SECOND restart's kill phase pkills CarlaUE4 by port, and the
+# first restart is at that moment waiting for exactly that server to become ready. The
+# first then fails with the server it launched already dead, and reports "restart failed"
+# while the second's server comes up healthy behind it.
+#
+# Restarts are meant to be serialised; serialising only half of one is not serialising it.
 bash "$REPO/scripts/carla_launch.sh" || exit 1
 
 nvidia-smi --query-gpu=memory.used --format=csv,noheader | sed 's/^/  GPU after restart: /'
