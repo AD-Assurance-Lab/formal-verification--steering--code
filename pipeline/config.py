@@ -497,12 +497,30 @@ def relu_count(channels, fc, in_h=28, in_w=84):
     return n + fc
 
 
-# Does this study's procedure INCLUDE student DAgger? Town06 removed it (T06-F14) and the
-# rebuild confirmed it is not needed there -- w3 reaches 24/24 distilled only. Town04's
-# published pipeline is behaviour cloning -> teacher DAgger -> distillation -> STUDENT
-# DAgger (README "Reproduce", and the archived dagger_student_clear / dagger_student_w3
-# round directories), so the redo must run it to reproduce the published procedure.
-STUDENT_DAGGER = STUDY_MAP == "Town04"
+# Does this study's procedure INCLUDE student DAgger?
+#
+# BOTH maps run it, and this flag must agree with the DRIVER that runs it or the study
+# breaks in a way no result reveals. It said `STUDY_MAP == "Town04"` while
+# run_town06_pipeline.sh ran the stage for Town06 -- restored by T06-F25, because
+# T06-F14 removed it on evidence that A-2 then discarded outright. The two halves of
+# that restoration were never joined:
+#
+#   * final_student() RAISES for Town06 the moment a <base>_dagger_rNN checkpoint
+#     exists, which the stage produces. The competence gate, the ledger and the
+#     certifier all call it, so the pipeline would have died immediately after student
+#     DAgger with an error saying the checkpoints were "stale artefacts of a procedure
+#     this study has abandoned" -- about a stage it had just deliberately run.
+#   * Had it not raised, it would have returned the DISTILLED intermediate while the
+#     stage shipped a DAgger'd model, which is the "certify a model nobody intended to
+#     ship" failure the same function was written to prevent.
+#
+# Town04's published pipeline is behaviour cloning -> teacher DAgger -> distillation ->
+# STUDENT DAgger (README "Reproduce", and the archived dagger_student_clear /
+# dagger_student_w3 round directories). Town06 is the deployment test of that same
+# pipeline, so it runs the same procedure; whether student DAgger HELPS at 168x28 is
+# then a measurement the competence gate and the three-lap ledger make on the corrected
+# harness, which is exactly what T06-F25 asked for and what nobody has.
+STUDENT_DAGGER = True
 
 
 def final_student(base):
@@ -514,7 +532,10 @@ def final_student(base):
     no longer runs one selects a stale artefact, and preferring the distilled
     intermediate where the procedure DOES run one selects a model that is not the policy.
 
-    For Town06, where student DAgger was removed, that is the DISTILLED one:
+    Both maps currently run student DAgger, so this returns the newest round. The
+    STUDENT_DAGGER = False branch below is kept because the choice is a property of the
+    PROCEDURE, not of the map, and a study that stops running the stage must not silently
+    keep driving its leftovers:
 
     This function used to return the newest <base>_dagger_rNN, because student DAgger
     was part of the procedure and every downstream stage was naming the distilled
