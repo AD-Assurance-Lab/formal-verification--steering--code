@@ -1,0 +1,38 @@
+{
+  "map": "Town06",
+  "students": {
+    "S_clear_t06": {
+      "checkpoint": "S_clear_t06lap_168x28_w2_dagger_r02",
+      "sections": {
+        "lap": {
+          "passed": false,
+          "n_pass": 0,
+          "reps": 3,
+          "max_cte_ft": 6.57
+        }
+      },
+      "competent": false
+    },
+    "S_mixed_t06": {
+      "checkpoint": "S_mixed_t06lap_168x28_w3_dagger_r02",
+      "sections": {
+        "lap": {
+          "passed": false,
+          "n_pass": 0,
+          "reps": 3,
+          "max_cte_ft": 17.35
+        }
+      },
+      "competent": false
+    }
+  },
+  "all_competent": false,
+  "checkpoint_digests": {
+    "S_clear_t06lap_168x28_w2_dagger_r02": "61d0f77b264168e3",
+    "S_mixed_t06lap_168x28_w3_dagger_r02": "d44774c412f4057b"
+  },
+  "cte_budget_ft": 2.1916011199999996,
+  "git_commit": "5126e671eca5c05df9c3f0490a8d989a10adccba",
+  "reps": 3,
+  "note": "clear weather only; s=0 anchor, not a disturbance cell, not a scored ledger cell; every section must hold on every rep"
+}

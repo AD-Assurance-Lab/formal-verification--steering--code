@@ -467,6 +467,21 @@ TOWN06_STUDENTS = (
     # (S_clear_t06_168x28_w2 / S_mixed_t06_168x28_w3) because they are a valid study on a
     # different route, not a superseded attempt at this one.
     ("S_clear_t06", "S_clear_t06lap_168x28_w2", (16, 32, 32), 64),
+    # THE RATIO, NOT THE ABSOLUTE WIDTH, IS WHAT TOWN04 SET.
+    #
+    # Published Town04 is clear (8,16,16)/fc32 -> mixed (24,48,48)/fc96: the mixed student
+    # is 3.0x the clear one's width, because it represents four conditions and the clear
+    # one represents a single point. The comment below claimed to follow that precedent
+    # and did not: Town06's CLEAR student was itself widened w1 -> w2 for the straights
+    # (T06-F11), the mixed student stayed at w3, and the ratio silently halved to 1.5x.
+    #
+    #     Town04    clear  5,152 ReLU  ->  mixed 15,456   3.0x
+    #     Town06    clear 21,408 ReLU  ->  mixed 32,112   1.5x   (w3, was here)
+    #     Town06    clear 21,408 ReLU  ->  mixed 42,816   2.0x   (w4, now)
+    #
+    # w4 is also the width T06-F18 measured as the best of five at this input size --
+    # 33/48 cells against w3's 15/48, on the six-section route -- and it is the step the
+    # architecture sweep would have taken first anyway.
     # THE MIXED STUDENT IS WIDER THAN THE CLEAR ONE, as in published Town04
     # (S_clear (8,16,16)/fc32 against S_mixed (24,48,48)/fc96). There is no reason for the
     # two to match: they fit different functions, and only the mixed one has to represent
@@ -480,7 +495,7 @@ TOWN06_STUDENTS = (
     # the gap is student capacity and width is the direct lever. This is the same
     # conclusion Town04 reached at 4b2ad73, where w1 failed all four conditions, w2 failed
     # night 10/10 and w3 passed everything.
-    ("S_mixed_t06", "S_mixed_t06lap_168x28_w3", (24, 48, 48), 96),
+    ("S_mixed_t06", "S_mixed_t06lap_168x28_w4", (32, 64, 64), 128),
 )
 
 
