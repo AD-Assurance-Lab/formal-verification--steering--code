@@ -67,3 +67,20 @@ python3 "$REPO/scripts/check_gpu_usable.py" || exit 1
 
 python3 -m carla_determinism --port "$PORT" || {
     echo "FATAL: the server on $PORT violates the determinism rules (above)."; exit 1; }
+
+# PHOTOMETRY, on every fresh server. The determinism preflight verifies how the server
+# was LAUNCHED and verify_condition() reads the weather struct back; both were green
+# through half a day in which this server rendered the identical scene 15% darker, and
+# every teacher trained on the result. See scripts/check_render_photometry.py.
+#
+# Only maps that have a recorded reference are checked, and a map without one SAYS SO on
+# every launch rather than passing quietly -- an unchecked server that prints nothing is
+# indistinguishable from a checked one, which is how this was missed.
+PHOTO_REF="$REPO/results/photometry_reference.json"
+if [ -f "$PHOTO_REF" ] && grep -q "\"${STUDY_MAP:-Town04}/clear\"" "$PHOTO_REF" 2>/dev/null; then
+    STUDY_MAP="${STUDY_MAP:-Town04}" CARLA_PORT="$PORT" \
+        python3 "$REPO/scripts/check_render_photometry.py" || {
+        echo "FATAL: the server on $PORT renders at a different brightness (above)."; exit 1; }
+else
+    echo "  photometry NOT CHECKED: no reference for ${STUDY_MAP:-Town04} in results/photometry_reference.json"
+fi

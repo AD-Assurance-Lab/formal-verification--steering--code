@@ -80,15 +80,40 @@ fi
 # SIGTERM first, never SIGKILL: a client killed with -9 skips env.cleanup and leaves the
 # world in synchronous mode with nothing ticking, which is how the server gets wedged in
 # the first place. Give clients a chance to restore settings.
-for pat in "[e]valuate.py" "[d]agger_student.py" "[d]agger.py" "[c]ollect_data.py" \
-           "[c]apture_offset_yaw.py" "[c]losed_loop_ledger.py"; do
-    pkill -TERM -f "$pat" 2>/dev/null
-done
+#
+# KILL PYTHON CLIENTS, NOT WHOEVER MENTIONED THEM.
+#
+# `pkill -f collect_data.py` matches EVERY process whose command line contains that
+# string -- including the shell that is running this script, whenever the caller wrote
+# `bash scripts/carla_restart.sh && python3 collect_data.py ...` on one line. The
+# bracket trick ([c]ollect) only stops pkill matching its OWN pattern argument; it does
+# nothing about an ancestor. So the restart killed its own invoker, part way through,
+# and the log read "...GPU after restart: 5693 MiB" followed by "Terminated" with a
+# perfectly healthy server at the end of it.
+#
+# That is the failure the DAgger driver reported all afternoon as "restart failed before
+# gate lap N", discarding a gate that was passing at the time.
+#
+# Two conditions now, both required: the process must be a PYTHON interpreter (so a
+# shell that merely names the script is never a candidate), and it must not be this
+# script or any of its ancestors.
+kill_clients() {                # kill_clients <signal>
+    local sig=$1 pid
+    local -a mine=()
+    pid=$$
+    while [ -n "$pid" ] && [ "$pid" != 0 ] && [ "$pid" != 1 ]; do
+        mine+=("$pid")
+        pid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
+    done
+    for pid in $(pgrep -f 'evaluate\.py|dagger_student\.py|dagger\.py|collect_data\.py|capture_offset_yaw\.py|closed_loop_ledger\.py|gate_teacher_lap\.py|measure_lap_condition\.py' 2>/dev/null); do
+        case " ${mine[*]} " in *" $pid "*) continue ;; esac
+        case "$(cat "/proc/$pid/comm" 2>/dev/null)" in python*) ;; *) continue ;; esac
+        kill "-$sig" "$pid" 2>/dev/null
+    done
+}
+kill_clients TERM
 sleep 5
-for pat in "[e]valuate.py" "[d]agger_student.py" "[d]agger.py" "[c]ollect_data.py" \
-           "[c]apture_offset_yaw.py" "[c]losed_loop_ledger.py"; do
-    pkill -KILL -f "$pat" 2>/dev/null      # only after they were asked politely
-done
+kill_clients KILL                          # only after they were asked politely
 
 # KILL, THEN WAIT FOR THE PORT TO ACTUALLY FREE.
 #

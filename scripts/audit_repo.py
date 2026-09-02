@@ -489,6 +489,32 @@ chk("_determinism_provenance" in _cl,
 chk("unknown, not absent" in _cl,
     "closed_loop_ledger.py: an uninspectable server is unknown, not a recorded violation")
 
+# --- the renderer's BRIGHTNESS is checked on every fresh server ---------------
+# T06-F42: the server rendered the identical scene 15% darker for half a day and both
+# Town06 lap teachers trained on it. The determinism preflight checks HOW the server was
+# launched, verify_condition() reads the weather struct back, and identify() checks the
+# condition classifies as itself. A uniform photometric gain passes all three.
+_launch = open("scripts/carla_launch.sh").read()
+chk("check_render_photometry.py" in _launch,
+    "carla_launch.sh: checks render photometry on every fresh server")
+chk("photometry NOT CHECKED" in _launch,
+    "carla_launch.sh: a map with no photometry reference says so rather than passing quietly")
+chk(os.path.exists("results/photometry_reference.json"),
+    "a photometry reference is committed")
+_photo = open("scripts/check_render_photometry.py").read()
+chk("return 2" in _photo,
+    "check_render_photometry.py: a missing reference REFUSES rather than passing")
+
+# --- carla_restart.sh must not kill its own caller ---------------------------
+# It stopped clients with `pkill -f collect_data.py`, which matches any ancestor whose
+# command line names the script. It killed the shell that invoked it, and the DAgger
+# driver reported that as "restart failed before gate lap N", discarding a passing gate.
+_rs = open("scripts/carla_restart.sh").read()
+chk("pkill -TERM -f \"$pat\"" not in _rs,
+    "carla_restart.sh: no longer stops clients with a bare pkill -f")
+chk("kill_clients" in _rs and "/proc/$pid/comm" in _rs,
+    "carla_restart.sh: only kills python clients, and never its own ancestry")
+
 # --- a driving loop the user watches must follow the car ---------------------
 # gate_teacher_lap.py drove the entire teacher gate with a stationary spectator, so the
 # window showed empty road while the run was going fine. Zach watches these.

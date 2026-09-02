@@ -1,0 +1,34 @@
+{
+  "condition": "low_sun",
+  "sun_azimuth": 315.0,
+  "sun_altitude": 5.0,
+  "exposure": {
+    "shutter": 800.0,
+    "iso": 100.0,
+    "fstop": 2.8,
+    "gamma": 2.2
+  },
+  "mean": 0.10142578627675165,
+  "std": 0.0037321439929017645,
+  "p05": 0.096587935090065,
+  "p95": 0.10879353359341622,
+  "blown_frac": 1.146045746984714e-06,
+  "sun_in_fov_frac": 0.17996870109546165,
+  "samples": 639,
+  "determinism": {
+    "deterministic_control": true,
+    "rules_digest": "bed0851fb1571d9e65be70c6872e9f00e54ac6fbd120c4e2991469a7d457fc4a",
+    "lock_problems": [],
+    "server_cmdline": [
+      "/home/za/carla/CarlaUE4/Binaries/Linux/CarlaUE4-Linux-Shipping",
+      "CarlaUE4",
+      "-carla-rpc-port=3000",
+      "-quality-level=Epic",
+      "-notexturestreaming",
+      "-windowed",
+      "-ResX=1280",
+      "-ResY=720",
+      ""
+    ]
+  }
+}
