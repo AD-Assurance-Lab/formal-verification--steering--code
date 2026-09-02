@@ -95,6 +95,29 @@ Recorded now, before any result, so they are not discovered later and argued abo
    landmarks, so the posted limit could not be used as a selection criterion.
 5. **Street lighting matches.** Both routes are 100 % within 30 m of a street light
    (Town06 median 14–15 m, Town04 12–13 m), so the night condition is lit in both.
+6. **Night sits closer to low sun than it does on Town04, and the axis stays ordered.**
+   Measured on the lap before any lap result existed (T06-F42,
+   `scripts/measure_lap_condition.py`, one pure-pursuit lap per condition with a clean
+   server each, on the student's view):
+
+   | | clear | fog | night | low sun |
+   |---|---|---|---|---|
+   | mean | 0.3064 | 0.2840 | 0.1844 | 0.1264 |
+   | σ | 0.0616 | 0.0610 | 0.1393 | 0.0389 |
+   | p01 | 0.0641 | 0.1855 | 0.0002 | 0.0111 |
+
+   Low sun is 5.0 % from A-2's six-section re-derivation (0.1204), inside the 9 % T06-F20
+   accepted, so **the 5° angle holds on the lap**. The night − low sun gap is **0.0580**
+   against 0.0921 on the six sections and 0.0958 on Town04: narrower, but the axis is
+   ordered and every condition classifies as itself 100 % of the time, with margin on
+   every discriminator. **No frozen constant moves**; this is a property of the route's
+   lighting, recorded as a difference rather than tuned away by changing the camera.
+
+   **Consequence, stated in advance:** night and low sun are closer together here than in
+   the discovery study, so a result that separates them is *stronger* evidence than the
+   same result on Town04, and a result that fails to separate them is *weaker* — it must
+   not be read as the criterion failing to discriminate until this gap is ruled out as
+   the cause.
 
 ---
 
