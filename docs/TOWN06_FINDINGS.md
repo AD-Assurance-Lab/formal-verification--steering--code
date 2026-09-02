@@ -3020,3 +3020,52 @@ addressed by rounds rather than laps.
 
 **This supersedes "three laps per condition"**, which was set before these numbers existed
 and which makes Town06 a materially smaller experiment than the study it is compared to.
+
+## T06-F49  On a deterministic harness, repeating a lap is not data. T06-F48's remedy is WITHDRAWN.
+
+T06-F48 measured that the Town06 students train on a third of Town04's data and raised the
+base sets from three laps per condition to six. The extra laps carry no new information.
+
+Laps 3-5 against laps 0-2, same condition, same route, same expert:
+
+    steer labels, all 1,274 steps, every condition:   max |difference| = 0.00e+00
+    rendered frames:                                   every sampled pair differs
+
+**The trajectory is bit-identical and only the pixels move** -- by the D-7 render floor,
+about thirty pixels a frame. That is the determinism campaign working exactly as designed
+(`cd.apply_control` removed the command-queue race, `-notexturestreaming` removed the mip
+race), and it means a second lap of a fixed route driven by a deterministic expert visits
+the same states with the same labels. It is a reproducibility check, which is what A-4
+says three laps are for, and it is not a sample.
+
+### What the extra laps actually did
+
+They halved the DAgger share of the distillation pool, 49% -> 33%, by doubling the base
+alone. Measured on the mixed student, same architecture, same teacher, same DAgger set:
+
+    condition   3-lap base        6-lap base
+    clear       0.83 ft  PASS     0.78 ft  PASS
+    fog        11.15 ft  FAIL    10.90 ft  FAIL   (over-budget 24.6% -> 8.7-16.2%)
+    night       0.68 ft  PASS     9.83 ft  FAIL
+    low sun     0.70 ft  PASS     (not measured; run stopped)
+
+Fog improved slightly and **night was destroyed**. Diluting recovery data with repeated
+nominal data is a straightforwardly bad trade, and it is what "collect more laps" amounts
+to here.
+
+### Why Town04's larger dataset IS larger
+
+Town04 collects two laps in TWO DIRECTIONS. The opposing carriageway is different road from
+the camera's point of view, so its extra frames are new states. Town06's lap is one-way,
+so its extra laps are the same states. T06-F48 compared frame COUNTS and concluded Town06
+was under-sampled; the counts are right and the inference was wrong.
+
+**The base sets are restored to three laps per condition**, which is what Zach specified
+before T06-F48 argued otherwise. The only sources of genuinely new states on this route are
+DAgger rounds, which visit states a different policy reaches, and the offset/yaw
+perturbations the capture rig already uses.
+
+### What this leaves
+
+Fog remains the single failing cell, and the lever is the DAgger pool -- 14,921 frames
+against Town04's 61,175 -- because that is the part of Town04's advantage that is real.
