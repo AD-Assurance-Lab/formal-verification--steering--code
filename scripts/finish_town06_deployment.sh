@@ -113,6 +113,41 @@ if bad:
 print(f"  captures OK at {C.TOWN06_INPUT_H}x{C.TOWN06_INPUT_W}")
 PY
 
+# ------------------------------------------------ 1b. THE CAPTURE GATE (PROTOCOL A-3)
+# A-3 makes this a PRECONDITION of certification, and audit_repo.py fails when a
+# certificate exists with no capture_gate.json beside it -- but nothing in this driver
+# ran it. The Town06 lap would have reached a committed certificate and then failed the
+# audit, with R1 making the certificate un-regenerable: recomputing it would place its
+# commit after the drives and destroy the ordering that makes it a prediction.
+#
+# Sound bounds computed on frames that do not reproduce the system prove nothing about
+# the system. It needs per-pose DRIVEN steering, which the ledger does not keep, so the
+# committed driver produces the traces first. Both are clear-weather training telemetry
+# and not scored cells, so they sit on the correct side of the leakage boundary
+# (PROTOCOL section 5) and may run before the certificate exists.
+if [ -f results/town06/captures/capture_gate.json ]; then
+    say "SKIP capture gate (capture_gate.json present)"
+else
+    carla_up 6 || carla_start || exit 1
+    say "capture gate: driving each student once per section for the comparison traces"
+    python3 scripts/capture_gate_drives.py >>"$LOG_DIR/capture_gate.log" 2>&1 \
+        || { say "FATAL: capture-gate drives failed, see capture_gate.log"; exit 1; }
+    say "capture gate: comparing captured frames against what the vehicle commanded"
+    # NOT `... | tee -a "$LOG" || fail`: a pipeline's status is the LAST command's, so
+    # tee's success would mask the gate's failure and the "FATAL" branch could never be
+    # reached. That is the same shape as the teacher gate that failed open and passed a
+    # teacher missing its budget by 13x. Capture the status, then show the output.
+    python3 scripts/capture_driven_gate.py --captures results/town06/captures \
+        >>"$LOG_DIR/capture_gate.log" 2>&1
+    GATE_RC=$?
+    tail -20 "$LOG_DIR/capture_gate.log" | tee -a "$LOG"
+    if [ "$GATE_RC" -ne 0 ]; then
+        say "FATAL: the capture gate FAILED (exit $GATE_RC). The frames the certificate"
+        say "       would be computed on do not reproduce the driving system (A-3)."
+        exit 1
+    fi
+fi
+
 # ---------------------------------------------------------------- 2. certify (blind)
 carla_stop
 say "certifying -- blind: no truth table is read, and the drives have not happened"

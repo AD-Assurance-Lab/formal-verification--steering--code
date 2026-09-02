@@ -434,6 +434,21 @@ for d in ("results/town06", "results/town04_v2/calibration"):
         chk(bool(glob.glob(os.path.join(d, "**", "capture_gate.json"), recursive=True)),
             f"{d}: capture gate ran before certification")
 
+# --- the A-3 gate must be RUN by the driver, not merely exist -----------------
+# capture_driven_gate.py existed and audit_repo.py required its artifact, and the Town06
+# lap driver never invoked it. The certificate would have been computed and COMMITTED,
+# and only then would this audit have failed -- at which point R1 makes it
+# un-regenerable, because recomputing places its commit after the drives.
+_fin = open("scripts/finish_town06_deployment.sh").read()
+chk("capture_driven_gate.py" in _fin,
+    "finish_town06_deployment.sh: runs the A-3 capture gate before certifying")
+chk("capture_gate_drives.py" in _fin,
+    "finish_town06_deployment.sh: produces the driven traces the gate compares against")
+chk(_fin.index("capture_driven_gate.py") < _fin.index("certify_town06.py"),
+    "finish_town06_deployment.sh: the capture gate runs BEFORE certification")
+chk("GATE_RC" in _fin,
+    "finish_town06_deployment.sh: the capture gate's exit status is not swallowed by tee")
+
 # --- a step's output must be a step's output ---------------------------------
 # run_dagger_rounds.sh took `ls -t | head -1` as "the checkpoint this round trained".
 # Four killed attempts in a row then gated a checkpoint from before the stage began,
