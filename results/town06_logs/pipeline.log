@@ -9,3 +9,18 @@
 [2026-09-02 06:36:04] START train_clear_bc_t06lap (attempt 1)
 [2026-09-02 06:37:59] OK    train_clear_bc_t06lap
 [2026-09-02 06:37:59] START dagger_clear_t06lap (attempt 1)
+[2026-09-02 07:04:31] OK    dagger_clear_t06lap
+[2026-09-02 07:04:31] FATAL: dagger_clear_t06lap exhausted its rounds WITHOUT the teacher meeting budget.
+[2026-09-02 07:04:31]        A teacher that cannot drive clear weather invalidates everything
+[2026-09-02 07:04:31]        downstream. Refusing to distil. See /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06_logs/dagger_clear_t06lap.log
+[2026-09-02 07:06:05] PROTOCOL lock OK; STUDY_MAP=Town06 CARLA_PORT=3000
+[2026-09-02 07:06:06] carla-determinism rules lock OK
+  determinism preflight OK (lock intact; D-3/D-5 verified on the live server)
+  D-7 floor remains: closed-loop numbers are still RATES over >=10 repetitions
+[2026-09-02 07:06:06] determinism preflight OK on the live server
+[2026-09-02 07:06:06] route fingerprint b5b56f8c993fc9ba
+[2026-09-02 07:06:06] SKIP  collect_clear_t06lap (manifest exists, fingerprint matches)
+[2026-09-02 07:06:06] SKIP  train_clear_bc_t06lap
+[2026-09-02 07:06:06] SKIP  dagger_clear_t06lap
+[2026-09-02 07:06:06] GATE  dagger_clear_t06lap: *** LAP GATE PASSED: teacher_clear_t06lap_dagger_r03 (3/3 laps, clean server each) ***
+[2026-09-02 07:06:06] START collect_mixed_t06lap (attempt 1)
