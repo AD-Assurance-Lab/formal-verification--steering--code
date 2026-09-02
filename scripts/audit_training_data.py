@@ -51,6 +51,17 @@ LENGTH_FLOOR = 0.80               # of the section's scored length
 # stops the collectors before recording them; this is the check that says so on the data
 # rather than on the source.
 STEER_LABEL_CEILING = 0.25
+# ...AND THE CAR MUST BE ON THE LINE. A large expert label is not by itself wrong: in a
+# DAgger set the POLICY drives, so when it wanders the expert legitimately commands a big
+# correction, and that recovery label is the entire point of the round. Measured on the
+# first clean DAgger round: 217 of 369 frames carry |steer| > 0.25, and every one of them
+# is at |CTE| between 0.53 m and 5.89 m, median 2.12 m. Flagging those would make this
+# check fire on every DAgger round ever collected, which is a warning nobody reads.
+#
+# The defect's signature is the CONJUNCTION: a large correction commanded when there is
+# nothing to correct. T06-F43's 13 frames were at |CTE| of 0.001 m -- the car perfectly on
+# the line and the lookahead clamped onto a vertex that had run out of route.
+STEER_LABEL_CTE_FLOOR_M = 0.20
 
 
 def audit(ds_dir):
@@ -60,7 +71,9 @@ def audit(ds_dir):
     laps = defaultdict(list)
     with open(man) as fh:
         for r in csv.DictReader(fh):
-            laps[(r["weather"], r["direction"], r["lap"])].append(r)
+            # A DAgger round's manifest has no `lap` column -- the round IS the
+            # repetition. Group it as one unit rather than skipping the file.
+            laps[(r["weather"], r["direction"], r.get("lap", "-"))].append(r)
     rows = []
     for key, recs in sorted(laps.items()):
         recs.sort(key=lambda r: int(r["step"]))
@@ -75,32 +88,53 @@ def audit(ds_dir):
         want = getattr(C, "SECTION_LEN_M", {}).get(key[1])
         cover = path / want if want else float("nan")
         st = np.array([abs(float(r["steer"])) for r in recs])
-        n_wild = int((st > STEER_LABEL_CEILING).sum())
+        ct = np.array([abs(float(r["cte_m"])) if r.get("cte_m") not in (None, "")
+                       else np.nan for r in recs])
+        degenerate = (st > STEER_LABEL_CEILING) & (ct < STEER_LABEL_CTE_FLOOR_M)
+        n_wild = int(np.count_nonzero(degenerate))
         rows.append((key, len(recs), path, actual, reported, ratio, cover, n_wild,
-                     float(st.max())))
+                     float(st[degenerate].max()) if n_wild else float(st.max())))
     return rows
 
 
 def main():
-    datasets = [p for p in sorted((REPO / "pipeline" / "data").iterdir())
+    # DAgger sets keep a manifest PER ROUND, so a top-level-manifest-only scan skipped
+    # them entirely -- and they run the same collection loop, so they carry the same
+    # defects. They are the majority of the frames a teacher sees.
+    root = REPO / "pipeline" / "data"
+    datasets = [p for p in sorted(root.iterdir())
                 if p.is_dir() and (p / "manifest.csv").exists()]
+    datasets += [p for p in sorted(root.glob("*/round*"))
+                 if p.is_dir() and (p / "manifest.csv").exists()]
     bad = []
     for ds in datasets:
-        rows = audit(ds)
+        try:
+            rows = audit(ds)
+        except (KeyError, ValueError) as exc:
+            print(f"\n{ds.name}: unreadable manifest ({type(exc).__name__}: {exc})")
+            bad.append((ds.name, ("-", "-", "-"), "unreadable", float("nan")))
+            continue
         if not rows:
             continue
-        print(f"\n{ds.name}  ({len(rows)} laps)")
+        is_dagger_round = ds.parent.name != "data"
+        label = (f"{ds.parent.name}/{ds.name}" if is_dagger_round else ds.name)
+        print(f"\n{label}  ({len(rows)} laps)")
         print(f"  {'weather':8s} {'sec':6s} {'lap':4s} {'frames':>7s} {'path m':>8s} "
               f"{'actual':>7s} {'report':>7s} {'ratio':>6s} {'cover':>6s} {'|st|max':>8s}")
         for key, n, path, actual, reported, ratio, cover, n_wild, st_max in rows:
             flag = ""
             if n_wild:
-                flag += f"  <-- {n_wild} WILD LABEL(S), max |steer| {st_max:.3f}"
+                flag += (f"  <-- {n_wild} DEGENERATE LABEL(S): |steer| > "
+                         f"{STEER_LABEL_CEILING} with the car on the line")
                 bad.append((ds.name, key, "steer_label", st_max))
             if ratio == ratio and ratio < SPEED_AGREEMENT_FLOOR:
                 flag += "  <-- SPEED DISAGREES"
                 bad.append((ds.name, key, "speed", ratio))
-            if cover == cover and cover < LENGTH_FLOOR:
+            # A DAGGER ROUND IS NOT A LAP OF THE ROAD. It ends when the policy departs,
+            # which is the point of the round -- an early round that covers 22% of the
+            # route is a policy being caught, not a degraded server. Flagging it would
+            # make this check fire on every early round and be tuned out.
+            if (not is_dagger_round) and cover == cover and cover < LENGTH_FLOOR:
                 flag += "  <-- SHORT LAP"
                 bad.append((ds.name, key, "length", cover))
             print(f"  {key[0]:8s} {key[1]:6s} {key[2]:4s} {n:7d} {path:8.0f} "
