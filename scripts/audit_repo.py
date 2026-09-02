@@ -320,14 +320,34 @@ for _stage in ("dagger_clear", "dagger_mixed", "collect_clear", "collect_mixed")
     chk(f"{_stage}_t06lap" in _pl and f'"{_stage}.log"' not in _pl,
         f"pipeline stage {_stage} writes a namespaced log")
 
+# Compare the CODE, not the prose. The first version of this check compared raw string
+# positions in the function body and failed on its own explanatory comment, which names
+# the loose gate's message before the code tests the strict one. A check that a comment
+# happens to mention something is not a check.
+def _code_lines(text):
+    return "\n".join(l for l in text.splitlines()
+                      if l.strip() and not l.strip().startswith("#"))
+
+
 # --- gates must FAIL CLOSED ----------------------------------------------------
 # teacher_gate grepped only for "without passing" and passed otherwise, so every way of
 # not printing that string counted as success -- including DAgger crashing. It announced
 # "teacher met budget" for a teacher whose last round missed by 29.57 ft against a
 # 2.19 ft budget. A gate that passes because nothing said "fail" is not a gate.
-_pl = open("scripts/run_town06_pipeline.sh").read()
-chk("PASSED at round" in _pl,
-    "teacher_gate requires positive evidence of a passing round")
+# POSITIVE EVIDENCE, asserted on the code rather than on a comment. This grepped for the
+# literal "PASSED at round" -- a string that lived only in an explanatory comment about
+# dagger.py's internal gate -- so rewriting the comment broke the check while the property
+# it names got stronger. What actually matters: the function's last word is a refusal, so
+# a log that says nothing cannot pass.
+_gate_body = _code_lines(_pl[_pl.index("teacher_gate() {"):_pl.index("# ── THE LAP REBUILD")])
+# The property, stated on the code: the function cannot report success before it has
+# tested for the strict marker, and the absence of that marker is an explicit refusal.
+# ("ends with return 1" was the wrong shape -- the function's last branch legitimately
+# returns 0, reachable only once the marker has been found.)
+chk(_gate_body.index("LAP GATE PASSED") < _gate_body.index("return 0"),
+    "teacher_gate cannot report success before testing for the strict lap-gate marker")
+chk('! grep -q "\\*\\*\\* LAP GATE PASSED"' in _gate_body,
+    "teacher_gate refuses when the strict lap-gate marker is absent")
 chk('[ ! -s "$log" ]' in _pl,
     "teacher_gate refuses an empty or missing log rather than assuming a pass")
 
@@ -433,6 +453,18 @@ for d in ("results/town06", "results/town04_v2/calibration"):
        glob.glob(os.path.join(d, "sustained_bound.json")):
         chk(bool(glob.glob(os.path.join(d, "**", "capture_gate.json"), recursive=True)),
             f"{d}: capture gate ran before certification")
+
+# --- the STRICT teacher gate must outrank the loose one, in BOTH directions ---
+# dagger.py's one-rep internal gate prints "Exhausted N rounds without passing" on every
+# round (each invocation gets --rounds 1 and scores the previous round's policy). The
+# strict gate -- three laps, clean server each -- writes "*** LAP GATE PASSED".
+# teacher_gate() checked the loose FAILURE first, so a teacher that passed 3/3 at 44-56%
+# of budget was declared FATAL and the pipeline refused to distil from it. e2ad7e4 fixed
+# this precedence for the PASS marker and left the FAIL marker pointing the other way.
+_pl = open("scripts/run_town06_pipeline.sh").read()
+_gate = _code_lines(_pl[_pl.index("teacher_gate() {"):_pl.index("# ── THE LAP REBUILD")])
+chk(_gate.index("LAP GATE PASSED") < _gate.index("without passing"),
+    "run_town06_pipeline.sh: the strict lap gate is checked BEFORE dagger's one-rep gate")
 
 # --- the A-3 gate must be RUN by the driver, not merely exist -----------------
 # capture_driven_gate.py existed and audit_repo.py required its artifact, and the Town06

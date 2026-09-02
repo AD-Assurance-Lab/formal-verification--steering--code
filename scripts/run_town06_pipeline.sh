@@ -184,15 +184,29 @@ teacher_gate() {   # teacher_gate <logname>
         say "FATAL: $1 has no log. Refusing to assume it passed."
         return 1
     fi
+    # THE STRICT MARKER DECIDES, AND IT IS CHECKED FIRST.
+    #
+    # Written only by scripts/run_dagger_rounds.sh, after three laps with a clean server
+    # before each. dagger.py's own one-rep internal gate is a progress signal (it is run
+    # with --external-gate) and it prints "Exhausted N rounds without passing" on EVERY
+    # round, because each invocation is given --rounds 1 and the policy it evaluates is
+    # the previous round's.
+    #
+    # So the loose gate's failure message was being read before the strict gate's pass.
+    # Measured 2026-09-02: teacher_clear_t06lap_dagger_r03 passed 3/3 laps at 44-56% of
+    # budget, the driver logged "clear teacher PASSED", and this function then declared
+    # FATAL and refused to distil from it. Commit e2ad7e4 fixed exactly this precedence
+    # for the PASS marker and left the FAIL marker pointing the other way.
+    if grep -q "\*\*\* LAP GATE PASSED" "$log" 2>/dev/null; then
+        say "GATE  $1: $(grep '\*\*\* LAP GATE PASSED' "$log" | tail -1 | tr -s ' ')"
+        return 0
+    fi
     if grep -q "without passing" "$log" 2>/dev/null; then
         say "FATAL: $1 exhausted its rounds WITHOUT the teacher meeting budget."
         say "       A teacher that cannot drive clear weather invalidates everything"
         say "       downstream. Refusing to distil. See $log"
         return 1
     fi
-    # The STRICT marker, written only by scripts/run_dagger_rounds.sh after three laps
-    # on a clean server each. dagger.py's own "*** PASSED at round N ***" comes from a
-    # 1-rep internal gate and must not decide this.
     if ! grep -q "\*\*\* LAP GATE PASSED" "$log" 2>/dev/null; then
         say "FATAL: $1 never printed a passing round."
         say "       Its last gate line was:"
