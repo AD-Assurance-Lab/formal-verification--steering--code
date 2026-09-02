@@ -1,0 +1,123 @@
+{
+  "Town06": [
+    {
+      "mean": 0.25710973143577576,
+      "std": 0.0001236881761591117,
+      "labels": [
+        "clear",
+        "clear",
+        "clear",
+        "clear",
+        "clear"
+      ],
+      "launch": 0,
+      "sec": 56.6
+    },
+    {
+      "mean": 0.25711011290550234,
+      "std": 0.00012337590949601914,
+      "labels": [
+        "clear",
+        "clear",
+        "clear",
+        "clear",
+        "clear"
+      ],
+      "launch": 1,
+      "sec": 57.1
+    },
+    {
+      "mean": 0.25710985660552976,
+      "std": 0.00012348126163071394,
+      "labels": [
+        "clear",
+        "clear",
+        "clear",
+        "clear",
+        "clear"
+      ],
+      "launch": 2,
+      "sec": 56.7
+    },
+    {
+      "mean": 0.25710763931274416,
+      "std": 0.00012409122674762233,
+      "labels": [
+        "clear",
+        "clear",
+        "clear",
+        "clear",
+        "clear"
+      ],
+      "launch": 3,
+      "sec": 54.7
+    },
+    {
+      "mean": 0.2571098327636719,
+      "std": 0.00012363322174079784,
+      "labels": [
+        "clear",
+        "clear",
+        "clear",
+        "clear",
+        "clear"
+      ],
+      "launch": 4,
+      "sec": 57.1
+    }
+  ],
+  "Town04": [
+    {
+      "mean": 0.24181319773197174,
+      "std": 9.082950460203569e-05,
+      "labels": [
+        "clear",
+        "clear",
+        "clear",
+        "clear",
+        "clear"
+      ],
+      "launch": 0,
+      "sec": 53.0
+    },
+    {
+      "mean": 0.24181289672851564,
+      "std": 9.059871076293796e-05,
+      "labels": [
+        "clear",
+        "clear",
+        "clear",
+        "clear",
+        "clear"
+      ],
+      "launch": 1,
+      "sec": 57.7
+    },
+    {
+      "mean": 0.24181273579597473,
+      "std": 9.074111214542942e-05,
+      "labels": [
+        "clear",
+        "clear",
+        "clear",
+        "clear",
+        "clear"
+      ],
+      "launch": 2,
+      "sec": 56.2
+    },
+    {
+      "mean": 0.24181289374828338,
+      "std": 9.08204382851034e-05,
+      "labels": [
+        "clear",
+        "clear",
+        "clear",
+        "clear",
+        "clear"
+      ],
+      "launch": 3,
+      "sec": 56.2
+    }
+  ]
+}
