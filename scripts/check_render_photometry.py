@@ -51,6 +51,8 @@ import carla_determinism as cd  # noqa: E402
 import carla_env as env  # noqa: E402
 import config as C  # noqa: E402
 from imaging import preprocess_for_model  # noqa: E402
+from student import student_preprocess  # noqa: E402
+from condition_signature import identify  # noqa: E402
 
 REF_PATH = os.path.join(REPO, "results", "photometry_reference.json")
 
@@ -89,12 +91,24 @@ def measure(condition="clear"):
         camera, q = env.spawn_camera_at(world, tf, condition=condition)
         for _ in range(SETTLE_TICKS):
             env.grab_frame(q, world.tick())
-        means = []
+        means, labels = [], []
         for _ in range(MEASURE_TICKS):
             image = env.grab_frame(q, world.tick())
-            a = np.asarray(preprocess_for_model(env.raw_to_bgr(image)), dtype=np.float32)
+            bgr = env.raw_to_bgr(image)
+            a = np.asarray(preprocess_for_model(bgr), dtype=np.float32)
             means.append(float(a.mean()))
-        return float(np.mean(means)), float(np.std(means))
+            # FREE EARLY WARNING for R-SIM-4. evaluate.py asserts identify() on the
+            # STUDENT's view of a frame at this same spawn pose and RAISES on a mismatch,
+            # aborting the run. On this lap clear sits near condition_signature's
+            # fog/clear boundary -- the student's crop is road only, so where the spawn
+            # has no dark pixels p01 rises past fog's 0.120 threshold. The frame is
+            # stationary and deterministic, so this cannot flicker mid-campaign: either
+            # it is fine for every run or it aborts every run of that condition, and
+            # this says which BEFORE the campaign spends hours finding out.
+            sv = np.asarray(student_preprocess(bgr, C.TOWN06_INPUT_W, C.TOWN06_INPUT_H),
+                            dtype=np.float32)
+            labels.append(identify(sv)[0])
+        return float(np.mean(means)), float(np.std(means)), labels
     finally:
         try:
             if camera:
@@ -112,12 +126,20 @@ def main():
                     help="record the CURRENT render as the reference for this map")
     args = ap.parse_args()
 
-    mean, std = measure(args.condition)
+    mean, std, labels = measure(args.condition)
+    want_label = env.canonical_condition(args.condition)
+    if any(l != want_label for l in labels):
+        print(f"  *** WARNING: the spawn frame classifies as "
+              f"{'/'.join(sorted(set(labels)))}, not '{want_label}'. evaluate.py asserts "
+              f"this and RAISES, so every run of '{want_label}' would abort at the spawn "
+              f"(R-SIM-4). The rendering may be fine -- the discriminator's threshold is "
+              f"what is close here. Check before starting a campaign.")
     ref = json.load(open(REF_PATH)) if os.path.exists(REF_PATH) else {}
     key = f"{C.STUDY_MAP}/{args.condition}"
 
     if args.write:
         ref[key] = dict(mean=mean, std=std, tol=args.tol,
+                        spawn_classifies_as=sorted(set(labels)),
                         server_cmdline=cd.server_cmdline(C.PORT))
         os.makedirs(os.path.dirname(REF_PATH), exist_ok=True)
         json.dump(ref, open(REF_PATH, "w"), indent=2, sort_keys=True)
