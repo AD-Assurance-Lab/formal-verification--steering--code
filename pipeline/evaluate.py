@@ -35,6 +35,7 @@ from expert import pure_pursuit_steer  # noqa: E402
 from metrics import summarize_cte  # noqa: E402
 from model import CarlaSteeringNet  # noqa: E402
 from route import load_route, signed_cte_route, pure_pursuit_route  # noqa: E402
+from route import lap_finished  # noqa: E402
 
 # Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).
 SPAWNS = C.SPAWNS
@@ -128,6 +129,15 @@ def drive_nn(world, world_map, vehicle, img_queue, model, device, direction, max
         if getattr(C, "LAP_BASED", False) and hint is not None:
             here_m = hint * float(C.LAP_META.get("step_m", 2.0))
             in_bridge = any(a <= here_m <= b for a, b in C.BRIDGE_SPANS)
+
+        # STOP AT THE END OF AN OPEN ROUTE, BEFORE RECORDING THIS STEP.
+        #
+        # The distance cap above bounds this by SECTION_LEN_M, which on the lap is the
+        # route's geometry -- so it stops at roughly the right place rather than exactly
+        # the right one, and "roughly" is what gate_teacher_lap.py measured as max|CTE|
+        # 75 ft from a measurement running off the end of its own reference.
+        if lap_finished(route, hint):
+            break
 
         drive_steer = exp_steer if in_bridge else nn_steer
         thr, brk = speed_ctrl.control(vehicle)

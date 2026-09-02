@@ -72,3 +72,19 @@ def test_the_data_auditor_would_catch_a_recurrence():
         if line.startswith("STEER_LABEL_CEILING"):
             exec(line, ns)
     assert 0.09 < ns["STEER_LABEL_CEILING"] <= STEER_CEILING
+
+
+@pytest.mark.parametrize("path", ["pipeline/evaluate.py", "scripts/closed_loop_ledger.py"])
+def test_every_measuring_loop_stops_at_the_route_end(path):
+    """The loops that SCORE a policy must stop too.
+
+    Their step budget comes from steps_for(), which runs slightly hot, and past the last
+    vertex CTE is measured against a segment that no longer exists -- gate_teacher_lap.py
+    recorded max|CTE| 75 ft while only 1.2% of steps were over budget, "not a policy that
+    leaves the road, a measurement running off the end of its own reference".
+
+    closed_loop_ledger.py is the loop that produces the SCORED RESULT and it had neither
+    this check nor evaluate.py's distance cap.
+    """
+    src = open(os.path.join(REPO, path)).read()
+    assert "lap_finished(" in src, f"{path} does not stop at an open route's end"
