@@ -1,0 +1,259 @@
+  server is 50s old: world is already fresh, skipping reload
+
+################################################################
+# student DAgger round 0 — policy 'S_mixed_t06lap_168x28_w4'
+################################################################
+  [clear/lap] over-budget=  0.0%  max|CTE|= 0.80ft  -> PASS
+  [fog/lap] over-budget= 20.8%  max|CTE|= 6.85ft  -> FAIL
+  [night/lap] over-budget=  0.0%  max|CTE|= 0.69ft  -> PASS
+  [low_sun/lap] over-budget=  0.8%  max|CTE|= 2.46ft  -> FAIL
+
+Exhausted this process's budget of 1 round(s) (last 'S_mixed_t06lap_168x28_w4'); re-distilling before exit so the round is not lost.
+  re-distilling (warm-start from 'S_mixed_t06lap_168x28_w4') -> S_mixed_t06lap_168x28_w4_dagger_r00
+all 15288 teacher targets cached
+
+===== student DAgger summary =====
+  round 0: S_mixed_t06lap_168x28_w4     FAIL
+resuming from 'S_mixed_t06lap_168x28_w4_dagger_r00', the newest policy this run actually trained (round 0); not 'S_mixed_t06lap_168x28_w4'
+  server is 54s old: world is already fresh, skipping reload
+resuming: found 1 prior student round(s), continuing at round 1
+
+################################################################
+# student DAgger round 1 — policy 'S_mixed_t06lap_168x28_w4_dagger_r00'
+################################################################
+    lap: aborted at step 975
+  [clear/lap] over-budget= 23.5%  max|CTE|=24.47ft  -> FAIL
+    lap: aborted at step 715
+  [fog/lap] over-budget=  8.1%  max|CTE|=30.11ft  -> FAIL
+    lap: aborted at step 708
+  [night/lap] over-budget= 21.5%  max|CTE|=28.73ft  -> FAIL
+    lap: aborted at step 42
+  [low_sun/lap] over-budget= 74.4%  max|CTE|=31.59ft  -> FAIL
+
+Exhausted this process's budget of 1 round(s) (last 'S_mixed_t06lap_168x28_w4_dagger_r00'); re-distilling before exit so the round is not lost.
+  re-distilling (warm-start from 'S_mixed_t06lap_168x28_w4_dagger_r00') -> S_mixed_t06lap_168x28_w4_dagger_r01
+all 15288 teacher targets cached
+
+===== student DAgger summary =====
+  round 1: S_mixed_t06lap_168x28_w4_dagger_r00 FAIL
+resuming from 'S_mixed_t06lap_168x28_w4_dagger_r01', the newest policy this run actually trained (round 1); not 'S_mixed_t06lap_168x28_w4'
+  server is 54s old: world is already fresh, skipping reload
+resuming: found 2 prior student round(s), continuing at round 2
+
+################################################################
+# student DAgger round 2 — policy 'S_mixed_t06lap_168x28_w4_dagger_r01'
+################################################################
+    lap: aborted at step 120
+  [clear/lap] over-budget= 84.3%  max|CTE|=29.31ft  -> FAIL
+    lap: aborted at step 714
+  [fog/lap] over-budget= 10.2%  max|CTE|=29.86ft  -> FAIL
+    lap: aborted at step 707
+  [night/lap] over-budget= 23.7%  max|CTE|=28.98ft  -> FAIL
+    lap: aborted at step 39
+  [low_sun/lap] over-budget= 72.5%  max|CTE|=38.74ft  -> FAIL
+
+Exhausted this process's budget of 1 round(s) (last 'S_mixed_t06lap_168x28_w4_dagger_r01'); re-distilling before exit so the round is not lost.
+  re-distilling (warm-start from 'S_mixed_t06lap_168x28_w4_dagger_r01') -> S_mixed_t06lap_168x28_w4_dagger_r02
+all 15288 teacher targets cached
+
+===== student DAgger summary =====
+  round 2: S_mixed_t06lap_168x28_w4_dagger_r01 FAIL
+resuming from 'S_mixed_t06lap_168x28_w4_dagger_r02', the newest policy this run actually trained (round 2); not 'S_mixed_t06lap_168x28_w4'
+  server is 53s old: world is already fresh, skipping reload
+resuming: found 3 prior student round(s), continuing at round 3
+
+################################################################
+# student DAgger round 3 — policy 'S_mixed_t06lap_168x28_w4_dagger_r02'
+################################################################
+    lap: aborted at step 38
+  [clear/lap] over-budget= 74.4%  max|CTE|=42.87ft  -> FAIL
+    lap: aborted at step 106
+  [fog/lap] over-budget= 77.6%  max|CTE|=30.05ft  -> FAIL
+    lap: aborted at step 96
+  [night/lap] over-budget= 74.2%  max|CTE|=74.07ft  -> FAIL
+    lap: aborted at step 38
+  [low_sun/lap] over-budget= 71.8%  max|CTE|=38.89ft  -> FAIL
+
+Exhausted this process's budget of 1 round(s) (last 'S_mixed_t06lap_168x28_w4_dagger_r02'); re-distilling before exit so the round is not lost.
+  re-distilling (warm-start from 'S_mixed_t06lap_168x28_w4_dagger_r02') -> S_mixed_t06lap_168x28_w4_dagger_r03
+all 15288 teacher targets cached
+
+===== student DAgger summary =====
+  round 3: S_mixed_t06lap_168x28_w4_dagger_r02 FAIL
+resuming from 'S_mixed_t06lap_168x28_w4_dagger_r03', the newest policy this run actually trained (round 3); not 'S_mixed_t06lap_168x28_w4'
+  server is 54s old: world is already fresh, skipping reload
+resuming: found 4 prior student round(s), continuing at round 4
+
+################################################################
+# student DAgger round 4 — policy 'S_mixed_t06lap_168x28_w4_dagger_r03'
+################################################################
+    lap: aborted at step 38
+  [clear/lap] over-budget= 74.4%  max|CTE|=41.09ft  -> FAIL
+    lap: aborted at step 92
+  [fog/lap] over-budget= 75.3%  max|CTE|=72.75ft  -> FAIL
+    lap: aborted at step 47
+  [night/lap] over-budget= 62.5%  max|CTE|=26.73ft  -> FAIL
+    lap: aborted at step 38
+  [low_sun/lap] over-budget= 71.8%  max|CTE|=40.22ft  -> FAIL
+
+Exhausted this process's budget of 1 round(s) (last 'S_mixed_t06lap_168x28_w4_dagger_r03'); re-distilling before exit so the round is not lost.
+  re-distilling (warm-start from 'S_mixed_t06lap_168x28_w4_dagger_r03') -> S_mixed_t06lap_168x28_w4_dagger_r04
+all 15288 teacher targets cached
+
+===== student DAgger summary =====
+  round 4: S_mixed_t06lap_168x28_w4_dagger_r03 FAIL
+resuming from 'S_mixed_t06lap_168x28_w4_dagger_r04', the newest policy this run actually trained (round 4); not 'S_mixed_t06lap_168x28_w4'
+  server is 53s old: world is already fresh, skipping reload
+resuming: found 5 prior student round(s), continuing at round 5
+
+################################################################
+# student DAgger round 5 — policy 'S_mixed_t06lap_168x28_w4_dagger_r04'
+################################################################
+    lap: aborted at step 38
+  [clear/lap] over-budget= 74.4%  max|CTE|=40.51ft  -> FAIL
+    lap: aborted at step 86
+  [fog/lap] over-budget= 78.2%  max|CTE|=33.70ft  -> FAIL
+    lap: aborted at step 47
+  [night/lap] over-budget= 62.5%  max|CTE|=26.75ft  -> FAIL
+    lap: aborted at step 38
+  [low_sun/lap] over-budget= 71.8%  max|CTE|=40.51ft  -> FAIL
+
+Exhausted this process's budget of 1 round(s) (last 'S_mixed_t06lap_168x28_w4_dagger_r04'); re-distilling before exit so the round is not lost.
+  re-distilling (warm-start from 'S_mixed_t06lap_168x28_w4_dagger_r04') -> S_mixed_t06lap_168x28_w4_dagger_r05
+all 15288 teacher targets cached
+
+===== student DAgger summary =====
+  round 5: S_mixed_t06lap_168x28_w4_dagger_r04 FAIL
+resuming from 'S_mixed_t06lap_168x28_w4_dagger_r05', the newest policy this run actually trained (round 5); not 'S_mixed_t06lap_168x28_w4'
+  server is 51s old: world is already fresh, skipping reload
+resuming: found 6 prior student round(s), continuing at round 6
+
+################################################################
+# student DAgger round 6 — policy 'S_mixed_t06lap_168x28_w4_dagger_r05'
+################################################################
+    lap: aborted at step 37
+  [clear/lap] over-budget= 73.7%  max|CTE|=53.19ft  -> FAIL
+    lap: aborted at step 86
+  [fog/lap] over-budget= 78.2%  max|CTE|=33.69ft  -> FAIL
+    lap: aborted at step 46
+  [night/lap] over-budget= 63.8%  max|CTE|=38.53ft  -> FAIL
+    lap: aborted at step 38
+  [low_sun/lap] over-budget= 74.4%  max|CTE|=37.64ft  -> FAIL
+
+Exhausted this process's budget of 1 round(s) (last 'S_mixed_t06lap_168x28_w4_dagger_r05'); re-distilling before exit so the round is not lost.
+  re-distilling (warm-start from 'S_mixed_t06lap_168x28_w4_dagger_r05') -> S_mixed_t06lap_168x28_w4_dagger_r06
+all 15288 teacher targets cached
+
+===== student DAgger summary =====
+  round 6: S_mixed_t06lap_168x28_w4_dagger_r05 FAIL
+resuming from 'S_mixed_t06lap_168x28_w4_dagger_r06', the newest policy this run actually trained (round 6); not 'S_mixed_t06lap_168x28_w4'
+  server is 51s old: world is already fresh, skipping reload
+resuming: found 7 prior student round(s), continuing at round 7
+
+################################################################
+# student DAgger round 7 — policy 'S_mixed_t06lap_168x28_w4_dagger_r06'
+################################################################
+    lap: aborted at step 37
+  [clear/lap] over-budget= 73.7%  max|CTE|=52.20ft  -> FAIL
+    lap: aborted at step 88
+  [fog/lap] over-budget= 77.5%  max|CTE|=33.68ft  -> FAIL
+    lap: aborted at step 46
+  [night/lap] over-budget= 63.8%  max|CTE|=38.59ft  -> FAIL
+    lap: aborted at step 38
+  [low_sun/lap] over-budget= 71.8%  max|CTE|=40.78ft  -> FAIL
+
+Exhausted this process's budget of 1 round(s) (last 'S_mixed_t06lap_168x28_w4_dagger_r06'); re-distilling before exit so the round is not lost.
+  re-distilling (warm-start from 'S_mixed_t06lap_168x28_w4_dagger_r06') -> S_mixed_t06lap_168x28_w4_dagger_r07
+all 15288 teacher targets cached
+
+===== student DAgger summary =====
+  round 7: S_mixed_t06lap_168x28_w4_dagger_r06 FAIL
+resuming from 'S_mixed_t06lap_168x28_w4_dagger_r07', the newest policy this run actually trained (round 7); not 'S_mixed_t06lap_168x28_w4'
+  server is 51s old: world is already fresh, skipping reload
+resuming: found 8 prior student round(s), continuing at round 8
+
+################################################################
+# student DAgger round 8 — policy 'S_mixed_t06lap_168x28_w4_dagger_r07'
+################################################################
+    lap: aborted at step 37
+  [clear/lap] over-budget= 76.3%  max|CTE|=45.60ft  -> FAIL
+    lap: aborted at step 85
+  [fog/lap] over-budget= 77.9%  max|CTE|=33.87ft  -> FAIL
+    lap: aborted at step 46
+  [night/lap] over-budget= 63.8%  max|CTE|=36.66ft  -> FAIL
+    lap: aborted at step 38
+  [low_sun/lap] over-budget= 71.8%  max|CTE|=39.98ft  -> FAIL
+
+Exhausted this process's budget of 1 round(s) (last 'S_mixed_t06lap_168x28_w4_dagger_r07'); re-distilling before exit so the round is not lost.
+  re-distilling (warm-start from 'S_mixed_t06lap_168x28_w4_dagger_r07') -> S_mixed_t06lap_168x28_w4_dagger_r08
+all 15288 teacher targets cached
+
+===== student DAgger summary =====
+  round 8: S_mixed_t06lap_168x28_w4_dagger_r07 FAIL
+resuming from 'S_mixed_t06lap_168x28_w4_dagger_r08', the newest policy this run actually trained (round 8); not 'S_mixed_t06lap_168x28_w4'
+  server is 52s old: world is already fresh, skipping reload
+resuming: found 9 prior student round(s), continuing at round 9
+
+################################################################
+# student DAgger round 9 — policy 'S_mixed_t06lap_168x28_w4_dagger_r08'
+################################################################
+    lap: aborted at step 36
+  [clear/lap] over-budget= 75.7%  max|CTE|=56.46ft  -> FAIL
+    lap: aborted at step 85
+  [fog/lap] over-budget= 79.1%  max|CTE|=33.38ft  -> FAIL
+    lap: aborted at step 46
+  [night/lap] over-budget= 61.7%  max|CTE|=36.98ft  -> FAIL
+    lap: aborted at step 37
+  [low_sun/lap] over-budget= 73.7%  max|CTE|=43.34ft  -> FAIL
+
+Exhausted this process's budget of 1 round(s) (last 'S_mixed_t06lap_168x28_w4_dagger_r08'); re-distilling before exit so the round is not lost.
+  re-distilling (warm-start from 'S_mixed_t06lap_168x28_w4_dagger_r08') -> S_mixed_t06lap_168x28_w4_dagger_r09
+all 15288 teacher targets cached
+
+===== student DAgger summary =====
+  round 9: S_mixed_t06lap_168x28_w4_dagger_r08 FAIL
+resuming from 'S_mixed_t06lap_168x28_w4_dagger_r09', the newest policy this run actually trained (round 9); not 'S_mixed_t06lap_168x28_w4'
+  server is 57s old: world is already fresh, skipping reload
+resuming: found 10 prior student round(s), continuing at round 10
+
+################################################################
+# student DAgger round 10 — policy 'S_mixed_t06lap_168x28_w4_dagger_r09'
+################################################################
+    lap: aborted at step 35
+  [clear/lap] over-budget= 75.0%  max|CTE|=58.35ft  -> FAIL
+    lap: aborted at step 47
+  [fog/lap] over-budget= 72.9%  max|CTE|=24.15ft  -> FAIL
+    lap: aborted at step 46
+  [night/lap] over-budget= 61.7%  max|CTE|=33.50ft  -> FAIL
+    lap: aborted at step 36
+  [low_sun/lap] over-budget= 73.0%  max|CTE|=49.19ft  -> FAIL
+
+Exhausted this process's budget of 1 round(s) (last 'S_mixed_t06lap_168x28_w4_dagger_r09'); re-distilling before exit so the round is not lost.
+  re-distilling (warm-start from 'S_mixed_t06lap_168x28_w4_dagger_r09') -> S_mixed_t06lap_168x28_w4_dagger_r10
+all 15288 teacher targets cached
+
+===== student DAgger summary =====
+  round 10: S_mixed_t06lap_168x28_w4_dagger_r09 FAIL
+resuming from 'S_mixed_t06lap_168x28_w4_dagger_r10', the newest policy this run actually trained (round 10); not 'S_mixed_t06lap_168x28_w4'
+  server is 56s old: world is already fresh, skipping reload
+resuming: found 11 prior student round(s), continuing at round 11
+
+################################################################
+# student DAgger round 11 — policy 'S_mixed_t06lap_168x28_w4_dagger_r10'
+################################################################
+    lap: aborted at step 34
+  [clear/lap] over-budget= 77.1%  max|CTE|=53.93ft  -> FAIL
+    lap: aborted at step 715
+  [fog/lap] over-budget= 10.2%  max|CTE|=29.90ft  -> FAIL
+    lap: aborted at step 45
+  [night/lap] over-budget= 73.9%  max|CTE|=38.59ft  -> FAIL
+    lap: aborted at step 37
+  [low_sun/lap] over-budget= 71.1%  max|CTE|=49.52ft  -> FAIL
+
+Exhausted this process's budget of 1 round(s) (last 'S_mixed_t06lap_168x28_w4_dagger_r10'); re-distilling before exit so the round is not lost.
+  re-distilling (warm-start from 'S_mixed_t06lap_168x28_w4_dagger_r10') -> S_mixed_t06lap_168x28_w4_dagger_r11
+all 15288 teacher targets cached
+
+===== student DAgger summary =====
+  round 11: S_mixed_t06lap_168x28_w4_dagger_r10 FAIL
+*** STUDENT DAGGER COMPLETE: S_mixed_t06lap_168x28_w4_dagger_r11 (12 round(s)) ***

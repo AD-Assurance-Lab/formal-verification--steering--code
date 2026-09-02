@@ -105,7 +105,12 @@ python3 -m carla_determinism --port "$PORT" || {
 # every launch rather than passing quietly -- an unchecked server that prints nothing is
 # indistinguishable from a checked one, which is how this was missed.
 PHOTO_REF="$REPO/results/photometry_reference.json"
-if [ -f "$PHOTO_REF" ] && grep -q "\"${STUDY_MAP:-Town04}/clear\"" "$PHOTO_REF" 2>/dev/null; then
+# CARLA_SKIP_PHOTOMETRY exists for ONE caller: scripts/probe_dark_server.py, which is
+# measuring how often a raw launch is dark. The retry below would hide exactly that.
+# Nothing else may set it -- a launch that skips the gate is a launch nobody checked.
+if [ "${CARLA_SKIP_PHOTOMETRY:-0}" = "1" ]; then
+    echo "  photometry SKIPPED by CARLA_SKIP_PHOTOMETRY (probe only)"
+elif [ -f "$PHOTO_REF" ] && grep -q "\"${STUDY_MAP:-Town04}/clear\"" "$PHOTO_REF" 2>/dev/null; then
     # A DARK SERVER IS RELAUNCHED, NOT ACCEPTED AND NOT FATAL.
     #
     # T06-F46 measured what this defect is: a server comes up either correct or ~14% dark,

@@ -1,4 +1,21 @@
 {
+  "Town04/clear": {
+    "mean": 0.24181281328201293,
+    "server_cmdline": [
+      "/home/za/carla/CarlaUE4/Binaries/Linux/CarlaUE4-Linux-Shipping",
+      "CarlaUE4",
+      "-carla-rpc-port=3000",
+      "-RenderOffScreen",
+      "-quality-level=Epic",
+      "-notexturestreaming",
+      ""
+    ],
+    "spawn_classifies_as": [
+      "clear"
+    ],
+    "std": 9.048270599458309e-05,
+    "tol": 0.01
+  },
   "Town06/clear": {
     "mean": 0.2571055948734283,
     "server_cmdline": [

@@ -1,0 +1,41 @@
+[2026-09-02 13:59:39] student round attempt 1/12 (rounds on disk: 0)
+[2026-09-02 14:02:16]   round exited rc=0
+[2026-09-02 14:02:16]   round trained S_clear_t06lap_168x28_w2_dagger_r00
+[2026-09-02 14:02:17] student round attempt 2/12 (rounds on disk: 1)
+[2026-09-02 14:04:50]   round exited rc=0
+[2026-09-02 14:04:50]   round trained S_clear_t06lap_168x28_w2_dagger_r01
+[2026-09-02 14:04:50] student round attempt 3/12 (rounds on disk: 2)
+[2026-09-02 14:07:12]   round exited rc=0
+[2026-09-02 14:07:12]   round trained S_clear_t06lap_168x28_w2_dagger_r02
+[2026-09-02 14:07:12] student round attempt 4/12 (rounds on disk: 3)
+[2026-09-02 14:09:34]   round exited rc=0
+[2026-09-02 14:09:34]   round trained S_clear_t06lap_168x28_w2_dagger_r03
+[2026-09-02 14:09:34] student round attempt 5/12 (rounds on disk: 4)
+[2026-09-02 14:11:57]   round exited rc=0
+[2026-09-02 14:11:57]   round trained S_clear_t06lap_168x28_w2_dagger_r04
+[2026-09-02 14:11:57] student round attempt 6/12 (rounds on disk: 5)
+[2026-09-02 14:14:25]   round exited rc=0
+[2026-09-02 14:14:25]   round trained S_clear_t06lap_168x28_w2_dagger_r05
+[2026-09-02 14:14:25] student round attempt 7/12 (rounds on disk: 6)
+[2026-09-02 14:16:46]   round exited rc=0
+[2026-09-02 14:16:46]   round trained S_clear_t06lap_168x28_w2_dagger_r06
+[2026-09-02 14:16:46] student round attempt 8/12 (rounds on disk: 7)
+[2026-09-02 14:19:14]   round exited rc=0
+[2026-09-02 14:19:14]   round trained S_clear_t06lap_168x28_w2_dagger_r07
+[2026-09-02 14:19:14] student round attempt 9/12 (rounds on disk: 8)
+[2026-09-02 14:21:43]   round exited rc=0
+[2026-09-02 14:21:43]   round trained S_clear_t06lap_168x28_w2_dagger_r08
+[2026-09-02 14:21:43] student round attempt 10/12 (rounds on disk: 9)
+[2026-09-02 14:22:37]   restart failed; stopping
+[2026-09-02 14:22:43] student round attempt 1/12 (rounds on disk: 9)
+[2026-09-02 14:25:05]   round exited rc=0
+[2026-09-02 14:25:05]   round trained S_clear_t06lap_168x28_w2_dagger_r09
+[2026-09-02 14:25:05] student round attempt 2/12 (rounds on disk: 10)
+[2026-09-02 14:27:21]   round exited rc=0
+[2026-09-02 14:27:21]   round trained S_clear_t06lap_168x28_w2_dagger_r10
+[2026-09-02 14:27:21] student round attempt 3/12 (rounds on disk: 11)
+[2026-09-02 14:29:41]   round exited rc=0
+[2026-09-02 14:29:41]   round trained S_clear_t06lap_168x28_w2_dagger_r11
+[2026-09-02 14:29:41]   round exited rc=0
+[2026-09-02 14:29:41]   no new round on disk (12 -> 12); not pretending otherwise -- stopping
+[2026-09-02 14:31:02] S_clear_t06lap_168x28_w2 student DAgger complete at S_clear_t06lap_168x28_w2_dagger_r11 (12 round(s))

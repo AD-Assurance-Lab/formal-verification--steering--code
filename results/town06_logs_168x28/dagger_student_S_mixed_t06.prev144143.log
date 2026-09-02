@@ -1,0 +1,8 @@
+[2026-09-02 14:31:02] student round attempt 1/12 (rounds on disk: 0)
+[2026-09-02 14:37:44]   round exited rc=0
+[2026-09-02 14:37:44]   round trained S_mixed_t06lap_168x28_w4_dagger_r00
+[2026-09-02 14:37:44] student round attempt 2/12 (rounds on disk: 1)
+[2026-09-02 14:38:42]   restart attempt 1/3 FAILED (round 2); FATAL: the server on 3000 renders at a different brightness (above).
+[2026-09-02 14:40:00]   restart attempt 2/3 FAILED (round 2); Terminated
+[2026-09-02 14:41:18]   restart attempt 3/3 FAILED (round 2); Terminated
+[2026-09-02 14:41:38]   restart FAILED three times (round 2) -- that is not a slow boot

@@ -458,15 +458,29 @@ def steps_for(section, margin=1.0):
 # 2.19 ft budget with 2.3x margin, on all 3 reps, with NO student-DAgger. Town04's F11
 # rejected resolution having tested only 112x38, which spends half the budget on the
 # axis that does not help.
+# INPUT SIZE. 168x56 is TOWN04's 84x28 DOUBLED IN BOTH DIMENSIONS.
+#
+# The student crop is rows 240:450 of a 640-wide frame -- 640x210, a native aspect
+# of 3.05:1. Town04's 84x28 is 3.0:1 and therefore geometrically faithful. Town06
+# was 168x28, which is 6.0:1: T06-F11 doubled the WIDTH to keep lane lines alive on
+# this route's long straights and never doubled the height, so the Town06 student
+# saw an image squashed 2x vertically while the published Town04 student did not.
+# That is a difference between the two studies that nothing intended, and it
+# compresses exactly the vertical structure the policy needs: the convergence of the
+# lane lines, and at night the SHAPE of the headlight throw.
+#
+# 168x56 keeps T06-F11's doubled width, restores the aspect, and is simply Town04 at
+# 2x resolution -- which is the closest this study can be to its reference while
+# still answering the reason the width was raised.
 TOWN06_INPUT_W, TOWN06_INPUT_H = (int(os.environ.get("T06_IN_W", "168")),
-                                  int(os.environ.get("T06_IN_H", "28")))
+                                  int(os.environ.get("T06_IN_H", "56")))
 
 #   (name, checkpoint stem, conv channels, FC width)
 TOWN06_STUDENTS = (
     # The LAP rebuild's students. The six-section checkpoints keep their own names
     # (S_clear_t06_168x28_w2 / S_mixed_t06_168x28_w3) because they are a valid study on a
     # different route, not a superseded attempt at this one.
-    ("S_clear_t06", "S_clear_t06lap_168x28_w2", (16, 32, 32), 64),
+    ("S_clear_t06", "S_clear_t06lap_168x56_w2", (16, 32, 32), 64),
     # THE RATIO, NOT THE ABSOLUTE WIDTH, IS WHAT TOWN04 SET.
     #
     # Published Town04 is clear (8,16,16)/fc32 -> mixed (24,48,48)/fc96: the mixed student
@@ -495,7 +509,7 @@ TOWN06_STUDENTS = (
     # the gap is student capacity and width is the direct lever. This is the same
     # conclusion Town04 reached at 4b2ad73, where w1 failed all four conditions, w2 failed
     # night 10/10 and w3 passed everything.
-    ("S_mixed_t06", "S_mixed_t06lap_168x28_w4", (32, 64, 64), 128),
+    ("S_mixed_t06", "S_mixed_t06lap_168x56_w4", (32, 64, 64), 128),
 )
 
 

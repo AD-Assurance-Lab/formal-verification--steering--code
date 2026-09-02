@@ -154,3 +154,26 @@
 [2026-09-02 14:31:02] START dagger_student_S_mixed_t06 (attempt 1)
 [2026-09-02 14:41:38] FAIL  dagger_student_S_mixed_t06 attempt 1 (see /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06_logs/dagger_student_S_mixed_t06.log)
 [2026-09-02 14:41:43] START dagger_student_S_mixed_t06 (attempt 2)
+[2026-09-02 14:45:25] PROTOCOL lock OK; STUDY_MAP=Town06 CARLA_PORT=3000
+[2026-09-02 14:45:25] carla-determinism rules lock OK
+  determinism preflight OK (lock intact; D-3/D-5 verified on the live server)
+  D-7 floor remains: closed-loop numbers are still RATES over >=10 repetitions
+[2026-09-02 14:45:25] determinism preflight OK on the live server
+[2026-09-02 14:45:25] route fingerprint b5b56f8c993fc9ba
+[2026-09-02 14:45:25] SKIP  collect_clear_t06lap (3/3 laps per condition already on disk)
+[2026-09-02 14:45:25] SKIP  train_clear_bc_t06lap
+[2026-09-02 14:45:25] SKIP  dagger_clear_t06lap
+[2026-09-02 14:45:25] GATE  dagger_clear_t06lap: *** LAP GATE PASSED: teacher_clear_t06lap_dagger_r04 (3/3 laps, clean server each) ***
+[2026-09-02 14:45:25] SKIP  collect_mixed_t06lap (3/3 laps per condition already on disk)
+[2026-09-02 14:45:25] SKIP  train_mixed_bc_t06lap
+[2026-09-02 14:45:25] SKIP  dagger_mixed_t06lap
+[2026-09-02 14:45:25] GATE  dagger_mixed_t06lap: *** LAP GATE PASSED: teacher_mixed_t06lap_dagger_r03 (12/12 laps, clean server each) ***
+[2026-09-02 14:45:25] teachers: clear=teacher_clear_t06lap_dagger_r04 mixed=teacher_mixed_t06lap_dagger_r03
+[2026-09-02 14:45:25] SKIP  distil S_clear_t06 (S_clear_t06lap_168x28_w2 exists)
+[2026-09-02 14:45:25] SKIP  distil S_mixed_t06 (S_mixed_t06lap_168x28_w4 exists)
+[2026-09-02 14:45:25] SKIP  dagger_student_S_clear_t06 (complete)
+[2026-09-02 14:45:25] GATE  dagger_student_S_clear_t06: *** STUDENT DAGGER COMPLETE: S_clear_t06lap_168x28_w2_dagger_r11 (12 round(s)) ***
+[2026-09-02 14:45:26] START dagger_student_S_mixed_t06 (attempt 1)
+[2026-09-02 15:36:01] OK    dagger_student_S_mixed_t06
+[2026-09-02 15:36:01] GATE  dagger_student_S_mixed_t06: *** STUDENT DAGGER COMPLETE: S_mixed_t06lap_168x28_w4_dagger_r11 (12 round(s)) ***
+[2026-09-02 15:36:01] START competence (attempt 1)
