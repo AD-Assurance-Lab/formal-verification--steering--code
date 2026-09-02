@@ -181,8 +181,8 @@ def main():
             report[name] = dict(error="checkpoint missing")
             all_ok = False
             continue
-        # Repetitions, per standing rule 3. A section must hold on every one.
-        per_rep = []
+        # Repetitions, per PROTOCOL A-4. A section must hold on EVERY one.
+        per_rep, harness_faults = [], []
         for _ in range(args.reps):
             out = run_eval(ckpt, channels, fc)
             r = parse(out)
@@ -194,9 +194,38 @@ def main():
                 # students after 12 minutes of driving against a CARLA that was
                 # listening but not yet serving, which reads as a verdict on the
                 # models. Show what actually happened.
-                print("      !! no per-section output; last lines of that run:")
+                #
+                # NAME THE HARNESS FAULT WHEN IT IS ONE. evaluate.py asserts the rendered
+                # condition from a frame at the spawn pose (R-SIM-4) and RAISES on a
+                # mismatch. Clear frames on this lap sit near condition_signature's
+                # fog/clear boundary, so that assert can fire on a run that is doing
+                # exactly what was asked -- and "no per-section result" reads as an
+                # incompetent student rather than an aborted run.
+                fault = ("CONDITION MISMATCH" if "CONDITION MISMATCH" in out else
+                         "traceback" if "Traceback" in out else None)
+                if fault:
+                    harness_faults.append(fault)
+                print(f"      !! no per-section output"
+                      + (f" -- {fault}" if fault else "") + "; last lines of that run:")
                 for ln in out.strip().splitlines()[-5:]:
                     print(f"         {ln}")
+
+        # A CELL MEASURED ON FEWER LAPS THAN THE STANDARD IS NOT A PASS.
+        #
+        # per_rep silently dropped crashed reps, and everything below aggregates over
+        # whatever survived -- so two aborted runs left the gate passing a student on ONE
+        # lap while recording reps=1, which nothing downstream reads. A-4 is explicit that
+        # three laps is conditional on the harness holding; when it does not hold the
+        # answer is to fix it, not to score the remainder.
+        if len(per_rep) != args.reps:
+            why = (f" ({', '.join(sorted(set(harness_faults)))})" if harness_faults
+                   else "")
+            print(f"  {name}: {len(per_rep)} of {args.reps} runs produced a result{why}."
+                  f" REFUSING to score a student on the runs that happened to survive.")
+            report[name] = dict(error=f"{len(per_rep)}/{args.reps} runs completed",
+                                harness_faults=sorted(set(harness_faults)))
+            all_ok = False
+            continue
         res = {}
         for sec in C.SECTIONS:
             got = [rp[sec] for rp in per_rep if sec in rp]
