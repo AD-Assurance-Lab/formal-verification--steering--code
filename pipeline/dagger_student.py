@@ -413,7 +413,7 @@ def main():
                       f"(last '{current}'); re-distilling before exit so the round is "
                       f"not lost.", flush=True)
                 new = f"{args.student}_dagger_r{r:02d}"
-                print(f"  re-distilling (warm-start from '{current}') -> {new}", flush=True)
+                print(f"  re-distilling ({chr(39)}warm-start from {chr(39)} + current if args.warm_start else {chr(39)}FROM SCRATCH{chr(39)}) -> {new}", flush=True)
                 distill_student(args.w, args.h, new, teacher_name=args.teacher,
                                 base=args.base, dagger_dirs=distill_dirs,
                                 weathers=weathers, channels=channels, fc=args.fc,
