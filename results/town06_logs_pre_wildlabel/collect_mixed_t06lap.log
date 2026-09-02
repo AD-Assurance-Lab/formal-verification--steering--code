@@ -1,0 +1,17 @@
+  server is 173s old: world is already fresh, skipping reload
+  [clear/lap lap00] start speed=20.1 mph
+  [clear/lap lap01] start speed=19.9 mph
+  [clear/lap lap02] start speed=20.0 mph
+  [fog/lap lap00] start speed=20.1 mph
+  [fog/lap lap01] start speed=20.0 mph
+  [fog/lap lap02] start speed=20.0 mph
+  [night/lap lap00] start speed=20.1 mph
+  [night/lap lap01] start speed=20.1 mph
+  [night/lap lap02] start speed=20.1 mph
+  [low_sun/lap lap00] start speed=20.0 mph
+  [low_sun/lap lap01] start speed=20.2 mph
+  [low_sun/lap lap02] start speed=20.1 mph
+
+Collected 15360 frames -> /home/za/ad-assurance--workspace/formal-verification--steering--code/pipeline/data/mixed_t06lap/manifest.csv
+  straight (|steer|<=0.01): 12644 (82%) | left: 110 | right: 2606
+  steer range: [-0.754, 0.079]

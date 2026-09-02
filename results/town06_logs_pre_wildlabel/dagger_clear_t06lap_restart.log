@@ -1,0 +1,9 @@
+  launching CARLA headless (quality=Epic, extra=[-notexturestreaming])
+loading Town06 (server is on Carla/Maps/Town10HD_Opt)
+CARLA ready on 3000 after 44s (map Carla/Maps/Town06)
+  determinism preflight OK (lock intact; D-3/D-5 verified on the live server)
+  D-7 floor remains: closed-loop numbers are still RATES over >=10 repetitions
+  server is 48s old: world is already fresh, skipping reload
+  photometry Town06/clear: 0.257109 vs reference 0.257106 (0.001% off, tol 1.0%)
+  GPU after restart: 8300 MiB
+Terminated

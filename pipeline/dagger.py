@@ -34,6 +34,7 @@ import config as C  # noqa: E402
 import carla_env as env  # noqa: E402
 from imaging import preprocess_for_model  # noqa: E402
 from route import load_route, signed_cte_route, pure_pursuit_route  # noqa: E402
+from route import lap_finished  # noqa: E402
 from metrics import summarize_cte  # noqa: E402
 from model import CarlaSteeringNet  # noqa: E402
 from train import train_model  # noqa: E402
@@ -117,6 +118,12 @@ def drive_collect(world, vehicle, img_queue, model, device, weather, direction,
         if getattr(C, "LAP_BASED", False) and hint is not None:
             here_m = hint * float(C.LAP_META.get("step_m", 2.0))
             in_bridge = any(a <= here_m <= b for a, b in C.BRIDGE_SPANS)
+
+        # STOP AT THE END OF AN OPEN ROUTE, BEFORE RECORDING (see route.lap_finished).
+        # The loop-closure test below cannot fire on the Town06 lap, so this drove past
+        # the last vertex and recorded a degenerate expert LABEL there -- every round.
+        if lap_finished(route, hint):
+            break
 
         rel = os.path.join(seg, "frames", f"{step:05d}.png")
         if collect:

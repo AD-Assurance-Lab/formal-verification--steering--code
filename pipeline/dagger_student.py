@@ -28,7 +28,7 @@ import carla
 
 import config as C
 import carla_env as env
-from route import load_route, signed_cte_route, pure_pursuit_route
+from route import load_route, signed_cte_route, pure_pursuit_route, lap_finished
 from metrics import summarize_cte
 from student import StudentNet, student_preprocess
 from distill import distill_student
@@ -97,6 +97,12 @@ def drive_collect(world, vehicle, img_queue, model, device, w, h, weather, direc
             in_bridge = any(a <= here_m <= b for a, b in C.BRIDGE_SPANS)
 
         rel = os.path.join(seg, "frames", f"{step:05d}.png")
+        # STOP AT THE END OF AN OPEN ROUTE, BEFORE RECORDING (see route.lap_finished).
+        # The loop-closure test below cannot fire on the Town06 lap, so this drove past
+        # the last vertex and recorded a degenerate expert LABEL there -- every round.
+        if lap_finished(route, hint):
+            break
+
         if collect:
             cv2.imwrite(os.path.join(round_dir, rel), bgr)
         rows.append(dict(image=rel, weather=weather, direction=direction, step=step, steer=exp_steer,

@@ -1,0 +1,21 @@
+{
+  "checkpoint": "teacher_clear_t06lap_dagger_r02",
+  "weather": "clear",
+  "lap": 2,
+  "max_cte_m": 1.1864068653791344,
+  "max_cte_ft": 3.8924111002104795,
+  "frac_over_budget": 0.004230118443316413,
+  "departed": false,
+  "passed": false,
+  "bridged_steps": 95,
+  "peak_at_m": 1502.0,
+  "over_budget_at_m": [
+    1498.0,
+    1500.0,
+    1502.0,
+    1504.0,
+    1506.0
+  ],
+  "scored_steps": 1182,
+  "budget_ft": 2.1916011199999996
+}
