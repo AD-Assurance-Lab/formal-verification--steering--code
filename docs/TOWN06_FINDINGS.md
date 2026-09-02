@@ -2802,3 +2802,57 @@ by the driver and the capture rig. `tests/test_route_arc_length.py` asserts that
 third column cannot change a route's length, that the lap measures its declared 2,289 m,
 and -- by source inspection -- that no driver measures a route distance over every column
 again.
+
+## T06-F45  "Top up this dataset" silently REPLACED it
+
+Raising the base sets from 4 laps to 8 (T06-F44's response: both students failed the full
+lap while both teachers held it) produced eight lap directories on disk and a manifest
+referencing four of them.
+
+    pipeline/data/clear_t06lap:  8 lap directories
+    manifest.csv:                5,098 rows, laps 4,5,6,7 only
+
+The first four laps' labels are gone. The dataset did not grow, it was replaced, and
+nothing said so -- the stage logged "collecting 4 more" and exited 0.
+
+### Cause
+
+`collect_data.py` merges a re-collection into the existing manifest with
+
+    prior = [r for r in csv.DictReader(f) if r.get("weather") not in weathers]
+
+Every prior row whose weather is being collected again is dropped. Its comment gives the
+reason, and the reason was true when it was written: "`range(args.laps)` always restarted
+at 0, so a SECOND collection for the same weather rewrote lap00.. with new images while
+the manifest kept the old rows pointing at those same paths -- old labels, new pixels, no
+error. Appending is only safe across weathers, which get distinct directories."
+
+That hazard was then fixed a different way: lap numbering CONTINUES from what is on disk
+(`base_lap`), so a re-collect writes new directories and cannot overwrite the old frames.
+Once that landed, the weather filter stopped protecting anything and started deleting
+data. Two correct fixes for one hazard, and the older one became the bug.
+
+### Why it was caught
+
+`scripts/audit_training_data.py` prints a lap count per dataset, and it said
+`clear_t06lap (4 laps)` immediately after a stage that was supposed to make it eight.
+The check was not looking for this -- it exists for degraded-server signatures -- but it
+reports the shape of the data, and the shape was wrong.
+
+### Fixed
+
+The guard is no longer the weather. A prior row is kept unless THIS run rewrote that exact
+(weather, direction, lap), and unless its frame is missing from disk -- a row whose image
+does not exist is a lie whatever else is true about it.
+
+### Cost, and what was recovered
+
+* `mixed_t06lap`: caught mid-collection. Its 15,288-row manifest was copied before the
+  in-flight run could overwrite it, and the three original laps per condition were merged
+  back afterwards.
+* `clear_t06lap`: laps 0-3 were already lost. Frames without labels cannot be relabelled
+  without re-driving the poses that produced them, so those four directories were deleted
+  and re-collected. Four laps, about five minutes.
+
+No teacher, student, certificate or scored cell was built on the truncated manifest: the
+failure landed between a collection and the distillation that consumes it.

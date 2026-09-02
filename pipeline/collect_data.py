@@ -157,9 +157,32 @@ def main():
     manifest = os.path.join(out_dir, "manifest.csv")
     prior = []
     if os.path.exists(manifest):
+        # KEEP EVERY PRIOR LAP THIS RUN DID NOT REWRITE, INCLUDING THE SAME WEATHER'S.
+        #
+        # This dropped every prior row whose weather was being collected again, on the
+        # reasoning that "appending is only safe across weathers, which get distinct
+        # directories". That was true when `range(args.laps)` restarted at lap00 and a
+        # second collection overwrote the first's images -- old labels, new pixels. Lap
+        # numbering now CONTINUES from what is on disk (`base_lap` above), so a re-collect
+        # writes new directories and the old rows still describe real, untouched frames.
+        #
+        # Left as it was, "top up this dataset from 4 laps to 8" silently REPLACED it:
+        # 8 lap directories on disk, a manifest referencing only laps 4-7, and the first
+        # four laps' labels gone. The dataset did not grow, and nothing said so.
+        #
+        # The guard that matters is not the weather, it is whether this run rewrote that
+        # lap -- so that is what is checked, plus the frame still existing on disk.
+        written = {(r["weather"], r["direction"], str(r["lap"])) for r in all_rows}
         with open(manifest, newline="") as f:
-            prior = [r for r in csv.DictReader(f) if r.get("weather") not in weathers]
-        print(f"  appending to existing manifest ({len(prior)} rows kept from other weathers)")
+            for r in csv.DictReader(f):
+                key = (r.get("weather"), r.get("direction"), str(r.get("lap")))
+                if key in written:
+                    continue                      # this run replaced that lap
+                if not os.path.exists(os.path.join(out_dir, r["image"])):
+                    continue                      # frames are gone; the row is a lie
+                prior.append(r)
+        print(f"  appending to existing manifest ({len(prior)} prior rows kept, "
+              f"{len(written)} lap(s) written this run)")
     with open(manifest, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=FIELDS)
         w.writeheader()
