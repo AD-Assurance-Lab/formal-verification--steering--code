@@ -424,23 +424,15 @@ def main():
     # which defeats the guard this field exists to feed: the certifiers TRUST
     # route_span_m when it is present and only measure the pose track when it is absent.
     # The 160 m captures were caught solely because they predate the field.
-    _pxy = np.array([[float(r["x"]), float(r["y"])] for r in poses], dtype=float)
-    _cov = float(np.linalg.norm(np.diff(_pxy, axis=0), axis=1).sum()) if len(_pxy) > 1 else 0.0
-    # With bridges excluded the pose track jumps each gap, so the straight-line sum
-    # between consecutive poses OVERSTATES nothing but understates the road covered by
-    # the bridge chords. Subtract the chord of each skipped span so route_span_m stays
-    # what it claims to be: the SCORED road these poses span.
-    if bridges and len(_pxy) > 1:
-        for a, b in bridges:
-            before = [i for i in idx if d[i] <= a]
-            after = [i for i in idx if d[i] >= b]
-            if before and after:
-                i0, i1 = max(before), min(after)
-                _cov -= float(np.hypot(xy[i1][0] - xy[i0][0], xy[i1][1] - xy[i0][1]))
+    # ONE definition of "metres of scored road these poses span" (route.scored_span_m),
+    # so the number recorded here is the number the certifier and the audit recompute.
+    # This used to subtract each bridge chord with its own arithmetic; the certifier and
+    # the audit each summed consecutive poses naively, and the three disagreed by 178 m.
+    from route import scored_span_m
+    _cov = scored_span_m([float(r["x"]) for r in poses], [float(r["y"]) for r in poses])
     print(f"  scored-road coverage: {args.length_m:.0f} m requested, {_cov:.0f} m "
           f"actually spanned by {len(poses)} captured poses"
-          + (f" (excluding {skipped_m:.0f} m of bridge)" if bridges else ""),
-          flush=True)
+          + (f" (excluding {skipped_m:.0f} m of bridge)" if bridges else ""), flush=True)
     np.savez_compressed(
         OUT, frames=frames, offsets=OFFSETS, yaws=YAWS, conds=np.array(CONDS),
         route_span_m=_cov, length_m_requested=args.length_m,
