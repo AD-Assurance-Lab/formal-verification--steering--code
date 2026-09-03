@@ -74,7 +74,19 @@ def main():
         runs = d.get("runs", [])
         n = len(runs)
         fails = sum(1 for r in runs if not r.get("pass", r.get("passed", False)))
-        drive = "FAIL" if fails * 2 >= n else "PASS"
+
+        # READ THE CELL'S OWN VERDICT. This recomputed one by majority vote, which turns a
+        # VOID cell into a PASS: fog/S_mixed_t06 failed 1 of 3 laps, the ledger correctly
+        # marked it VOID under PROTOCOL A-4 -- "if the three laps disagree, that is a BUG
+        # until proven otherwise ... a cell whose laps disagree is void, not uncertain" --
+        # and this printed "PASS 1/3" and counted it toward the agreement rate.
+        #
+        # A majority vote over three laps is exactly the "estimate a rate from a small
+        # sample" reading A-4 exists to forbid. The aggregator already applied the rule;
+        # the comparison's job is to report it, not to re-derive it more loosely.
+        drive = d.get("verdict")
+        if drive not in ("PASS", "FAIL", "VOID"):
+            sys.exit(f"FATAL: {fn} has verdict {drive!r}; expected PASS, FAIL or VOID.")
         lo, hi = wilson(fails, n)
 
         # The certificate is ONE bound per (student, condition), pooled across the six
@@ -94,7 +106,10 @@ def main():
                      f"not a disagreement between prediction and outcome.")
         else:
             cert_v, note = cert[key]["verdict"], ""
-        agree = (drive, cert_v) in D.AGREES
+        # A VOID cell agrees with nothing: it is not a measurement of the policy, it is a
+        # measurement that the harness produced laps that disagree. Counting it either way
+        # would put a number nobody can defend into the agreement rate.
+        agree = None if drive == "VOID" else (drive, cert_v) in D.AGREES
         exp_drive, exp_cert = D.expected(stu, cond)
         rows.append(dict(cond=cond, stu=stu, drive=drive, fails=fails, n=n,
                          lo=lo, hi=hi, cert=cert_v, agree=agree, note=note,
@@ -111,12 +126,17 @@ def main():
     print(f"  certificate committed before every drive (R1 satisfied)\n")
     hdr = f"  {'condition':10s} {'student':13s} {'driving':16s} {'certificate':15s} {'':6s} pre-reg"
     print(hdr); print("  " + "-" * (len(hdr) - 2))
-    scored = [r for r in rows if r["cond"] not in D.VACUOUS_CELLS]
+    scored = [r for r in rows if r["cond"] not in D.VACUOUS_CELLS
+              and r["drive"] != "VOID"]
+    voided = [r for r in rows if r["drive"] == "VOID"]
     for r in rows:
         lab = COND_LABEL.get(r["cond"], r["cond"])
         rate = f"{r['drive']} {r['fails']}/{r['n']}"
         ci = f"[{r['lo']*100:.0f},{r['hi']*100:.0f}]%"
-        mark = "agree" if r["agree"] else "DISAGREE"
+        # A VOID cell neither agrees nor disagrees: there is no driving verdict to
+        # compare against. Printing DISAGREE there would read as evidence against the
+        # certificate when it is evidence about the harness.
+        mark = "n/a" if r["agree"] is None else ("agree" if r["agree"] else "DISAGREE")
         if r["cond"] in D.VACUOUS_CELLS:
             mark = "vacuous"
         print(f"  {lab:10s} {r['stu']:13s} {rate:9s}{ci:8s} {r['cert']:15s} "
@@ -127,7 +147,13 @@ def main():
     uniform = len({(r["drive"], r["cert"]) for r in scored}) <= 1
 
     print(f"\n  agreement on scored cells: {n_ok}/{n}"
-          f"   (clear excluded: vacuous by construction)")
+          f"   (clear excluded: vacuous by construction"
+          + (f"; {len(voided)} VOID cell(s) excluded" if voided else "") + ")")
+    for r in voided:
+        print(f"    VOID: {r['cond']}/{r['stu']} -- {r['fails']} of {r['n']} laps failed, "
+              f"so the laps disagree. Under A-4 that is a BUG until the cause is found "
+              f"and written down, not a rate. It is excluded from the agreement, and the "
+              f"study is not complete while it stands.")
 
     if uniform and n:
         print("\n  *** EVERY SCORED CELL SHARES ONE VERDICT PAIR. ***")
