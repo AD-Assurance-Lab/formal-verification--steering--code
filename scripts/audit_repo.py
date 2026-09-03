@@ -489,6 +489,19 @@ for _entry in ("scripts/closed_loop_ledger.py", "scripts/gate_teacher_lap.py",
         "ImportError" not in (_p.stdout + _p.stderr),
         f"{os.path.basename(_entry)} imports cleanly as its own process")
 
+# --- one retry policy, and the LEDGER must use it -----------------------------
+# Four drivers restart CARLA before every measurement; three grew their own retry and the
+# ledger -- the one whose output is a published number -- had none. It died on the last
+# rep of its eighth cell, with seven cells and twenty-three laps already driven, because
+# one server did not come up.
+chk(os.path.exists("scripts/carla_restart_retry.sh"),
+    "one shared CARLA restart retry exists")
+_led = open("scripts/run_town06_ledger.sh").read()
+chk("carla_restart_retry.sh" in _led,
+    "run_town06_ledger.sh: retries a transient restart instead of losing the stage")
+chk("| tee" not in _led.split("carla_restart_retry.sh")[1][:400],
+    "run_town06_ledger.sh: the retry's exit status is not masked by tee")
+
 # --- a failed ledger must stop the run, not warn ------------------------------
 # finish_town06_deployment.sh logged "WARNING: ledger exited nonzero", printed a
 # comparison table with no rows, and announced DEPLOYMENT TEST COMPLETE with zero cells

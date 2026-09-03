@@ -41,17 +41,24 @@ CARLA_ROOT=${CARLA_ROOT:-$HOME/carla}
 carla_up() { for i in $(seq 1 "${1:-60}"); do
     ss -ltn 2>/dev/null | grep -q ":$CARLA_PORT" && return 0; sleep 5; done; return 1; }
 carla_restart() {
+    # RETRY A TRANSIENT, via the one place that decides how many times
+    # (scripts/carla_restart_retry.sh). The ledger drives 24 laps with a restart before
+    # each, so a boot that occasionally misses its 300 s window is a certainty over a
+    # stage rather than a risk -- and this stage's output is the published number.
+    #
+    # Measured 2026-09-03: seven of eight cells were complete and twenty-three laps
+    # driven when one server failed to come up, and the whole ledger failed on the last
+    # rep of the last cell. Every other driver had grown its own retry; the ledger, the
+    # one whose result gets published, had none.
     say "restarting CARLA on port $CARLA_PORT"
-    pkill -f "[C]arlaUE4-Linux-Shipping.*rpc-port=$CARLA_PORT" 2>/dev/null; sleep 8
-    # ONE launcher: the determinism flags are launch-time and invisible over RPC,
-    # so a second copy of this command is a second chance to omit them.
-    # HONOUR THE LAUNCHER'S EXIT CODE, and prove the server can SERVE. See run_town04.
-    if ! bash "$REPO/scripts/carla_launch.sh"; then
-        say "launcher exit code nonzero"; return 1
+    # NOT `... | tee ... ; then`: a pipeline's status is the LAST command's, so tee's
+    # success would mask the retry's failure -- the same masking this repo already fixed
+    # once in the capture gate. Capture the status, then show the output.
+    bash "$REPO/scripts/carla_restart_retry.sh" \
+        "$LOG_DIR/ledger_restart.log" "ledger" >>"$LOG_DIR/ledger_run.log" 2>&1
+    if [ $? -ne 0 ]; then
+        say "restart failed after retries"; return 1
     fi
-    carla_up 60 || { say "port never bound"; return 1; }
-    CARLA_PORT=$CARLA_PORT python3 "$REPO/scripts/wait_carla_ready.py" --timeout 120 \
-        >/dev/null 2>&1 || { say "port bound but simulator will not serve"; return 1; }
     say "CARLA back up"; sleep 5; return 0
     say "FATAL: CARLA did not return"; return 1; }
 carla_up 12 || carla_restart || exit 1
