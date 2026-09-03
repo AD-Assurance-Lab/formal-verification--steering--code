@@ -73,6 +73,14 @@ SCREEN_FRAC=${SCREEN_FRAC:-1.0}
 PIN_CK=${PIN_CK:-$CK}
 PROMOTE=${PROMOTE:-1}
 
+# Where screen/gate artifacts land. A new sweep of an OLD checkpoint overwrites the old
+# sweep's artifacts in place -- which is how the committed 11.45 ft fog screen of
+# S_mixed_t06lap_168x56_w4_s0 was replaced by a 1.48 ft one, destroying the only record
+# of the measurement that rejected it. The originals were recoverable only because they
+# happened to be tracked in git.
+OUT_DIR=${OUT_DIR:-results/town06}
+mkdir -p "$REPO/$OUT_DIR"
+
 BUDGET_FT=$(python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(C.CTE_BUDGET_FT)")
 GATE_FT=$(python3 -c "print(f'{$BUDGET_FT * $MARGIN_FRAC:.4f}')")
 SCREEN_FT=$(python3 -c "print(f'{$BUDGET_FT * $SCREEN_FRAC:.4f}')")
@@ -125,7 +133,7 @@ for SEED in $SEEDS; do
     # single lap will not hold three, and the screen costs a third as much.
     SCREEN=0
     for COND in $CONDS; do
-        OUT="$REPO/results/town06/seed_screen_${SCK}_${COND}.json"
+        OUT="$REPO/$OUT_DIR/seed_screen_${SCK}_${COND}.json"
         python3 scripts/compare_student_variants.py --checkpoints "$SCK" \
             --channels "$CH" --fc "$FC" --reps 1 --weather "$COND" --out "$OUT" >>"$LOG" 2>&1
         N=$(held_under "$OUT" "$SCREEN_FT")
@@ -137,7 +145,7 @@ for SEED in $SEEDS; do
     say "  seed $SEED passed the screen; strict gate: $REPS laps x $NCOND condition(s)"
     HELD=0
     for COND in $CONDS; do
-        OUT="$REPO/results/town06/seed_gate_${SCK}_${COND}.json"
+        OUT="$REPO/$OUT_DIR/seed_gate_${SCK}_${COND}.json"
         python3 scripts/compare_student_variants.py --checkpoints "$SCK" \
             --channels "$CH" --fc "$FC" --reps "$REPS" --weather "$COND" --out "$OUT" >>"$LOG" 2>&1
         N=$(held_under "$OUT" "$GATE_FT")

@@ -41,19 +41,91 @@ import config as C  # noqa: E402
 
 
 def restart_carla(log):
-    """A clean server before every lap (A-4). Never capture_output: carla_restart.sh
-    daemonises CARLA and the detached child inherits the pipe, so the call never returns.
+    """A clean server before every lap (A-4). Returns True only if the restart SUCCEEDED.
+
+    Never capture_output: carla_restart.sh daemonises CARLA and the detached child
+    inherits the pipe, so the call never returns.
+
+    THE EXIT STATUS IS CHECKED. It was not: subprocess.run() was called with no `check=`
+    and its returncode was never read, so a restart that printed
+    "FATAL: CARLA did not come up on 3000" and exited non-zero was indistinguishable from
+    one that worked, and the lap was driven anyway -- against a stale server, or none.
+    The restart log carries five such failures.
+
+    That silence is why an 11.45 ft rejection of S_mixed_t06lap_168x56_w4_s0 could not
+    afterwards be told apart from a 1.48 ft pass of the byte-identical checkpoint: the
+    measurement that selects which model ships recorded nothing about the server it ran
+    on. A-4 is explicit that where the harness is not enforced the answer is to enforce
+    it, not to average over it.
     """
     with open(log, "a") as fh:
         for cmd, lim in ((["bash", str(REPO / "scripts" / "carla_restart.sh")], 420),
                          ([sys.executable, str(REPO / "scripts" / "wait_carla_ready.py"),
                            "--timeout", "200"], 240)):
             try:
-                subprocess.run(cmd, stdout=fh, stderr=subprocess.STDOUT,
-                               stdin=subprocess.DEVNULL, timeout=lim,
-                               env=dict(os.environ))
+                r = subprocess.run(cmd, stdout=fh, stderr=subprocess.STDOUT,
+                                   stdin=subprocess.DEVNULL, timeout=lim,
+                                   env=dict(os.environ))
             except subprocess.TimeoutExpired:
-                print(f"      !! restart step exceeded {lim}s; continuing", flush=True)
+                print(f"      !! restart step exceeded {lim}s -- REFUSING to measure",
+                      flush=True)
+                return False
+            if r.returncode != 0:
+                print(f"      !! {os.path.basename(str(cmd[1]))} exited "
+                      f"{r.returncode} -- REFUSING to measure on this server",
+                      flush=True)
+                return False
+    return True
+
+
+def lap_provenance(weather):
+    """The harness this lap ran under -- the same block the scored ledger records.
+
+    A selection gate decides WHICH MODEL SHIPS. Recording only a number means a
+    disagreement between two runs of identical weights can never be attributed, which is
+    exactly the position this study reached. D-11 says data collected under a violating
+    harness is not reusable; that is only enforceable if the data says which harness it
+    ran under.
+    """
+    import datetime
+    prov = dict(
+        run_started=datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
+        weather=weather, map=getattr(C, "MAP_NAME", None),
+        fixed_delta_seconds=getattr(C, "FIXED_DT", None),
+        target_speed_ms=getattr(C, "TARGET_SPEED_MS", None),
+        lap_end_m=getattr(C, "LAP_END_M", None),
+    )
+    try:
+        prov["git_sha"] = subprocess.run(
+            ["git", "rev-parse", "HEAD"], capture_output=True, text=True,
+            cwd=str(REPO), timeout=10).stdout.strip() or None
+        prov["git_dirty"] = bool(subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=no"],
+            capture_output=True, text=True, cwd=str(REPO), timeout=10).stdout.strip())
+    except Exception:
+        prov["git_sha"], prov["git_dirty"] = None, None
+    det = dict(deterministic_control=bool(getattr(C, "DETERMINISTIC_CONTROL", False)))
+    try:
+        import carla_determinism as _cd
+        det["package_version"] = getattr(_cd, "__version__", None)
+        det["rules_digest"] = _cd.digest()
+        det["lock_problems"] = _cd.check_lock()
+        argv = _cd.server_cmdline(C.PORT) or []
+        det["server_cmdline"] = argv
+        # None, never False, when the server could not be inspected: "unknown" and
+        # "absent" are different facts and the artifact must not collapse them.
+        det["notexturestreaming"] = (any("-notexturestreaming" in a for a in argv)
+                                     if argv else None)
+        det["windowed"] = (any(a == "-windowed" for a in argv) if argv else None)
+        q = [a.split("=", 1)[1] for a in argv if a.startswith("-quality-level=")]
+        det["quality_level"] = (q[0] if q else None) if argv else None
+        if not argv:
+            det["server_cmdline_note"] = (
+                f"no CARLA server found on port {C.PORT}; flags unknown, not absent")
+    except Exception as e:
+        det["error"] = str(e)
+    prov["determinism"] = det
+    return prov
 
 
 def drive(ckpt, channels, fc, in_w, in_h, weather):
@@ -117,11 +189,22 @@ def main():
     for ck in args.checkpoints:
         laps = []
         for rep in range(args.reps):
-            restart_carla(log)
+            # A FAILED RESTART IS A FAILED LAP, not a lap on an unknown server. Driving
+            # anyway is how a student gets rejected by the simulator rather than by its
+            # own behaviour, with nothing in the artifact to say so afterwards.
+            if not restart_carla(log):
+                laps.append(dict(error=True, rep=rep, sec=0.0,
+                                 tail=["restart failed; lap not driven"],
+                                 restart_failed=True,
+                                 provenance=lap_provenance(args.weather)))
+                print(f"  {ck:44s} lap{rep}  RESTART FAILED -- lap not driven")
+                continue
+            prov = lap_provenance(args.weather)
             t0 = time.time()
             r = drive(ck, args.channels, args.fc, in_w, in_h, args.weather)
             r["rep"] = rep
             r["sec"] = round(time.time() - t0, 1)
+            r["provenance"] = prov
             laps.append(r)
             if r.get("error"):
                 print(f"  {ck:44s} lap{rep}  RUN FAILED")
@@ -140,8 +223,13 @@ def main():
         good = [l for l in laps if not l.get("error")]
         held = sum(1 for l in good if l["passed"])
         worst = max((l["max_cte_ft"] for l in good), default=float("nan"))
+        # UNMEASURED laps are named. A gate compares held against the EXPECTED count, so
+        # a dropped lap can never inflate a pass -- but it must still be visible, or a
+        # cell measured on two laps reads exactly like one measured on three.
+        bad = len(laps) - len(good)
+        note = "" if not bad else f"   ({bad} lap(s) NOT MEASURED)"
         print(f"{ck:46s} {held:>6d}/{len(laps):<3d} {worst:11.2f}ft "
-              f"{100 * worst / C.CTE_BUDGET_FT:11.0f}%")
+              f"{100 * worst / C.CTE_BUDGET_FT:11.0f}%{note}")
 
     out = REPO / args.out
     out.parent.mkdir(parents=True, exist_ok=True)
