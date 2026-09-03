@@ -88,11 +88,42 @@ PY
 
 # ---------------------------------------------------------------- 1. capture
 # The captures ARE the verifier's input, so they must be at the students' resolution.
-if ls results/town06/captures/*.npz >/dev/null 2>&1; then
-    say "SKIP capture (npz present)"
+# "FILES EXIST" IS NOT "THE RIGHT FILES EXIST".
+#
+# This skipped whenever ANY npz sat in the capture directory, and twenty-four of them did
+# -- the six-section era's, at 168x28, on sections s00..s05 that this study no longer
+# drives. The stage skipped, and the resolution check below then refused to certify, which
+# is the good outcome only because that check exists. The guard now asks whether the
+# captures on disk are the ones THIS study needs: one per condition, on the current
+# sections, at the current students' resolution.
+NEED_CAPS=$(python3 - <<'PY'
+import sys, os, glob
+import numpy as np
+sys.path.insert(0, "pipeline"); sys.path.insert(0, ".")
+import config as C
+from study import town06_design as D
+need = [f"lap_{d}_{c}.npz" for d in D.SECTIONS for c in D.CONDITIONS]
+missing = [n for n in need if not os.path.exists(os.path.join("results/town06/captures", n))]
+wrong = []
+for n in need:
+    p = os.path.join("results/town06/captures", n)
+    if os.path.exists(p):
+        try:
+            s = np.load(p)["frames"].shape[-2:]
+            if tuple(s) != (C.TOWN06_INPUT_H, C.TOWN06_INPUT_W):
+                wrong.append(f"{n}{tuple(s)}")
+        except Exception as e:
+            wrong.append(f"{n}(unreadable)")
+print("OK" if not missing and not wrong else
+      f"REBUILD missing={len(missing)} wrong={','.join(wrong[:3])}")
+PY
+)
+if [ "$NEED_CAPS" = "OK" ]; then
+    say "SKIP capture (every capture present at the current resolution)"
 else
     carla_up 6 || carla_start || exit 1
-    say "capturing $(STUDY_MAP=Town06 python3 -c \"import sys;sys.path.insert(0,'pipeline');import config as C;print(len(C.SECTIONS)*4)\") captures (sections x 4 conditions) at the students' resolution"
+    say "capture needed: $NEED_CAPS"
+    say "capturing $(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(len(C.SECTIONS)*4)") captures (sections x 4 conditions) at the students' resolution"
     bash scripts/capture_town06_laps.sh >>"$LOG_DIR/capture.log" 2>&1 \
         || { say "FATAL: capture failed, see capture.log"; exit 1; }
 fi
