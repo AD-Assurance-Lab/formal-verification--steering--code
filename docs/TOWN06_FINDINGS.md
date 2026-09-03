@@ -3153,3 +3153,147 @@ was the more sensitive instrument.
   rested on Town04 disposition D-14 ("the clear student is genuinely robust to fog on open
   road"). Town06 fog is harsher: the clear-only student departs after 19 steps, 34 m in, at
   24 ft, reproducibly across three laps. D-14 does not transfer to this map.
+
+## T06-F51  The lighting axis has a failing INTERIOR band, and below the horizon it cannot be swept at all
+
+Zach, on `night/S_mixed_t06` driving PASS at the endpoint while the certificate says
+NOT_CERTIFIED: "that can still be correct. it would mean that an intermediate disturbance
+like dusk could still fail. it's worth looking into."
+
+It does fail, and the sweep also exposes a methodological gap that has to be reported with
+it. One lap per point, clean server before each, mixed student
+`S_mixed_t06lap_168x56_w4_s3`, `--weather low_sun` so the camera is DAYLIGHT exposure
+throughout (T06-F35's correction: sweeping with `--weather night` renders daylight scenes
+through a shutter-200 camera and its failures are artefacts).
+
+    sun alt   student-view mean   dark    max|CTE|      verdict    image valid?
+     90 clear      0.3064         0.009    ledger 0/3   PASS       yes (endpoint)
+     45           0.2733          0.013     2.85 ft     FAIL       yes
+     20           0.2106          0.021     2.90 ft     FAIL       yes
+     10           0.1733          0.029     2.18 ft     PASS 99%   yes
+      5 low sun   0.1264          0.046     1.34 ft     PASS       yes (endpoint, 61%)
+      0           0.0036          0.985    62.74 ft     FAIL       NO -- black frame
+     -5           0.0122*         0.721    65.48 ft     FAIL       NO -- wrong exposure
+    -25 night     0.0355*         0.721    65.36 ft     FAIL       NO -- wrong exposure
+    -25 night     0.1844          0.217    ledger 0/3   PASS       yes (endpoint, sh 200)
+
+    * measured at shutter 800; the study's declared night exposure is 200.
+
+### The interior failure is real
+
+**45 and 20 degrees fail at ~130% of budget on images that are entirely normal**: mean
+0.27 and 0.21 against clear's 0.31, under 2.1% dark pixels, zero blown pixels, full 1,180
+scored steps with no departure. Both endpoints of the lighting axis pass -- clear 0/3 and
+night 0/3 in the scored ledger -- and the study's own low-sun point passes at 61% of
+budget. So the axis is **not monotone**, and endpoint-only closed-loop testing declares
+this policy safe across lighting when it is not.
+
+That is the same shape T06-F32 found on the fog axis (both endpoints clean, fog density 35
+failing 11/11), now on the lighting axis, and it is the argument the study exists to make:
+the certificate quantifies over the family, the ledger drives one point of it.
+
+### What it does NOT establish, and this matters
+
+The failing band is 20-45 degrees, where the sun is high enough to cast DIRECTIONAL
+SHADOWS on the road. T06-F35 is explicit that cast shadows are a different disturbance
+from the uniform darkening the study models, and out of scope at this stage. The night
+family in `certify_cell.night_map` is a darkening away from the headlight field plus
+retroreflection -- it does not represent shadows.
+
+So this sweep shows the PHYSICAL axis between clear and night passes through a region the
+policy cannot drive, but it does not isolate the MODELLED axis, and it is therefore not
+proof that the night bound predicted this particular failure. The certificate's caution is
+consistent with an unsafe interior; that is the honest strength of the claim.
+
+### The gap: interior points have no declared exposure
+
+Below about 5 degrees the axis cannot be swept at a fixed camera at all. At 0 degrees with
+daylight exposure **98.5% of the network's input is below 0.05** -- the frame is black, and
+the 62.74 ft "failure" is a policy driving blind, not a policy failing. CARLA's sun
+contribution collapses roughly 30x between 5 and 0 degrees.
+
+The study's exposure is "a DECLARED FUNCTION OF CONDITION" (config.CONDITION_EXPOSURE), and
+conditions are NAMED endpoints. Interior points of a family that crosses the daylight/night
+switch have no declared exposure, so there is no camera with which to drive them:
+
+  * at shutter 800 the sub-horizon points are black (night reads 0.0355, 72% dark);
+  * at shutter 200 the above-horizon points are overexposed (low sun reads 0.4102 and
+    stops classifying as itself).
+
+**The sweep contains its own control.** The night PRESET, driven at shutter 800, fails at
+65.36 ft; the same point at its declared shutter 200 reads 0.1844 -- matching T06-F42's
+independently measured night brightness exactly -- and passes 3/3 in the scored ledger.
+An interior sweep that cannot reproduce its own endpoint has not measured the family, and
+this one says so rather than reporting 65 ft as a result.
+
+### Consequence for the study
+
+The interior result stands on the four valid points above the horizon: 45 and 20 fail, 10
+is at 99% of budget, 5 passes. Extending it across the whole family requires the exposure
+function to be defined for interior points, which is a modelling decision and not
+something to settle at the end of a run. Recorded here, not acted on.
+
+## T06-F52  The certified family is defined POINTWISE ON CAPTURED POSES, so it cannot be driven closed-loop
+
+Zach's suggestion, after T06-F51 showed a physically re-rendered dusk introduces shadows
+and crosses the exposure switch: "we basically have to inject a synthetic darkening onto
+the clear images as they pass from the camera to the AI input". Right in principle, and the
+attempt fails a control in a way that is itself the finding.
+
+`scripts/drive_chord_interior.py` drives in CLEAR weather and injects the certificate's own
+perturbation between the camera and the network:
+
+    live_input(s) = live_clear_input + s * (captured_night[k] - captured_clear[k])
+
+with k the captured pose nearest the vehicle. No shadows, no exposure decision, and the
+difference term is the measured night-minus-clear direction the bound is computed over.
+
+    s        max|CTE|    % of budget   verdict
+    0.00      1.69 ft        77%       PASS     <- clear anchor
+    0.25      5.65 ft       258%       FAIL
+    0.50      7.24 ft       331%       FAIL
+    0.75      7.03 ft       321%       FAIL
+    1.00     29.07 ft      1326%       FAIL     <- should reproduce NIGHT
+
+**s = 1 is the night endpoint, and the scored ledger drives night PASS 0/3 at about
+1.0 ft.** The stand-in does not reproduce its own endpoint, so the interior numbers are not
+evidence about anything. Recorded, not reported as a result -- the same rule that withdrew
+the sub-horizon points of T06-F51.
+
+### Why, and it is structural rather than a coding error
+
+`captured_night[k] - captured_clear[k]` is the difference between two frames taken at
+EXACTLY pose k. Adding it to a live frame is only meaningful while the vehicle is at pose
+k. In closed loop it never is: it starts near the route and then moves, and every metre of
+cross-track error misaligns the injected difference against what the camera sees. The
+misalignment corrupts the input, the policy steers worse, the error grows, and the
+misalignment grows with it. At s = 1 that loop ran 84.9% of the lap over budget.
+
+So the frozen family of PROTOCOL section 3 --
+
+    x(s) = x_clear + s * (x_cond - x_clear)
+
+-- is defined POINTWISE, on the captured poses, and is exact only there. That is entirely
+sound for the certificate, which is computed offline on those very frames. It is not a
+function of an arbitrary live image, so there is nothing to inject into a closed loop.
+
+### What this means for validating an interior claim
+
+Three options, and none is free:
+
+1. **Open loop, pose-matched.** Evaluate the family at the captured poses and compare
+   steering against the bound. Exact, and says nothing about closed-loop behaviour.
+2. **A pose-independent disturbance MODEL** -- `certify_cell.night_map`'s darkening away
+   from the headlight field plus retroreflection is one, and it is a function of whatever
+   image it is given, so it CAN be injected live. But it is a different family from the
+   chord this study certifies, so a failure under it is not evidence about this
+   certificate. It would need certifying in its own right.
+3. **A simulator that can render an intermediate condition directly**, which is what the
+   physical sweep tried and what T06-F51 showed CARLA cannot do across the daylight/night
+   exposure switch.
+
+Nothing here undermines the certificate: it bounds what it bounds, on frames that passed
+the A-3 capture gate at 0.0148. What is established is narrower and worth stating plainly
+in the paper -- **an interior claim about this family is not closed-loop testable as the
+family is currently defined**, and the study should say so rather than leave the reader to
+assume the ledger's endpoint drive covers it.
