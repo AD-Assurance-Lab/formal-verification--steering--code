@@ -67,6 +67,7 @@ for ROW in "${ROWS[@]}"; do
     # PROMOTE=0: never overwrite the base .pth. S_mixed_t06lap_168x56_w4.pth is the model
     # passes 1 and 2 were certified and driven with.
     CK="$SWEEP" CH="$CH" FC="$FC" TEACHER="$TEACHER" BASE="$DSET" \
+    OUT_DIR="results/town06/pass3" \
     DAGGER_DIRS="$DDIRS" CONDS="clear fog night low_sun" REPS=3 \
     SEEDS="$SEEDS" MARGIN_FRAC="$MARGIN" SCREEN_FRAC=1.0 \
     PIN_CK="$PIN" PROMOTE=0 \
