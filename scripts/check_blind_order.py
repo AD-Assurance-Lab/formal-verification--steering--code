@@ -29,11 +29,31 @@ import sys
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# (certificate, ledger glob) per study.
+#
+# THE TOWN06 ENTRY POINTED AT A PATH THAT NEVER EXISTED. `results/town06/certificate/
+# sustained_bound.json` has no commit in this repository's history -- the artifact has
+# always been `results/town06/certificate_town06.json`. So every run of this checker
+# reported "8 closed-loop cell(s) recorded with NO certificate -- order unverifiable",
+# and standing rule 1 was never actually verified here for the study that most needed
+# it. It was invisible because audit_repo.py surfaces only the first line of this
+# tool's output, which is the town04_v2 warning.
+#
+# The Town06-specific checker (scripts/check_order_town06.py) was correct throughout and
+# is what the ledger calls before it writes a cell, so the protocol itself held. What
+# failed is the generic check that standing rule 1 names.
 CERTIFICATES = {
-    "town04_v2": ("results/town04_v2/calibration/sustained_bound.json",
-                  "results/town04_v2/ledger/*closed_loop.json"),
-    "town06":    ("results/town06/certificate/sustained_bound.json",
-                  "results/town06/ledger/*closed_loop.json"),
+    "town04_v2":    ("results/town04_v2/calibration/sustained_bound.json",
+                     "results/town04_v2/ledger/*closed_loop.json"),
+    "town06":       ("results/town06/certificate_town06.json",
+                     "results/town06/ledger/*closed_loop.json"),
+    # A-5 pass 2 drives against BOTH scopes' certificates. Each is checked against the
+    # same drives, so a bound written after the laps it is compared against is caught
+    # whichever scope it belongs to.
+    "town06_pass2": ("results/town06/certificate_town06.json",
+                     "results/town06/ledger_pass2/*closed_loop.json"),
+    "town06_pass2_capped": ("results/town06/certificate_town06_capped.json",
+                            "results/town06/ledger_pass2/*closed_loop.json"),
 }
 
 

@@ -17,6 +17,7 @@ capture rig, not a failure rate, and rule 3 does not apply to it.
     STUDY_MAP=Town06 python3 scripts/capture_gate_drives.py
     STUDY_MAP=Town04 TOWN04_REDO=1 python3 scripts/capture_gate_drives.py
 """
+import argparse
 import os, subprocess, sys
 from pathlib import Path
 
@@ -41,6 +42,22 @@ def server_listening(port):
 
 
 def main():
+    # PARSE ARGUMENTS, even though there are none to take.
+    #
+    # Without this the script had no argparse at all, so `--help` was silently ignored
+    # and fell straight through into the body -- which RESTARTS CARLA AND DRIVES LAPS.
+    # audit_repo.py probes every entry point with `--help` to prove it imports cleanly,
+    # so running the audit while a server happened to be up made the audit itself
+    # restart the simulator and start driving, violating R-SIM-3 (one client per port)
+    # from inside the tool whose job is to check the repo is sound.
+    #
+    # It passed for months because the audit was run with no server listening: the
+    # guard below returned 2 immediately and the check went green. The behaviour of the
+    # audit depended on whether CARLA happened to be running.
+    argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter).parse_args()
+
     students = C.TOWN06_STUDENTS if C.STUDY_MAP == "Town06" else C.STUDENTS
     in_w, in_h = ((C.TOWN06_INPUT_W, C.TOWN06_INPUT_H) if C.STUDY_MAP == "Town06"
                   else (84, 28))

@@ -629,9 +629,19 @@ chk(os.path.exists("scripts/check_blind_order.py"), "the blind-order check exist
 if os.path.exists("scripts/check_blind_order.py"):
     _r = subprocess.run([sys.executable, "scripts/check_blind_order.py"],
                         capture_output=True, text=True)
+    # REPORT EVERY LINE THE CHECKER EMITTED, not just the first.
+    #
+    # This printed splitlines()[0]. The checker's first line was the town04_v2 warning,
+    # so its SECOND line -- "town06: 8 closed-loop cell(s) recorded with NO certificate
+    # -- order unverifiable" -- was invisible in every audit ever run. The Town06 entry
+    # pointed at a path that has no commit in this repository's history, so the generic
+    # standing-rule-1 check had never verified Town06 at all, and the audit hid it
+    # behind an unrelated warning it did surface.
+    _lines = [l for l in _r.stdout.strip().splitlines() if l.strip()] or ["failed"]
     chk(_r.returncode == 0,
         "blind protocol: verdicts precede their runs"
-        + ("" if _r.returncode == 0 else f" -- {_r.stdout.strip().splitlines()[0] if _r.stdout.strip() else 'failed'}"))
+        + ("" if _r.returncode == 0
+           else " -- " + " | ".join(l.strip() for l in _lines)))
 
 print("PASS:")
 for m in ok: print("   ", m)
