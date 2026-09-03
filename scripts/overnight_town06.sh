@@ -5,8 +5,11 @@
 #
 # Two stages, and the second only runs if the first genuinely succeeded:
 #
-#   1. Student DAgger until the mixed student holds ALL FOUR conditions over THREE laps
-#      each, from-scratch re-distillation per round. Writes the checkpoint pin.
+#   1. Find a mixed student that holds ALL FOUR conditions over THREE laps each, by
+#      re-drawing the distillation seed on the fixed pool. Writes the checkpoint pin.
+#      Successive DAgger rounds on that pool oscillate between failing fog and failing
+#      night while the pool stays balanced to 0.5%, which is training variance rather
+#      than missing data -- see the header of select_mixed_student_seed.sh.
 #   2. scripts/finish_town06_lap.sh -- clear student, competence gate, captures, the A-3
 #      capture gate, blind certification, COMMIT, the scored ledger, the comparison.
 #
@@ -32,18 +35,19 @@ if [ -f "$PIN" ]; then
 else
     # If a loop is already running, wait for it rather than starting a second one --
     # two DAgger drivers on one CARLA port is the collision the lock exists to stop.
-    if pgrep -f "[s]dagger_loop.sh" >/dev/null; then
-        say "a student-DAgger loop is already running; waiting for it"
-        while pgrep -f "[s]dagger_loop.sh" >/dev/null; do sleep 60; done
+    if pgrep -f "[s]elect_mixed_student_seed.sh" >/dev/null; then
+        say "a seed sweep is already running; waiting for it"
+        while pgrep -f "[s]elect_mixed_student_seed.sh" >/dev/null; do sleep 60; done
     else
-        say "starting the student-DAgger loop"
-        bash "$REPO/scripts/student_dagger_until_12.sh" >>"$LOG" 2>&1
+        say "starting the seed sweep (see scripts/select_mixed_student_seed.sh for why"
+        say "  a seed re-draw rather than more DAgger rounds)"
+        bash "$REPO/scripts/select_mixed_student_seed.sh" >>"$LOG" 2>&1
     fi
 fi
 
 if [ ! -f "$PIN" ]; then
     say "STOPPING: the mixed student never held 12/12."
-    say "  Best per-condition results are in results/town06/sdl_*.json."
+    say "  Per-seed results are in results/town06/seed_gate_*.json."
     say "  Not certifying: a bound on deviation from an output that is already wrong"
     say "  says nothing about the system (PROTOCOL section 4a)."
     exit 1
