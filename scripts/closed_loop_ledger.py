@@ -249,6 +249,7 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps,
     n_bridged = 0
     onset = [None]
     log_rows, frames_dir = [], None
+    trace_rows = []
     if log_dir is not None:
         frames_dir = Path(log_dir) / "frames"
         frames_dir.mkdir(parents=True, exist_ok=True)
@@ -278,6 +279,7 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps,
         # scoring the expert's road would compare a verdict against road the certificate
         # does not cover.
         in_bridge = False
+        here_m = None
         if getattr(C, "LAP_BASED", False) and hint is not None:
             here_m = hint * float(C.LAP_META.get("step_m", 2.0))
             in_bridge = any(a <= here_m <= b for a, b in C.BRIDGE_SPANS)
@@ -301,6 +303,22 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps,
         # the loop that produces the SCORED RESULT, and it had neither.
         if lap_finished(route, hint):
             break
+
+        # THE TRACE, ALWAYS. Not behind --log-frames, which also writes a PNG per step
+        # and is therefore never on for a scored run.
+        #
+        # Without this a run keeps only its max |CTE| and where that max was, so a cell
+        # can never be re-scored against a different scored span -- the 24 committed
+        # Town06 laps cannot be, and answering "how much of this verdict is the road we
+        # chose to score?" needed all of them driven again. It also makes A-4's margin
+        # and R-SIM-6's step count auditable after the fact instead of on trust. Rows are
+        # ~80 bytes; a lap is ~1,180 of them.
+        trace_rows.append(dict(
+            step=step_i, here_m=("" if here_m is None else round(here_m, 3)),
+            x=round(float(loc.x), 4), y=round(float(loc.y), 4),
+            yaw=round(float(tf.rotation.yaw), 4), steer=round(float(steer), 6),
+            cte_m=("" if cte is None else round(float(cte), 6)),
+            in_bridge=int(in_bridge), speed_mph=round(float(env.speed_mph(vehicle)), 3)))
 
         if cte is not None and not in_bridge:
             ctes.append(abs(cte))
@@ -346,13 +364,30 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps,
             wtr.writerows(log_rows)
 
     if not ctes:
-        return (float("inf"), 1.0, True, None)
+        return (float("inf"), 1.0, True, None, trace_rows)
     arr = np.array(ctes)
     i = int(arr.argmax())
     where = dict(step=i, x=poses[i][0], y=poses[i][1]) if i < len(poses) else None
     if where is not None and onset[0] is not None:
         where["onset"] = onset[0]
-    return (float(arr.max()), float((arr > C.CTE_BUDGET_M).mean()), departed, where)
+    return (float(arr.max()), float((arr > C.CTE_BUDGET_M).mean()), departed, where,
+            trace_rows)
+
+
+def write_trace(path, rows):
+    """The per-step trace beside its run JSON. Written even for a departed run.
+
+    A departed run is exactly the one whose trace is worth keeping: it is the only record
+    of WHERE the policy left the road rather than how far it got afterwards.
+    """
+    if not rows:
+        return None
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", newline="") as fh:
+        wtr = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
+        wtr.writeheader()
+        wtr.writerows(rows)
+    return path
 
 
 def main():
@@ -450,7 +485,7 @@ def main():
               f"= {args.reps * len(C.SECTIONS)} runs\n")
 
         if args.only_section is not None:
-            mx, frac, departed, where = drive_once(
+            mx, frac, departed, where, trace = drive_once(
                 world, vehicle, cam_queue, model, device, args.only_section,
                 min(args.max_steps, C.steps_for(args.only_section)))
             ok = (not departed) and mx <= C.CTE_BUDGET_M
@@ -465,6 +500,7 @@ def main():
             rp.write_text(json.dumps(dict(run=rec, student=args.student,
                                           checkpoint=_ck, condition=args.condition,
                                           provenance=prov), indent=2))
+            write_trace(rdir / "traces" / (rp.stem + ".csv"), trace)
             print(f"  {args.only_section} rep {args.only_rep} "
                   f"max|CTE|={mx * C.M_TO_FT:6.2f} ft {'PASS' if ok else 'FAIL'}")
             print(f"wrote {rp}")
@@ -490,9 +526,12 @@ def main():
                     (client, world, original, vehicle, camera,
                      cam_queue) = restart_and_respawn(args.condition)
                 n_run += 1
-                mx, frac, departed, where = drive_once(world, vehicle, cam_queue, model,
-                                                device, d, min(args.max_steps, C.steps_for(d)),
-                                                log_dir=ldir)
+                mx, frac, departed, where, trace = drive_once(
+                    world, vehicle, cam_queue, model, device, d,
+                    min(args.max_steps, C.steps_for(d)), log_dir=ldir)
+                cell = args.cell_name or args.student
+                write_trace(LEDGER / "runs" / "traces" /
+                            f"{args.condition}__{cell}__{d}__rep{rep:02d}.csv", trace)
                 if ldir is not None:
                     n = len(list((ldir / "frames").glob("*.png"))) if (ldir/"frames").exists() else 0
                     print(f"    logged {n} frames -> {ldir}")

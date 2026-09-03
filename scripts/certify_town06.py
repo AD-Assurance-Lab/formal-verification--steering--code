@@ -105,7 +105,42 @@ def check_coverage(path, sec):
                  f"would look like.")
 
 
-def nominal(path, cond):
+def scope_mask(path, scope):
+    """Which captured poses lie on road the `scope` scores.
+
+    `full` keeps every captured pose, which is what the committed certificate used: the
+    capture rig already skips the ODD bridges, so its poses ARE the full scored road.
+    `capped` additionally drops poses on road over SMAX_CAP -- the constant
+    build_town06_sections.py enforced and build_town06_lap_from_track.py does not.
+
+    The pose's position on the route is recomputed by projecting it onto the route's own
+    vertices, never read from an index the capture stored, so this stays a measurement of
+    where the frames actually are (standing rule 7).
+    """
+    import scored_scope as ss  # noqa: E402
+    from route import load_route  # noqa: E402
+
+    z = np.load(path, allow_pickle=True)
+    if "pose_x" not in z.files:
+        raise RuntimeError(f"{path.name}: no pose track; cannot scope it")
+    px = np.asarray(z["pose_x"], float)
+    py = np.asarray(z["pose_y"], float)
+    if scope == "full":
+        return np.ones(len(px), dtype=bool)
+    rt = np.asarray(load_route("lap"), float)[:, :2]
+    seg = np.linalg.norm(np.diff(rt, axis=0), axis=1)
+    arc = np.concatenate([[0.0], np.cumsum(seg)])
+    # nearest route vertex per pose -> its arc length
+    d2 = ((px[:, None] - rt[None, :, 0]) ** 2 + (py[:, None] - rt[None, :, 1]) ** 2)
+    here = arc[np.argmin(d2, axis=1)]
+    spans = ss.excluded_spans("lap", ss.SMAX_CAP)
+    keep = np.ones(len(px), dtype=bool)
+    for a, b in spans:
+        keep &= ~((here >= a) & (here <= b))
+    return keep
+
+
+def nominal(path, cond, mask=None):
     z = np.load(path, allow_pickle=True)
     conds = [str(c) for c in z["conds"]]
     if cond not in conds:
@@ -123,16 +158,23 @@ def nominal(path, cond):
     # 4-D array, (1,3,H,W), so a rank check would have passed it.
     if out.ndim != 4 or out.shape[0] != fr.shape[0]:
         raise RuntimeError(f"{path.name}: expected ({fr.shape[0]},3,H,W), got {out.shape}")
+    # The scope filter is applied AFTER the shape check, so a mask can never disguise an
+    # indexing fault as a short capture.
+    if mask is not None:
+        if len(mask) != out.shape[0]:
+            raise RuntimeError(f"{path.name}: mask covers {len(mask)} poses, "
+                               f"capture has {out.shape[0]}")
+        out = out[mask]
     return out
 
 
-def baseline_for(cond_path, fallback):
+def baseline_for(cond_path, fallback, mask=None):
     """Paired clear baseline if the condition capture recorded its own, else foreign.
 
     F43: a clear baseline from a different session shifts the bound materially. Which
     one was used is printed and recorded, never chosen silently.
     """
-    own = nominal(cond_path, "clear")
+    own = nominal(cond_path, "clear", mask)
     return (own, "paired") if own is not None else (fallback, "foreign")
 
 
@@ -150,6 +192,11 @@ def main():
     ap.add_argument("--stride", type=int, default=8, help="pose subsampling (frozen: 8)")
     ap.add_argument("--nsplit", type=int, default=16, help="BaB sub-intervals (frozen: 16)")
     ap.add_argument("--allow-missing", action="store_true")
+    ap.add_argument("--scope", default="full", choices=("full", "capped"),
+                    help="scored road the bound is pooled over. 'full' is the committed "
+                         "Town06 certificate; 'capped' drops road over SMAX_CAP.")
+    ap.add_argument("--out", default=None,
+                    help="artifact path (default: the scope's own file)")
     args = ap.parse_args()
 
     require_locked()
@@ -230,9 +277,11 @@ def main():
                 check_coverage(p, sec); check_coverage(base, sec)
                 if not p.exists() or not base.exists():
                     continue
-                clr, origin = baseline_for(p, nominal(base, "clear"))
+                mask = scope_mask(p, args.scope)
+                bmask = scope_mask(base, args.scope)
+                clr, origin = baseline_for(p, nominal(base, "clear", bmask), mask)
                 origins.add(origin)
-                dis = nominal(p, cond)
+                dis = nominal(p, cond, mask)
                 if dis is None or len(dis) != len(clr):
                     print(f"  {sec}/{nm}/{cond}: LENGTH MISMATCH, skipped")
                     continue
@@ -299,9 +348,12 @@ def main():
         cells_expected=n_expected, cells_scored=n, git_commit=git_head(), device=dev,
         torch=torch.__version__, numpy=np.__version__,
         blind="no truth table; agreement is not computable by this tool")
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(out, indent=2))
-    print(f"\n  wrote {OUT.relative_to(REPO)}")
+    dest = Path(args.out) if args.out else (
+        OUT if args.scope == "full"
+        else OUT.with_name(OUT.stem + f"_{args.scope}" + OUT.suffix))
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(json.dumps(out, indent=2))
+    print(f"\n  wrote {dest.relative_to(REPO)}")
     print("  COMMIT THIS FILE before running any scored closed-loop cell (PROTOCOL R1).")
     return 0
 

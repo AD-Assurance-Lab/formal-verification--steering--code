@@ -73,6 +73,18 @@ results/town06_logs/
 !results/town06/
 !results/town06/certificate_town06.json
 !results/town06/ledger/
+# The PER-RUN artifacts and their step traces. `runs/` above excluded these, so the
+# committed Town06 result carried only eight aggregated cells: the three laps behind each
+# verdict, their margins, and where each one peaked were all untracked. That is the
+# evidence A-4 asks for ("report the margin with every verdict") and R-SIM-6 asks for
+# ("check step counts before reading verdicts"), and none of it was in the repository.
+#
+# The traces also make a cell RE-SCORABLE. Without them a scored span is baked into the
+# verdict at drive time, and asking what a different span would have given means driving
+# 24 laps again -- which is exactly what it cost to ask that question once.
+# ~95 KB per lap, 24 laps per pass.
+!results/town06/ledger/runs/
+!results/town06/ledger/runs/**
 
 # Determinism campaign (T06-F22). The SUMMARIES are the result and are committed; the
 # per-rep traces and raw frame dumps are bulk evidence, regenerable from the probes in
