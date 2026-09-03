@@ -3476,3 +3476,111 @@ and it is only known to do so because the drives were already seen. The pose-wis
 is what was pre-registered and it stays the verdict. The witness search is a **diagnosis
 reported alongside**, never a re-score. Recorded here so that choice is visible rather than
 inferred from a number that improved.
+
+## T06-F55  The evidence that ruled out a wider mixed student is a SINGLE DRAW, and the repo later measured that draw to be a coin toss
+
+Zach, on the mixed student being 2.0x the clear one on Town06 against 3.0x on Town04:
+"This seems concerning to me. I think this is worth pursuing."
+
+It is, and the reason is stronger than the ratio. **The measurement that closed this
+question is not sound.**
+
+### What the record says
+
+`config.TOWN06_STUDENTS` and T06-F48 both state the case as settled:
+
+> w4 = 2.0x the clear student. w6 (3.0x, Town04's ratio) was tried and did NOT fix fog
+> either -- 11.64 ft against w4's 11.15 -- so the extra 50,000 ReLU buys nothing here and
+> the smaller model is preferred. Fog is not a capacity problem
+
+> Every architectural lever was tried and none of them moved fog:
+>     168x28 w4  fog 6.85 ft     168x56 w4  fog 11.15 ft     168x56 w6  fog 11.64 ft
+
+### Why it does not hold
+
+Every number in that row is **one distillation from one seed**. Six hours after the w6
+checkpoint was written, this repo committed 389f192, *"Both students are selected by seed
+sweep, because one draw is a coin toss"*, on this measurement:
+
+> The clear student re-distilled from the same base, the same teacher and the same default
+> seed that produced 1.16 / 1.08 / 1.16 ft in the afternoon produced 8.68 / 8.59 / 8.58 ft
+> in the evening. Nothing about the inputs changed.
+
+**A single re-draw of one unchanged configuration swung 7.5 ft. The w4-versus-w6 difference
+is 0.49 ft.** The architectural comparison is fifteen times smaller than the noise the same
+pipeline was subsequently shown to have, so it cannot separate the two widths at all.
+
+Timeline and artifacts, both checkable:
+
+    S_mixed_t06lap_168x56_w6.pth   written 2026-09-02 16:45   seed variants on disk: 0
+    S_mixed_t06lap_168x56_w4.pth   written 2026-09-02 22:11   seed variants on disk: 5
+    389f192 "one draw is a coin toss"      committed 2026-09-02 22:45
+
+The shipped student is `w4_s3` -- **the fourth seed drawn**, because seeds 0, 1 and 2 were
+rejected on the first lap of the screen. w6 was never given a second draw, let alone four.
+
+### So the two widths were never compared
+
+w4 got a four-seed sweep and w6 got one shot. Whatever else is true, "the extra 50,000
+ReLU buys nothing here" is not something that row of numbers can support.
+
+**T06-F48's architectural conclusion is withdrawn.** Its DATA conclusion is separately
+interesting and also unresolved: T06-F48 diagnosed too little data from fog's heavy tail
+(p99 error 0.121, ten times tolerance, on a condition whose RMSE 0.0272 is BETTER than
+night's 0.0333, which passes) -- and then T06-F49 withdrew the proposed remedy, because
+repeating a lap on a deterministic harness is not data. **So the fog problem was diagnosed
+and never fixed.**
+
+### What actually made the current student pass fog
+
+Not width, and not data. **Seed selection.** `w4_s3` cleared the gate at 1.78 ft against a
+2.19 ft budget -- 19% margin -- after three earlier draws failed on their first screening
+lap. That is a student picked for squeaking through, and it is exactly what T06-F53 then
+measured: VOID under fog in both passes, at two unrelated locations, 3 of 12 laps over
+budget.
+
+A student selected by "the first draw that passes" is a student with no margin by
+construction, on the one condition where the draws disagree. That, and not the ratio, is
+the mechanism behind Zach's concern that "if the AI models are borderline to begin with,
+the formal verification can be strange".
+
+### Consequence
+
+The wider-student experiment is worth running, and the prior evidence against it should not
+be cited to discourage it. Two levers are now open where the record claimed none were:
+
+1. **width, tested properly** -- w6 with the same seed sweep w4 received; and
+2. **the selection criterion itself** -- currently "the first seed that passes", which
+   cannot select for headroom because it stops at the first student that has none.
+
+## T06-F56  Pass 2 ran on a MIXED windowed/headless server population, and the two are indistinguishable on a scored cell
+
+Recorded because it was claimed otherwise mid-session and because standing rule 7 asks
+evidence to state its own scope.
+
+Pass 2 was launched with `CARLA_WINDOWED=1` and reported as a windowed run. The per-run
+provenance says otherwise:
+
+    pass 2:  22 windowed, 2 headless
+    pass 1:  24 headless
+
+The two headless laps are `low_sun/S_clear rep02` and `night/S_clear rep02`. No fallback
+message survives in the logs -- `ledger_restart.log` is truncated per restart and holds
+only the last one -- so the trigger is unidentified, exactly as T06-F46 left it. The
+`server_cmdline` recorded in every run artifact is what settles it, which is the reason
+that field exists.
+
+### It is not a defect in the result, and it is a better measurement than the one we had
+
+Both headless laps fall inside their own cell's windowed spread:
+
+    low_sun/S_clear   6.3239 (win)   6.3107 (win)   6.3139 (HEADLESS)   spread 13 mm
+    night/S_clear     7.7821 (win)   7.7827 (win)   7.7784 (HEADLESS)   spread  4 mm
+
+T06-F42's windowed-versus-headless equivalence (0.2525015 against 0.2524913, 4e-5) was
+measured on a pure-pursuit probe. This is the same claim on a **scored closed-loop cell
+with a policy in the loop**, and it holds to millimetres -- far inside the D-7 render
+residual, which T06-F53 saw move a fog lap by 0.7 m.
+
+So the mode does not need to be controlled for the result to stand. It does need to be
+RECORDED, because "this run was windowed" was said before it was checked.
