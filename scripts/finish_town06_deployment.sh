@@ -219,8 +219,20 @@ say "R1 satisfied. The prediction is on the record; driving may begin."
 # ---------------------------------------------------------------- 4. drive, 5. compare
 carla_start || exit 1
 say "running the scored ledger: 8 cells (2 students x 4 conditions), 3 laps each (A-4)"
-bash scripts/run_town06_ledger.sh >>"$LOG_DIR/ledger_run.log" 2>&1 \
-    || say "WARNING: ledger exited nonzero, see ledger_run.log"
+# A FAILED LEDGER IS NOT A WARNING.
+#
+# This logged "WARNING: ledger exited nonzero" and carried on to the comparison, which
+# then printed a table with no rows, after which the driver announced "DEPLOYMENT TEST
+# COMPLETE" and exited 0. Measured 2026-09-02: the ledger died on its FIRST cell with a
+# ModuleNotFoundError, zero cells were scored, and the overnight chain reported success.
+#
+# A study that cannot drive its cells has not completed; it has failed, and the run must
+# stop where a person can see it.
+if ! bash scripts/run_town06_ledger.sh >>"$LOG_DIR/ledger_run.log" 2>&1; then
+    say "FATAL: the scored ledger failed. See ledger_run.log."
+    say "  No comparison is printed: a table built from missing cells is not a result."
+    exit 1
+fi
 
 say "comparing prediction against outcome"
 python3 scripts/compare_town06.py 2>&1 | tee -a "$LOG"

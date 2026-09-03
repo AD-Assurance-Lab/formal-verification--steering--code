@@ -28,10 +28,15 @@ import cv2
 import numpy as np
 import torch
 
-from gpu import require_cuda  # noqa: E402
-
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "pipeline"))
+
+# BELOW the sys.path insert, not above it. `gpu` lives in pipeline/, so this import only
+# ever succeeded when something else had already put pipeline/ on the path -- and when the
+# ledger was finally run as its own process from the repo root it died with
+# ModuleNotFoundError before driving a single lap. Same failure as the teacher gate's six
+# silent rounds, recorded in run_dagger_rounds.sh.
+from gpu import require_cuda  # noqa: E402
 
 import carla  # noqa: E402
 import carla_env as env  # noqa: E402
