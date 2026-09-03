@@ -22,6 +22,20 @@ REPO=$PWD
 export STUDY_MAP=Town06 CARLA_PORT=${CARLA_PORT:-3000} CARLA_WINDOWED=${CARLA_WINDOWED:-0}
 export PYTHONUNBUFFERED=1
 
+# ONE SUPERVISOR AT A TIME. Without this, launching a second overnight run while the
+# first is working restarts CARLA underneath it: on 2026-09-02 the first instance's
+# capture-gate drive had just passed (clear student, 1.28 ft) when a second instance's
+# restart killed its server, and the stage reported "restart FAILED ... refusing to
+# measure". One CARLA per port is the oldest rule in this repo and the supervisor was the
+# one driver not honouring it.
+OVERNIGHT_LOCK=/tmp/town06_overnight.lock
+if [ -e "$OVERNIGHT_LOCK" ] && kill -0 "$(cat "$OVERNIGHT_LOCK" 2>/dev/null)" 2>/dev/null; then
+    echo "another overnight run is alive (pid $(cat "$OVERNIGHT_LOCK")); exiting"
+    exit 0
+fi
+echo $$ > "$OVERNIGHT_LOCK"
+trap 'rm -f "$OVERNIGHT_LOCK"' EXIT
+
 LOG=$REPO/results/town06_logs/overnight.log
 mkdir -p "$(dirname "$LOG")"
 say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG"; }
