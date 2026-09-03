@@ -66,14 +66,14 @@ def main():
 
         print("\n  A: the same section three times, nothing between")
         for i in range(3):
-            mx, frac, dep, _ = drive_once(world, vehicle, q, net, dev, SEC,
+            mx, frac, dep, _, _ = drive_once(world, vehicle, q, net, dev, SEC,
                                           C.steps_for(SEC))
             print(f"     {SEC} #{i}   max|CTE| {mx * C.M_TO_FT:5.2f} ft", flush=True)
 
         print("\n  B: s05 first, then s00 -- the rep1 ordering")
-        mx, _, _, _ = drive_once(world, vehicle, q, net, dev, "s05", C.steps_for("s05"))
+        mx, _, _, _, _ = drive_once(world, vehicle, q, net, dev, "s05", C.steps_for("s05"))
         print(f"     s05      max|CTE| {mx * C.M_TO_FT:5.2f} ft", flush=True)
-        mx, _, _, _ = drive_once(world, vehicle, q, net, dev, SEC, C.steps_for(SEC))
+        mx, _, _, _, _ = drive_once(world, vehicle, q, net, dev, SEC, C.steps_for(SEC))
         print(f"     {SEC}      max|CTE| {mx * C.M_TO_FT:5.2f} ft   <-- rep1 position",
               flush=True)
 
@@ -81,7 +81,7 @@ def main():
         camera.destroy(); vehicle.destroy(); world.tick()
         vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
         camera, q = env.set_condition(world, vehicle, COND)
-        mx, _, _, _ = drive_once(world, vehicle, q, net, dev, SEC, C.steps_for(SEC))
+        mx, _, _, _, _ = drive_once(world, vehicle, q, net, dev, SEC, C.steps_for(SEC))
         print(f"     {SEC}      max|CTE| {mx * C.M_TO_FT:5.2f} ft   <-- respawned",
               flush=True)
     finally:
