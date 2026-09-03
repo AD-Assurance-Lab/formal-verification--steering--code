@@ -1,0 +1,134 @@
+{
+  "verdict": "PASS",
+  "laps": 3,
+  "laps_failed": 0,
+  "lap_failure_rate": 0.0,
+  "wilson_95": [
+    0.0,
+    0.5615060804490177
+  ],
+  "worst_cte_m": 0.41734036857568957,
+  "margin_frac": 0.3752389691980694,
+  "lap_spans": [
+    "lap"
+  ],
+  "laps_detail": [
+    {
+      "lap": 0,
+      "passed": true,
+      "worst_cte_m": 0.41734036857568957
+    },
+    {
+      "lap": 1,
+      "passed": true,
+      "worst_cte_m": 0.3926344289163169
+    },
+    {
+      "lap": 2,
+      "passed": true,
+      "worst_cte_m": 0.40257351128631186
+    }
+  ],
+  "student": "S_clear_t06lap_168x56_w2_s0",
+  "checkpoint": "S_clear_t06lap_168x56_w2_s0",
+  "condition": "clear",
+  "exposure": {
+    "shutter": 800.0,
+    "iso": 100.0,
+    "fstop": 2.8,
+    "gamma": 2.2
+  },
+  "cte_budget_m": 0.6679999999999999,
+  "provenance": {
+    "run_started": "2026-09-03T12:49:27-04:00",
+    "weather": {
+      "cloudiness": 80.0,
+      "dust_storm": 0.0,
+      "fog_density": 0.0,
+      "fog_distance": 0.0,
+      "fog_falloff": 0.0,
+      "mie_scattering_scale": 0.0,
+      "precipitation": 0.0,
+      "precipitation_deposits": 0.0,
+      "scattering_intensity": 0.0,
+      "sun_altitude_angle": 90.0,
+      "sun_azimuth_angle": 0.0,
+      "wetness": 0.0,
+      "wind_intensity": 0.0
+    },
+    "env_overrides": {},
+    "fixed_delta_seconds": 0.2,
+    "substepping": {
+      "max_substeps": 16,
+      "max_substep_delta_time": 0.0125
+    },
+    "map": "Town06",
+    "target_speed_ms": 8.9408,
+    "lap_end_m": 2289.037517334472,
+    "git_sha": "152e143e30ec7a1d0fbc35753dc86a2080e7b4de",
+    "git_dirty": false,
+    "determinism": {
+      "deterministic_control": true,
+      "package_version": "1.0.0",
+      "rules_digest": "bed0851fb1571d9e65be70c6872e9f00e54ac6fbd120c4e2991469a7d457fc4a",
+      "lock_problems": [],
+      "server_cmdline": [
+        "/home/za/carla/CarlaUE4/Binaries/Linux/CarlaUE4-Linux-Shipping",
+        "CarlaUE4",
+        "-carla-rpc-port=3000",
+        "-quality-level=Epic",
+        "-notexturestreaming",
+        "-windowed",
+        "-ResX=1280",
+        "-ResY=720",
+        ""
+      ],
+      "notexturestreaming": true,
+      "quality_level": "Epic"
+    },
+    "independent_runs": true,
+    "restart_granularity": "per_run_process",
+    "aggregated_at": "2026-09-03T12:52:58-04:00"
+  },
+  "runs": [
+    {
+      "rep": 0,
+      "direction": "lap",
+      "max_cte_m": 0.41734036857568957,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 17,
+        "x": 639.6130981445312,
+        "y": -7.810556888580322
+      }
+    },
+    {
+      "rep": 1,
+      "direction": "lap",
+      "max_cte_m": 0.3926344289163169,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 18,
+        "x": 638.1747436523438,
+        "y": -8.861382484436035
+      }
+    },
+    {
+      "rep": 2,
+      "direction": "lap",
+      "max_cte_m": 0.40257351128631186,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 18,
+        "x": 638.1655883789062,
+        "y": -8.855287551879883
+      }
+    }
+  ]
+}

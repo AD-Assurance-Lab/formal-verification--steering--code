@@ -1,0 +1,64 @@
+{
+  "verdict": "FAIL",
+  "laps": 3,
+  "laps_failed": 3,
+  "worst_cte_m": 22.569558,
+  "margin_frac": -32.786763473053895,
+  "scored_m": 2040.8033398026723,
+  "scope": "capped",
+  "laps_detail": [
+    {
+      "rep": 0,
+      "max_cte_m": 21.337516,
+      "frac_over_budget": 0.4168618266978923,
+      "n_scored": 854,
+      "n_steps": 972,
+      "departed": true,
+      "passed": false
+    },
+    {
+      "rep": 1,
+      "max_cte_m": 19.456442,
+      "frac_over_budget": 0.41735052754982416,
+      "n_scored": 853,
+      "n_steps": 972,
+      "departed": true,
+      "passed": false
+    },
+    {
+      "rep": 2,
+      "max_cte_m": 22.569558,
+      "frac_over_budget": 0.4133489461358314,
+      "n_scored": 854,
+      "n_steps": 972,
+      "departed": true,
+      "passed": false
+    }
+  ],
+  "runs": [
+    {
+      "rep": 0,
+      "direction": "lap",
+      "max_cte_m": 21.337516,
+      "frac_over_budget": 0.4168618266978923,
+      "departed": true,
+      "passed": false
+    },
+    {
+      "rep": 1,
+      "direction": "lap",
+      "max_cte_m": 19.456442,
+      "frac_over_budget": 0.41735052754982416,
+      "departed": true,
+      "passed": false
+    },
+    {
+      "rep": 2,
+      "direction": "lap",
+      "max_cte_m": 22.569558,
+      "frac_over_budget": 0.4133489461358314,
+      "departed": true,
+      "passed": false
+    }
+  ]
+}

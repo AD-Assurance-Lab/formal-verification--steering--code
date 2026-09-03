@@ -41,10 +41,42 @@ LEDGER = REPO / D.LEDGER_SUBDIR
 TRACES = LEDGER / "runs" / "traces"
 
 
+def _route_arc():
+    """TRUE cumulative arc length per route vertex, from the vertices themselves."""
+    from route import load_route  # noqa: E402
+    rt = np.asarray(load_route("lap"), float)[:, :2]
+    seg = np.linalg.norm(np.diff(rt, axis=0), axis=1)
+    return np.concatenate([[0.0], np.cumsum(seg)])
+
+
 def load_trace(path):
+    """(true_arc, cte, in_bridge_as_driven, n_steps) for one lap.
+
+    TWO PARAMETERISATIONS, and mixing them is a real bug that this function exists to
+    stop. The driver records `here_m = route_index * step_m` -- index times the NOMINAL
+    2.0 m spacing. `scored_scope`'s spans, and `BRIDGE_SPANS` in the route metadata, are
+    TRUE arc length, cumsum of the actual vertex spacing, which averages 1.9974 m.
+
+    Over 1,147 vertices the two drift by up to 6.8 m and end 3.0 m apart. Scored against
+    `here_m`, low_sun/S_mixed's peak at true arc 2284.9 m reads as 2288.0 m and falls
+    OUTSIDE the 2249.2-2287.0 exclusion -- so the capped scope silently excluded nothing
+    and printed margins identical to the full scope, which is exactly what a working
+    comparison of two identical scopes looks like.
+
+    So the index is recovered and mapped through the route's own arc array. `step_m` is
+    read from the metadata rather than assumed, because the recovery is only exact while
+    the driver's multiplier and this divisor are the same number.
+    """
     with open(path) as fh:
         rows = list(csv.DictReader(fh))
-    here = np.array([float(r["here_m"]) if r["here_m"] != "" else np.nan for r in rows])
+    arc = _route_arc()
+    step = float(C.LAP_META.get("step_m", 2.0))
+    here = np.full(len(rows), np.nan)
+    for i, r in enumerate(rows):
+        if r["here_m"] == "":
+            continue
+        idx = int(round(float(r["here_m"]) / step))
+        here[i] = arc[min(max(idx, 0), len(arc) - 1)]
     cte = np.array([float(r["cte_m"]) if r["cte_m"] != "" else np.nan for r in rows])
     br = np.array([int(r["in_bridge"]) for r in rows], dtype=bool)
     return here, cte, br, len(rows)
@@ -132,7 +164,18 @@ def main():
                               laps_failed=sum(1 for l in laps if not l["passed"]),
                               worst_cte_m=worst, margin_frac=margin,
                               scored_m=ss.scored_length_m("lap", scope),
-                              laps_detail=laps)
+                              scope=scope,
+                              laps_detail=laps,
+                              # `runs` as well, in the shape the aggregator writes it.
+                              # compare_town06.py counts laps from this key, and a cell
+                              # carrying only `laps_detail` reported "PASS 0/0" with a
+                              # Wilson interval of [0,100]% -- a verdict with no visible
+                              # evidence behind it, which reads as a cell nobody drove.
+                              runs=[dict(rep=l["rep"], direction="lap",
+                                         max_cte_m=l["max_cte_m"],
+                                         frac_over_budget=l["frac_over_budget"],
+                                         departed=l["departed"], passed=l["passed"])
+                                    for l in laps])
         f, c = row["full"], row["capped"]
         print(f"  {cond:9s} {ck.split('_t06')[0]:13s} | "
               f"{f['verdict']:5s} {f['laps_failed']}/{f['laps']} "
