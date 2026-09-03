@@ -1,0 +1,19 @@
+{
+  "weather": "clear",
+  "reps": 1,
+  "budget_ft": 2.1916011199999996,
+  "results": {
+    "S_clear_t06lap_168x56_w2_s0": [
+      {
+        "max_cte_ft": 1.3,
+        "over": 0.0,
+        "steps": 1180,
+        "full_steps": 1280,
+        "departed": false,
+        "passed": true,
+        "rep": 0,
+        "sec": 30.9
+      }
+    ]
+  }
+}
