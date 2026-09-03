@@ -51,6 +51,32 @@ IN_W=${IN_W:-168}
 IN_H=${IN_H:-56}
 SEEDS="${SEEDS:-0 1 2 3 4 5 6 7 8 9}"
 
+# MARGIN, not merely a pass (pass-3 pre-registration).
+#
+# The gate below counted `passed`, which is "max |CTE| <= budget". A sweep that stops at
+# the first draw meeting that criterion CANNOT select for headroom, because it stops at
+# the first student that has none: the shipped mixed student cleared fog at 1.78 ft of a
+# 2.19 ft budget -- 19% margin -- and then went VOID under fog in two independent passes.
+#
+# MARGIN_FRAC is the fraction of budget every GATE lap must stay under. The SCREEN stays
+# at the full budget: it is a cheap filter, not the criterion.
+#
+# Default 1.0 reproduces the old behaviour exactly, so passes 1 and 2 are unaffected.
+MARGIN_FRAC=${MARGIN_FRAC:-1.0}
+SCREEN_FRAC=${SCREEN_FRAC:-1.0}
+
+# Where the winner is recorded, and whether it overwrites the base checkpoint.
+#
+# PIN_CK lets a new sweep pin under its OWN name. Without it, re-sweeping w4 for pass 3
+# would overwrite S_mixed_t06lap_168x56_w4.selected -- the pin passes 1 and 2 resolve
+# through -- and silently change which model those committed results refer to.
+PIN_CK=${PIN_CK:-$CK}
+PROMOTE=${PROMOTE:-1}
+
+BUDGET_FT=$(python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(C.CTE_BUDGET_FT)")
+GATE_FT=$(python3 -c "print(f'{$BUDGET_FT * $MARGIN_FRAC:.4f}')")
+SCREEN_FT=$(python3 -c "print(f'{$BUDGET_FT * $SCREEN_FRAC:.4f}')")
+
 # ONE SWEEP AT A TIME, by PID lock. A process-name match also matches a git commit whose
 # message names this file, and that has already made a supervisor wait on itself.
 LOCK=/tmp/town06_seed_sweep_$(echo "$CK" | tr -c 'a-zA-Z0-9' '_').lock
@@ -68,6 +94,13 @@ import json
 d=json.load(open('$1'))
 laps=[l for l in list(d['results'].values())[0] if not l.get('error')]
 print(sum(1 for l in laps if l['passed']))"; }
+# Laps at or under a THRESHOLD in feet, rather than merely under budget. A lap that
+# errored is not counted as held -- an absent measurement is not a passing one.
+held_under() { python3 -c "
+import json
+d=json.load(open('$1'))
+laps=[l for l in list(d['results'].values())[0] if not l.get('error')]
+print(sum(1 for l in laps if l['max_cte_ft'] <= $2))"; }
 worst_of() { python3 -c "
 import json
 d=json.load(open('$1'))
@@ -75,7 +108,8 @@ laps=[l for l in list(d['results'].values())[0] if not l.get('error')]
 print(f\"{max(l['max_cte_ft'] for l in laps):.2f}\")"; }
 
 NCOND=$(echo "$CONDS" | wc -w)
-say "=== seed sweep for $CK: conditions [$CONDS], $REPS laps each ==="
+say "=== seed sweep for $CK -> pin $PIN_CK: conditions [$CONDS], $REPS laps each ==="
+say "    budget $BUDGET_FT ft | screen <= $SCREEN_FT ft | GATE <= $GATE_FT ft (${MARGIN_FRAC}x)"
 for SEED in $SEEDS; do
     SCK="${CK}_s${SEED}"
     if [ ! -f "$REPO/pipeline/checkpoints/$SCK.pth" ]; then
@@ -94,7 +128,8 @@ for SEED in $SEEDS; do
         OUT="$REPO/results/town06/seed_screen_${SCK}_${COND}.json"
         python3 scripts/compare_student_variants.py --checkpoints "$SCK" \
             --channels "$CH" --fc "$FC" --reps 1 --weather "$COND" --out "$OUT" >>"$LOG" 2>&1
-        N=$(held_of "$OUT"); say "    screen $COND $N/1  worst $(worst_of "$OUT") ft"
+        N=$(held_under "$OUT" "$SCREEN_FT")
+        say "    screen $COND $N/1  worst $(worst_of "$OUT") ft (<= $SCREEN_FT)"
         SCREEN=$((SCREEN+N)); [ "$N" -eq 0 ] && break
     done
     [ "$SCREEN" -lt "$NCOND" ] && { say "  seed $SEED rejected at the screen"; continue; }
@@ -105,17 +140,21 @@ for SEED in $SEEDS; do
         OUT="$REPO/results/town06/seed_gate_${SCK}_${COND}.json"
         python3 scripts/compare_student_variants.py --checkpoints "$SCK" \
             --channels "$CH" --fc "$FC" --reps "$REPS" --weather "$COND" --out "$OUT" >>"$LOG" 2>&1
-        N=$(held_of "$OUT"); say "    gate $COND $N/$REPS  worst $(worst_of "$OUT") ft"
+        N=$(held_under "$OUT" "$GATE_FT")
+        say "    gate $COND $N/$REPS  worst $(worst_of "$OUT") ft (<= $GATE_FT)"
         HELD=$((HELD+N))
     done
     NEED=$((REPS*NCOND))
     say "  seed $SEED held $HELD/$NEED"
     if [ "$HELD" -eq "$NEED" ]; then
-        cp -p "$REPO/pipeline/checkpoints/$SCK.pth" "$REPO/pipeline/checkpoints/${CK}.pth"
-        echo "$SCK" > "$REPO/pipeline/checkpoints/${CK}.selected"
-        say "*** $CK PASSES $HELD/$NEED: $SCK (seed $SEED, pinned) ***"
+        if [ "$PROMOTE" = "1" ]; then
+            cp -p "$REPO/pipeline/checkpoints/$SCK.pth" \
+                  "$REPO/pipeline/checkpoints/${CK}.pth"
+        fi
+        echo "$SCK" > "$REPO/pipeline/checkpoints/${PIN_CK}.selected"
+        say "*** $PIN_CK PASSES $HELD/$NEED at <= $GATE_FT ft: $SCK (seed $SEED, pinned) ***"
         exit 0
     fi
 done
-say "no seed held every lap for $CK"
+say "no seed held every lap under $GATE_FT ft for $CK"
 exit 1

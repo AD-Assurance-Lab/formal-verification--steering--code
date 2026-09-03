@@ -524,6 +524,38 @@ TOWN06_STUDENTS = (
     ("S_mixed_t06", "S_mixed_t06lap_168x56_w4", (32, 64, 64), 128),
 )
 
+# ── PASS 3: the two mixed widths, swept under a MARGIN gate ──────────────────
+# docs/TOWN06_PASS3_PREREGISTRATION.md, committed before any draw.
+#
+# The comment above records w6 as "tried and did NOT fix fog either -- 11.64 ft against
+# w4's 11.15". T06-F55 withdraws that: both numbers are ONE distillation from ONE seed,
+# and 389f192 -- committed six hours after the w6 checkpoint was written -- measured a
+# re-draw of one UNCHANGED configuration swinging 1.16 -> 8.68 ft. A 7.5 ft swing cannot
+# resolve a 0.49 ft difference. w4 ships its fourth draw; w6 was never given a second.
+#
+# So the widths are swept against each other under one criterion, fixed in advance.
+#
+#     w4  (32,64,64)/128  101,888 ReLU   2.0x the clear student
+#     w6  (48,96,96)/192  152,832 ReLU   3.0x -- published Town04's ratio
+#
+# PIN NAMES ARE SEPARATE ON PURPOSE. The sweep pins under "<base>p3", so re-sweeping w4
+# cannot overwrite S_mixed_t06lap_168x56_w4.selected -- the pin passes 1 and 2 resolve
+# through. Overwriting it would silently change which model those committed results refer
+# to, which is the failure PROTOCOL R4 exists to prevent.
+TOWN06_PASS3_WIDTHS = (
+    # (name, SWEEP base -- where _s<seed> checkpoints live, PIN base, channels, fc)
+    ("S_mixed_t06_w4", "S_mixed_t06lap_168x56_w4",
+     "S_mixed_t06lap_168x56_w4p3", (32, 64, 64), 128),
+    ("S_mixed_t06_w6", "S_mixed_t06lap_168x56_w6",
+     "S_mixed_t06lap_168x56_w6p3", (48, 96, 96), 192),
+)
+
+# Every GATE lap must stay under this fraction of the CTE budget. The screen stays at the
+# full budget. Fixed before the first draw and not to be moved afterwards: the shipped
+# w4_s3 holds only 6/12 laps under it (fog 1.78/1.28/1.18, low sun 1.10/1.21/1.26 against
+# 1.096 ft), which is the point.
+TOWN06_PASS3_GATE_MARGIN = 0.50
+
 
 def relu_count(channels, fc, in_h=28, in_w=84):
     """ReLU neurons, so it can be reported next to every certified rate (4ac6002:
