@@ -152,7 +152,11 @@ def main():
 
     if args.write:
         for scope in ss.SCOPES:
-            d = REPO / "results" / "town06" / f"ledger_{scope}"
+            # Inside the PASS's own directory. Spelled as results/town06/ledger_<scope>
+            # these would be shared across passes, so pass 3 would silently overwrite
+            # pass 2's re-scoring while its raw runs sat safely in their own folder --
+            # the same collision TOWN06_PASS exists to prevent, one level down.
+            d = REPO / D.LEDGER_SUBDIR / f"scored_{scope}"
             d.mkdir(parents=True, exist_ok=True)
             for key, row in out.items():
                 cond, ck = key.split("/")
