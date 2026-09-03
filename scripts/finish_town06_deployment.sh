@@ -144,6 +144,8 @@ if bad:
 print(f"  captures OK at {C.TOWN06_INPUT_H}x{C.TOWN06_INPUT_W}")
 PY
 
+CERT=results/town06/certificate_town06.json
+
 # ------------------------------------------------ 1b. THE CAPTURE GATE (PROTOCOL A-3)
 # A-3 makes this a PRECONDITION of certification, and audit_repo.py fails when a
 # certificate exists with no capture_gate.json beside it -- but nothing in this driver
@@ -180,14 +182,27 @@ else
 fi
 
 # ---------------------------------------------------------------- 2. certify (blind)
+# DO NOT RE-CERTIFY A COMMITTED CERTIFICATE.
+#
+# This ran the certifier unconditionally, so every resume of the chain spent twenty
+# minutes recomputing an artifact that was already committed and pushed. Worse in
+# principle than the waste: the certificate is the pre-registered prediction under R1, and
+# rewriting the file it lives in -- even with identical contents -- is the kind of churn
+# that makes "was this the committed version?" a question anyone has to ask. PROTOCOL R4
+# is explicit that a recomputation after the drives is a NEW cell with a new name.
+if [ -f "$CERT" ] && git -C "$REPO" diff --quiet HEAD -- "$CERT" 2>/dev/null \
+   && git -C "$REPO" ls-files --error-unmatch "$CERT" >/dev/null 2>&1; then
+    say "SKIP certification (certificate committed and unmodified)"
+else
 carla_stop
 say "certifying -- blind: no truth table is read, and the drives have not happened"
 python3 scripts/certify_town06.py >>"$LOG_DIR/certify.log" 2>&1 \
     || { say "FATAL: certification failed, see certify.log"; carla_start; exit 1; }
 tail -20 "$LOG_DIR/certify.log" | tee -a "$LOG"
 
+fi
+
 # ---------------------------------------------------------------- 3. COMMIT (R1)
-CERT=results/town06/certificate_town06.json
 [ -f "$CERT" ] || { say "FATAL: no certificate written"; carla_start; exit 1; }
 git add "$CERT" docs/TOWN06_FINDINGS.md 2>/dev/null
 if git diff --cached --quiet; then
