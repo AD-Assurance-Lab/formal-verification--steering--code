@@ -471,6 +471,32 @@ _gate = _code_lines(_pl[_pl.index("teacher_gate() {"):_pl.index("# ── THE LA
 chk(_gate.index("LAP GATE PASSED") < _gate.index("without passing"),
     "run_town06_pipeline.sh: the strict lap gate is checked BEFORE dagger's one-rep gate")
 
+# --- every entry point must IMPORT, before it is trusted to drive ---------------
+# closed_loop_ledger.py had `from gpu import require_cuda` ABOVE the sys.path insert that
+# adds pipeline/, so it only worked when a caller had already put pipeline/ on the path.
+# Run as its own process it died with ModuleNotFoundError before driving a single lap --
+# the same failure that cost the teacher gate six silent rounds. An import error is
+# indistinguishable from a policy failure to whatever reads the exit code.
+for _entry in ("scripts/closed_loop_ledger.py", "scripts/gate_teacher_lap.py",
+               "scripts/certify_town06.py", "scripts/check_student_competence.py",
+               "scripts/compare_student_variants.py", "scripts/capture_gate_drives.py",
+               "scripts/capture_driven_gate.py"):
+    _p = subprocess.run([sys.executable, _entry, "--help"],
+                        capture_output=True, text=True, timeout=180,
+                        env=dict(os.environ, STUDY_MAP="Town06"),
+                        cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    chk("ModuleNotFoundError" not in (_p.stdout + _p.stderr) and
+        "ImportError" not in (_p.stdout + _p.stderr),
+        f"{os.path.basename(_entry)} imports cleanly as its own process")
+
+# --- a failed ledger must stop the run, not warn ------------------------------
+# finish_town06_deployment.sh logged "WARNING: ledger exited nonzero", printed a
+# comparison table with no rows, and announced DEPLOYMENT TEST COMPLETE with zero cells
+# scored.
+_fin2 = open("scripts/finish_town06_deployment.sh").read()
+chk("FATAL: the scored ledger failed" in _fin2,
+    "finish_town06_deployment.sh: a failed ledger is fatal, not a warning")
+
 # --- the A-3 gate must be RUN by the driver, not merely exist -----------------
 # capture_driven_gate.py existed and audit_repo.py required its artifact, and the Town06
 # lap driver never invoked it. The certificate would have been computed and COMMITTED,
