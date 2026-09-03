@@ -3297,3 +3297,182 @@ the A-3 capture gate at 0.0148. What is established is narrower and worth statin
 in the paper -- **an interior claim about this family is not closed-loop testable as the
 family is currently defined**, and the study should say so rather than leave the reader to
 assume the ledger's endpoint drive covers it.
+
+## T06-F53  PASS 2: every verdict reproduces, the scope moves no verdict, and T06-F50's disposition of the VOID cell is WRONG
+
+PROTOCOL amendment A-5. Same two frozen checkpoints, same route, same conditions, same
+frozen constants; 24 laps re-driven with per-step traces, scored under both scopes from
+one set of drives. Predictions committed before driving in
+`docs/TOWN06_PASS2_PREREGISTRATION.md` and not edited since.
+
+**Pass 2 is not blind and is never to be reported as such.** R1 holds literally -- both
+certificates were committed before every pass-2 lap, `check_order_town06.py` confirms it --
+but pass 1's outcomes were known. Pass 1 stands unchanged in `results/town06/ledger` (R4).
+
+### P1 CONFIRMED: 8 of 8 verdicts reproduce
+
+    cell              pass 1                  pass 2
+    clear/S_clear     PASS   0.392 m          PASS   0.417 m
+    clear/S_mixed     PASS   0.397 m          PASS   0.227 m
+    fog/S_clear       FAIL  21.027 m          FAIL  22.570 m
+    fog/S_mixed       VOID 1/3                VOID 1/3
+    low_sun/S_clear   FAIL   6.329 m          FAIL   6.324 m
+    low_sun/S_mixed   PASS   0.667 m +0.20%   PASS   0.454 m +32.1%
+    night/S_clear     FAIL   7.779 m          FAIL   7.783 m
+    night/S_mixed     PASS   0.305 m +54.3%   PASS   0.295 m +55.8%
+
+`night/S_clear` reproduces to 4 mm and `low_sun/S_clear` to 5 mm across independent server
+restarts a day apart. This is the first direct test of A-4's premise -- that under a fully
+enforced harness laps agree -- against a whole re-driven study rather than an assertion,
+and it holds.
+
+### P2 CONFIRMED: 0 of 8 cells change verdict with the scope
+
+Agreement is **4/5 under both scopes**, cell for cell identical. Only two margins move,
+and they are the two the pre-registration named:
+
+    low_sun/S_mixed   full 0.454 m +32.1%   capped 0.217 m +67.5%
+    night/S_mixed     full 0.295 m +55.8%   capped 0.185 m +72.2%
+
+So the 78 m of out-of-regime road changes how comfortable two cells look and changes no
+verdict anywhere. **The scope question is real and its answer is that it did not matter
+here** -- which is only knowable because both were scored.
+
+### P3: the 1.4 mm was an artifact in low sun, and NOT an artifact in fog
+
+**Low sun.** The 1.4 mm did not reproduce at all. Pass 1's laps were 0.479 / **0.667** /
+0.474 m; pass 2's are 0.443 / 0.436 / 0.454 m -- the outlier simply did not recur. On top
+of that, removing out-of-regime road takes the worst from 0.454 m to 0.217 m. Against the
+pre-registered rule (capped margin above +30% => the scope), **+67.5% says the marginality
+was where the road was cut plus run-to-run variation, not a systematically borderline
+student in low sun.**
+
+**Fog.** The opposite, and it is the finding. `fog/S_mixed` is VOID in both passes, under
+both scopes, and the cap cannot touch it.
+
+### T06-F50's disposition of the VOID cell is FALSIFIED
+
+F50 concluded the cell was "D-7 -- the irreducible render residual ... amplified by a
+policy sitting on a decision boundary **at one location** under fog", and supported it with
+six extra runs whose peak |CTE| "always at step 22-26, about 45 m into the lap".
+
+Pass 2's failing lap peaks at **arc 1058.6 m**. Pass 1's peaked at **arc 55.3 m**. A
+kilometre apart, on unrelated road, both in scope under every scope.
+
+    pass 1   0.406 / 1.601 / 0.449 m   failing lap peaked at arc   55.3 m
+    pass 2   0.325 / 0.329 / 1.000 m   failing lap peaked at arc 1058.6 m
+
+Combined with F50's own six diagnostic runs: **3 of 12 laps over budget, at two unrelated
+locations.** The instability is therefore NOT a single decision boundary at one place. It
+is distributed, and the honest reading is that **the mixed student sits on its CTE budget
+under fog generally.**
+
+That is a stronger statement of the concern Zach raised than F50 made -- "if the AI models
+are borderline to begin with, the formal verification can be strange" -- and it is the one
+cell where it is established rather than explained away. F50's location-specific mechanism
+is withdrawn; its bit-identical-start measurement and its D-7 amplification argument stand,
+because a policy on its budget anywhere is exactly what D-7 noise can push over.
+
+**The cell remains VOID under A-4 and the study is not complete while it stands.** What has
+changed is that the cause is no longer "one spot"; it is the policy's margin.
+
+### What this does NOT overturn
+
+The `night/S_mixed` DISAGREE is unaffected and has its own disposition (T06-F54): it
+reproduces at +55.8% margin with all three laps peaking at the identical location, and the
+certificate's NOT_CERTIFIED rests on the pose-wise-varying-s relaxation, not on any
+intensity the ledger can drive.
+
+### A pre-existing defect found while scoring, with its cost measured
+
+`closed_loop_ledger.py` tests bridge membership with `here_m = route_index * step_m` --
+index times the NOMINAL 2.0 m. `BRIDGE_SPANS` in the route metadata are TRUE arc length,
+cumsum of the actual spacing, which averages 1.9974 m. Over 1,147 vertices the two drift by
+up to 6.8 m and end 3.0 m apart.
+
+Measured from the 24 committed traces: **286 mis-assigned steps, 13-15 per lap, and ZERO
+laps whose max |CTE| changes.** The affected steps sit at bridge edges on dead-straight
+grade-separated merge road, where |dheading| is 0.00 deg/2 m. A real defect that cost
+nothing, recorded rather than quietly corrected.
+
+It cost something in the analysis, though: the first version of `score_scopes.py` compared
+the capped spans against `here_m`, so `low_sun/S_mixed`'s peak at true arc 2284.9 m read as
+2288.0 and fell outside the 2249.2-2287.0 exclusion. The capped scope excluded nothing and
+printed margins identical to the full scope -- which is exactly what a correct comparison
+of two genuinely identical scopes looks like, and would have been reported as "the scope
+makes no difference to anything".
+
+## T06-F54  DISPOSITION for night/S_mixed: the certificate and the ledger answer different questions
+
+Standing rule 2 requires a written disposition ruling out the candidate causes before a
+contradicted pre-registration becomes a finding. This is that disposition, for the one
+DISAGREE in the Town06 deployment test:
+
+    night/S_mixed_t06   drove PASS 0/3   certificate NOT_CERTIFIED   (both passes, both scopes)
+
+### Candidate causes ruled out
+
+**1. Not a loose bound.** The bounds were compared against dense sampling of the same
+family at the same 133 poses. On five of six cells alpha-CROWN is tight to **1.0-1.1x**.
+The solver is not the problem.
+
+**2. Not a bad model or a bad drive.** The cell reproduces across two independent passes:
+PASS 0/3 at +54.3% margin in pass 1, +55.8% in pass 2, with **all three laps in both passes
+peaking at the identical location, arc 1259.3 m.** This is among the most reproducible
+cells in the study.
+
+**3. Not the scored scope.** NOT_CERTIFIED under the full-scope certificate and under the
+capped-scope certificate, with bounds moving in the third decimal.
+
+**4. Not threshold placement.** Flipping this cell to CERTIFIED needs `T_CLOSED_LOOP_S`
+near 1.10 s. The admissible window measured on the twelve Town04 cells is (1.231, 2.128).
+
+**5. Not a harness or condition fault.** Determinism preflight green, photometry gate green
+on every fresh server, weather struct verified per run, condition classified from a frame.
+
+### The cause
+
+`certify_town06.py` bounds, per pose, the worst case over `s`, and **then** averages over
+poses. `s` is therefore free to vary from pose to pose. That is deliberate and documented
+in `certify_sustained_bound.py`: it covers spatially varying disturbance -- fog thicker in a
+hollow, shadow only under the trees -- and is "strictly more general than a single global
+intensity".
+
+The ledger drives a **single global intensity**: one rendered condition over the whole lap.
+
+`scripts/falsify_witness.py` searches that narrower family densely. For this cell the worst
+lap-mean bias at any single global `s` is **-0.66x tolerance at s = 0.678** (capped scope:
+-0.75x at the same s). **No member of the family the ledger can drive violates the
+corridor.**
+
+So the certificate is sound and the drive is correct and they are not in conflict. The
+certificate declines to prove safety over a set that includes disturbances varying along
+the road; the ledger measures one uniform disturbance from inside that set. **The
+NOT_CERTIFIED is UNDECIDED, not falsified** -- exactly the reading `certify_sustained_bound`
+already warns the label overstates.
+
+`S_mixed/fog` is in the same position: NOT_CERTIFIED, no witness, worst single-s +0.85x.
+
+### What this means for the reported result
+
+The agreement number should be reported with the distinction visible, because "the
+certificate was wrong" and "the certificate did not decide" are different claims:
+
+    NOT_CERTIFIED with an exhibited witness  -- falsified, proven unsafe somewhere in [0,1]
+        S_clear/fog, S_clear/night, S_clear/low_sun   (all drove FAIL)
+    NOT_CERTIFIED with no witness            -- sound but undecided
+        S_mixed/fog (drove VOID), S_mixed/night (drove PASS)
+    CERTIFIED                                -- proven, for every per-pose choice of s
+        S_mixed/low_sun (drove PASS)
+
+Read that way there is **no cell where the certificate is wrong.** The 4/5 agreement
+undercounts, and the one DISAGREE is a cell where the criterion was conservative in the
+direction it is designed to be conservative in.
+
+### Not acted on
+
+Reporting the single-global-s reading as the primary verdict would make Town06 agree 5/5,
+and it is only known to do so because the drives were already seen. The pose-wise reading
+is what was pre-registered and it stays the verdict. The witness search is a **diagnosis
+reported alongside**, never a re-score. Recorded here so that choice is visible rather than
+inferred from a number that improved.
