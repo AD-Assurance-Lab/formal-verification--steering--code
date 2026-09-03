@@ -151,4 +151,20 @@ MIN_CLOSED_LOOP_REPS = LAPS_PER_CELL
 
 RESULTS_SUBDIR = os.path.join("results", "town06")
 CERT_ARTIFACT = os.path.join(RESULTS_SUBDIR, "certificate_town06.json")
-LEDGER_SUBDIR = os.path.join(RESULTS_SUBDIR, "ledger")
+
+# PROTOCOL A-5 pass 2. A pass writes its OWN ledger directory, so pass 1 -- the blind
+# deployment test whose original PROTOCOL R4 requires to stand in the record -- cannot be
+# overwritten or skipped into. run_town06_ledger.sh skips any cell whose file exists, so
+# without this a pass-2 run would silently do nothing and report success.
+TOWN06_PASS = int(os.environ.get("TOWN06_PASS", "1"))
+if TOWN06_PASS not in (1, 2):
+    raise SystemExit(f"TOWN06_PASS={TOWN06_PASS}; expected 1 or 2")
+LEDGER_SUBDIR = os.path.join(
+    RESULTS_SUBDIR, "ledger" if TOWN06_PASS == 1 else f"ledger_pass{TOWN06_PASS}")
+
+# Every certificate a pass drives against. Pass 2 scores BOTH scopes, so both must be
+# committed before it drives -- the capped one is new, the full one is pass 1's and has
+# been committed since 73415e5.
+CAPPED_CERT_ARTIFACT = os.path.join(RESULTS_SUBDIR, "certificate_town06_capped.json")
+CERT_ARTIFACTS = ([CERT_ARTIFACT] if TOWN06_PASS == 1
+                  else [CERT_ARTIFACT, CAPPED_CERT_ARTIFACT])
