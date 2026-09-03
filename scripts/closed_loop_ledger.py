@@ -41,6 +41,9 @@ from gpu import require_cuda  # noqa: E402
 import carla  # noqa: E402
 import carla_env as env  # noqa: E402
 import config as C  # noqa: E402
+
+sys.path.insert(0, str(REPO))
+from study import town06_design as _D  # noqa: E402
 from route import (load_route, signed_cte_route, pure_pursuit_route,  # noqa: E402
                    lap_finished)
 from student import StudentNet, student_preprocess  # noqa: E402
@@ -50,7 +53,14 @@ from student import StudentNet, student_preprocess  # noqa: E402
 # A cell can therefore never be mistaken for, or overwrite, a published one -- and the
 # published cells are tracked in git under exactly these filenames, so an unscoped redo
 # would overwrite the record it exists to be compared against.
-LEDGER = (REPO / "results" / "town06" / "ledger" if C.STUDY_MAP != "Town04"
+#
+# A-5 pass 2: the Town06 path is READ FROM THE DESIGN MODULE, which is what TOWN06_PASS
+# scopes. Spelled literally here it ignored the pass entirely, so run_town06_ledger.sh
+# would have checked ledger_pass2/ for existing cells, found none, driven all 24 laps --
+# and this would have written every one of them into pass 1's directory, overwriting the
+# blind result R4 requires to stand. The guard and the writer must read the same
+# definition or the guard protects nothing.
+LEDGER = (REPO / _D.LEDGER_SUBDIR if C.STUDY_MAP != "Town04"
           else pathlib.Path(C.LEDGER_DIR))
 # Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).
 SPAWNS = C.SPAWNS
