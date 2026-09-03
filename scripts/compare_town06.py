@@ -12,6 +12,7 @@ rather than rounded up into a clean score.
 
     STUDY_MAP=Town06 python3 scripts/compare_town06.py
 """
+import argparse
 import json
 import os
 import sys
@@ -27,6 +28,19 @@ from study import town06_design as D  # noqa: E402
 
 CERT = REPO / D.CERT_ARTIFACT
 LEDGER = REPO / D.LEDGER_SUBDIR
+
+# A-5: a pass-2 comparison runs once per SCOPE, against that scope's own certificate and
+# that scope's own re-scoring of the same drives. The scope ledgers are DERIVED from the
+# committed traces by score_scopes.py, so R1 is still checked against the drives
+# themselves (D.LEDGER_SUBDIR, which TOWN06_PASS scopes) and never against a derived
+# artifact whose commit time says nothing about when the vehicle moved.
+SCOPE_ARTIFACTS = {
+    "full":   (D.CERT_ARTIFACT,
+               os.path.join(D.LEDGER_SUBDIR, "scored_full")),
+    "capped": (getattr(D, "CAPPED_CERT_ARTIFACT",
+                       os.path.join(D.RESULTS_SUBDIR, "certificate_town06_capped.json")),
+               os.path.join(D.LEDGER_SUBDIR, "scored_capped")),
+}
 
 # Ledger student name -> design student name
 # Built from the REGISTRY, not hardcoded. This was a literal map of the 84x28
@@ -52,9 +66,27 @@ def wilson(k, n, z=1.96):
 
 
 def main():
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--scope", default=None, choices=sorted(SCOPE_ARTIFACTS),
+                    help="compare one A-5 scope's ledger against that scope's "
+                         "certificate. Omit for the pass-1 comparison, unchanged.")
+    args = ap.parse_args()
+
+    global CERT, LEDGER
+    cert_rel = D.CERT_ARTIFACT
+    if args.scope:
+        cert_rel, ledger_rel = SCOPE_ARTIFACTS[args.scope]
+        CERT, LEDGER = REPO / cert_rel, REPO / ledger_rel
+        if not CERT.exists():
+            sys.exit(f"no certificate for scope '{args.scope}' at {cert_rel}")
+        if not LEDGER.is_dir():
+            sys.exit(f"no '{args.scope}' ledger at {ledger_rel} -- run "
+                     f"scripts/score_scopes.py --write first")
+
     require_certificate_committed()
     cert = json.loads(CERT.read_text())
-    cert_t = first_commit_epoch(D.CERT_ARTIFACT)
+    cert_t = first_commit_epoch(cert_rel)
 
     if not LEDGER.is_dir():
         sys.exit("no ledger cells yet -- run scripts/run_town06_ledger.sh")
