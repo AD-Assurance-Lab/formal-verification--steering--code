@@ -73,6 +73,17 @@ for ROW in "${ROWS[@]}"; do
     PIN_CK="$PIN" PROMOTE=0 \
         bash scripts/select_student_seed.sh
     RC=$?
+    # RC 2 = the sweep could not MEASURE a lap. That is a harness failure and must never
+    # be recorded as "no seed passed" -- the same confusion one level down cost the
+    # shipped student a screen rejection it had not earned. The whole run stops: a
+    # comparison of two widths where one was scored against a broken harness compares
+    # nothing.
+    if [ $RC -eq 2 ]; then
+        say "  $NM: ABORTED -- a lap could not be measured. NOT a width result."
+        say ""
+        say "  STOPPING. Fix the harness and re-run; do not interpret a partial sweep."
+        exit 2
+    fi
     if [ $RC -eq 0 ] && [ -f "$REPO/pipeline/checkpoints/${PIN}.selected" ]; then
         say "  $NM PASSES: $(cat "$REPO/pipeline/checkpoints/${PIN}.selected")"
         RESULTS+=("$NM PASS $(cat "$REPO/pipeline/checkpoints/${PIN}.selected")")

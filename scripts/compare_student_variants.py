@@ -58,8 +58,13 @@ def restart_carla(log):
     on. A-4 is explicit that where the harness is not enforced the answer is to enforce
     it, not to average over it.
     """
+    # THE ONE RETRY POLICY (scripts/carla_restart_retry.sh, commit 5c8b340). This called
+    # carla_restart.sh directly, so a boot that missed its 300 s window -- a certainty
+    # over a stage of dozens of restarts, not a risk -- became a failed lap. Four copies
+    # of a retry policy is how they drift, so this uses the one.
     with open(log, "a") as fh:
-        for cmd, lim in ((["bash", str(REPO / "scripts" / "carla_restart.sh")], 420),
+        for cmd, lim in (([ "bash", str(REPO / "scripts" / "carla_restart_retry.sh"),
+                            str(log), "variant-gate"], 1500),
                          ([sys.executable, str(REPO / "scripts" / "wait_carla_ready.py"),
                            "--timeout", "200"], 240)):
             try:
@@ -231,12 +236,26 @@ def main():
         print(f"{ck:46s} {held:>6d}/{len(laps):<3d} {worst:11.2f}ft "
               f"{100 * worst / C.CTE_BUDGET_FT:11.0f}%{note}")
 
+    # EXIT 3 WHEN A LAP COULD NOT BE MEASURED.
+    #
+    # An unmeasured lap is not a failing lap. The sweep counts laps under a threshold and
+    # compares against the EXPECTED count, so an unmeasured lap made a seed look rejected
+    # -- and it happened: S_mixed_t06lap_168x56_w4_s3, the SHIPPED student, was "rejected
+    # at the screen" because one restart failed and the night lap was never driven. That
+    # is a harness failure wearing the costume of a model verdict, which is the exact
+    # confusion the restart-status fix was meant to end and only half ended.
+    unmeasured = sum(1 for laps in results.values()
+                     for l in laps if l.get("error") or l.get("restart_failed"))
     out = REPO / args.out
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(dict(weather=args.weather, reps=args.reps,
                                    budget_ft=C.CTE_BUDGET_FT, results=results),
                               indent=2))
     print(f"\n  -> {out}")
+    if unmeasured:
+        print(f"\n  {unmeasured} lap(s) COULD NOT BE MEASURED. This is a harness "
+              f"failure, not a\n  model verdict, and the caller must not read it as one.")
+        return 3
     return 0
 
 
