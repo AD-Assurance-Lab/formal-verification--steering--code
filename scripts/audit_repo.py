@@ -131,7 +131,12 @@ for cap in glob.glob("results/**/lap_*.npz", recursive=True) + glob.glob("result
     span = None
     if "pose_x" in z.files:
         x, y = _np.asarray(z["pose_x"], float), _np.asarray(z["pose_y"], float)
-        span = float(_np.hypot(_np.diff(x), _np.diff(y)).sum())
+        # SCORED road: a pair of poses straddling a bridged span is not connected by road
+        # this study claims, so their separation is not coverage. Same definition the
+        # capture rig and the certifier use, and it needs only the poses -- no route file,
+        # no bridge table, no map -- so it stays a recomputation from primary data.
+        from route import scored_span_m as _ssm
+        span = _ssm(x, y)
     claimed = float(z["route_span_m"]) if "route_span_m" in z.files else None
     if span is not None and claimed is not None:
         chk(abs(claimed - span) <= 25.0,

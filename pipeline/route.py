@@ -124,6 +124,37 @@ def route_length_m(route):
     return float(a[-1]) if len(a) else 0.0
 
 
+def scored_span_m(pose_x, pose_y, gap_factor=10.0):
+    """Metres of SCORED road a pose track spans, from the POSES ALONE. ONE definition.
+
+    A naive sum of distances between consecutive poses counts the gap across a BRIDGED
+    span as covered road. It is not: pure pursuit drives those metres, nothing scores
+    them, the capture deliberately places no pose inside them, and a certificate claiming
+    them would cover road no closed-loop cell drives.
+
+    Measured on the Town06 lap: the naive sum is 2,289 m -- the route's whole geometry --
+    while the poses span the 2,119 m of scored road. Three consumers each recomputed this
+    privately and drifted: the capture rig recorded 2,111 m, the certifier and the audit
+    each recomputed 2,289 m and refused it as a 178 m disagreement.
+
+    A bridge shows up in the pose track as a single step ORDERS OF MAGNITUDE larger than
+    the rest -- 88 m and 82 m against a 2 m median here -- so it is detectable without the
+    route, the bridge table or the map. That matters: this is a SCOPE measurement, and
+    standing rule 7 says scope is recomputed from the primary data rather than read from
+    anything the artifact or its configuration asserts. A route with no bridges (Town04)
+    has no such steps and the result is the plain sum.
+    """
+    px = np.asarray(pose_x, dtype=float)
+    py = np.asarray(pose_y, dtype=float)
+    if len(px) < 2:
+        return 0.0
+    d = np.hypot(np.diff(px), np.diff(py))
+    med = float(np.median(d))
+    if med <= 0:
+        return float(d.sum())
+    return float(d[d <= gap_factor * med].sum())
+
+
 def lap_finished(route, hint, margin=2):
     """Has the vehicle reached the usable end of an OPEN route?
 

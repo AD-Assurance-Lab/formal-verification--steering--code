@@ -76,7 +76,12 @@ def check_coverage(path, sec):
     if "pose_x" not in z.files:
         return
     x, y = np.asarray(z["pose_x"], float), np.asarray(z["pose_y"], float)
-    span = float(np.hypot(np.diff(x), np.diff(y)).sum())
+    # SCORED road, not the naive pose-to-pose sum, which counts the gap across a bridged
+    # span as covered road. route.scored_span_m is the one definition, computed from the
+    # POSES ALONE so this remains a recomputation from primary data rather than a reading
+    # of anything the artifact or the config asserts (standing rule 7).
+    from route import scored_span_m  # noqa: E402
+    span = scored_span_m(x, y)
     claimed = float(z["route_span_m"]) if "route_span_m" in z.files else None
     if claimed is not None and abs(claimed - span) > 25.0:
         sys.exit(f"REFUSING to certify from {path.name}: it records route_span_m "
