@@ -444,3 +444,74 @@ what it required is the failure this procedure exists to prevent.
 re-aggregated at lap granularity. No drive is re-run: the underlying per-run artifacts are
 unchanged and already carry a fresh server and vehicle each. Cells written before the
 process-per-run change do not satisfy this amendment and are superseded.
+
+
+#### A-5. The scored span is reported under BOTH scopes, because the lap exceeds SMAX_CAP
+
+**Date:** 2026-09-03. **Requested by:** Zach.
+
+**What changed.** `build_study_route.py` declares, before any Town06 model existed:
+
+    REF      = dict(s50=0.0023, s90=0.0168, s99=0.0467, smax=0.0467)   # Town04's lap
+    SMAX_CAP = 0.060        # steering demand regime that actually trained on Town04
+
+with demand `arctan(WHEELBASE * kappa) / MAX_STEER`. `build_town06_sections.py` ENFORCED
+that cap: every stored section came in at smax <= 0.0596. `build_town06_lap_from_track.py`,
+which superseded the sections, never mentions it. **The lap's smax is 0.0670.**
+
+Measured by `scripts/scored_scope.py` from the route's own vertices:
+
+    over SMAX_CAP 0.060      2 spans,  78 m    arc 1224.1-1264.5, 2249.2-2287.0
+    over Town04 smax 0.0467  3 spans, 130 m    arc   14.7-  64.3 added
+    scored road: full 2119 m, capped 2041 m
+
+So the committed Town06 result scored 78 m of road demanding more steering than the regime
+the criterion was calibrated in. Section 4 declares the route's differences from Town04 so
+they cannot be argued about later; this one was not declared, because the constraint was
+dropped silently when the route was rebuilt rather than decided against.
+
+**Why it matters, and it is not a small thing.** All three of the mixed student's
+peak-|CTE| locations are on that road. `low_sun/S_mixed_t06` -- the only CERTIFIED cell
+that also drove PASS, and therefore the entire weight of the "a certificate predicts safe
+driving" direction -- peaked at arc 2284.9 m in all three laps, inside the excluded span,
+at the LAST step of the lap, and passed by 1.4 mm of a 668 mm budget.
+
+**What this amendment does NOT do.** It does not exclude that road. Excluding it makes the
+mixed student look better, and a scope narrowed after seeing which cells were marginal is
+indistinguishable from tuning no matter how good the reason. **Both scopes are scored, from
+one set of drives, and both are reported.** `scripts/score_scopes.py` refuses to pick, and
+`scripts/scored_scope.py` prints "Neither scope is the answer."
+
+**What makes that possible, and it was missing.** `closed_loop_ledger.py` kept only a max
+|CTE| and its location per run; the per-step trace was written only under `--log-frames`,
+which also writes a PNG per step and is therefore never on for a scored run. A cell could
+not be re-scored against a different span at all. It now always writes a trace, and the
+per-run artifacts and traces are tracked -- `runs/` in `.gitignore` had excluded all 24 of
+them, so the committed result carried eight aggregated cells and none of the evidence
+behind them, which is the margin A-4 requires reported and the step count R-SIM-6 requires
+checked.
+
+**What it invalidates.** Section 9.5: an amendment made after the corresponding result
+exists invalidates that result. Applied honestly:
+
+  * The **first Town06 pass** (certificate `73415e5`, ledger `results/town06/ledger`,
+    agreement 4/5, T06-F50) is **not withdrawn and not re-scored**. It is a correctly
+    executed blind deployment test of the scope it declared, and PROTOCOL R4 requires the
+    original to stand in the record. What it lacks is a second scope to compare against and
+    the traces to compute one.
+  * It is **superseded as the reported result** by pass 2, which drives the same models
+    over the same route and reports both scopes.
+  * No frozen constant in section 3 moves. `PROTOCOL.lock` is unchanged.
+
+**What is NOT re-run, and this bounds what pass 2 can claim.** The models are frozen: the
+same two checkpoints, the same training data, the same DAgger rounds. The route geometry,
+the conditions, the exposure function and the captures are unchanged, so the full-scope
+certificate is the one already committed and is not recomputed. Only the capped-scope
+certificate is new, and it is committed before any pass-2 drive (R1).
+
+**The blindness cost, stated plainly.** Pass 1's outcomes are known. R1 still holds
+literally -- every pass-2 certificate is committed before every pass-2 drive -- but pass 2
+is a scope-corrected re-measurement made with prior knowledge, not a blind test, and it
+must never be reported as one. `docs/TOWN06_PASS2_PREREGISTRATION.md` records what we
+expect before driving, so the re-run has falsifiable content rather than confirming a hope.
+That document is committed before the drives and is not edited afterwards.
