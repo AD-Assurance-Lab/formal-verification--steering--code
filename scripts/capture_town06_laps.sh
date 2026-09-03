@@ -41,8 +41,26 @@ for SEC in $SECTIONS; do
     # degrades silently and nothing in a capture reveals which server produced it. The
     # Town04 driver restarts per capture; this one did not, and the drift went unnoticed
     # because the rule lived in prose rather than in a check.
-    bash scripts/carla_restart.sh > "$LOGD/restart_${SEC}_${COND}.log" 2>&1 \
-      || { echo "  restart FAILED $SEC/$COND"; exit 1; }
+    # RETRY A FAILED RESTART. A capture run is 20+ minutes of driving per condition and a
+    # single transient must not throw it away. Observed 2026-09-02: CARLA reported "ready
+    # on 3000 after 46s" and had DIED by the time the determinism preflight looked for it
+    # ("no CarlaUE4 server found serving rpc-port 3000"), with nothing listening on the
+    # port -- a server crash between readiness and the check, after three captures had
+    # already succeeded on the same loop.
+    #
+    # Three attempts, twenty seconds apart. Three consecutive failures is a real problem
+    # and still stops the run, because a capture taken against a server that cannot be
+    # verified is a capture nobody can defend (D-11).
+    _restarted=0
+    for _try in 1 2 3; do
+        if bash scripts/carla_restart.sh > "$LOGD/restart_${SEC}_${COND}.log" 2>&1; then
+            [ "$_try" -gt 1 ] && echo "  restart succeeded on attempt $_try ($SEC/$COND)"
+            _restarted=1; break
+        fi
+        echo "  restart attempt $_try/3 FAILED ($SEC/$COND): $(tail -1 "$LOGD/restart_${SEC}_${COND}.log" | tr -s ' ' | cut -c1-70)"
+        sleep 20
+    done
+    [ "$_restarted" = 1 ] || { echo "  restart FAILED three times $SEC/$COND"; exit 1; }
     OY_OFFSETS=0.0 OY_YAWS=0.0 OY_CONDS="$COND" OY_OUT="$OUT" \
       python3 scripts/capture_offset_yaw.py \
         --direction "$SEC" --poses "$POSES" --start-m 0 --length-m "$LEN" \
