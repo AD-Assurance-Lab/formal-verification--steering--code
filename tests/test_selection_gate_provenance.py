@@ -122,3 +122,46 @@ def test_sweep_artifacts_can_be_written_somewhere_else():
     p3 = open(os.path.join(REPO, "scripts/pass3_sweep_widths.sh")).read()
     assert 'OUT_DIR="results/town06/pass3"' in p3, (
         "pass 3 would write over the historical selection artifacts")
+
+
+# --- an UNMEASURED lap must never read as a model verdict --------------------------
+
+def test_unmeasured_lap_exits_distinctly():
+    """compare_student_variants must exit 3 when a lap could not be measured.
+
+    An unmeasured lap is not a failing lap. The sweep counts laps under a threshold
+    against the EXPECTED count, so an unmeasured lap made a seed look rejected -- and it
+    did: S_mixed_t06lap_168x56_w4_s3, the SHIPPED student, was "rejected at the screen"
+    because one restart failed and its night lap was never driven. The restart-status fix
+    stopped the bad DATA and not the bad VERDICT; this is the other half.
+    """
+    src = open(GATE).read()
+    assert "return 3" in src, "no distinct exit for an unmeasured lap"
+    assert "unmeasured" in src, "unmeasured laps are not counted"
+
+
+def test_sweep_aborts_on_an_unmeasured_lap():
+    """The sweep must STOP, not reject the seed, when the harness cannot produce a lap."""
+    src = open(os.path.join(REPO, "scripts/select_student_seed.sh")).read()
+    assert src.count("eq 3") >= 2, (
+        "select_student_seed.sh does not check the unmeasured-lap exit code at both the "
+        "screen and the gate")
+    assert "Refusing to score any seed against a harness" in src
+
+
+def test_width_sweep_does_not_call_a_harness_abort_a_width_result():
+    src = open(os.path.join(REPO, "scripts/pass3_sweep_widths.sh")).read()
+    assert "RC -eq 2" in src, "pass3 sweep treats a harness abort as 'no seed passed'"
+    assert "NOT a width result" in src
+
+
+def test_gate_uses_the_one_retry_policy():
+    """A boot that misses its window is a certainty over a stage, not a risk.
+
+    carla_restart_retry.sh is 'THE one place that decides how many times' (5c8b340).
+    Calling carla_restart.sh directly here made a slow boot into a failed lap, and four
+    copies of a retry policy is how they drift.
+    """
+    src = open(GATE).read()
+    assert "carla_restart_retry.sh" in src, (
+        "the selection gate does not use the shared retry policy")

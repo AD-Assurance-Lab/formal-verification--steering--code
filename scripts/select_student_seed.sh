@@ -136,6 +136,15 @@ for SEED in $SEEDS; do
         OUT="$REPO/$OUT_DIR/seed_screen_${SCK}_${COND}.json"
         python3 scripts/compare_student_variants.py --checkpoints "$SCK" \
             --channels "$CH" --fc "$FC" --reps 1 --weather "$COND" --out "$OUT" >>"$LOG" 2>&1
+        # EXIT 3 = a lap could not be measured. Rejecting the seed on that would blame
+        # the model for the harness: the SHIPPED student was "rejected at the screen"
+        # exactly this way, when one restart failed and its night lap was never driven.
+        # A sweep that cannot get a server cannot evaluate anything, so it stops.
+        if [ $? -eq 3 ]; then
+            say "  FATAL: $COND lap for seed $SEED could not be measured (harness)."
+            say "  Refusing to score any seed against a harness that cannot produce a lap."
+            exit 2
+        fi
         N=$(held_under "$OUT" "$SCREEN_FT")
         say "    screen $COND $N/1  worst $(worst_of "$OUT") ft (<= $SCREEN_FT)"
         SCREEN=$((SCREEN+N)); [ "$N" -eq 0 ] && break
@@ -148,6 +157,10 @@ for SEED in $SEEDS; do
         OUT="$REPO/$OUT_DIR/seed_gate_${SCK}_${COND}.json"
         python3 scripts/compare_student_variants.py --checkpoints "$SCK" \
             --channels "$CH" --fc "$FC" --reps "$REPS" --weather "$COND" --out "$OUT" >>"$LOG" 2>&1
+        if [ $? -eq 3 ]; then
+            say "  FATAL: $COND gate for seed $SEED could not be measured (harness)."
+            exit 2
+        fi
         N=$(held_under "$OUT" "$GATE_FT")
         say "    gate $COND $N/$REPS  worst $(worst_of "$OUT") ft (<= $GATE_FT)"
         HELD=$((HELD+N))
