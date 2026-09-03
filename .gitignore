@@ -85,6 +85,20 @@ results/town06_logs/
 # ~95 KB per lap, 24 laps per pass.
 !results/town06/ledger/runs/
 !results/town06/ledger/runs/**
+# ...and for every A-5 pass and scope. A pass writes ledger_pass<N>/ and the scope
+# scorer writes ledger_<scope>/, and `runs/` above would exclude their per-run artifacts
+# exactly as it excluded pass 1's. Spelling only pass 1 here is how the next pass
+# silently loses its evidence again.
+#
+# Only .json and .csv are re-included. A bare `**` would also re-admit the .npz and .png
+# rules above, which exist because these directories are where 18 GB of simulator output
+# lands -- the re-inclusion must be narrower than the exclusion it is reopening.
+!results/town06/ledger_*/
+!results/town06/ledger_*/**/
+!results/town06/ledger_*/**/*.json
+!results/town06/ledger_*/**/*.csv
+!results/town06/ledger_*/*.json
+!results/town06/ledger_*/*.csv
 
 # Determinism campaign (T06-F22). The SUMMARIES are the result and are committed; the
 # per-rep traces and raw frame dumps are bulk evidence, regenerable from the probes in

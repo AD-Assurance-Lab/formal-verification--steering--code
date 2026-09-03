@@ -20,6 +20,13 @@ export PYTHONUNBUFFERED=1
 # THREE LAPS (PROTOCOL A-4). A Town06 lap is every scored section driven once; three
 # laps is a reproducibility check, not a rate estimate. This drove TWO.
 LAPS=${LAPS:-3}
+
+# PROTOCOL A-5 pass 2 writes its own ledger directory. This script SKIPS any cell or run
+# whose file already exists -- so pointing pass 2 at pass 1's directory would skip all
+# 24 laps and report "LEDGER COMPLETE" having driven nothing. The path is read from the
+# design module rather than spelled here, because two copies of it is how that happens.
+export TOWN06_PASS=${TOWN06_PASS:-1}
+LEDGER_DIR=$REPO/$(python3 -c "import sys;sys.path.insert(0,'$REPO');from study import town06_design as D;print(D.LEDGER_SUBDIR)")
 NSEC=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(len(C.SECTIONS))")
 
 LOG_DIR=$REPO/results/town06_logs
@@ -30,7 +37,8 @@ python3 scripts/check_protocol_lock.py >/dev/null || { say "FATAL: PROTOCOL lock
 python3 scripts/check_order_town06.py  >/dev/null || {
     say "FATAL: PROTOCOL R1 -- certificate is missing, uncommitted or dirty."
     say "Certify and COMMIT before driving. Refusing to run."; exit 1; }
-say "R1 satisfied: certificate is committed. Driving may begin."
+say "R1 satisfied: certificate(s) committed. Driving pass $TOWN06_PASS may begin."
+say "ledger -> $LEDGER_DIR"
 
 # Any override left exported would silently change what a canonical cell measures.
 for v in FOG_DENSITY_OVERRIDE SUN_ALTITUDE_OVERRIDE ROUTE_ROLL OY_OFFSETS OY_YAWS OY_CONDS; do
@@ -77,7 +85,7 @@ for ROW in "${STUDENT_ROWS[@]}"; do
   STU=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(C.final_student('$BASE'))")
   say "student $BASE -> $STU"
   for COND in clear fog night low_sun; do
-    CELL="$REPO/results/town06/ledger/${COND}__${STU}__closed_loop.json"
+    CELL="$LEDGER_DIR/${COND}__${STU}__closed_loop.json"
     if [ -f "$CELL" ]; then say "SKIP  $COND/$STU (cell exists)"; continue; fi
     say "START $COND/$STU"
     # ONE PROCESS AND ONE SERVER PER RUN.
@@ -94,7 +102,7 @@ for ROW in "${STUDENT_ROWS[@]}"; do
     RUN_OK=1
     for REP in $(seq 0 $((LAPS-1))); do
       for SEC in $(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(' '.join(C.SECTIONS))"); do
-        RUNF="$REPO/results/town06/ledger/runs/${COND}__${STU}__${SEC}__rep0${REP}.json"
+        RUNF="$LEDGER_DIR/runs/${COND}__${STU}__${SEC}__rep0${REP}.json"
         [ -f "$RUNF" ] && { say "SKIP  $COND/$STU $SEC rep$REP (run exists)"; continue; }
         carla_restart || { RUN_OK=0; break; }
         rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null

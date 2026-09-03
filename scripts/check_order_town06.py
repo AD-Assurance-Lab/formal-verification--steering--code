@@ -41,12 +41,24 @@ def first_commit_epoch(relpath):
 
 
 def require_certificate_committed():
-    """Refuse to run a scored cell unless the certificate is already committed.
+    """Refuse to run a scored cell unless EVERY certificate this pass drives against
+    is already committed.
 
     Called by the ledger. This is the guard that makes R1 hold by construction rather
     than by remembering to run a checker afterwards.
+
+    Pass 2 (A-5) scores both scopes, so it predicts with two certificates and both must
+    precede the drive. Checking only the first would let the capped-scope bound be
+    written after the laps it is compared against -- which is the exact failure R1
+    exists to prevent, reintroduced by a second artifact.
     """
-    rel = D.CERT_ARTIFACT
+    for rel in getattr(D, "CERT_ARTIFACTS", [D.CERT_ARTIFACT]):
+        _require_one(rel)
+    return True
+
+
+def _require_one(rel):
+    CERT = os.path.join(REPO, rel)
     if not os.path.exists(CERT):
         raise SystemExit(
             f"PROTOCOL R1: {rel} does not exist.\n"
@@ -70,8 +82,11 @@ def main():
     ok = True
     try:
         require_certificate_committed()
-        cert_t = first_commit_epoch(D.CERT_ARTIFACT)
-        print(f"certificate committed at epoch {cert_t}")
+        cert_t = max(first_commit_epoch(r)
+                     for r in getattr(D, "CERT_ARTIFACTS", [D.CERT_ARTIFACT]))
+        for r in getattr(D, "CERT_ARTIFACTS", [D.CERT_ARTIFACT]):
+            print(f"certificate {r} committed at epoch {first_commit_epoch(r)}")
+        print(f"latest certificate commit: epoch {cert_t}")
     except SystemExit as e:
         print(e)
         return 1
