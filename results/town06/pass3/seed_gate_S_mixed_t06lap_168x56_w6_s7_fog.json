@@ -1,0 +1,129 @@
+{
+  "weather": "fog",
+  "reps": 3,
+  "budget_ft": 2.1916011199999996,
+  "results": {
+    "S_mixed_t06lap_168x56_w6_s7": [
+      {
+        "max_cte_ft": 12.02,
+        "over": 0.02,
+        "steps": 1178,
+        "full_steps": 1280,
+        "departed": false,
+        "passed": false,
+        "rep": 0,
+        "sec": 30.5,
+        "provenance": {
+          "run_started": "2026-09-03T19:00:14-04:00",
+          "weather": "fog",
+          "map": "Town06",
+          "fixed_delta_seconds": 0.2,
+          "target_speed_ms": 8.9408,
+          "lap_end_m": 2289.037517334472,
+          "git_sha": "39ee42befcd91ac92416f12b4bfd64cb9e616a9c",
+          "git_dirty": false,
+          "determinism": {
+            "deterministic_control": true,
+            "package_version": "1.0.0",
+            "rules_digest": "bed0851fb1571d9e65be70c6872e9f00e54ac6fbd120c4e2991469a7d457fc4a",
+            "lock_problems": [],
+            "server_cmdline": [
+              "/home/za/carla/CarlaUE4/Binaries/Linux/CarlaUE4-Linux-Shipping",
+              "CarlaUE4",
+              "-carla-rpc-port=3000",
+              "-quality-level=Epic",
+              "-notexturestreaming",
+              "-windowed",
+              "-ResX=1280",
+              "-ResY=720",
+              ""
+            ],
+            "notexturestreaming": true,
+            "windowed": true,
+            "quality_level": "Epic"
+          }
+        }
+      },
+      {
+        "max_cte_ft": 11.97,
+        "over": 0.022000000000000002,
+        "steps": 1178,
+        "full_steps": 1280,
+        "departed": false,
+        "passed": false,
+        "rep": 1,
+        "sec": 30.1,
+        "provenance": {
+          "run_started": "2026-09-03T19:01:48-04:00",
+          "weather": "fog",
+          "map": "Town06",
+          "fixed_delta_seconds": 0.2,
+          "target_speed_ms": 8.9408,
+          "lap_end_m": 2289.037517334472,
+          "git_sha": "39ee42befcd91ac92416f12b4bfd64cb9e616a9c",
+          "git_dirty": false,
+          "determinism": {
+            "deterministic_control": true,
+            "package_version": "1.0.0",
+            "rules_digest": "bed0851fb1571d9e65be70c6872e9f00e54ac6fbd120c4e2991469a7d457fc4a",
+            "lock_problems": [],
+            "server_cmdline": [
+              "/home/za/carla/CarlaUE4/Binaries/Linux/CarlaUE4-Linux-Shipping",
+              "CarlaUE4",
+              "-carla-rpc-port=3000",
+              "-quality-level=Epic",
+              "-notexturestreaming",
+              "-windowed",
+              "-ResX=1280",
+              "-ResY=720",
+              ""
+            ],
+            "notexturestreaming": true,
+            "windowed": true,
+            "quality_level": "Epic"
+          }
+        }
+      },
+      {
+        "max_cte_ft": 12.09,
+        "over": 0.022000000000000002,
+        "steps": 1177,
+        "full_steps": 1280,
+        "departed": false,
+        "passed": false,
+        "rep": 2,
+        "sec": 31.1,
+        "provenance": {
+          "run_started": "2026-09-03T19:03:14-04:00",
+          "weather": "fog",
+          "map": "Town06",
+          "fixed_delta_seconds": 0.2,
+          "target_speed_ms": 8.9408,
+          "lap_end_m": 2289.037517334472,
+          "git_sha": "39ee42befcd91ac92416f12b4bfd64cb9e616a9c",
+          "git_dirty": false,
+          "determinism": {
+            "deterministic_control": true,
+            "package_version": "1.0.0",
+            "rules_digest": "bed0851fb1571d9e65be70c6872e9f00e54ac6fbd120c4e2991469a7d457fc4a",
+            "lock_problems": [],
+            "server_cmdline": [
+              "/home/za/carla/CarlaUE4/Binaries/Linux/CarlaUE4-Linux-Shipping",
+              "CarlaUE4",
+              "-carla-rpc-port=3000",
+              "-quality-level=Epic",
+              "-notexturestreaming",
+              "-windowed",
+              "-ResX=1280",
+              "-ResY=720",
+              ""
+            ],
+            "notexturestreaming": true,
+            "windowed": true,
+            "quality_level": "Epic"
+          }
+        }
+      }
+    ]
+  }
+}

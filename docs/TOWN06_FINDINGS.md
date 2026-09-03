@@ -3584,3 +3584,93 @@ residual, which T06-F53 saw move a fog lap by 0.7 m.
 
 So the mode does not need to be controlled for the result to stand. It does need to be
 RECORDED, because "this run was windowed" was said before it was checked.
+
+## T06-F57  PASS 3 RESULT: width is eliminated as the lever, with 8 seeds per width instead of one
+
+`docs/TOWN06_PASS3_PREREGISTRATION.md`, committed before the first draw. Two mixed-student
+widths, the same eight seeds in the same order, the same teacher and pools, one criterion
+fixed in advance: screen 1 lap x 4 conditions at the full 2.19 ft budget, then gate 3 laps
+x 4 conditions with **every lap under 1.096 ft** (50% of budget).
+
+**Neither width met the gate. 0 of 8 seeds at each.** Zero harness aborts, zero unmeasured
+laps: every rejection is a driven lap, and all 83 laps carry a provenance block naming the
+server they ran on.
+
+    w4 (32,64,64)/128  101,888 ReLU        w6 (48,96,96)/192  152,832 ReLU  (3.0x clear)
+    seed  clear     fog                    seed  clear     fog
+    s0     3.41       -                    s0     2.54       -
+    s1    41.54       -                    s1     1.16    11.76
+    s2     1.22     8.10                   s2     0.85     2.84
+    s3     0.73     4.80  <- shipped       s3     1.21     5.09
+    s4     3.79       -                    s4    GATE fog 6.06, 7.10, 7.02
+    s5    GATE fog 2.14, 1.98, 2.26        s5    GATE fog 2.01, 2.11, 1.86
+    s6     1.23     2.78                   s6     0.88    11.33
+    s7    40.41       -                    s7    GATE fog 12.02, 11.97, 12.09
+
+### P1 held, and T06-F48 was wrong on its own terms
+
+T06-F55 withdrew "w6 was tried and did NOT fix fog" as a single draw. Swept properly, w6 is
+**visibly the better model**: three seeds reached the gate against w4's one, and `w6_s7`
+produced the best non-fog driving in the study -- clear 0.62 / 0.49 / 0.78 ft and low sun
+0.64 / 0.78 / 0.71 ft, all inside a 1.096 ft criterion the shipped student fails. So "the
+extra 50,000 ReLU buys nothing here" is false. What is true is narrower and was never
+tested: **the extra capacity does not buy fog.**
+
+### P2 held: fog is the binding condition at both widths
+
+Every seed that cleared the screen's first condition was stopped by fog. Every seed that
+reached the gate passed clear, night and low sun at or near 9/9 and failed fog 0/3. No
+other condition rejected a single seed at either width.
+
+### P3, third branch: not capacity, and not the seed
+
+Sixteen students, two widths, one criterion, no survivor. Fog is neither a capacity problem
+nor a draw problem at this input size and this pool.
+
+### The finding I did not expect, and it corrects T06-F53's mechanism
+
+Fog failure is **reproducible per checkpoint, not chaotic**:
+
+    w6_s7   fog  12.02, 11.97, 12.09   spread 0.12 ft   (drives clear at 0.49-0.78)
+    w6_s4   fog   6.06,  7.10,  7.02   spread 1.04 ft
+    w4_s5   fog   2.14,  1.98,  2.26   spread 0.28 ft
+    w6_s5   fog   2.01,  2.11,  1.86   spread 0.25 ft
+
+A policy that drives clear weather at half a foot and fog at twelve feet, three times
+running, to within an inch and a half, is not a policy being perturbed. It is a policy that
+has learned something wrong about fog and does it the same way every lap.
+
+**This retires the "fog amplifies the D-7 residual" reading of T06-F53** (already withdrawn
+there on its own control, which showed the fog cells breach within 31-105 steps and left no
+usable on-road baseline). Both the erratic cells and these stable ones are the same
+phenomenon seen at different severities: fog degrades the policy deterministically, and
+where that degradation lands near the budget the lap verdict flips on D-7 noise, while
+where it lands far past the budget the laps agree perfectly.
+
+### What is now eliminated, and what is not
+
+**Eliminated:** width / capacity (8 seeds per width, two widths), and the draw (16 draws).
+
+**Not tested, and both are what the literature points at:**
+
+1. **Input resolution.** T06-F48 measured `168x28 -> 168x56` moving fog the WRONG way,
+   6.85 -> 11.15 ft, while fixing night and low sun. Town04, whose clear-only student is
+   fog-robust (D-14), uses 84x28. That measurement is a single draw like the w6 one and is
+   owed the same scrutiny before it is believed or dismissed.
+2. **The steering-label distribution.** `distill.py --balance` exists, is OFF by default,
+   and NO driver passes it -- so every certified Town06 student trained on the raw label
+   distribution on a route where 83.8% of frames need |steer| <= 0.01. The refutation in
+   `config.TOWN06_STUDENTS` (c1e5dfd, 2026-08-26) predates the seed sweep by a week, was
+   measured on the superseded six-section route, and refutes only DOWNSAMPLING -- its own
+   argument, "on a route that genuinely IS 84% straight, downsampling straight frames
+   trains the student for a distribution it will not meet", does not touch loss weighting,
+   which leaves the input distribution intact and changes only each frame's gradient
+   contribution. The E2E literature treats this imbalance as a standard failure mode and
+   names up-sampling of curved segments and loss weighting as the remedies alongside
+   downsampling.
+
+### Nothing here is acted on
+
+The gate is not relaxed and no student is pinned. Relaxing a pre-registered criterion after
+it rejects every candidate is the one move the pre-registration forbids, and the sweep
+script says so in its own output.
