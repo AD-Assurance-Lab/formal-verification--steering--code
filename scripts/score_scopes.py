@@ -142,6 +142,32 @@ def main():
               f"{'YES' if verd['full'] != verd['capped'] else '-'}")
         out[f"{cond}/{ck}"] = row
 
+    # CROSS-CHECK: the FULL-scope re-scoring must reproduce the verdict the ledger wrote
+    # while driving. The trace is a second recording of the same run, so if the two ever
+    # disagree, one of them is not measuring the cell -- and a scope comparison built on
+    # a trace that does not reproduce its own drive would be comparing two different
+    # things and calling the difference a scope effect.
+    drift = []
+    for key, row in out.items():
+        cond, ck = key.split("/")
+        live = LEDGER / f"{cond}__{ck}__closed_loop.json"
+        if not live.exists():
+            continue
+        d = json.loads(live.read_text())
+        if (d.get("verdict") != row["full"]["verdict"]
+                or abs(d.get("worst_cte_m", 0) - row["full"]["worst_cte_m"]) > 1e-6):
+            drift.append(f"{key}: ledger {d.get('verdict')} "
+                         f"{d.get('worst_cte_m'):.6f} m vs trace "
+                         f"{row['full']['verdict']} {row['full']['worst_cte_m']:.6f} m")
+    if drift:
+        print("\n  FATAL: the trace does not reproduce the ledger's own full-scope "
+              "verdict:")
+        for x in drift:
+            print(f"    {x}")
+        sys.exit(1)
+    print(f"\n  cross-check: full-scope re-scoring reproduces the ledger's own verdict "
+          f"and margin on all {len(out)} cell(s).")
+
     changed = [k for k, v in out.items() if v["full"]["verdict"] != v["capped"]["verdict"]]
     print(f"\n  {len(changed)} of {len(out)} cells change verdict with the scope.")
     for k in changed:
