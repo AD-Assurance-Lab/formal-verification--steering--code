@@ -1,0 +1,12 @@
+{
+  "s": 1.0,
+  "max_cte_m": 8.860752066332408,
+  "max_cte_ft": 29.070709809306017,
+  "frac_over": 0.8487768717568569,
+  "scored_steps": 1349,
+  "bridged": 51,
+  "passed": false,
+  "checkpoint": "S_mixed_t06lap_168x56_w4_s3",
+  "condition": "night",
+  "budget_ft": 2.1916011199999996
+}
