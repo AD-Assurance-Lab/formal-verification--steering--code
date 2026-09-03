@@ -3069,3 +3069,87 @@ perturbations the capture rig already uses.
 
 Fog remains the single failing cell, and the lever is the DAgger pool -- 14,921 frames
 against Town04's 61,175 -- because that is the part of Town04's advantage that is real.
+
+## T06-F50  DEPLOYMENT TEST RESULT: agreement 4/5, and the VOID cell is a real instability that verification saw and three laps did not
+
+The Town06 lap deployment test is complete. The certificate was committed and pushed
+(73415e5) before any scored cell was driven; `check_order_town06.py` confirms R1 against
+commit timestamps.
+
+    condition  student   driving      certificate      agreement
+    clear      S_clear   PASS 0/3     CERTIFIED        vacuous by construction
+    clear      S_mixed   PASS 0/3     CERTIFIED        vacuous by construction
+    fog        S_clear   FAIL 3/3     NOT_CERTIFIED    agree
+    fog        S_mixed   VOID 1/3     NOT_CERTIFIED    excluded (see below)
+    low sun    S_clear   FAIL 3/3     NOT_CERTIFIED    agree
+    low sun    S_mixed   PASS 0/3     CERTIFIED        agree
+    night      S_clear   FAIL 3/3     NOT_CERTIFIED    agree
+    night      S_mixed   PASS 0/3     NOT_CERTIFIED    DISAGREE
+
+**Agreement 4/5 on scored, non-void cells.**
+
+### The declared degeneracy risk did NOT materialise
+
+PROTOCOL section 4.2 and `study/town06_design.py` both warned, before any result, that
+Town06's straighter route made it possible for every cell to pass and every cell to
+certify -- which would measure sensitivity and not specificity, as the withdrawn rain
+condition did. That is not what happened. The certificate separates the two students
+completely (the clear-only student fails all three disturbances; the mixed student holds
+them) and separates conditions WITHIN the mixed student (low sun certified, night not).
+
+### The VOID cell, and why it is the most interesting cell in the table
+
+`fog/S_mixed_t06` failed 1 of 3 laps -- 0.406 / 1.601 / 0.449 m against a 0.668 m budget --
+so under A-4 it is void, not a 33% failure rate, and it stays void until the cause is found
+and written down. This is that.
+
+**Ruled out.** Provenance is identical across the three laps: same weather struct, same
+determinism config, same substepping, same git SHA, a clean server per lap with the
+determinism preflight and the photometry gate green before each.
+
+**The initial condition is bit-identical.** Six further runs, one process each, clean
+server each, recording the pose the scored run starts from:
+
+    start x spread   0.000 m      start yaw spread 0.000 deg
+    start y spread   0.000 m      start v spread   0.0000 m/s
+
+So `warmup_to_speed` is deterministic and the runs begin from the same state. That was the
+leading hypothesis and it is refuted.
+
+**What actually happens.** The runs diverge from an identical start, slowly and then
+violently, at one place:
+
+    step  0   sd 0.0000 m        step 22   sd 0.1048 m
+    step  5   sd 0.0131 m        step 24   sd 0.3330 m
+    step 20   sd 0.0196 m        step 26   sd 0.5045 m
+
+Under 2 cm of spread through step 20, then 25x growth in six steps. Peak |CTE| across the
+six runs ranges 0.235 m to 1.515 m, always at step 22-26, about 45 m into the lap.
+
+That is D-7 -- the irreducible render residual, ~30 differing pixels per frame on a frozen
+scene -- amplified by a policy sitting on a decision boundary at one location under fog.
+D-7 records this growing to 4-8 ft over 349 steps; here it reaches 5 ft in 26.
+
+**Combined evidence: 2 of 9 runs exceed budget at that one spot.**
+
+### What this says about the criterion, and it is the strongest result here
+
+The certificate called `fog/S_mixed_t06` **NOT_CERTIFIED**. The student's own selection
+gate had passed fog 3/3 at 1.78 ft, and the study would have shipped it. It took nine runs
+to see the instability that the bound flagged offline, from captured frames, without
+driving at all.
+
+So this cell is not a failure of the criterion. It is the criterion doing the job the study
+exists to test: **finding a place where the policy is not robust that closed-loop sampling
+at the standard's own repetition count did not find.** A 3-lap check is a reproducibility
+check, exactly as A-4 says, and not a search for rare instability -- and here verification
+was the more sensitive instrument.
+
+### Still to dispose (standing rule 2)
+
+* `night/S_mixed_t06` -- drove PASS 0/3, certificate NOT_CERTIFIED. A sound but
+  conservative bound. Needs its own disposition.
+* `fog/S_clear_t06` -- drove FAIL 3/3 against a pre-registration of PASS/CERTIFIED, which
+  rested on Town04 disposition D-14 ("the clear student is genuinely robust to fog on open
+  road"). Town06 fog is harsher: the clear-only student departs after 19 steps, 34 m in, at
+  24 ft, reproducibly across three laps. D-14 does not transfer to this map.
