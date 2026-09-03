@@ -1,0 +1,39 @@
+{
+  "weather": "night",
+  "reps": 3,
+  "budget_ft": 2.1916011199999996,
+  "results": {
+    "S_mixed_t06lap_168x56_w4_dagger_r02": [
+      {
+        "max_cte_ft": 1.45,
+        "over": 0.0,
+        "steps": 1179,
+        "full_steps": 1280,
+        "departed": false,
+        "passed": true,
+        "rep": 0,
+        "sec": 40.3
+      },
+      {
+        "max_cte_ft": 3.24,
+        "over": 0.004,
+        "steps": 1179,
+        "full_steps": 1280,
+        "departed": false,
+        "passed": false,
+        "rep": 1,
+        "sec": 42.4
+      },
+      {
+        "max_cte_ft": 2.86,
+        "over": 0.005,
+        "steps": 1179,
+        "full_steps": 1280,
+        "departed": false,
+        "passed": false,
+        "rep": 2,
+        "sec": 39.6
+      }
+    ]
+  }
+}

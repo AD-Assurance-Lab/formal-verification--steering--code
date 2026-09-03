@@ -596,6 +596,28 @@ def final_student(base):
     checkpoint is how the wrong model gets certified.
     """
     import glob as _glob
+
+    # A PIN BEATS A TIMESTAMP.
+    #
+    # "The student is the newest <base>_dagger_rNN" is an inference from the filesystem,
+    # and this study has now been bitten four separate times by reading a stale artifact
+    # as though the current step produced it. The last one was expensive: a DAgger run
+    # resumed from an r03 left behind by an abandoned run and destroyed a policy that had
+    # just passed all four conditions.
+    #
+    # Which checkpoint IS the student is a decision made by a gate, so it is recorded by
+    # the gate that made it. `<base>.selected` holds one checkpoint name; if it names a
+    # file that exists, that file is the student and nothing about mtimes matters.
+    _pin = os.path.join(CHECKPOINT_DIR, f"{base}.selected")
+    if os.path.exists(_pin):
+        with open(_pin) as _fh:
+            _name = _fh.read().strip()
+        if _name and os.path.exists(os.path.join(CHECKPOINT_DIR, f"{_name}.pth")):
+            return _name
+        raise RuntimeError(
+            f"{base}.selected names '{_name}', which is not in {CHECKPOINT_DIR}. A pin "
+            f"that points at nothing is worse than no pin: fix or remove it.")
+
     rounds = sorted(_glob.glob(os.path.join(CHECKPOINT_DIR, f"{base}_dagger_r*.pth")))
 
     if STUDENT_DAGGER:
