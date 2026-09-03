@@ -35,6 +35,18 @@ REPO=$PWD
 export STUDY_MAP=Town06 CARLA_PORT=${CARLA_PORT:-3000} CARLA_WINDOWED=${CARLA_WINDOWED:-0}
 export PYTHONUNBUFFERED=1
 
+# ONE SWEEP AT A TIME, via a PID lock rather than a process-name match. `pgrep -f
+# select_mixed_student_seed.sh` also matches a git commit whose message names this file,
+# a grep for it, or an editor with it open -- and it did: the overnight supervisor waited
+# on its own commit command. A lock holding a PID cannot be confused with a mention.
+LOCK=/tmp/town06_seed_sweep.lock
+if [ -e "$LOCK" ] && kill -0 "$(cat "$LOCK" 2>/dev/null)" 2>/dev/null; then
+    echo "another seed sweep is alive (pid $(cat "$LOCK")); exiting"
+    exit 0
+fi
+echo $$ > "$LOCK"
+trap 'rm -f "$LOCK"' EXIT
+
 LOG=$REPO/results/town06_logs/seed_sweep.log
 mkdir -p "$(dirname "$LOG")"
 say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG"; }

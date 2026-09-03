@@ -35,9 +35,14 @@ if [ -f "$PIN" ]; then
 else
     # If a loop is already running, wait for it rather than starting a second one --
     # two DAgger drivers on one CARLA port is the collision the lock exists to stop.
-    if pgrep -f "[s]elect_mixed_student_seed.sh" >/dev/null; then
-        say "a seed sweep is already running; waiting for it"
-        while pgrep -f "[s]elect_mixed_student_seed.sh" >/dev/null; do sleep 60; done
+    # A PID LOCK, NOT A PROCESS-NAME MATCH. pgrep -f matches any command line CONTAINING
+    # the script's name, and this supervisor waited on a git commit whose message named it.
+    SWEEP_LOCK=/tmp/town06_seed_sweep.lock
+    if [ -e "$SWEEP_LOCK" ] && kill -0 "$(cat "$SWEEP_LOCK" 2>/dev/null)" 2>/dev/null; then
+        say "a seed sweep is already running (pid $(cat "$SWEEP_LOCK")); waiting for it"
+        while [ -e "$SWEEP_LOCK" ] && kill -0 "$(cat "$SWEEP_LOCK" 2>/dev/null)" 2>/dev/null; do
+            sleep 60
+        done
     else
         say "starting the seed sweep (see scripts/select_mixed_student_seed.sh for why"
         say "  a seed re-draw rather than more DAgger rounds)"
