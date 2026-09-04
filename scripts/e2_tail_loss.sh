@@ -28,7 +28,13 @@ TEACHER=teacher_mixed_t06lap_dagger_r03
 BASE=mixed_t06lap
 DAGGER_DIRS=dagger_mixed_t06lap,dagger_student_S_mixed_t06_t06lap
 
-OUT_DIR=$REPO/results/town06/tail_loss
+# DETERMINISTIC=1 pins the kernels so the seed is a real control variable and the design
+# becomes PAIRED -- alpha is then the only difference between two arms at the same seed.
+# Separate names and output directory so the unpinned run stays on record beside it.
+DETERMINISTIC=${DETERMINISTIC:-0}
+PREFIX=${PREFIX:-S_mixed_tail}
+OUT_DIR=${OUT_DIR:-$REPO/results/town06/tail_loss}
+[ "$DETERMINISTIC" = "1" ] && { PREFIX=${PREFIX_DET:-S_mixed_taildet};     OUT_DIR=${OUT_DIR_DET:-$REPO/results/town06/tail_loss_det}; }
 mkdir -p "$OUT_DIR"
 LOG=$OUT_DIR/e2.log
 say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG"; }
@@ -41,7 +47,7 @@ echo $$ > "$LOCK"; trap 'rm -f "$LOCK"' EXIT
 
 # alpha -> checkpoint name. 0.0 resolves to the existing baseline students.
 # Every arm, including the baseline, gets a fresh checkpoint distilled in THIS session.
-ck_name() { echo "S_mixed_tail_a${1/./p}_s${2}"; }
+ck_name() { echo "${PREFIX}_a${1/./p}_s${2}"; }
 
 kd_for() {  # kd_for <checkpoint> <outfile>
     STUDENT="$1" CHANNELS="$CH" FC="$FC" TEACHER="$TEACHER" BASE="$BASE" \
@@ -49,7 +55,8 @@ kd_for() {  # kd_for <checkpoint> <outfile>
         python3 scripts/kd_error_by_condition.py >>"$LOG" 2>&1
 }
 
-say "=== E2 tail-sensitive loss: alphas [$ALPHAS] + baseline 0.0, seeds [$SEEDS] ==="
+say "=== E2 tail-sensitive loss: alphas [$ALPHAS], seeds [$SEEDS], "\
+    "deterministic=$DETERMINISTIC, out=$(basename "$OUT_DIR") ==="
 
 for A in $ALPHAS; do
     for SEED in $SEEDS; do
@@ -58,6 +65,8 @@ for A in $ALPHAS; do
         if [ ! -f "$REPO/pipeline/checkpoints/$SCK.pth" ]; then
             say "distil $SCK  (alpha $A, seed $SEED)"
             ( cd pipeline && DISTILL_SEED="$SEED" DISTILL_TAIL_ALPHA="$A" \
+                DISTILL_DETERMINISTIC="$DETERMINISTIC" \
+                CUBLAS_WORKSPACE_CONFIG=:4096:8 \
                 python3 distill.py --in-w "$IN_W" --in-h "$IN_H" \
                 --out "$SCK" --teacher "$TEACHER" --base "$BASE" \
                 --dagger-dirs "$DAGGER_DIRS" --channels "$CH" --fc "$FC" ) \
