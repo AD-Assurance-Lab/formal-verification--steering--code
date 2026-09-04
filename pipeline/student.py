@@ -34,12 +34,20 @@ def student_preprocess(bgr, out_w, out_h):
 # so no existing checkpoint changes shape.
 #
 # Depth 5 (E4) cannot simply add two more stride-2 layers: the input is 56 px tall and a
-# fourth stride-2 layer leaves 2 rows, a fifth leaves none. The extra layers are therefore
-# stride 1, which is also what the PilotNet teacher does (three strided convs, then two
-# unstrided). config.relu_count reads this same table, so the two cannot drift apart.
+# fourth stride-2 layer leaves 2 rows, a fifth leaves none. The extra layers are stride 1,
+# which is also what the PilotNet teacher does.
+#
+# ONLY THE FIRST TWO ARE STRIDED. The obvious spec -- three strided convs then two
+# unstrided -- leaves a 1x15 final map, so the flatten dimension collapses to 300 against
+# depth 3's 6,080. A student matched on ReLU COUNT but carrying a 20x smaller
+# representation is not a depth experiment; it is a bottleneck experiment, and it trained
+# ~4x worse (val KD RMSE 0.0909 against ~0.03). Measured, then corrected -- see amendment
+# A-1 in docs/E4_PREREGISTRATION.md.
+#
+# config.relu_count reads this same table, so the two cannot drift apart.
 CONV_SPEC = {
     3: ((5, 2), (5, 2), (3, 2)),
-    5: ((5, 2), (5, 2), (3, 2), (3, 1), (3, 1)),
+    5: ((5, 2), (5, 2), (3, 1), (3, 1), (3, 1)),
 }
 
 
