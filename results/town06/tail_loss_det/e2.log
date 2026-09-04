@@ -35,3 +35,11 @@ STUDENT VARIANT COMPARISON -- clear, 3 lap(s) each, clean server before every la
 
   S_mixed_taildet_a0p0_s0                      lap0  max|CTE|    2.32 ft over   0.2%  steps 1180/1280  FAIL
   S_mixed_taildet_a0p0_s0                      lap1  max|CTE|    1.21 ft over   0.0%  steps 1179/1280  PASS
+  S_mixed_taildet_a0p0_s0                      lap2  max|CTE|    1.70 ft over   0.0%  steps 1179/1280  PASS
+
+checkpoint                                      laps held  worst |CTE|  % of budget
+S_mixed_taildet_a0p0_s0                             2/3          2.32ft         106%
+
+  -> /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06/tail_loss_det/e2_a0p0_s0_clear.json
+[2026-09-04 13:31:02]     worst 2.32 ft 
+[2026-09-04 13:31:02] distil S_mixed_taildet_a0p0_s1  (alpha 0.0, seed 1)
