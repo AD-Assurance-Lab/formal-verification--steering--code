@@ -54,6 +54,7 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(REPO / "pipeline"))
 
+from gpu import require_cuda  # noqa: E402
 import config as C  # noqa: E402
 from route import load_route  # noqa: E402
 import certify_cell as cc  # noqa: E402
@@ -197,10 +198,15 @@ def main():
     ap.add_argument("--allow-missing", action="store_true",
                     help="continue when a capture is absent instead of refusing to run. "
                          "A partial run's score is not comparable to the published 12/12")
+    ap.add_argument("--allow-cpu", action="store_true",
+                    help="certify on the CPU when no usable GPU is present; for "
+                         "smoke-testing only, not for a certificate of record")
     args = ap.parse_args()
     stride, nsplit = args.stride, args.nsplit
 
-    dev = "cuda" if torch.cuda.is_available() else "cpu"
+    # See certify_town06.py: is_available() is False while CARLA initialises and was
+    # TRUE on a card with no matching kernels (sm_120 vs a sm_90 build). Prove the device.
+    dev = require_cuda(tries=1, wait_s=0, allow_cpu=args.allow_cpu)
     tol = C.CLOSED_LOOP_TOLERANCE
     # The redo reads and writes its OWN captures. results/calibration holds the
     # published ones, taken under the old harness -- D-11 says they are not reusable, and

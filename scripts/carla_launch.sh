@@ -36,14 +36,30 @@ else
     EXTRA="-notexturestreaming"
 fi
 
+# The display to run windowed on. Standing rule 6 says launch WINDOWED so runs can be
+# watched -- but every doc in this repo said DISPLAY=:0, and the 2026-09-03 desktop has
+# no :0 at all (its X socket is :1). Hardcoding :0 there does not fail loudly: the
+# windowed launch dies, the script falls back to HEADLESS, and nobody is watching
+# anything. So: honour an explicit DISPLAY, otherwise pick a socket that actually exists.
+if [ -z "${DISPLAY:-}" ]; then
+    for _d in /tmp/.X11-unix/X*; do
+        [ -e "$_d" ] || continue
+        _n=":${_d##*/X}"
+        if DISPLAY="$_n" xdpyinfo >/dev/null 2>&1; then DISPLAY=$_n; export DISPLAY; break; fi
+    done
+fi
+if [ "${CARLA_WINDOWED:-0}" = "1" ] && [ -z "${DISPLAY:-}" ]; then
+    echo "  NOTE: CARLA_WINDOWED=1 but no usable X display was found; this will run HEADLESS."
+fi
+
 if [ "${CARLA_WINDOWED:-0}" = "1" ]; then
-    echo "  launching CARLA WINDOWED on DISPLAY=${DISPLAY:-:0} (quality=$QUALITY, extra=[$EXTRA])"
+    echo "  launching CARLA WINDOWED on DISPLAY=${DISPLAY:-<none>} (quality=$QUALITY, extra=[$EXTRA])"
     # 9>&- : do NOT let the daemonised server inherit the caller's descriptors.
     # carla_restart.sh holds its serialisation lock on fd 9, and CARLA inheriting that fd
     # holds the lock for the SERVER's entire lifetime -- so the next restart waits the full
     # timeout and fails. Same family as this repo's older note about piping
     # carla_restart.sh: the detached child inherits what the parent had open.
-    ( cd "$CARLA_ROOT" && DISPLAY="${DISPLAY:-:0}" setsid nohup ./CarlaUE4.sh \
+    ( cd "$CARLA_ROOT" && DISPLAY="${DISPLAY:-}" setsid nohup ./CarlaUE4.sh \
         -carla-rpc-port="$PORT" -quality-level="$QUALITY" $EXTRA -windowed -ResX=1280 -ResY=720 \
         >>"$LOG" 2>&1 < /dev/null 9>&- & )
 else
@@ -71,7 +87,7 @@ if ! CARLA_PORT=$PORT timeout 300 python3 "$REPO/scripts/wait_carla_ready.py" --
     # headless and windowed agree to 4e-5 on a full driven lap (T06-F42), which is what
     # makes the fallback safe rather than merely convenient.
     if [ "${CARLA_WINDOWED:-0}" = "1" ]; then
-        echo "  WINDOWED LAUNCH FAILED on DISPLAY=${DISPLAY:-:0}; falling back to HEADLESS."
+        echo "  WINDOWED LAUNCH FAILED on DISPLAY=${DISPLAY:-<none>}; falling back to HEADLESS."
         echo "  (standing rule 6 asks for a watchable window; this run is not watchable.)"
         pkill -f "[C]arlaUE4.*rpc-port=$PORT" 2>/dev/null
         for i in $(seq 1 20); do
@@ -136,7 +152,7 @@ elif [ -f "$PHOTO_REF" ] && grep -q "\"${STUDY_MAP:-Town04}/clear\"" "$PHOTO_REF
             sleep 1
         done
         if [ "${CARLA_WINDOWED:-0}" = "1" ]; then
-            ( cd "$CARLA_ROOT" && DISPLAY="${DISPLAY:-:0}" setsid nohup ./CarlaUE4.sh \
+            ( cd "$CARLA_ROOT" && DISPLAY="${DISPLAY:-}" setsid nohup ./CarlaUE4.sh \
                 -carla-rpc-port="$PORT" -quality-level="$QUALITY" $EXTRA -windowed \
                 -ResX=1280 -ResY=720 >>"$LOG" 2>&1 < /dev/null 9>&- & )
         else

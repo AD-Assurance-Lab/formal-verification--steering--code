@@ -373,8 +373,20 @@ for _f in ("scripts/carla_restart.sh", "pipeline/dagger.py", "pipeline/dagger_st
 # is a silent-failure switch: while CARLA initialises on the same device the flag is
 # False, so the run continues ON THE CPU and says nothing. Caught when a Town06 policy
 # drive printed "CUDA unknown error" and then drove the whole lap anyway.
+# Widened 2026-09-03: the four driving entry points were guarded, but the CERTIFIERS
+# were not -- and on the desktop migration `torch.cuda.is_available()` returned True on a
+# card whose kernels the installed torch did not carry (RTX 5090 sm_120 against an
+# sm_50..sm_90 build), so certify_town06.py selected CUDA and died. The same predicate
+# guards nothing in the training and measurement scripts either, where a silent CPU run
+# is slow rather than wrong-looking, and therefore even easier to miss.
 for _f in ("pipeline/evaluate.py", "pipeline/dagger.py", "pipeline/dagger_student.py",
-           "scripts/closed_loop_ledger.py"):
+           "scripts/closed_loop_ledger.py",
+           "scripts/certify_town06.py", "scripts/certify_sustained_bound.py",
+           "scripts/capture_driven_gate.py", "scripts/drive_chord_interior.py",
+           "scripts/kd_error_by_condition.py", "scripts/determinism_tier1_openloop.py",
+           "scripts/probe_run_independence.py", "scripts/falsify_witness.py",
+           "scripts/interpolation_fidelity.py", "scripts/interp_fidelity_night.py",
+           "scripts/diagnose_void_cell.py", "pipeline/train.py", "pipeline/distill.py"):
     _t = open(_f).read()
     chk('torch.cuda.is_available() else "cpu"' not in _t,
         f"{os.path.basename(_f)} does not fall back to the CPU silently")
@@ -625,6 +637,37 @@ for _f in ("pipeline/evaluate.py", "pipeline/dagger.py", "pipeline/dagger_studen
 # The rule names `python -m study.ledger --check-order`, and the prune deleted that
 # module, so the rule went unchecked here for the whole Town04 redo. A rule that names a
 # command nobody runs is a rule nobody is following.
+# --- a certifier must not overwrite the record it is checked against --------------
+# certify_town06.py's DEFAULT output path IS results/town06/certificate_town06.json, the
+# pass-1 artifact PROTOCOL R4 requires to stand. A bare re-run overwrote it during the
+# 2026-09-03 migration check and it had to be restored from git. The guard must also come
+# BEFORE the bound computation, or it refuses only after spending the whole run.
+_t = open("scripts/certify_town06.py").read()
+chk("REFUSING to overwrite" in _t,
+    "certify_town06.py refuses to overwrite an existing certificate")
+chk("--force" in _t, "certify_town06.py has an explicit --force escape hatch")
+chk(_t.index("REFUSING to overwrite") < _t.index("for nm, ck_base, ch, fc in STUDENTS"),
+    "certify_town06.py refuses BEFORE certifying, not after")
+
+# --- the environment must be buildable, and prove itself ---------------------------
+# torch 2.5.1+cu121 builds sm_50..sm_90; the lab desktop's RTX 5090 is sm_120. Every
+# kernel failed while torch.cuda.is_available() reported True. A version pin cannot catch
+# that -- only running a kernel can.
+chk(os.path.exists("scripts/bootstrap_env.sh"), "an environment bootstrap exists")
+_b = open("scripts/bootstrap_env.sh").read()
+chk("torch.cuda.get_arch_list" in _b or "CUDA kernel" in _b,
+    "bootstrap_env.sh proves the GPU by running a kernel, not by reading a flag")
+chk(".pth" in _b and "/opt/ros/" in _b,
+    "bootstrap_env.sh neutralises the ROS PYTHONPATH leak")
+
+# --- windowed launch must not assume :0 --------------------------------------------
+# Standing rule 6 says launch WINDOWED so runs can be watched. The lab desktop has no
+# :0 (its socket is :1), and a hardcoded :0 does not fail loudly -- it falls back to
+# headless and nobody is watching.
+_l = open("scripts/carla_launch.sh").read()
+chk("/tmp/.X11-unix/X*" in _l,
+    "carla_launch.sh finds a real X display instead of assuming :0")
+
 chk(os.path.exists("scripts/check_blind_order.py"), "the blind-order check exists")
 if os.path.exists("scripts/check_blind_order.py"):
     _r = subprocess.run([sys.executable, "scripts/check_blind_order.py"],

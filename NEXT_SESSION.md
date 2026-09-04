@@ -37,15 +37,23 @@ the road.** Quantifying over the disturbance family is what prevented it.
 ## Standing hygiene
 
 ```bash
+bash scripts/bootstrap_env.sh                 # build .venv; proves the GPU with a real kernel
 python3 -m carla_determinism --port 3000      # preflight; entry points call it too
 bash scripts/carla_restart.sh                 # before EVERY measurement run (R-SIM-1)
-python3 scripts/audit_repo.py                 # before any release -- 216 passed, 0 failed
-python3 -m pytest tests/ -q -p no:anyio       # 78 tests
+python3 scripts/audit_repo.py                 # before any release -- 249 passed, 0 failed
+python3 -m pytest tests/ -q                   # 78 tests
 ```
 
-CARLA runs on a non-default port (3000) and must be booked. Launch windowed on `DISPLAY=:0`
-so runs can be watched (standing rule 6); `carla_launch.sh` falls back to headless loudly if
-the window will not init, and every run records which mode it used in its own provenance.
+CARLA runs on a non-default port (3000) and must be booked. Launch WINDOWED so runs can be
+watched (standing rule 6). **The display is `:1` on the current desktop, not `:0`** — there
+is no `:0` at all — so `carla_launch.sh` now finds a live X socket instead of assuming one;
+it still falls back to headless loudly if the window will not init, and every run records
+which mode it used in its own provenance.
+
+**The environment is `.venv`, built by `scripts/bootstrap_env.sh`** (torch 2.13.0+cu130 for
+the RTX 5090's sm_120, numpy 1.26.4 to match the published artifacts). Do not `pip install
+-r requirements.txt` by hand — three of its pieces cannot be resolved that way. The venv
+also neutralises the ROS `PYTHONPATH` leak that otherwise stops pytest collecting anything.
 
 **Never pipe or capture the output of `carla_restart.sh`** — it daemonises CARLA and the
 detached child inherits the pipe. Redirect to a file.

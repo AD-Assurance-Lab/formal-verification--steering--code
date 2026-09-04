@@ -15,6 +15,8 @@ import argparse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from gpu import require_cuda  # noqa: E402
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -49,7 +51,7 @@ def train_model(manifest_paths, out, epochs=120, batch_size=64, lr=1e-3,
     """Train on the aggregated manifests. With init_from=<checkpoint name>, warm-start
     from those weights (DAgger fine-tunes each round from the prior policy instead of
     re-training from scratch, which destabilizes on multi-condition aggregates)."""
-    device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+    device = device or require_cuda()
     torch.manual_seed(0)
     # Seed the augmentation RNG too: dataset._shift draws from the global `random`,
     # and torch.manual_seed alone left retraining non-reproducible bit-for-bit.

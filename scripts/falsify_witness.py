@@ -53,6 +53,8 @@ sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(REPO / "pipeline"))
 sys.path.insert(0, str(REPO / "scripts"))
 
+from gpu import require_cuda  # noqa: E402
+
 import config as C  # noqa: E402
 from student import StudentNet  # noqa: E402
 from study import town06_design as D  # noqa: E402
@@ -84,7 +86,10 @@ def main():
 
     if C.STUDY_MAP != "Town06":
         sys.exit("run with STUDY_MAP=Town06")
-    dev = "cuda" if torch.cuda.is_available() else "cpu"
+    # require_cuda, not is_available(): the flag is False while CARLA initialises on
+    # the same device, and was True on a card the installed torch had no kernels for
+    # (sm_120 vs an sm_90 build). Both end in a silent CPU run that still prints numbers.
+    dev = require_cuda()
     tol = C.CLOSED_LOOP_TOLERANCE
     cert_rel = (D.CERT_ARTIFACT if args.scope == "full"
                 else getattr(D, "CAPPED_CERT_ARTIFACT", D.CERT_ARTIFACT))

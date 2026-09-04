@@ -1,7 +1,7 @@
 # Reproducing this work
 
-Three levels, in increasing cost. **Level 1 needs no simulator and no GPU-hours** and
-reproduces every certified bound in both papers; it is the one most readers want.
+Three levels, in increasing cost. **Level 1 needs no simulator** and reproduces every
+certified verdict in both papers; it is the one most readers want.
 
 ---
 
@@ -43,16 +43,54 @@ Certification reads captured frames, not a live simulator. Fetch the capture bun
 Releases), then:
 
 ```bash
-pip install -r requirements.txt          # includes the carla-determinism package
+bash scripts/bootstrap_env.sh            # builds .venv and proves it works; see below
 tar xf steering-captures.tar.zst         # -> results/{town06/captures,town04_v2/calibration,diagnostic}
 # sha256 10fb9b4a05e4b4de8591bf86df35216f1ac51420ceed637027b4efefd6a89e8c
 
-STUDY_MAP=Town06 python3 scripts/certify_town06.py          # 6 cells, blind
+STUDY_MAP=Town06 python3 scripts/certify_town06.py --out /tmp/cert.json     # 6 cells, blind
 STUDY_MAP=Town04 TOWN04_REDO=1 python3 scripts/certify_sustained_bound.py   # 12 cells
 ```
 
-Every bound in both papers should reproduce **exactly** — this path is deterministic, and
-the only nondeterminism in the study lives in the renderer, which is upstream of it.
+`--out` is not optional in practice: the default path IS
+`results/town06/certificate_town06.json`, the pass-1 artifact PROTOCOL R4 requires to
+stand, so the script refuses to overwrite it without `--force`.
+
+**A GPU is wanted but not required.** The certifier calls `require_cuda()` and refuses to
+fall back silently, because a bound computed on another device is a bound about a
+different computation. With no usable GPU, pass `--allow-cpu`: the verdicts are unchanged
+and each bound lands within ~4e-3 (the CPU agrees with a TF32-disabled GPU to ~1e-6).
+Expect roughly 5 minutes per cell on a CPU against ~30 seconds on a current card.
+
+**Every verdict reproduces. The bounds reproduce to about 4e-3 relative, not exactly.**
+
+This claim used to read "exactly — this path is deterministic". Measured on the
+2026-09-03 desktop migration (`docs/MIGRATION_2026-09-03.md`), that is wrong in three
+separate ways, none of which changes a verdict:
+
+| comparison | worst relative difference in any bound |
+|---|---|
+| the same binary, run twice, same GPU | 2.5e-06 — **the certifier is not bitwise deterministic** |
+| committed vs a different GPU, `S_clear` (50,944 ReLU) | 1.1e-08 … 4.7e-07 |
+| committed vs a different GPU, `S_mixed` (101,888 ReLU) | 3.6e-04 … **3.9e-03** |
+| GPU with cuDNN TF32 off, vs the CPU | agree with each other to ~1e-06 |
+
+What is actually going on: cuDNN's TF32 default explains the *clear* student entirely —
+turn TF32 off and the GPU reproduces the CPU. The *mixed* student differs in every
+configuration, including the exact recorded environment on a different card, and the
+differences change sign between cells. That is the signature of α-CROWN's branch-and-bound
+making different splitting choices when tiny floating-point differences reorder them, and
+it grows with network size. Both bounds remain sound; they are simply not the same bound.
+
+**Neither numpy nor torch explains it.** Certifying under the exact recorded pair
+(torch 2.13.0+cu130, numpy 1.26.4) reproduces the drift unchanged, and numpy 2.2.6 gives
+results identical to numpy 1.26.4 to 1e-9.
+
+**What you should check** is that all six verdicts and all pose counts match, and that
+each bound agrees to ~1e-2 relative. Every verdict in the study has at least **309x**
+headroom between its bound and the value that would flip it, so a 4e-3 drift cannot
+change a conclusion — but a *verdict* change, or a bound that moves by more than a
+percent, means something real is different and should be investigated rather than
+accepted.
 
 ## Level 2 — re-drive the closed loop. Needs CARLA 0.9.16 and a GPU.
 

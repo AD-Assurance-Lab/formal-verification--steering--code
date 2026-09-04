@@ -4,9 +4,16 @@
 > **The harness defects are FIXED and both studies are rebuilt on the corrected one.**
 > Every CARLA measurement here goes through the `carla-determinism` package: bind the
 > client, call `require_deterministic()` before measuring, issue commands with
-> `cd.apply_control()`, and launch via `scripts/carla_launch.sh`. Bit-exact closed-loop
-> replay is still unreachable (rule D-7), so every closed-loop number remains a rate over
-> >= 10 repetitions. Run `python3 scripts/audit_repo.py` before any release.
+> `cd.apply_control()`, and launch via `scripts/carla_launch.sh`.
+>
+> **Environment: `.venv`, built by `bash scripts/bootstrap_env.sh`.** Never trust
+> `torch.cuda.is_available()` — on this desktop it returned True on a card the installed
+> torch had no kernels for, and every entry point here calls `require_cuda()` instead,
+> which proves the device by operating on a tensor. The display is `:1`, not `:0`.
+>
+> Bit-exact closed-loop replay is still unreachable (rule D-7), so every closed-loop
+> number remains a rate over >= 10 repetitions. Run `python3 scripts/audit_repo.py`
+> before any release.
 
 Public artifact repo for the end-to-end steering verification paper.
 

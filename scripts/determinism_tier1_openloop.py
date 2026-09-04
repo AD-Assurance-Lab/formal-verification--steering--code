@@ -54,6 +54,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "pipeline"))
 
+from gpu import require_cuda  # noqa: E402
+
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 import carla  # noqa: E402
@@ -364,7 +366,10 @@ def main():
     if args.lens_flare is not None:
         pp["lens_flare_intensity"] = str(args.lens_flare)
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    # require_cuda, not is_available(): the flag is False while CARLA initialises on
+    # the same device, and was True on a card the installed torch had no kernels for
+    # (sm_120 vs an sm_90 build). Both end in a silent CPU run that still prints numbers.
+    device = require_cuda()
     model = StudentNet(args.in_h, args.in_w,
                        channels=tuple(int(v) for v in args.channels.split(",")),
                        fc=args.fc).to(device)

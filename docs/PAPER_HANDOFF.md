@@ -275,5 +275,5 @@ Verify before quoting:
 
     python3 scripts/check_order_town06.py     # R1 against commit timestamps
     python3 scripts/compare_town06.py         # the agreement table
-    python3 scripts/audit_repo.py             # 216 passed, 0 failed
-    python3 -m pytest tests/ -q -p no:anyio   # 78 tests
+    python3 scripts/audit_repo.py             # 249 passed, 0 failed
+    python3 -m pytest tests/ -q               # 78 tests

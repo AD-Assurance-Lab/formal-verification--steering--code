@@ -141,3 +141,4 @@ pipeline/results/*
 # gigabytes and stay out, but the JSON that says they reproduce the vehicle is the
 # record that a stated precondition was actually checked. It must be in git.
 !results/town06/captures/capture_gate.json
+.venv*/

@@ -32,6 +32,8 @@ os.environ.setdefault("CARLA_PORT", "3000")
 sys.path.insert(0, str(REPO)); sys.path.insert(0, str(REPO / "pipeline"))
 sys.path.insert(0, str(REPO / "scripts"))
 
+from gpu import require_cuda  # noqa: E402
+
 import torch                                                     # noqa: E402
 import carla_env as env                                          # noqa: E402
 import config as C                                               # noqa: E402
@@ -45,7 +47,10 @@ COND = "clear"
 def load_student():
     nm, ck_base, ch, fc = C.TOWN06_STUDENTS[0]
     ck = C.final_student(ck_base)
-    dev = "cuda" if torch.cuda.is_available() else "cpu"
+    # require_cuda, not is_available(): the flag is False while CARLA initialises on
+    # the same device, and was True on a card the installed torch had no kernels for
+    # (sm_120 vs an sm_90 build). Both end in a silent CPU run that still prints numbers.
+    dev = require_cuda()
     net = StudentNet(C.TOWN06_INPUT_H, C.TOWN06_INPUT_W, channels=ch, fc=fc).to(dev)
     net.load_state_dict(torch.load(f"{C.CHECKPOINT_DIR}/{ck}.pth", map_location=dev,
                                    weights_only=True))
