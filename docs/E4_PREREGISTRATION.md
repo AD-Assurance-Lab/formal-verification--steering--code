@@ -72,3 +72,49 @@ Restart before every lap; exit 3 aborts rather than scoring the model; no promot
 `.selected` pin; output under `results/town06/depth/`; certification writes with `--out` to
 that directory and never to the committed certificate; VOID cells (>25% lap disagreement)
 excluded, not averaged.
+
+---
+
+# AMENDMENT A-1 — the depth-5 arm was a bottleneck experiment, not a depth experiment
+
+**Recorded 2026-09-04, after one seed and before any E4 conclusion.** One `d5` checkpoint
+had been distilled and one fog cell driven; both are discarded and the arm is redefined.
+
+## What went wrong
+
+The declared `d5` stack was `5x5 s2, 5x5 s2, 3x3 s2, 3x3 s1, 3x3 s1` with channels
+`(32,64,48,24,20)` — matched to `d3` on **ReLU count** (101,892 against 101,888, 4 neurons
+apart). It was not matched on anything else, and the third stride-2 layer leaves a final
+feature map of **1x15**:
+
+```
+  d3  (32,64,64)        101,888 ReLU   final map 5x19   flatten 6,080
+  d5  (32,64,48,24,20)  101,892 ReLU   final map 1x15   flatten   300     <- 20x smaller
+```
+
+The student's fully-connected head therefore saw **300 features instead of 6,080**. It
+trained about four times worse (val KD RMSE 0.0909 against ~0.03; fog p99 0.5566 against
+0.1773) and its first fog lap departed after 24 steps.
+
+**That is a representation-size result wearing a depth label.** Reporting it as "depth does
+not help" would have been wrong in exactly the way this study keeps catching elsewhere —
+one variable named, two variables moved.
+
+## The corrected arm
+
+Only the first two convolutions are strided, so the map stays large:
+
+```
+  d5  (32,32,24,24,36)  strides 2,2,1,1,1   101,892 ReLU  final map 5x33  flatten 5,940
+```
+
+Matched to `d3` on **ReLU count to 0.004%** and on **flatten dimension to 2.3%**. Depth is
+now the variable that moves; width, neuron count and representation size are held.
+
+## Predictions
+
+F1–F4 are unchanged and were not written with any knowledge of the corrected arm's
+behaviour — no corrected-arm student had been distilled when this amendment was recorded.
+
+The discarded arm is not reported as a finding. It is one seed of a configuration that was
+never the intended comparison, and its only value is this amendment.
