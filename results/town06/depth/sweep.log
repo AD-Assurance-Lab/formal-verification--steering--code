@@ -1,0 +1,46 @@
+[2026-09-04 16:22:19] === arm sweep S_mixed_depth: seeds [0 1 2 3 4 5], conds [fog clear], deterministic kernels ===
+[2026-09-04 16:22:19] --- arm d5: channels 32,32,24,24,36, fc 128, env [none], flags [none] ---
+[2026-09-04 16:22:19] distil S_mixed_depth_d5_s0
+[2026-09-04 16:23:28]   KD error: d5 s0
+S_mixed_depth_d5_s0  (101,892 ReLU)  vs  teacher_mixed_t06lap_dagger_r03
+52,180 frames, 67,468 cached teacher targets
+
+condition   frames   KD RMSE      bias  teacher|s|  student|s|  p99 |err|
+  --------------------------------------------------------------------------
+clear        3,000    0.1127   +0.0086      0.0411      0.0068     0.5683
+fog          3,000    0.1311   +0.0079      0.0515      0.0067     0.5560
+night        3,000    0.0987   +0.0001      0.0426      0.0066     0.4964
+low_sun      3,000    0.0842   -0.0024      0.0313      0.0067     0.5105
+shadows      none
+
+  steering tolerance delta_tol = 0.0120 (normalised units), for scale
+  wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06/depth/kd_d5_s0.json
+[2026-09-04 16:24:04]   drive d5 s0 fog: 3 laps
+
+STUDENT VARIANT COMPARISON -- fog, 3 lap(s) each, clean server before every lap
+  budget 2.19 ft
+
+  S_mixed_depth_d5_s0                          lap0  max|CTE|   40.19 ft over  70.8%  steps 24/1280  DEPARTED  FAIL
+  S_mixed_depth_d5_s0                          lap1  max|CTE|   40.19 ft over  70.8%  steps 24/1280  DEPARTED  FAIL
+  S_mixed_depth_d5_s0                          lap2  max|CTE|   40.19 ft over  70.8%  steps 24/1280  DEPARTED  FAIL
+
+checkpoint                                      laps held  worst |CTE|  % of budget
+S_mixed_depth_d5_s0                                 0/3         40.19ft        1834%
+
+  -> /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06/depth/drive_d5_s0_fog.json
+[2026-09-04 16:26:38]     worst 40.19 ft 
+[2026-09-04 16:26:38]   drive d5 s0 clear: 3 laps
+
+STUDENT VARIANT COMPARISON -- clear, 3 lap(s) each, clean server before every lap
+  budget 2.19 ft
+
+  S_mixed_depth_d5_s0                          lap0  max|CTE|   40.26 ft over  70.8%  steps 24/1280  DEPARTED  FAIL
+  S_mixed_depth_d5_s0                          lap1  max|CTE|   40.26 ft over  70.8%  steps 24/1280  DEPARTED  FAIL
+  S_mixed_depth_d5_s0                          lap2  max|CTE|   40.26 ft over  70.8%  steps 24/1280  DEPARTED  FAIL
+
+checkpoint                                      laps held  worst |CTE|  % of budget
+S_mixed_depth_d5_s0                                 0/3         40.26ft        1837%
+
+  -> /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06/depth/drive_d5_s0_clear.json
+[2026-09-04 16:29:12]     worst 40.26 ft 
+[2026-09-04 16:29:12] distil S_mixed_depth_d5_s1

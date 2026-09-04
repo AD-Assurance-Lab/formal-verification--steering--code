@@ -52,6 +52,28 @@ if [ "${CARLA_WINDOWED:-0}" = "1" ] && [ -z "${DISPLAY:-}" ]; then
     echo "  NOTE: CARLA_WINDOWED=1 but no usable X display was found; this will run HEADLESS."
 fi
 
+# A SERVER ALREADY ON THE PORT IS NOT NECESSARILY THE SERVER YOU ASKED FOR.
+# This script launches, then waits for the port to answer -- and if something was already
+# listening, the wait succeeds instantly against THAT server while the process just
+# launched dies unnoticed. Asking for headless on a box already running windowed
+# therefore returned "launching CARLA headless ... ready after 0s" while every subsequent
+# run used the windowed server, and left two CarlaUE4 processes behind. Nothing in a
+# result reveals which server you were on, which is the whole reason R-SIM-1 exists.
+if ss -ltn 2>/dev/null | grep -q ":$PORT "; then
+    _pid=$(ss -ltnp 2>/dev/null | grep ":$PORT " | grep -oE 'pid=[0-9]+' | head -1 | cut -d= -f2)
+    _cmd=$(tr '\0' ' ' < "/proc/${_pid}/cmdline" 2>/dev/null)
+    case "$_cmd" in *-RenderOffScreen*) _mode=headless ;; *-windowed*) _mode=windowed ;;
+                    *) _mode=unknown ;; esac
+    _want=headless; [ "${CARLA_WINDOWED:-0}" = "1" ] && _want=windowed
+    if [ "$_mode" != "$_want" ]; then
+        echo "FATAL: a CARLA server is already on port $PORT and it is $_mode, not $_want."
+        echo "  Reusing it would measure a different renderer than the one requested."
+        echo "  Run scripts/carla_restart.sh (which stops it first), not carla_launch.sh."
+        exit 1
+    fi
+    echo "  reusing the $_mode server already on $PORT (pid $_pid)"
+fi
+
 if [ "${CARLA_WINDOWED:-0}" = "1" ]; then
     echo "  launching CARLA WINDOWED on DISPLAY=${DISPLAY:-<none>} (quality=$QUALITY, extra=[$EXTRA])"
     # 9>&- : do NOT let the daemonised server inherit the caller's descriptors.

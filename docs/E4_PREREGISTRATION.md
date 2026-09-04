@@ -118,3 +118,58 @@ behaviour — no corrected-arm student had been distilled when this amendment wa
 
 The discarded arm is not reported as a finding. It is one seed of a configuration that was
 never the intended comparison, and its only value is this amendment.
+
+---
+
+# AMENDMENT A-2 — the study's learning rate does not fit a deeper student
+
+**Recorded 2026-09-04, after the corrected `d5` arm's first seed and before any E4
+conclusion.** The corrected arm still failed, and for a different reason.
+
+## What was measured
+
+The corrected `d5` (matched on ReLU count AND flatten dimension) did not train at all under
+the study's fixed recipe: best validation at **epoch 0**, val KD-MSE flat at 8.26e-3, while
+`d3` descends 7.49 → 6.26 → 5.25 → 4.66e-3 over its first four epochs.
+
+That is an optimisation failure, not an architectural result. `distill.py` has used
+`lr=1e-3` for every student in this study, and it is tuned to the 3-conv stack. Sweeping a
+declared grid at seed 0, selecting on **validation KD-MSE** (never on fog or on any driving
+outcome):
+
+```
+                 lr 1e-3     lr 3e-4     lr 1e-4
+  d3 (3 conv)   2.080e-3    1.183e-3    1.229e-3     <- best at 3e-4
+  d5 (5 conv)   8.259e-3    2.121e-3    1.619e-3     <- best at 1e-4, and does not train at 1e-3
+```
+
+**Two things follow, and the second is more important than E4.**
+
+1. `d5` trains fine at 1e-4 and reaches **1.619e-3**, better than `d3` at the study's own
+   learning rate. Comparing depth at a single shared learning rate would have measured the
+   learning rate.
+2. **`d3` at 3e-4 reaches 1.183e-3 against 2.080e-3 at the shipped 1e-3 — a 43% lower
+   validation KD error on the shipped architecture.** Every student in this study, on both
+   maps, was distilled at 1e-3. That is a property of the recipe, not of the architecture,
+   and nothing in the study has ever varied it.
+
+## Revised design
+
+Three arms, learning rate selected per arm from the declared grid by validation KD-MSE:
+
+| arm | stack | lr | what it isolates |
+|---|---|---|---|
+| `d3@1e-3` | 3 conv (32,64,64) | 1e-3 | the shipped recipe (already measured as E2's alpha 0.0 arm) |
+| `d3@3e-4` | 3 conv (32,64,64) | 3e-4 | **the recipe alone** — same architecture |
+| `d5@1e-4` | 5 conv (32,32,24,24,36) | 1e-4 | **depth**, each arm at its own best recipe |
+
+Seeds 0–5, fog and clear, 3 laps, kernels pinned.
+
+## Added prediction
+
+**F5 — the learning rate matters more than the depth.** `d3@3e-4` will beat `d3@1e-3` on
+fog by more than `d5@1e-4` beats `d3@3e-4`. If F5 holds, the study's fog failure is
+entangled with an untuned distillation recipe, and "the obstruction is distillation rather
+than verification" becomes considerably more pointed than the paper currently states.
+
+F1–F4 are unchanged. No driving result from either new arm existed when this was recorded.
