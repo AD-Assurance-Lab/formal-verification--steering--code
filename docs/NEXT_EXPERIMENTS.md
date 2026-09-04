@@ -94,7 +94,7 @@ they are believed *or* dismissed.
 **How.**
 
 ```bash
-export STUDY_MAP=Town06 CARLA_PORT=3000 CARLA_WINDOWED=1 DISPLAY=:0
+export STUDY_MAP=Town06 CARLA_PORT=3000 CARLA_WINDOWED=1   # DISPLAY: leave unset
 # For each input size, distil a seed sweep and gate it. The sweep script already
 # parameterises IN_W/IN_H; the mixed student's channels stay at w4 to isolate resolution.
 for WH in "84 28" "168 28" "168 56" "252 84"; do
@@ -274,12 +274,18 @@ that look fine and are not.
 ## Housekeeping
 
 ```bash
+bash scripts/bootstrap_env.sh              # build .venv (once); proves the GPU works
 python3 -m carla_determinism --port 3000   # preflight
 bash scripts/carla_restart.sh              # before EVERY measurement run
 python3 scripts/audit_repo.py              # before any release; must be 0 failed
-python3 -m pytest tests/ -q -p no:anyio    # 78 tests; the -p flag works around a
-                                           # broken anyio plugin in the env
+python3 -m pytest tests/ -q                # 78 tests
 ```
 
-`pytest` needs `-p no:anyio` on the old machine because of a system plugin conflict; try
-without it first on the new one.
+The old machine's `-p no:anyio` workaround is **not** needed. The new one had a worse
+version of the same problem — ROS Jazzy on `PYTHONPATH` made pytest abort before
+collecting a single test — and `bootstrap_env.sh` fixes it inside the venv, so no caller
+has to remember anything. See `docs/MIGRATION_2026-09-03.md`.
+
+Set `export STUDY_MAP=Town06 CARLA_PORT=3000 CARLA_WINDOWED=1` before driving. **Do not
+set `DISPLAY=:0`** as the older examples in this file do — this desktop's display is `:1`,
+and `carla_launch.sh` now finds it on its own if you leave `DISPLAY` alone.

@@ -16,6 +16,8 @@ from concurrent.futures import ProcessPoolExecutor
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from gpu import require_cuda  # noqa: E402
+
 import numpy as np
 import cv2
 import torch
@@ -148,7 +150,7 @@ def distill_student(in_w, in_h, out_name, teacher_name="steering_dagger_r02",
                     weathers=None, channels=(8, 16, 16), fc=32, init_from=None,
                     epochs=120, batch_size=64, lr=1e-3, patience=20,
                     device=None, quiet=False, balance=False, augment=0.0):
-    device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+    device = device or require_cuda()
     # DISTILL_SEED exposes what was a hardcoded 0. Seed is not a tuning knob here -- it
     # is the variable T06-F14 measured as flipping a student from 4/6 to 6/6 on a clear
     # gate with the architecture and data held fixed. Leaving it hardcoded makes that

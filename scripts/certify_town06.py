@@ -36,6 +36,7 @@ from check_protocol_lock import require_locked  # noqa: E402
 
 import config as C  # noqa: E402
 import certify_cell as cc  # noqa: E402
+from gpu import require_cuda  # noqa: E402
 from student import StudentNet  # noqa: E402
 from study import town06_design as D  # noqa: E402
 
@@ -50,6 +51,19 @@ CAPTURES = REPO / "results" / "town06" / "captures"
 # separate bound per section would make six stretches of one condition look like six
 # independent measurements, which they are not.
 OUT = REPO / D.CERT_ARTIFACT
+
+
+def _rel(p):
+    """Repo-relative path for display, or the absolute path when --out is outside it.
+
+    `Path.relative_to` RAISES for a path outside the repo, and it was called only to
+    format a log line -- so `--out /tmp/x.json` wrote the certificate correctly and then
+    died with ValueError on the very next statement, exiting nonzero on a good run.
+    """
+    try:
+        return Path(p).relative_to(REPO)
+    except ValueError:
+        return Path(p)
 
 
 # Sanity floor for a pooled cell. Each section contributes roughly len(section)/stride
@@ -195,6 +209,16 @@ def main():
     ap.add_argument("--scope", default="full", choices=("full", "capped"),
                     help="scored road the bound is pooled over. 'full' is the committed "
                          "Town06 certificate; 'capped' drops road over SMAX_CAP.")
+    ap.add_argument("--allow-cpu", action="store_true",
+                    help="certify on the CPU when no usable GPU is present. Bounds move "
+                         "in the 4th significant figure between devices (see "
+                         "docs/MIGRATION_2026-09-03.md), so this is for smoke-testing, "
+                         "not for producing a certificate of record.")
+    ap.add_argument("--force", action="store_true",
+                    help="overwrite an existing certificate. Refused by default: "
+                         "results/town06/certificate_town06.json is the pass-1 artifact "
+                         "PROTOCOL R4 requires to stand, and this script's default "
+                         "output path IS that file.")
     ap.add_argument("--out", default=None,
                     help="artifact path (default: the scope's own file)")
     args = ap.parse_args()
@@ -231,7 +255,28 @@ def main():
         sys.exit(f"PROTOCOL section 3 freezes stride=8 and nsplit=16; "
                  f"got {args.stride}/{args.nsplit}. Changing either is an amendment.")
 
-    dev = "cuda" if torch.cuda.is_available() else "cpu"
+    # Resolve the destination and refuse BEFORE certifying, not after: the check used to
+    # sit at the write site, so a bare re-run spent the full certification and only then
+    # said it would not save the result.
+    dest = Path(args.out) if args.out else (
+        OUT if args.scope == "full"
+        else OUT.with_name(OUT.stem + f"_{args.scope}" + OUT.suffix))
+    if dest.exists() and not args.force:
+        sys.exit(f"REFUSING to overwrite {_rel(dest)}\n"
+                 f"  It already exists, and PROTOCOL R4 requires the committed "
+                 f"certificates to stand.\n"
+                 f"  Write elsewhere with --out PATH, or pass --force if you really "
+                 f"mean to replace it.")
+
+    # NOT the is_available()-then-quietly-use-the-CPU idiom. That predicate lies in
+    # both directions: it is False while CARLA initialises on the same device, and on the
+    # 2026-09-03 desktop it was TRUE on a card the installed torch had no kernels for
+    # (RTX 5090 is sm_120; torch 2.5.1+cu121 builds sm_50..sm_90), so the certifier
+    # selected CUDA and died mid-run. require_cuda allocates and operates on a real
+    # tensor, which catches both. tries=1: nothing here races CARLA, so do not sit in a
+    # two-minute retry loop -- but still refuse to certify silently on the CPU, because a
+    # bound computed on a different device is a bound about a different computation.
+    dev = require_cuda(tries=1, wait_s=0, allow_cpu=args.allow_cpu)
     tol = C.CLOSED_LOOP_TOLERANCE
     # THE CONDITION IS low_sun. The capture rig writes lap_<sec>_low_sun.npz, and this
     # asked for lap_<sec>_shadows.npz -- so with --allow-missing it would have certified
@@ -348,12 +393,9 @@ def main():
         cells_expected=n_expected, cells_scored=n, git_commit=git_head(), device=dev,
         torch=torch.__version__, numpy=np.__version__,
         blind="no truth table; agreement is not computable by this tool")
-    dest = Path(args.out) if args.out else (
-        OUT if args.scope == "full"
-        else OUT.with_name(OUT.stem + f"_{args.scope}" + OUT.suffix))
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(json.dumps(out, indent=2))
-    print(f"\n  wrote {dest.relative_to(REPO)}")
+    print(f"\n  wrote {_rel(dest)}")
     print("  COMMIT THIS FILE before running any scored closed-loop cell (PROTOCOL R1).")
     return 0
 
