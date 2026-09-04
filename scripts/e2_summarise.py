@@ -13,7 +13,11 @@ import json
 import pathlib
 import statistics as st
 
-D = pathlib.Path(__file__).resolve().parent.parent / "results" / "town06" / "tail_loss"
+import os
+# E2_DIR selects which run to summarise: the original unpinned sweep, or the
+# deterministic paired re-run (amendment A-2). Defaults to the original.
+D = (pathlib.Path(__file__).resolve().parent.parent /
+     os.environ.get("E2_DIR", "results/town06/tail_loss"))
 ALPHAS = ["0.0", "2.0", "8.0"]
 SEEDS = [0, 1, 2, 3, 4, 5]
 BUDGET = 2.19
