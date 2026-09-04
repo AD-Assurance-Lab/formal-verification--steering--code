@@ -4,6 +4,14 @@ Updated 2026-09-03.
 
 ## The study is COMPLETE and frozen for publication
 
+**Since then (2026-09-03/04):** the repo was ported to the new desktop and the frozen
+result was re-verified there — all six Town06 verdicts, the oracle bit-identical to its
+committed CSVs, photometry 0.003% off reference. Six environment/harness defects were
+found and fixed (`docs/MIGRATION_2026-09-03.md`). **E1 has been run**
+(`docs/E1_FINDINGS.md`): the resolution trend that motivated it does not survive a seed
+sweep, and fog robustness turns out to be unreliable rather than absent. Nothing in the
+paper's frozen scope changed.
+
 Town04 (discovery test) and Town06 (deployment test) are both finished. Nothing is running.
 The result is written up and the artifacts are committed.
 
@@ -11,6 +19,8 @@ The result is written up and the artifacts are committed.
 
 | you are… | read |
 |---|---|
+| picking up after the desktop migration | **`docs/MIGRATION_2026-09-03.md`** — six defects, all fixed |
+| looking at the E1 result | **`docs/E1_FINDINGS.md`** — run 2026-09-03/04, 48 cells |
 | writing the arXiv paper | **`docs/PAPER_HANDOFF.md`** — authoritative on what to publish |
 | running the follow-on experiments | **`docs/NEXT_EXPERIMENTS.md`** — E1..E6, prioritised |
 | checking a number | `docs/TOWN06_FINDINGS.md`, findings T06-F50..F57 |
