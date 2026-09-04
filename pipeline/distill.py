@@ -159,7 +159,12 @@ def distill_student(in_w, in_h, out_name, teacher_name="steering_dagger_r02",
     # is the variable T06-F14 measured as flipping a student from 4/6 to 6/6 on a clear
     # gate with the architecture and data held fixed. Leaving it hardcoded makes that
     # variance invisible: one draw is taken, and whether it was a good one is unknowable
-    # without re-drawing. Default 0, so every existing result reproduces exactly.
+    # without re-drawing. Default 0.
+    #
+    # NOT "so every existing result reproduces exactly", which this comment used to claim.
+    # MEASURED 2026-09-04: three draws of seed 0 on identical data and objective gave fog
+    # p99 |err| of 0.1027, 0.1427 and 0.1036. The seed alone does not pin the draw --
+    # see DISTILL_DETERMINISTIC below, which does.
     _seed = int(os.environ.get("DISTILL_SEED", "0"))
     if _seed:
         print(f"  DISTILL_SEED={_seed} (default is 0; this is a different draw, not a "
