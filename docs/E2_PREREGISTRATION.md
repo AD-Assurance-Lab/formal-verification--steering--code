@@ -157,3 +157,63 @@ C1–C4 stand exactly as written above. They were about the effect of alpha, and
 here changes what alpha is predicted to do; it changes what alpha must be measured
 against. The E1 baseline arm (`results/town06/res_ablation/e1_168x56_*`) remains on record
 as an independent reference for how far a re-run moves things.
+
+---
+
+# AMENDMENT A-2 — the paired re-run, with kernels pinned
+
+**Recorded 2026-09-04, before the re-run's first distillation.** Follows `docs/E2_FINDINGS.md`.
+
+## Why re-run at all
+
+The first E2 found nothing, but E2-F5 measured that it could only have detected a shift of
+roughly 40% or more: baseline fog p99 has CV 19.9% across seeds, giving the 6-vs-6 design
+31% power at a 20% effect. "No effect detected" was therefore not evidence of no effect,
+and reporting it as one would repeat the single-draw error the whole study is trying to
+avoid.
+
+E2-F6 then removed the cause. With `DISTILL_DETERMINISTIC=1` two runs at seed 0 produce
+**bit-identical weights**. The seed becomes a real control variable, so alpha can be
+compared *within* a seed and the run-to-run component drops out entirely.
+
+## What changes
+
+| | first run | this re-run |
+|---|---|---|
+| kernels | cuDNN autotuned, non-deterministic reductions | pinned; bit-identical at fixed seed |
+| design | unpaired (amendment A-1) | **paired** — seed is a control |
+| primary test | Mann-Whitney 6 v 6 | **Wilcoxon signed-rank on 6 matched pairs** |
+| checkpoints | `S_mixed_tail_*` | `S_mixed_taildet_*` |
+| output | `results/town06/tail_loss/` | `results/town06/tail_loss_det/` |
+
+Everything else is identical: alphas **0.0 / 2.0 / 8.0**, seeds **0–5**, 168x56 w4, fog
+and clear, 3 laps. The first run stays on record beside it.
+
+## Predictions
+
+**D1 — the paired design separates arms the unpaired one could not.** At least one alpha
+will differ from baseline on fog p99 with Wilcoxon p < 0.05, where the unpaired test gave
+p = 0.310 and p = 0.699. This is a prediction about *power*, not about alpha's sign.
+
+**D2 — alpha 2.0 will still not help, and the direction will now be consistent.** In the
+first run 1/6 seeds improved at 2.0 and 4/6 at 8.0, which is noise. Paired, I predict the
+sign is consistent across seeds within each arm: ≥5/6 in the same direction.
+
+**D3 — closed-loop fog still does not improve.** Seeds holding fog 3/3 will not exceed the
+baseline arm's count by more than 1. E1b showed the closed loop selects among discrete
+modes; pinning the training kernels does not pin the renderer, and D-7 noise still decides
+which mode a lap lands in.
+
+**D4 — the pinned baseline reproduces the study's architecture, not a new one.** Baseline
+fog p99 at alpha 0.0 will land inside the range the unpinned run measured
+(0.0755–0.1265). If it lands outside, pinning the kernels changed the model rather than
+just the reproducibility of it, and that has to be reported before anything else here is
+believed.
+
+## What would make this conclusive either way
+
+If D1 holds and alpha still shows no benefit across a paired test, the tail-loss
+hypothesis is answered at adequate power and E2 is closed. If D1 fails — if even the
+paired design cannot separate the arms — then the remaining noise is not the kernels, and
+the honest report is that this architecture's distillation cannot be compared at n=6 by
+any design, which is itself the finding.
