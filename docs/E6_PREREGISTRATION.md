@@ -61,3 +61,34 @@ intervention in the study that has, and it directly answers the open question.
 The same rules as E4: restart before every lap, exit 3 aborts, no promotion, no
 `.selected` pin, output under `results/town06/balancing/`, VOID cells excluded rather than
 averaged.
+
+---
+
+# AMENDMENT A-1 — run the arms at the tuned learning rate, not the shipped one
+
+**Recorded 2026-09-04, before any E6 distillation.** Follows `docs/E4_FINDINGS.md`.
+
+E4 measured that `lr=3e-4` moves this architecture's fog median from 11.79 ft to 1.91 ft
+and its validation KD error from 2.080e-3 to 1.183e-3, changing nothing else. The shipped
+`lr=1e-3` is not the recipe anyone should use going forward.
+
+Running E6 against a `1e-3` baseline would therefore answer "does balancing rescue a
+recipe we already know is misconfigured" — a question nobody needs. All three arms move to
+**`--lr 3e-4`**, and the `raw` baseline becomes **E4's `d3lr3` arm**, which is already
+measured at six seeds under identical conditions, kernels and lap protocol.
+
+| arm | method | lr |
+|---|---|---|
+| `raw` | plain MSE (E4's `d3lr3`, already measured) | 3e-4 |
+| `bal` | `--balance` downsampling — the refuted arm | 3e-4 |
+| `curv` | `DISTILL_CURV_BETA=4.0` reweighting | 3e-4 |
+
+**Predictions G1–G4 are unchanged in substance**, and are now read against the tuned
+baseline: `raw` fog median 1.91 ft, 3/6 seeds holding, clear 6/6.
+
+One prediction is added.
+
+**G5 — balancing matters less on the better recipe, not more.** Whatever gap `bal` or
+`curv` shows against `raw` will be smaller than the 9.88 ft the learning rate moved. If
+that is wrong — if a label-weighting change outperforms the learning-rate change — then the
+imbalance is a first-order problem after all and the study's framing needs revisiting.
