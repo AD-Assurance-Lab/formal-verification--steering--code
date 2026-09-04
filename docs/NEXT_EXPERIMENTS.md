@@ -57,6 +57,24 @@ The new machine has a 5090 and plenty of RAM. What that changes:
 
 ---
 
+## STATUS as of 2026-09-04
+
+| | state |
+|---|---|
+| **E1** resolution ablation | **DONE** — `docs/E1_FINDINGS.md`. The trend it was built on was single draws; it does not survive a seed sweep. |
+| **E1b** bimodality probe | **DONE** — `docs/E1B_FINDINGS.md`. Multimodal, not bimodal; harness exonerated. |
+| **E5** screen/gate discrepancy | **ANSWERED by E1b** — order statistics, no harness fault. |
+| **E2** tail-sensitive loss | **RUN, INCONCLUSIVE** — `docs/E2_FINDINGS.md`. No effect detected, but the design could only have seen a ~40% one. Re-run it paired with `DISTILL_DETERMINISTIC=1` before spending more seeds. |
+| **E3, E4, E6** | not started |
+
+**Read `docs/E2_FINDINGS.md` E2-F6 before designing any experiment that compares two
+training configurations.** Seeding python/numpy/torch does not pin a distillation draw —
+cuDNN autotuning and non-deterministic backward reductions moved fog p99 by 1.39x at a
+fixed seed, which is as large as the spread across six different seeds.
+`DISTILL_DETERMINISTIC=1` gives bit-identical weights and makes the seed a real control
+variable. **E2 as written below asks for a comparison "at matched seeds"; without that
+flag there is no such thing.**
+
 ## Experiments, in priority order
 
 Each gives: the question, why it is worth running, how to run it, and what would count as

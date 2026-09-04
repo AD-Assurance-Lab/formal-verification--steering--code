@@ -7,9 +7,13 @@ Updated 2026-09-03.
 **Since then (2026-09-03/04):** the repo was ported to the new desktop and the frozen
 result was re-verified there — all six Town06 verdicts, the oracle bit-identical to its
 committed CSVs, photometry 0.003% off reference. Six environment/harness defects were
-found and fixed (`docs/MIGRATION_2026-09-03.md`). **E1 has been run**
-(`docs/E1_FINDINGS.md`): the resolution trend that motivated it does not survive a seed
-sweep, and fog robustness turns out to be unreliable rather than absent. Nothing in the
+found and fixed (`docs/MIGRATION_2026-09-03.md`). **E1, E1b and E2 have been run** (`docs/E1_FINDINGS.md`,
+`docs/E1B_FINDINGS.md`, `docs/E2_FINDINGS.md`): the resolution trend that motivated E1 does
+not survive a seed sweep; fog robustness is unreliable rather than absent; the VOID cells
+are multimodal and the harness is exonerated (which also answers E5); and the tail loss
+showed no measurable effect in a design that could only have detected a large one. The
+durable result is `DISTILL_DETERMINISTIC=1` — seeding python/numpy/torch never pinned a
+distillation draw, and now it can be pinned bit-exactly. Nothing in the
 paper's frozen scope changed.
 
 Town04 (discovery test) and Town06 (deployment test) are both finished. Nothing is running.
