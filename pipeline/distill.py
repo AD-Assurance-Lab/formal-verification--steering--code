@@ -25,6 +25,14 @@ import torch
 # E2 knob. A float; 0.0 reproduces the plain-MSE objective exactly. Read once at import
 # so a run's objective cannot change halfway through, and recorded by the E2 driver.
 TAIL_ALPHA = float(os.environ.get("DISTILL_TAIL_ALPHA", "0") or 0)
+
+# E6 knob. Curvature-WEIGHTED loss: each frame's gradient contribution is scaled by how
+# far its target is from straight, leaving the input distribution untouched. This is the
+# arm the balancing refutation in config.TOWN06_STUDENTS does NOT cover -- that refutation
+# is about DOWNSAMPLING straight frames, and its argument ("on a route that genuinely IS
+# 84% straight, downsampling straight frames trains the student for a distribution it will
+# not meet") is sound and simply does not apply to reweighting. 0.0 = plain MSE.
+CURV_BETA = float(os.environ.get("DISTILL_CURV_BETA", "0") or 0)
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 
@@ -246,6 +254,15 @@ def distill_student(in_w, in_h, out_name, teacher_name="steering_dagger_r02",
     opt = torch.optim.Adam(student.parameters(), lr=lr, weight_decay=1e-5)
     sched = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, factor=0.5, patience=8)
 
+    # Fixed |steer| scale for the E6 weighting, over the TRAINING targets only.
+    _y_abs_mean = 1.0
+    if CURV_BETA:
+        _ys = torch.cat([yy.abs().flatten() for _, yy in tl])
+        _y_abs_mean = max(float(_ys.mean()), 1e-6)
+        print(f"  DISTILL_CURV_BETA={CURV_BETA} (mean |steer| = {_y_abs_mean:.5f}; "
+              f"a frame at 10x the mean gets {1 + CURV_BETA * 10:.1f}x the weight)",
+              flush=True)
+
     ckpt = os.path.join(C.CHECKPOINT_DIR, f"{out_name}.pth")
     best, bad = float("inf"), 0
     for ep in range(epochs):
@@ -253,6 +270,14 @@ def distill_student(in_w, in_h, out_name, teacher_name="steering_dagger_r02",
         for x, y in tl:
             x, y = x.to(device), y.to(device)
             opt.zero_grad()
+            # E6: CURVATURE-WEIGHTED LOSS, off by default. Scale is fixed from the whole
+            # training set (_y_abs_mean) rather than per batch, so a batch that happens to
+            # be all-straight does not silently rescale the objective.
+            if CURV_BETA:
+                w = 1.0 + CURV_BETA * (y.abs() / _y_abs_mean)
+                loss = (w * (student(x) - y).pow(2)).mean()
+                loss.backward(); opt.step()
+                continue
             # E2: TAIL-SENSITIVE LOSS, off by default.
             #
             # T06-F48 measured that fog's MEAN distillation error is BETTER than night's

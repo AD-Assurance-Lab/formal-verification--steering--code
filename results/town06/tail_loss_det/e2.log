@@ -33,3 +33,5 @@ S_mixed_taildet_a0p0_s0                             0/3         12.08ft         
 STUDENT VARIANT COMPARISON -- clear, 3 lap(s) each, clean server before every lap
   budget 2.19 ft
 
+  S_mixed_taildet_a0p0_s0                      lap0  max|CTE|    2.32 ft over   0.2%  steps 1180/1280  FAIL
+  S_mixed_taildet_a0p0_s0                      lap1  max|CTE|    1.21 ft over   0.0%  steps 1179/1280  PASS
