@@ -165,6 +165,29 @@ def distill_student(in_w, in_h, out_name, teacher_name="steering_dagger_r02",
         print(f"  DISTILL_SEED={_seed} (default is 0; this is a different draw, not a "
               f"different method)", flush=True)
     torch.manual_seed(_seed)
+    # DISTILL_DETERMINISTIC=1 pins the kernels too. Seeding python/numpy/torch is NOT
+    # enough: cuDNN picks algorithms by autotuning and several backward kernels reduce
+    # non-deterministically, so the same seed lands in a different basin. MEASURED --
+    # three draws of "seed 0" on the same data and the same objective gave fog p99 |err|
+    # of 0.1027, 0.1427 and 0.1036, a 1.39x spread, which is as large as the spread
+    # ACROSS six different seeds (CV 19.9%). The comment below used to claim "every
+    # existing result reproduces exactly"; it does not.
+    #
+    # Off by default so existing checkpoints are not implicitly re-defined, and because
+    # deterministic kernels are slower. Turn it on for any experiment that compares two
+    # training configurations, where run-to-run noise is otherwise confounded with the
+    # thing being measured (see docs/E2_FINDINGS.md).
+    if os.environ.get("DISTILL_DETERMINISTIC", "") == "1":
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+        # cuBLAS needs this set BEFORE its first handle is created to make GEMM reductions
+        # reproducible; setting it later silently does nothing.
+        os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
+        try:
+            torch.use_deterministic_algorithms(True)
+        except Exception as _exc:                       # noqa: BLE001
+            print(f"  DISTILL_DETERMINISTIC: {type(_exc).__name__}: {_exc}", flush=True)
+        print("  DISTILL_DETERMINISTIC=1 (pinned kernels; slower)", flush=True)
     # Seed the augmentation RNG too: dataset._shift draws from the global `random`,
     # and torch.manual_seed alone left retraining non-reproducible bit-for-bit.
     import random as _random
