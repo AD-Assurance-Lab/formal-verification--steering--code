@@ -1,8 +1,22 @@
 # Town06 deployment test — status
 
-On `main`, alongside the Town04 redo. The released v1.0.0 tag is untouched.
+**COMPLETE, 2026-09-03. Frozen for publication.**
 
-**Read `PROTOCOL.md` first.** It wins over every other file, including this one.
+| you are… | read |
+|---|---|
+| writing the paper | **`docs/PAPER_HANDOFF.md`** |
+| running follow-on experiments | **`docs/NEXT_EXPERIMENTS.md`** |
+| checking a number | `docs/TOWN06_FINDINGS.md`, T06-F50..F57 |
+
+**Result:** certificate committed before any scored lap (`73415e5`, R1 verified against
+commit timestamps), agreement **4/5** on scored cells, all eight verdicts reproduced by an
+independent second pass. Every failure localises to fog. Pass 3 drove 16 students (two
+widths x eight seeds) against a pre-registered margin gate and none passed, so fog is
+neither capacity nor an unlucky draw — the teacher drives it at 0.37 ft, and the
+distillation loses it.
+
+Everything below this line is the historical record of how the study got here. The stage
+table it contains was accurate on 2026-09-02 and is superseded by the above.
 
 ---
 

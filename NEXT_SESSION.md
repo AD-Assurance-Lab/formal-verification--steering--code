@@ -1,77 +1,60 @@
 # Start here
 
-Updated 2026-09-02.
+Updated 2026-09-03.
 
-## Where the study is
+## The study is COMPLETE and frozen for publication
 
-The Town06 deployment test is being **rebuilt from step 0** on the continuous lap. The
-blocker that stopped the previous session is found, measured and fixed: see
-`docs/TOWN06_FINDINGS.md` **T06-F42**.
+Town04 (discovery test) and Town06 (deployment test) are both finished. Nothing is running.
+The result is written up and the artifacts are committed.
 
-**What was wrong.** The CARLA server rendered the identical scene ~15% darker for part of
-2026-09-01. Both Town06 lap BC sets and most DAgger rounds were collected on the dark side,
-so both teachers trained on frames systematically darker than the frames they are scored
-on — and DAgger aggregated both renderings into one set. Clear had the headroom to survive
-it; night and low sun did not, which is exactly the failure that was read as "the mixed
-teacher will not converge" and, in T06-F41, as "the lap route is darker than the route the
-conditions were calibrated on".
+**Where to go depends on what you are doing:**
 
-**T06-F41 is withdrawn.** Driving one instrument over the lap does not reproduce it: a
-pure-pursuit lap of the LAP route matches the SIX-SECTION dataset to within 0.4%. The route
-did not get darker; the collection did. **No frozen constant moves and `PROTOCOL.lock` is
-untouched** — low sun measures 5.0% from A-2's re-derivation against the 9% T06-F20
-accepted, and the night/low-sun axis stays ordered with all four conditions classifying as
-themselves.
-
-## What is new, and why it is there
-
-| | |
+| you are… | read |
 |---|---|
-| `scripts/check_render_photometry.py` | The guard. A fixed camera at the study spawn, no vehicle, ~2 s, run from `carla_launch.sh` on **every fresh server**. The determinism preflight checks the launch argv, `verify_condition()` reads the weather struct back, `identify()` checks which condition it is — a uniform photometric gain passes all three. |
-| `scripts/measure_lap_condition.py` | ONE instrument for a condition's rendered outcome, recording both the teacher's and the student's view. Three mutually inconsistent brightness tables had accumulated here, and one of them named a condition. |
-| `scripts/calibrate_lap_conditions.sh` | Drives all four, clean server each. |
-| `results/photometry_reference.json` | The committed reference. Reproducible across fresh servers to 0.001%. |
+| writing the arXiv paper | **`docs/PAPER_HANDOFF.md`** — authoritative on what to publish |
+| running the follow-on experiments | **`docs/NEXT_EXPERIMENTS.md`** — E1..E6, prioritised |
+| checking a number | `docs/TOWN06_FINDINGS.md`, findings T06-F50..F57 |
+| touching anything that drives | `PROTOCOL.md`, then `CLAUDE.md` (R-SIM-1..6) |
 
-Two harness defects fixed alongside it:
+## The result in five lines
 
-* **`carla_restart.sh` killed its own caller.** It stopped clients with
-  `pkill -f collect_data.py`, which matches any ancestor whose command line names the
-  script — the `[c]ollect` bracket trick only protects against pkill's own argument. That
-  is the previous session's "restart failed before gate lap N" with a healthy server in
-  the log, which discarded a 12-lap gate that was passing at the time.
-* **The drivers asked for `shadows`, the classifier answered `low_sun`.** Harmless while
-  both were wrong together; renaming one alone would have aborted every low-sun lap of the
-  rebuild, hours in, on a condition that rendered correctly.
+Town06's certificate was committed to git before any scored lap (`73415e5`; R1 verified
+against commit timestamps) and agreed with driving on **4 of 5 scored cells**. Pass 2
+re-drove all 24 laps days later and reproduced **all eight verdicts**. Every disagreement
+and every failure localises to **fog**. Pass 3 then drove 16 independently distilled
+students — two widths × eight seeds — against a pre-registered margin gate; **none passed,
+and fog stopped every one**, so the fog failure is neither capacity nor an unlucky draw.
+The teacher drives Town06 fog at 0.37 ft, so it is the distillation that loses it.
 
-## Running it
+## The strongest single result
 
-    export STUDY_MAP=Town06 CARLA_PORT=3000 CARLA_WINDOWED=0
-    setsid nohup bash scripts/watchdog_town06.sh > /tmp/t06_watchdog.log 2>&1 &
+`fog/S_clear` and `low_sun/S_clear` sit *inside* the corridor at the driven intensity
+(0.69× and 0.37× of tolerance) and both drive FAIL 3/3, one 21 m off the road. Their
+falsification witnesses are interior, at s = 0.41 and s = 0.60. **Certifying only at the
+rendered condition would have issued sound-looking certificates on two policies that leave
+the road.** Quantifying over the disturbance family is what prevented it.
 
-The watchdog restarts the pipeline if it dies and stops when the lap ledger exists.
-`results/town06_logs/pipeline.log` is the stage log.
+## Standing hygiene
 
-**CARLA runs HEADLESS here** (`-RenderOffScreen`). Standing rule 6 asks for a windowed
-server so runs can be watched; windowed will not start from this session (SDL init fails,
-empty log, rc=1). The deviation is measured rather than assumed: the same pure-pursuit
-clear lap gives mean 0.2525015 windowed against 0.2524913 headless, with identical sample
-count and identical sun-in-FOV fraction — 4e-5, far below the D-7 render floor. Recorded in
-T06-F42. **If you can launch windowed, do; nothing else changes.**
+```bash
+python3 -m carla_determinism --port 3000      # preflight; entry points call it too
+bash scripts/carla_restart.sh                 # before EVERY measurement run (R-SIM-1)
+python3 scripts/audit_repo.py                 # before any release -- 216 passed, 0 failed
+python3 -m pytest tests/ -q -p no:anyio       # 78 tests
+```
+
+CARLA runs on a non-default port (3000) and must be booked. Launch windowed on `DISPLAY=:0`
+so runs can be watched (standing rule 6); `carla_launch.sh` falls back to headless loudly if
+the window will not init, and every run records which mode it used in its own provenance.
 
 **Never pipe or capture the output of `carla_restart.sh`** — it daemonises CARLA and the
 detached child inherits the pipe. Redirect to a file.
 
-## After the pipeline
+## What must not be touched
 
-    bash scripts/finish_town06_deployment.sh
-
-Capture → certify blind → **commit the certificate** → drive the scored ledger → compare.
-Steps 3 and 4 cannot be reordered: `check_order_town06.py` enforces R1 against commit
-timestamps, and `closed_loop_ledger.py` refuses a cell whose certificate is missing,
-untracked or dirty.
-
-## Standing hygiene
-
-    python3 -m carla_determinism --port 3000      # preflight; entry points call it too
-    bash scripts/carla_restart.sh                 # before EVERY measurement run
-    python3 scripts/audit_repo.py                 # before any release
+* `PROTOCOL.md` §3 and `PROTOCOL.lock` — frozen constants; §9 amendment procedure only.
+* `results/town06/ledger` (pass 1), `results/town06/ledger_pass2`, both certificates.
+  PROTOCOL R4 requires the originals to stand.
+* The `.selected` pins for `S_clear_t06lap_168x56_w2` and `S_mixed_t06lap_168x56_w4` —
+  they resolve the certified models. New work pins under its own name (`PIN_CK=`) and
+  passes `PROMOTE=0`.
