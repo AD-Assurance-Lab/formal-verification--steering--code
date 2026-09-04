@@ -21,6 +21,10 @@ from gpu import require_cuda  # noqa: E402
 import numpy as np
 import cv2
 import torch
+
+# E2 knob. A float; 0.0 reproduces the plain-MSE objective exactly. Read once at import
+# so a run's objective cannot change halfway through, and recorded by the E2 driver.
+TAIL_ALPHA = float(os.environ.get("DISTILL_TAIL_ALPHA", "0") or 0)
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 
@@ -220,7 +224,25 @@ def distill_student(in_w, in_h, out_name, teacher_name="steering_dagger_r02",
         student.train()
         for x, y in tl:
             x, y = x.to(device), y.to(device)
-            opt.zero_grad(); loss = nn.functional.mse_loss(student(x), y)
+            opt.zero_grad()
+            # E2: TAIL-SENSITIVE LOSS, off by default.
+            #
+            # T06-F48 measured that fog's MEAN distillation error is BETTER than night's
+            # (RMSE 0.0272 against 0.0333) while fog's p99 error is 0.121 -- ten times the
+            # steering tolerance. Average-case fine, tail catastrophic. Plain MSE fits the
+            # bulk and is blind to exactly that tail.
+            #
+            # DISTILL_TAIL_ALPHA=0 (the default) leaves the objective bit-identical to
+            # every student already distilled in this repo, so passes 1-3 and E1 are
+            # unaffected and no checkpoint needs re-deriving to compare against.
+            if TAIL_ALPHA:
+                err = (student(x) - y).abs()
+                # err.detach() in the weight: this re-weights each sample by how badly it
+                # is currently fitted, it does not add a d(err)/dw term that would chase
+                # the cube of the error and destabilise training.
+                loss = (err.pow(2) * (1.0 + TAIL_ALPHA * err.detach())).mean()
+            else:
+                loss = nn.functional.mse_loss(student(x), y)
             loss.backward(); opt.step()
         v = _mse(student, vl, device); sched.step(v)
         if v < best:
