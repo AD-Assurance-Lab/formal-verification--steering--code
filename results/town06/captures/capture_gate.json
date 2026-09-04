@@ -1,0 +1,25 @@
+{
+  "threshold": 0.05,
+  "worst": 0.014800315233768445,
+  "cells": [
+    {
+      "student": "S_clear_t06",
+      "checkpoint": "S_clear_t06lap_168x56_w2_s0",
+      "direction": "lap",
+      "cond": "clear",
+      "mean_abs_diff": 0.014800315233768445,
+      "poses": 1055,
+      "passed": true
+    },
+    {
+      "student": "S_mixed_t06",
+      "checkpoint": "S_mixed_t06lap_168x56_w4_s3",
+      "direction": "lap",
+      "cond": "clear",
+      "mean_abs_diff": 0.014469578684585087,
+      "poses": 1054,
+      "passed": true
+    }
+  ],
+  "cells_expected": 2
+}
