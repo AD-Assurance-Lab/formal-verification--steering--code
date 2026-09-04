@@ -1,0 +1,23 @@
+[2026-09-03 23:02:34] === E1 resolution ablation ===
+[2026-09-03 23:02:34]     resolutions [84x28 168x28 168x56 252x84] x seeds [0 1 2 3 4 5] x conds [fog clear], 3 laps each
+[2026-09-03 23:02:34]     channels 32,64,64 fc 128 (w4, fixed); teacher teacher_mixed_t06lap_dagger_r03
+[2026-09-03 23:02:34]   drive 84x28 s0 fog: 3 laps
+
+STUDENT VARIANT COMPARISON -- fog, 3 lap(s) each, clean server before every lap
+  budget 2.19 ft
+
+  S_mixed_res_84x28_s0                         lap0  max|CTE|    6.37 ft over   1.3%  steps 1181/1280  FAIL
+  S_mixed_res_84x28_s0                         lap1  max|CTE|    6.36 ft over   1.3%  steps 1181/1280  FAIL
+  S_mixed_res_84x28_s0                         lap2  max|CTE|    6.37 ft over   1.3%  steps 1181/1280  FAIL
+
+checkpoint                                      laps held  worst |CTE|  % of budget
+S_mixed_res_84x28_s0                                0/3          6.37ft         291%
+
+  -> /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06/res_ablation/e1_84x28_s0_fog.json
+[2026-09-03 23:05:29]     worst 6.37 ft over 3 lap(s) 
+[2026-09-03 23:05:29]   drive 84x28 s0 clear: 3 laps
+
+STUDENT VARIANT COMPARISON -- clear, 3 lap(s) each, clean server before every lap
+  budget 2.19 ft
+
+  S_mixed_res_84x28_s0                         lap0  max|CTE|    1.28 ft over   0.0%  steps 1179/1280  PASS
