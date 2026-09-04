@@ -561,11 +561,23 @@ def relu_count(channels, fc, in_h=28, in_w=84):
     """ReLU neurons, so it can be reported next to every certified rate (4ac6002:
     a larger model has looser bounds, and that must stay visible rather than be
     engineered away)."""
+    # Geometry comes from StudentNet.CONV_SPEC so the two cannot disagree. This used to
+    # zip channels against a literal (5, 5, 3): passing five channels silently counted
+    # only three layers and under-reported the model, which is exactly the kind of number
+    # that then gets printed next to a certified rate.
+    from student import CONV_SPEC                          # local: avoid an import cycle
+    channels = tuple(channels)
+    if len(channels) not in CONV_SPEC:
+        raise ValueError(f"relu_count: no conv stack defined for {len(channels)} layers; "
+                         f"StudentNet.CONV_SPEC has {sorted(CONV_SPEC)}")
     h, w = in_h, in_w
     n = 0
-    for c, k in zip(channels, (5, 5, 3)):          # StudentNet: 5x5 s2, 5x5 s2, 3x3 s2
-        h = (h - k) // 2 + 1
-        w = (w - k) // 2 + 1
+    for c, (k, st) in zip(channels, CONV_SPEC[len(channels)]):
+        h = (h - k) // st + 1
+        w = (w - k) // st + 1
+        if h < 1 or w < 1:
+            raise ValueError(f"relu_count: the stack collapses at {in_h}x{in_w} "
+                             f"({len(channels)} layers); no such model can be built")
         n += c * h * w
     return n + fc
 
