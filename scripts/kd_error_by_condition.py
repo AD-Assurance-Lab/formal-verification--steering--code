@@ -41,6 +41,10 @@ def main():
     fc = int(os.environ.get("FC", "64"))
     w, h = C.TOWN06_INPUT_W, C.TOWN06_INPUT_H
     cap = int(os.environ.get("CAP", "3000"))
+    # KD_JSON: write the same per-condition numbers to a file, so a sweep can consume
+    # them instead of scraping this table out of stdout.
+    out_json = os.environ.get("KD_JSON")
+    rec = {"student": os.environ.get("STUDENT", ""), "teacher": "", "conditions": {}}
 
     _, rows = load_manifests(aggregated_manifests(
         base=os.environ.get("BASE", "mixed_t06"),
@@ -52,6 +56,8 @@ def main():
     net.load_state_dict(torch.load(Path(C.CHECKPOINT_DIR) / f"{ck}.pth",
                                    map_location=dev, weights_only=True))
     net.eval()
+    rec["student"], rec["teacher"] = ck, teacher
+    rec["relu"] = C.relu_count(ch, fc, h, w)
     print(f"{ck}  ({C.relu_count(ch, fc, h, w):,} ReLU)  vs  {teacher}")
     print(f"{len(rows):,} frames, {len(tgt):,} cached teacher targets\n")
     print(f"{'condition':10s} {'frames':>7s} {'KD RMSE':>9s} {'bias':>9s} "
@@ -78,12 +84,23 @@ def main():
                 s = net(torch.from_numpy(x).to(dev)).cpu().numpy().reshape(-1)
             errs.append(s - t); tv.append(t)
         e = np.concatenate(errs); t = np.concatenate(tv)
+        rec["conditions"][cond] = {
+            "frames": int(len(e)), "rmse": float(np.sqrt((e ** 2).mean())),
+            "bias": float(e.mean()), "p99_abs_err": float(np.percentile(np.abs(e), 99)),
+            "p999_abs_err": float(np.percentile(np.abs(e), 99.9)),
+            "max_abs_err": float(np.abs(e).max())}
         print(f"{cond:10s} {len(e):7,} {np.sqrt((e ** 2).mean()):9.4f} {e.mean():+9.4f} "
               f"{np.abs(t).mean():11.4f} {np.abs(t + e).mean():11.4f} "
               f"{np.percentile(np.abs(e), 99):10.4f}")
 
     print(f"\n  steering tolerance delta_tol = {C.CLOSED_LOOP_TOLERANCE:.4f} "
           f"(normalised units), for scale")
+    if out_json:
+        import json as _json
+        rec["tolerance"] = float(C.CLOSED_LOOP_TOLERANCE)
+        Path(out_json).parent.mkdir(parents=True, exist_ok=True)
+        Path(out_json).write_text(_json.dumps(rec, indent=2))
+        print(f"  wrote {out_json}")
 
 
 if __name__ == "__main__":
