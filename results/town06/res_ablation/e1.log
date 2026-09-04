@@ -21,3 +21,99 @@ STUDENT VARIANT COMPARISON -- clear, 3 lap(s) each, clean server before every la
   budget 2.19 ft
 
   S_mixed_res_84x28_s0                         lap0  max|CTE|    1.28 ft over   0.0%  steps 1179/1280  PASS
+  S_mixed_res_84x28_s0                         lap1  max|CTE|    1.26 ft over   0.0%  steps 1179/1280  PASS
+  S_mixed_res_84x28_s0                         lap2  max|CTE|    1.28 ft over   0.0%  steps 1179/1280  PASS
+
+checkpoint                                      laps held  worst |CTE|  % of budget
+S_mixed_res_84x28_s0                                3/3          1.28ft          58%
+
+  -> /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06/res_ablation/e1_84x28_s0_clear.json
+[2026-09-03 23:08:28]     worst 1.28 ft over 3 lap(s) 
+[2026-09-03 23:08:28] distil S_mixed_res_84x28_s1  (84x28, seed 1)
+[2026-09-03 23:11:34]   drive 84x28 s1 fog: 3 laps
+
+STUDENT VARIANT COMPARISON -- fog, 3 lap(s) each, clean server before every lap
+  budget 2.19 ft
+
+  S_mixed_res_84x28_s1                         lap0  max|CTE|   28.86 ft over   4.4%  steps 315/1280  DEPARTED  FAIL
+  S_mixed_res_84x28_s1                         lap1  max|CTE|   28.86 ft over   4.4%  steps 315/1280  DEPARTED  FAIL
+  S_mixed_res_84x28_s1                         lap2  max|CTE|   28.86 ft over   4.4%  steps 315/1280  DEPARTED  FAIL
+
+checkpoint                                      laps held  worst |CTE|  % of budget
+S_mixed_res_84x28_s1                                0/3         28.86ft        1317%
+
+  -> /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06/res_ablation/e1_84x28_s1_fog.json
+[2026-09-03 23:14:14]     worst 28.86 ft over 3 lap(s) 
+[2026-09-03 23:14:14]   drive 84x28 s1 clear: 3 laps
+
+STUDENT VARIANT COMPARISON -- clear, 3 lap(s) each, clean server before every lap
+  budget 2.19 ft
+
+  S_mixed_res_84x28_s1                         lap0  max|CTE|    1.77 ft over   0.0%  steps 1180/1280  PASS
+  S_mixed_res_84x28_s1                         lap1  max|CTE|    1.59 ft over   0.0%  steps 1180/1280  PASS
+  S_mixed_res_84x28_s1                         lap2  max|CTE|    1.59 ft over   0.0%  steps 1180/1280  PASS
+
+checkpoint                                      laps held  worst |CTE|  % of budget
+S_mixed_res_84x28_s1                                3/3          1.77ft          81%
+
+  -> /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06/res_ablation/e1_84x28_s1_clear.json
+[2026-09-03 23:17:13]     worst 1.77 ft over 3 lap(s) 
+[2026-09-03 23:17:13] distil S_mixed_res_84x28_s2  (84x28, seed 2)
+[2026-09-03 23:18:54]   drive 84x28 s2 fog: 3 laps
+
+STUDENT VARIANT COMPARISON -- fog, 3 lap(s) each, clean server before every lap
+  budget 2.19 ft
+
+  S_mixed_res_84x28_s2                         lap0  max|CTE|    5.87 ft over   4.9%  steps 1180/1280  FAIL
+  S_mixed_res_84x28_s2                         lap1  max|CTE|    5.88 ft over   4.2%  steps 1180/1280  FAIL
+  S_mixed_res_84x28_s2                         lap2  max|CTE|    5.87 ft over   4.9%  steps 1180/1280  FAIL
+
+checkpoint                                      laps held  worst |CTE|  % of budget
+S_mixed_res_84x28_s2                                0/3          5.88ft         268%
+
+  -> /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06/res_ablation/e1_84x28_s2_fog.json
+[2026-09-03 23:21:50]     worst 5.88 ft over 3 lap(s) 
+[2026-09-03 23:21:50]   drive 84x28 s2 clear: 3 laps
+
+STUDENT VARIANT COMPARISON -- clear, 3 lap(s) each, clean server before every lap
+  budget 2.19 ft
+
+  S_mixed_res_84x28_s2                         lap0  max|CTE|    3.96 ft over   1.7%  steps 1180/1280  FAIL
+  S_mixed_res_84x28_s2                         lap1  max|CTE|    4.03 ft over   1.8%  steps 1180/1280  FAIL
+  S_mixed_res_84x28_s2                         lap2  max|CTE|    4.01 ft over   1.7%  steps 1180/1280  FAIL
+
+checkpoint                                      laps held  worst |CTE|  % of budget
+S_mixed_res_84x28_s2                                0/3          4.03ft         184%
+
+  -> /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06/res_ablation/e1_84x28_s2_clear.json
+[2026-09-03 23:24:48]     worst 4.03 ft over 3 lap(s) 
+[2026-09-03 23:24:48] distil S_mixed_res_84x28_s3  (84x28, seed 3)
+[2026-09-03 23:27:46]   drive 84x28 s3 fog: 3 laps
+
+STUDENT VARIANT COMPARISON -- fog, 3 lap(s) each, clean server before every lap
+  budget 2.19 ft
+
+  S_mixed_res_84x28_s3                         lap0  max|CTE|    1.22 ft over   0.0%  steps 1179/1280  PASS
+  S_mixed_res_84x28_s3                         lap1  max|CTE|    1.22 ft over   0.0%  steps 1179/1280  PASS
+  S_mixed_res_84x28_s3                         lap2  max|CTE|    1.22 ft over   0.0%  steps 1179/1280  PASS
+
+checkpoint                                      laps held  worst |CTE|  % of budget
+S_mixed_res_84x28_s3                                3/3          1.22ft          56%
+
+  -> /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06/res_ablation/e1_84x28_s3_fog.json
+[2026-09-03 23:30:42]     worst 1.22 ft over 3 lap(s) 
+[2026-09-03 23:30:42]   drive 84x28 s3 clear: 3 laps
+
+STUDENT VARIANT COMPARISON -- clear, 3 lap(s) each, clean server before every lap
+  budget 2.19 ft
+
+  S_mixed_res_84x28_s3                         lap0  max|CTE|    1.27 ft over   0.0%  steps 1180/1280  PASS
+  S_mixed_res_84x28_s3                         lap1  max|CTE|    1.24 ft over   0.0%  steps 1180/1280  PASS
+  S_mixed_res_84x28_s3                         lap2  max|CTE|    1.26 ft over   0.0%  steps 1180/1280  PASS
+
+checkpoint                                      laps held  worst |CTE|  % of budget
+S_mixed_res_84x28_s3                                3/3          1.27ft          58%
+
+  -> /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06/res_ablation/e1_84x28_s3_clear.json
+[2026-09-03 23:33:40]     worst 1.27 ft over 3 lap(s) 
+[2026-09-03 23:33:40] distil S_mixed_res_84x28_s4  (84x28, seed 4)
