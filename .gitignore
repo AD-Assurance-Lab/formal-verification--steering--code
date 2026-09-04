@@ -28,6 +28,18 @@ pipeline/checkpoints/*
 !pipeline/checkpoints/teacher_mixed_v2_dagger_r03.pth
 !pipeline/checkpoints/teacher_clear_t06_dagger_r06.pth
 !pipeline/checkpoints/teacher_mixed_t06_dagger_r11.pth
+# THE MODELS THE TOWN06 RESULT IS ABOUT. The four above are the SIX-SECTION era; the lap
+# rebuild superseded them, and its checkpoints were never added -- so a clone of this
+# repository could not reproduce certificate_town06.json and shipped two retired students
+# instead of the two that were certified and driven. 6 MB for the artifact to be what it
+# says it is.
+!pipeline/checkpoints/S_clear_t06lap_168x56_w2_s0.pth
+!pipeline/checkpoints/S_mixed_t06lap_168x56_w4_s3.pth
+!pipeline/checkpoints/teacher_clear_t06lap_dagger_r04.pth
+!pipeline/checkpoints/teacher_mixed_t06lap_dagger_r03.pth
+# ...and the pins that say WHICH checkpoint is the student. final_student() resolves
+# through these, so without them the registry names a base that does not exist.
+!pipeline/checkpoints/*.selected
 # ...and the Town06 deployment-test routes. These are PROTOCOL artifacts, not data:
 # the route had to be fixed, on geometry alone, before any Town06 model existed, and
 # committing it is what makes that checkable later. ~23 KB each.
@@ -68,7 +80,13 @@ results/framelog/
 
 # Town06 deployment test: captures are simulator output (~38 MB x 8) and regenerable.
 # The CERTIFICATE is not -- it is the pre-drive prediction and must be committed.
-results/town06/captures/
+# EXCLUDE THE CONTENTS, NOT THE DIRECTORY. `results/town06/captures/` excluded the
+# directory itself, and git cannot re-include a file inside an excluded directory -- so
+# the `!.../capture_gate.json` rule at the bottom of this file never took effect and had
+# no way to. The A-3 gate artifact was read from disk by audit_repo.py and was absent
+# from every clone, which is why "a certificate exists with no gate artifact beside it"
+# never fired.
+results/town06/captures/*
 results/town06_logs/
 !results/town06/
 !results/town06/certificate_town06.json
