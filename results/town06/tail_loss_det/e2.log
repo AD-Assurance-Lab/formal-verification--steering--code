@@ -1,0 +1,35 @@
+[2026-09-04 13:22:43] === E2 tail-sensitive loss: alphas [0.0 2.0 8.0], seeds [0 1 2 3 4 5],  deterministic=1, out=tail_loss_det ===
+[2026-09-04 13:22:43] distil S_mixed_taildet_a0p0_s0  (alpha 0.0, seed 0)
+[2026-09-04 13:24:33]   KD error: alpha 0.0 seed 0
+S_mixed_taildet_a0p0_s0  (101,888 ReLU)  vs  teacher_mixed_t06lap_dagger_r03
+52,180 frames, 67,468 cached teacher targets
+
+condition   frames   KD RMSE      bias  teacher|s|  student|s|  p99 |err|
+  --------------------------------------------------------------------------
+clear        3,000    0.0296   +0.0028      0.0411      0.0388     0.1339
+fog          3,000    0.0396   -0.0018      0.0515      0.0504     0.1773
+night        3,000    0.0377   +0.0081      0.0426      0.0384     0.1673
+low_sun      3,000    0.0323   +0.0060      0.0313      0.0279     0.1383
+shadows      none
+
+  steering tolerance delta_tol = 0.0120 (normalised units), for scale
+  wrote /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06/tail_loss_det/kd_a0p0_s0.json
+[2026-09-04 13:25:08]   drive a0.0 s0 fog: 3 laps
+
+STUDENT VARIANT COMPARISON -- fog, 3 lap(s) each, clean server before every lap
+  budget 2.19 ft
+
+  S_mixed_taildet_a0p0_s0                      lap0  max|CTE|   12.08 ft over   6.4%  steps 1179/1280  FAIL
+  S_mixed_taildet_a0p0_s0                      lap1  max|CTE|   12.08 ft over   6.4%  steps 1179/1280  FAIL
+  S_mixed_taildet_a0p0_s0                      lap2  max|CTE|   12.08 ft over   6.4%  steps 1179/1280  FAIL
+
+checkpoint                                      laps held  worst |CTE|  % of budget
+S_mixed_taildet_a0p0_s0                             0/3         12.08ft         551%
+
+  -> /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06/tail_loss_det/e2_a0p0_s0_fog.json
+[2026-09-04 13:28:04]     worst 12.08 ft 
+[2026-09-04 13:28:04]   drive a0.0 s0 clear: 3 laps
+
+STUDENT VARIANT COMPARISON -- clear, 3 lap(s) each, clean server before every lap
+  budget 2.19 ft
+
