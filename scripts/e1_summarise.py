@@ -42,19 +42,28 @@ def cell(wh, seed, cond):
     if not laps:
         return {"state": "NO_LAPS"}
     cte = [l["max_cte_ft"] for l in laps]
-    short = [l for l in laps if l.get("full_steps") and
-             l["steps"] < SHORT_LAP_FRAC * l["full_steps"]]
+    # A short lap that DEPARTED is a real failure -- the run ended because the car left
+    # the road, which is the outcome being measured. A short lap that did NOT depart is
+    # the R-SIM-6 bug: three separate attempts at the section-end distance cap ended runs
+    # after 3-5 steps and reported a tiny |CTE| as a PASS. Only the second is suspicious,
+    # and conflating them flags every genuine departure as a possible harness fault.
+    short = [l for l in laps
+             if l.get("full_steps") and l["steps"] < SHORT_LAP_FRAC * l["full_steps"]
+             and not l.get("departed")]
+    departed = [l for l in laps if l.get("departed")]
     lo, hi = min(cte), max(cte)
     void = hi > 0 and (hi - lo) / max(hi, 1e-9) > VOID_REL
     return {"state": "VOID" if void else "OK", "n": len(laps), "lo": lo, "hi": hi,
             "held": sum(1 for l in laps if l["max_cte_ft"] <= BUDGET),
-            "short": len(short)}
+            "short": len(short), "departed": len(departed)}
 
 
 def main():
     if not D.exists():
         sys.exit(f"no results at {D}")
-    print(f"E1 resolution ablation -- budget {BUDGET} ft, worst-of-3 laps per cell\n")
+    print(f"E1 resolution ablation -- budget {BUDGET} ft, worst-of-3 laps per cell")
+    print("   D = the car departed the road (a real failure); "
+          "! = lap ended short WITHOUT departing (suspect, R-SIM-6)\n")
     summary = {}
     for cond in CONDS:
         print(f"=== {cond} ===")
@@ -72,7 +81,8 @@ def main():
                 elif c["state"] != "OK":
                     row += f"{c['state']:>10s}"
                 else:
-                    flag = "!" if c["short"] else ""
+                    # ! = short WITHOUT departing (suspect, R-SIM-6); D = departed.
+                    flag = "!" if c["short"] else ("D" if c["departed"] else "")
                     row += f"{c['hi']:>9.2f}{flag:<1s}"
                     vals.append(c["hi"])
                     held += 1 if c["held"] == c["n"] else 0
