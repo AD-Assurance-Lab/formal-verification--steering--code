@@ -94,3 +94,66 @@ unmeasured lap; no promotion and no `.selected` pin; output confined to
 averaged (standing rule 3, and E1b showed exactly what those cells are).
 
 Report what happened, including where it contradicts C1–C4.
+
+
+---
+
+# AMENDMENT A-1 — the baseline arm must be re-distilled, and the design is not paired
+
+**Recorded 2026-09-04, BEFORE any E2 sweep lap was driven.** One alpha-2.0 checkpoint and
+one baseline re-distillation had been run as smoke tests when this was found; no scored
+E2 cell existed yet.
+
+## What was measured
+
+Re-distilling the baseline objective — `DISTILL_TAIL_ALPHA=0`, which takes the original
+`mse_loss` branch — at **the same seed 0**, against the committed pass-3 checkpoint:
+
+```
+                     committed s0    re-distilled s0 (same seed, same objective)
+  fog  p99 |err|           0.1027                 0.1427    +38.9%
+  clear p99 |err|          0.0695                 0.0814    +17.1%
+  low_sun p99 |err|        0.0675                 0.0901    +33.5%
+  night p99 |err|          0.1048                 0.0986     -5.9%
+```
+
+For comparison, alpha 2.0 at seed 0 gives fog p99 **0.1331** — **+29.6%** against the
+committed baseline but **−6.7%** against the baseline re-distilled in the same session.
+
+**The sign of the alpha effect depends entirely on which baseline it is compared against.**
+
+## Why this invalidates the original design
+
+`distill.py` seeds python, numpy and torch but does not pin cuDNN determinism, so the same
+nominal seed can land in a different basin. The repo already recorded this once — the
+clear student drew 1.16 ft and then 8.68 ft on the *default seed both times*
+(`scripts/select_student_seed.sh`, `389f192`) — but it was filed as training variance
+rather than as a constraint on experiment design.
+
+It is a constraint on experiment design. Two consequences:
+
+1. **The baseline arm cannot be inherited from pass 3.** Comparing a new checkpoint
+   against a checkpoint distilled weeks ago under a different code state measures the
+   re-run difference (+38.9% here) on top of whatever alpha does. The alpha 0.0 arm is
+   therefore **re-distilled in this session**, under fresh names, alongside 2.0 and 8.0.
+
+2. **The design is NOT paired.** The pre-registration's primary endpoint was a Wilcoxon
+   signed-rank over seed-matched pairs. Seed matching carries no information here, so the
+   primary endpoint becomes **Mann-Whitney U, 6 vs 6, unpaired**, on fog p99 |err|. The
+   paired test is still reported for completeness and explicitly labelled as assuming
+   something now known to be false.
+
+**This also means E2 as specified in `docs/NEXT_EXPERIMENTS.md` is not executable as
+written.** That text asks for "fog p99 error and fog closed-loop CTE, both against the MSE
+baseline **at matched seeds**". There is no such thing as a matched seed in this pipeline.
+
+## Revised cost
+
+18 distillations (3 alphas x 6 seeds) and 108 laps, against 12 and 72. About 3 hours.
+
+## Predictions — unchanged
+
+C1–C4 stand exactly as written above. They were about the effect of alpha, and nothing
+here changes what alpha is predicted to do; it changes what alpha must be measured
+against. The E1 baseline arm (`results/town06/res_ablation/e1_168x56_*`) remains on record
+as an independent reference for how far a re-run moves things.
