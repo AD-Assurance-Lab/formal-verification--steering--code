@@ -41,7 +41,23 @@ from student import StudentNet  # noqa: E402
 from study import town06_design as D  # noqa: E402
 
 # One definition, in config.
+#
+# TOWN06_STUDENTS_OVERRIDE certifies checkpoints that are not the study's two shipped
+# students -- E4 needs the bound width of a 3-conv and a 5-conv net at matched ReLU count,
+# on the SAME committed captures and through the SAME bound math, because re-implementing
+# that math elsewhere is how two certifiers drift apart. Format:
+#
+#     name:checkpoint:c1,c2[,c3...]:fc;name2:...
+#
+# An overridden run may NOT write the canonical certificate: it is a different set of
+# models, and a file at that path is expected to be about the shipped ones.
 STUDENTS = C.TOWN06_STUDENTS
+_OVERRIDE = os.environ.get("TOWN06_STUDENTS_OVERRIDE", "").strip()
+if _OVERRIDE:
+    STUDENTS = tuple(
+        (f.split(":")[0], f.split(":")[1],
+         tuple(int(x) for x in f.split(":")[2].split(",")), int(f.split(":")[3]))
+        for f in _OVERRIDE.split(";") if f.strip())
 
 CAPTURES = REPO / "results" / "town06" / "captures"
 
@@ -261,6 +277,10 @@ def main():
     dest = Path(args.out) if args.out else (
         OUT if args.scope == "full"
         else OUT.with_name(OUT.stem + f"_{args.scope}" + OUT.suffix))
+    if _OVERRIDE and dest == OUT:
+        sys.exit("REFUSING: TOWN06_STUDENTS_OVERRIDE is set, so this run is not about the "
+                 "shipped students.\n  Pass --out to write it somewhere else; the "
+                 "canonical certificate must describe config.TOWN06_STUDENTS.")
     if dest.exists() and not args.force:
         sys.exit(f"REFUSING to overwrite {_rel(dest)}\n"
                  f"  It already exists, and PROTOCOL R4 requires the committed "
@@ -306,7 +326,9 @@ def main():
         # Certify the FINAL student -- the newest student-DAgger round -- not the
         # distilled intermediate. Bounding the wrong checkpoint would produce a
         # perfectly valid certificate about a policy that is not the one under study.
-        ck = C.final_student(ck_base)
+        # With an override the checkpoint name is given exactly; final_student() resolves
+        # the study's DAgger'd policies and must not rewrite a name that has no rounds.
+        ck = ck_base if _OVERRIDE else C.final_student(ck_base)
         wpath = Path(C.CHECKPOINT_DIR) / f"{ck}.pth"
         if not wpath.exists():
             sys.exit(f"missing checkpoint {wpath}")
