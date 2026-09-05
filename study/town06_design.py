@@ -77,8 +77,32 @@ def expected(student, condition):
     A result contradicting this is a BUG until a written disposition rules out the
     candidate causes (standing rule 2). It is not a finding before that.
     """
+    # Vacuous FIRST: a vacuous cell's expectation does not depend on the student, so
+    # this must not fall into the unknown-student branch below.
     if condition in VACUOUS_CELLS:
         return ("PASS", "CERTIFIED")
+    # AN UNKNOWN STUDENT HAS NO PRE-REGISTERED EXPECTATION, and must not silently
+    # inherit one. Every branch below except the first is keyed on the student, so a
+    # name this table has never heard of fell through to the LAST line -- the clear-only
+    # student's row -- and was scored against it. Q3 drove an exploratory tuned student
+    # and got three CONTRADICTS that meant only "this table has no row for me": the same
+    # broken-join-wearing-the-costume-of-a-result that compare_town06.py's own docstring
+    # records, in the one place it was not guarded.
+    #
+    # Standing rule 2 makes this expensive: a contradiction is a BUG until a written
+    # disposition rules out the candidate causes, so a defaulted expectation manufactures
+    # investigations that have no subject.
+    if student not in STUDENTS:
+        if TOWN06_LEDGER_TAG:
+            # Exploratory scope: say so, rather than inventing an expectation. The
+            # experiment's own pre-registration carries its predictions.
+            return (None, None)
+        raise SystemExit(
+            f"no pre-registered expectation for student {student!r}.\n"
+            f"  known: {sorted(STUDENTS)}\n"
+            f"  An expectation recorded after the fact is not a pre-registration, and\n"
+            f"  defaulting to another student's row is not one either. If this is an\n"
+            f"  exploratory run, set TOWN06_LEDGER_TAG.")
     if student == "S_mixed_t06":
         return ("PASS", "CERTIFIED")
     if condition == "fog":

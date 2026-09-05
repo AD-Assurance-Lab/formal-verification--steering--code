@@ -160,10 +160,17 @@ def main():
         # measurement that the harness produced laps that disagree. Counting it either way
         # would put a number nobody can defend into the agreement rate.
         agree = None if drive == "VOID" else (drive, cert_v) in D.AGREES
+        # (None, None) means this student has NO pre-registered expectation -- an
+        # exploratory scope. That is not the same as contradicting one, and printing
+        # CONTRADICTS for it would manufacture a standing-rule-2 investigation with no
+        # subject. The experiment's own pre-registration carries its predictions.
         exp_drive, exp_cert = D.expected(stu, cond)
+        pre_registered = exp_drive is not None
         rows.append(dict(cond=cond, stu=stu, drive=drive, fails=fails, n=n,
                          lo=lo, hi=hi, cert=cert_v, agree=agree, note=note,
-                         as_expected=(drive == exp_drive and cert_v == exp_cert)))
+                         pre_registered=pre_registered,
+                         as_expected=(pre_registered and drive == exp_drive
+                                      and cert_v == exp_cert)))
 
     if violations:
         print("PROTOCOL R1 VIOLATED -- these cells were committed at or before the")
@@ -189,8 +196,12 @@ def main():
         mark = "n/a" if r["agree"] is None else ("agree" if r["agree"] else "DISAGREE")
         if r["cond"] in D.VACUOUS_CELLS:
             mark = "vacuous"
+        if not r["pre_registered"]:
+            exp_col = "none"
+        else:
+            exp_col = "ok" if r["as_expected"] else "CONTRADICTS"
         print(f"  {lab:10s} {r['stu']:13s} {rate:9s}{ci:8s} {r['cert']:15s} "
-              f"{mark:9s} {'ok' if r['as_expected'] else 'CONTRADICTS'}")
+              f"{mark:9s} {exp_col}")
 
     n_ok = sum(1 for r in scored if r["agree"])
     n = len(scored)
@@ -210,7 +221,8 @@ def main():
         print("  " + D.DEGENERATE_IF_ALL_AGREE)
         print("  Report this as sensitivity, NOT as a discriminating result.")
 
-    contradictions = [r for r in scored if not r["as_expected"]]
+    contradictions = [r for r in scored
+                      if r["pre_registered"] and not r["as_expected"]]
     if contradictions:
         print(f"\n  {len(contradictions)} cell(s) contradict the pre-registered "
               f"expectation. Standing rule 2:")
