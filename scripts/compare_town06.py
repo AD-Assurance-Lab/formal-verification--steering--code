@@ -52,6 +52,24 @@ STU = {}
 for _nm, _ck, _, _ in C.TOWN06_STUDENTS:
     STU[_ck] = _nm
     STU[C.final_student(_ck)] = _nm
+
+# The exploratory scope drives a student that is not the shipped pair, so the join above
+# would not contain it -- and this tool exits FATAL on a missing key rather than calling
+# it a disagreement, which is right and would also have stopped Q3 dead.
+#
+# Uses the SAME override string that certify_town06.py and run_town06_ledger.sh take, so
+# the certificate key and the ledger filename are guaranteed to join: the name before the
+# first colon becomes the certificate's key, the checkpoint after it becomes the ledger
+# filename's student. One string, one mapping, no third place to get it wrong.
+#
+# An overridden checkpoint is NOT passed through final_student(): it names a checkpoint
+# exactly, and rewriting a name that has no DAgger rounds is how the join breaks.
+_LSTU = os.environ.get("TOWN06_LEDGER_STUDENTS", "").strip()
+if _LSTU:
+    for _f in _LSTU.split(";"):
+        if _f.strip():
+            _parts = _f.split(":")
+            STU[_parts[1]] = _parts[0]
 COND_LABEL = {"shadows": "low sun", "low_sun": "low sun"}
 
 
