@@ -104,9 +104,23 @@ def lap_provenance(weather):
         prov["git_sha"] = subprocess.run(
             ["git", "rev-parse", "HEAD"], capture_output=True, text=True,
             cwd=str(REPO), timeout=10).stdout.strip() or None
-        prov["git_dirty"] = bool(subprocess.run(
+        _porc = subprocess.run(
             ["git", "status", "--porcelain", "--untracked-files=no"],
-            capture_output=True, text=True, cwd=str(REPO), timeout=10).stdout.strip())
+            capture_output=True, text=True, cwd=str(REPO), timeout=10).stdout.rstrip("\n")
+        # rstrip("\n"), NOT strip(): porcelain lines are "XY PATH" with X a space when
+        # only the worktree changed, so stripping the whole blob eats the leading space of
+        # the FIRST line and shifts that one path by a character. Caught by reading the
+        # output: 'cripts/closed_loop_ledger.py'.
+        prov["git_dirty"] = bool(_porc)
+        # WHICH files, not just whether. A bare boolean cannot tell "the sweep's own
+        # append-only log" from "someone had uncommitted code in the driving path", and
+        # those have opposite implications for whether the cell is attributable.
+        #
+        # This is not hypothetical: every sweep log in results/town06/*/ is TRACKED, so
+        # re-running an existing sweep directory sets the flag by the act of running.
+        # Q4's cells carry dirty=True for exactly that reason and nothing else.
+        prov["git_dirty_files"] = sorted(
+            l[3:].split(" -> ")[-1] for l in _porc.splitlines())[:20] if _porc else []
     except Exception:
         prov["git_sha"], prov["git_dirty"] = None, None
     det = dict(deterministic_control=bool(getattr(C, "DETERMINISTIC_CONTROL", False)))
