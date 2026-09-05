@@ -87,11 +87,19 @@ def run_provenance(condition):
     try:
         sha = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True,
                              text=True, cwd=REPO, timeout=10).stdout.strip() or None
-        dirty = bool(subprocess.run(
+        _porc = subprocess.run(
             ["git", "status", "--porcelain", "--untracked-files=no"],
-            capture_output=True, text=True, cwd=REPO, timeout=10).stdout.strip())
+            capture_output=True, text=True, cwd=REPO, timeout=10).stdout.rstrip("\n")
+        # rstrip("\n"), NOT strip() -- see compare_student_variants.lap_provenance:
+        # stripping the blob eats the first line's leading space and mangles that path.
+        dirty = bool(_porc)
+        # WHICH files, not just whether -- see compare_student_variants.lap_provenance.
+        # "dirty" is only actionable if a later reader can tell a driver's own log from
+        # uncommitted code in the driving path.
+        dirty_files = sorted(l[3:].split(" -> ")[-1]
+                             for l in _porc.splitlines())[:20] if _porc else []
     except Exception:
-        sha, dirty = None, None
+        sha, dirty, dirty_files = None, None, None
     return dict(
         run_started=datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
         weather=weather,
@@ -101,7 +109,7 @@ def run_provenance(condition):
         map=C.MAP_NAME,
         target_speed_ms=C.TARGET_SPEED_MS,
         lap_end_m=C.LAP_END_M,
-        git_sha=sha, git_dirty=dirty,
+        git_sha=sha, git_dirty=dirty, git_dirty_files=dirty_files,
         # THE HARNESS THIS RAN UNDER, recorded so D-11 is checkable afterwards.
         #
         # D-11 says data collected under a violating harness is not reusable. That is
