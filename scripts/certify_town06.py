@@ -73,6 +73,11 @@ CAPTURES = REPO / "results" / "town06" / "captures"
 # separate bound per section would make six stretches of one condition look like six
 # independent measurements, which they are not.
 OUT = REPO / D.CERT_ARTIFACT
+# The published artifact, whatever scope is selected. The two refusals below protect
+# THIS, not OUT: with TOWN06_LEDGER_TAG set, OUT is the exploratory certificate and
+# comparing against it would have the guards refuse the very file the run is meant to
+# write, while leaving the canonical one unguarded.
+CANONICAL = REPO / D.CANONICAL_CERT_ARTIFACT
 
 
 def _rel(p):
@@ -294,7 +299,7 @@ def main():
     dest = Path(args.out) if args.out else (
         OUT if args.scope == "full"
         else OUT.with_name(OUT.stem + f"_{args.scope}" + OUT.suffix))
-    if _OVERRIDE and dest == OUT:
+    if _OVERRIDE and dest == CANONICAL:
         sys.exit("REFUSING: TOWN06_STUDENTS_OVERRIDE is set, so this run is not about the "
                  "shipped students.\n  Pass --out to write it somewhere else; the "
                  "canonical certificate must describe config.TOWN06_STUDENTS.")
@@ -302,11 +307,11 @@ def main():
     # stand. A tighter method is a separate result reported alongside it, never a
     # replacement for it -- so the canonical path is refused for any non-default method
     # BEFORE the run, not at the write site hours later.
-    if args.method != "CROWN" and dest == OUT:
+    if args.method != "CROWN" and dest == CANONICAL:
         sys.exit(f"REFUSING: --method {args.method} may not write the canonical "
                  f"certificate.\n"
-                 f"  {_rel(OUT)} is a plain-CROWN artifact and PROTOCOL R4 requires it "
-                 f"to stand.\n"
+                 f"  {_rel(CANONICAL)} is a plain-CROWN artifact and PROTOCOL R4 requires "
+                 f"it to stand.\n"
                  f"  Pass --out PATH; every non-CROWN result is a separate artifact.")
     if dest.exists() and not args.force:
         sys.exit(f"REFUSING to overwrite {_rel(dest)}\n"

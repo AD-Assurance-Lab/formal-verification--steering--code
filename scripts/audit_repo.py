@@ -663,6 +663,25 @@ chk("method=args.method," in _t,
 chk("alpha-CROWN over the one-parameter family" not in _t,
     "certify_town06.py's docstring no longer claims alpha-CROWN where it runs CROWN")
 
+# --- the exploratory blind scope must not be able to disarm the guards --------------
+# TOWN06_LEDGER_TAG moves LEDGER_SUBDIR and CERT_ARTIFACT so a non-deployment experiment
+# can run the blind protocol without writing into a directory R4 protects. Because it
+# MOVES paths other guards compare against, the guards must compare against the
+# canonical path, which the tag does not move.
+_dsg = open("study/town06_design.py").read()
+chk("CANONICAL_CERT_ARTIFACT" in _dsg,
+    "town06_design exposes a canonical certificate path the scope cannot move")
+chk("dest == CANONICAL" in _t,
+    "certify_town06.py's refusals compare against the CANONICAL certificate, not OUT")
+chk("dest == OUT" not in _t,
+    "certify_town06.py has no refusal left comparing against the scoped OUT")
+chk('TOWN06_LEDGER_TAG in ("ledger", "ledger_pass2"' in _dsg,
+    "a tag that would alias a protected ledger directory is refused by name")
+chk('_re.fullmatch(r"[a-z0-9][a-z0-9_]{0,31}"' in _dsg,
+    "the tag is charset-validated, so it cannot traverse out of results/town06")
+chk('if TOWN06_PASS != 1:' in _dsg,
+    "a tag cannot be combined with a deployment pass -- two scopes is how one is ignored")
+
 # --- the environment must be buildable, and prove itself ---------------------------
 # torch 2.5.1+cu121 builds sm_50..sm_90; the lab desktop's RTX 5090 is sm_120. Every
 # kernel failed while torch.cuda.is_available() reported True. A version pin cannot catch
