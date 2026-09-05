@@ -74,15 +74,44 @@ carla_up 12 || carla_restart || exit 1
 # CARLA leaks ~10.5 GiB over 11 h and drifts near the stability cliff. A fresh server
 # per cell costs ~40 s and removes accumulated state as an explanation for any result.
 # One definition, in config: name | channels | fc
+# TOWN06_LEDGER_STUDENTS drives checkpoints that are not the study's shipped pair --
+# Q3 needs a blind certificate-then-drive on a TUNED student, which is not a deployment
+# test and must not be one. Format, matching TOWN06_STUDENTS_OVERRIDE:
+#
+#     name:checkpoint:c1,c2[,c3...]:fc
+#
+# It is REFUSED unless TOWN06_LEDGER_TAG is also set. Without that guard a stray export
+# would silently drive a different policy into a canonical cell, and the cell's filename
+# encodes the student, so it would look like a perfectly ordinary result. The tag is what
+# moves the ledger out of the protected directories, so requiring it means an overridden
+# run cannot land anywhere R4 protects.
+if [ -n "${TOWN06_LEDGER_STUDENTS:-}" ] && [ -z "${TOWN06_LEDGER_TAG:-}" ]; then
+    say "FATAL: TOWN06_LEDGER_STUDENTS is set but TOWN06_LEDGER_TAG is not."
+    say "An overridden student may not write a canonical ledger. Set a tag."; exit 1
+fi
+
 mapfile -t STUDENT_ROWS < <(STUDY_MAP=Town06 python3 -c "
-import sys; sys.path.insert(0,'pipeline'); import config as C
-for nm, ck, ch, fc in C.TOWN06_STUDENTS:
-    print(ck, ','.join(str(c) for c in ch), fc, C.TOWN06_INPUT_W, C.TOWN06_INPUT_H)")
+import os, sys; sys.path.insert(0,'pipeline'); import config as C
+ov = os.environ.get('TOWN06_LEDGER_STUDENTS', '').strip()
+if ov:
+    rows = [(f.split(':')[1], f.split(':')[2], f.split(':')[3])
+            for f in ov.split(';') if f.strip()]
+else:
+    rows = [(ck, ','.join(str(c) for c in ch), fc) for _, ck, ch, fc in C.TOWN06_STUDENTS]
+for ck, ch, fc in rows:
+    print(ck, ch, fc, C.TOWN06_INPUT_W, C.TOWN06_INPUT_H)")
 
 for ROW in "${STUDENT_ROWS[@]}"; do
   read -r BASE CH FC IN_W IN_H <<<"$ROW"
   # Drive the FINAL student (newest student-DAgger round), not the distilled base.
-  STU=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(C.final_student('$BASE'))")
+  # With an override the checkpoint is given EXACTLY -- final_student() resolves the
+  # study's DAgger'd policies and must not rewrite a name that has no rounds, the same
+  # rule certify_town06.py follows for TOWN06_STUDENTS_OVERRIDE.
+  if [ -n "${TOWN06_LEDGER_STUDENTS:-}" ]; then
+      STU=$BASE
+  else
+      STU=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(C.final_student('$BASE'))")
+  fi
   say "student $BASE -> $STU"
   for COND in clear fog night low_sun; do
     CELL="$LEDGER_DIR/${COND}__${STU}__closed_loop.json"
