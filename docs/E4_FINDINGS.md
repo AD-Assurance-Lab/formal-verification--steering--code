@@ -56,7 +56,7 @@ flatten dimension, on the same committed captures through the same bound math:
   low_sun             0.61          2.25   3.70x     d3 CERTIFIED, d5 NOT
 ```
 
-Every layer compounds α-CROWN's relaxation, and it is not a small effect: the deeper
+Every layer compounds CROWN's relaxation, and it is not a small effect: the deeper
 student's bounds are **two to four times wider for the same number of neurons**, and the
 one cell the shallow student certifies, the deeper one does not.
 

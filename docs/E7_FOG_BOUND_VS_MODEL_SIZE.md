@@ -12,7 +12,7 @@ Artifacts: `results/town06/depth/cert/cert_size.json`, checkpoints
 ## The question
 
 Town04 certifies fog for both students. Town06 certifies it for neither. Town06's students
-are 6.6x and 9.9x larger in ReLU count, and α-CROWN's relaxation loosens with size — so the
+are 6.6x and 9.9x larger in ReLU count, and CROWN's relaxation loosens with size — so the
 obvious sceptical reading is that the arterial's fog cells fail **because the network is
 bigger**, not because the road is harder. If that were true, the cross-road comparison in
 the paper would be measuring the architecture rather than the ODD.
