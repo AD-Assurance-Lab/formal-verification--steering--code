@@ -60,7 +60,13 @@ def main():
     print(f"{'seed':>5s} {'checkpoint':>24s}  " +
           "".join(f"{c:>10s}" for c in CONDS) + f"{'gate':>8s}{'verdict':>22s}")
     any_pass = False
-    stoppers = {}
+    # Which conditions fail the margin gate, per CONDITION. NOT "the first failing
+    # condition per candidate": CONDS is iterated in a fixed order, so recording only
+    # the first would systematically credit whichever condition is listed first (here
+    # `clear`) and could report fog as no longer the stopper while fog was failing every
+    # single candidate. That is precisely the question Q2-P3 asks, so getting it from
+    # list order would have answered it backwards.
+    fails = {c: [] for c in CONDS}
     for seed, ck in CANDIDATES:
         cells, held, total, screened_out = [], 0, 0, None
         for c in CONDS:
@@ -81,8 +87,8 @@ def main():
             total += len(g)
             mark = "V" if void(g) else " "
             cells.append(f"{w:9.2f}{mark}")
-            if n < len(g) and c not in stoppers:
-                stoppers.setdefault(seed, c)
+            if n < len(g):
+                fails[c].append(seed)
         if screened_out:
             verdict = f"screened out at {screened_out}"
         elif total == 0:
@@ -112,13 +118,24 @@ def main():
           f"{fog_ok if fog_ok else 'none'} -> {'HELD' if fog_ok else 'FALSIFIED'}")
     print(f"  Q2-P2 no candidate passes all four 12/12          : "
           f"{'FALSIFIED -- REPORT IMMEDIATELY' if any_pass else 'HELD'}")
-    if stoppers:
-        from collections import Counter
-        c = Counter(stoppers.values())
-        top = c.most_common(1)[0]
-        print(f"  Q2-P3 fog is NOT the stopping condition for most : "
-              f"stoppers {dict(c)} -> "
-              f"{'HELD' if top[0] != 'fog' else 'FALSIFIED'}")
+    gated = [s_ for s_, ck in CANDIDATES if laps("gate", ck, "fog") is not None]
+    if gated:
+        n = len(gated)
+        detail = ", ".join(f"{c} {len(fails[c])}/{n}" for c in CONDS)
+        # P3 predicted fog would stop a MINORITY. It is falsified if fog still fails
+        # more candidates than any other condition.
+        worst_c = max(CONDS, key=lambda c: len(fails[c]))
+        print(f"  Q2-P3 fog is NOT the stopping condition for most : {detail} -> "
+              f"{'FALSIFIED' if worst_c == 'fog' else 'HELD'}")
+        universal = [c for c in CONDS if len(fails[c]) == n]
+        if universal:
+            print(f"        conditions failing EVERY gated candidate: {universal}")
+        # Margin vs budget: a gate failure at 50% of budget is not a departure.
+        under_budget = all(
+            l["max_cte_ft"] <= BUDGET
+            for _, ck in CANDIDATES for c in CONDS
+            for l in (laps("gate", ck, c) or []))
+        print(f"        every gated lap within the {BUDGET:.2f} ft BUDGET: {under_budget}")
     else:
         print("  Q2-P3 no failing gate cells recorded yet")
 
