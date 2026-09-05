@@ -57,23 +57,28 @@ The new machine has a 5090 and plenty of RAM. What that changes:
 
 ---
 
-## STATUS as of 2026-09-04
+## STATUS as of 2026-09-04 — READ `docs/OVERALL_STATUS.md` FIRST
+
+Every experiment in this file has now been run except E3, which is blocked on a design
+decision rather than on effort.
 
 | | state |
 |---|---|
-| **E1** resolution ablation | **DONE** — `docs/E1_FINDINGS.md`. The trend it was built on was single draws; it does not survive a seed sweep. |
+| **E1** resolution ablation | **DONE** — `docs/E1_FINDINGS.md`. The trend it was built on was single draws and does not survive a seed sweep. |
 | **E1b** bimodality probe | **DONE** — `docs/E1B_FINDINGS.md`. Multimodal, not bimodal; harness exonerated. |
 | **E5** screen/gate discrepancy | **ANSWERED by E1b** — order statistics, no harness fault. |
-| **E2** tail-sensitive loss | **RUN, INCONCLUSIVE** — `docs/E2_FINDINGS.md`. No effect detected, but the design could only have seen a ~40% one. Re-run it paired with `DISTILL_DETERMINISTIC=1` before spending more seeds. |
-| **E3, E4, E6** | not started |
+| **E2** tail-sensitive loss | **DONE, twice** — `docs/E2_FINDINGS.md` and `docs/E2_RERUN_FINDINGS.md`. No measurable effect, and closed as *unanswerable by this endpoint*: at the observed dispersion even n=60 misses a 20% effect. |
+| **E4** depth at matched ReLU | **DONE** — `docs/E4_FINDINGS.md`. Depth costs 2.3–3.7x bound width and does not help driving. **It also turned up the learning rate, which is the biggest result in the queue.** |
+| **E6** label balancing | **DONE** — `docs/E6_FINDINGS.md`. Does not move the median; removes the failures. Its refutation predicted the opposite of what happened. |
+| **E3** gradient alignment | **BLOCKED.** The teacher is 200x66 and the student 168x56, so their input gradients live in different spaces and the KDIGA objective is undefined until someone decides how to map between them. The recipe below says the teacher's gradient "can be precomputed per batch" — true, and insufficient. |
 
-**Read `docs/E2_FINDINGS.md` E2-F6 before designing any experiment that compares two
-training configurations.** Seeding python/numpy/torch does not pin a distillation draw —
-cuDNN autotuning and non-deterministic backward reductions moved fog p99 by 1.39x at a
-fixed seed, which is as large as the spread across six different seeds.
-`DISTILL_DETERMINISTIC=1` gives bit-identical weights and makes the seed a real control
-variable. **E2 as written below asks for a comparison "at matched seeds"; without that
-flag there is no such thing.**
+**The queue that matters now is in `docs/OVERALL_STATUS.md` §5**, not below. Item 1 there —
+confirming the learning-rate effect at n >= 15 — is a blocker for the paper as written.
+
+**Before designing anything that compares two training configurations**, read
+`docs/E2_RERUN_FINDINGS.md` E2R-F1: pinning kernels makes a run repeatable but does not
+make the seed a control across objectives, so paired designs do not rescue power, and
+n = 6 can only see very large effects.
 
 ## Experiments, in priority order
 
