@@ -114,5 +114,33 @@ def teardown_module(_):
     design()          # leave the module in its default state for other tests
 
 
+
+
+def test_an_unknown_student_gets_no_defaulted_expectation():
+    """study.expected() is keyed on the student for every branch but the vacuous one, so
+    a name it has never heard of used to fall through to the LAST line -- the clear-only
+    student's row -- and be scored against it. Q3 drove an exploratory tuned student and
+    got three CONTRADICTS that meant only "this table has no row for me".
+
+    Standing rule 2 makes that expensive: a contradiction is a BUG until a written
+    disposition rules out the candidate causes, so a defaulted expectation manufactures
+    an investigation with no subject."""
+    D = design()
+    with pytest.raises(SystemExit):
+        D.expected("S_tuned", "fog")
+    # the shipped students still resolve exactly as before
+    assert D.expected("S_clear_t06", "night") == ("FAIL", "NOT_CERTIFIED")
+    assert D.expected("S_mixed_t06", "fog") == ("PASS", "CERTIFIED")
+    assert D.expected("S_clear_t06", "fog") == ("PASS", "CERTIFIED")      # D-14
+
+
+def test_an_exploratory_student_reports_no_expectation_rather_than_inventing_one():
+    D = design(TOWN06_LEDGER_TAG="q3_tuned")
+    assert D.expected("S_tuned", "fog") == (None, None)
+    assert D.expected("S_tuned", "night") == (None, None)
+    # a vacuous cell does not depend on the student and must not fall into that branch
+    assert D.expected("S_tuned", "clear") == ("PASS", "CERTIFIED")
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-q"]))
