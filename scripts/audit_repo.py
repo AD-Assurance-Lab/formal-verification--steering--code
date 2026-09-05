@@ -682,6 +682,18 @@ chk('_re.fullmatch(r"[a-z0-9][a-z0-9_]{0,31}"' in _dsg,
 chk('if TOWN06_PASS != 1:' in _dsg,
     "a tag cannot be combined with a deployment pass -- two scopes is how one is ignored")
 
+# TOWN06_LEDGER_STUDENTS drives a checkpoint that is not the shipped pair. It must be
+# impossible to point it at a canonical ledger: the cell filename encodes the student, so
+# a stray export would produce something that looks like an ordinary result.
+_rtl = open("scripts/run_town06_ledger.sh").read()
+chk("TOWN06_LEDGER_STUDENTS" in _rtl and "TOWN06_LEDGER_TAG" in _rtl,
+    "run_town06_ledger.sh gates its student override on the exploratory tag")
+chk(_rtl.index("An overridden student may not write a canonical ledger")
+    < _rtl.index("mapfile -t STUDENT_ROWS"),
+    "the override guard refuses BEFORE resolving students, not after driving")
+chk("STU=$BASE" in _rtl,
+    "an overridden checkpoint is driven exactly, not rewritten by final_student()")
+
 # --- the environment must be buildable, and prove itself ---------------------------
 # torch 2.5.1+cu121 builds sm_50..sm_90; the lab desktop's RTX 5090 is sm_120. Every
 # kernel failed while torch.cuda.is_available() reported True. A version pin cannot catch
