@@ -27,6 +27,7 @@ student it drove was trained at a learning rate that was never swept.
 | The harness is sound | E1b: one long client process vs twelve fresh ones, Fisher p = 0.414. No process effect; every multi-rep number stands |
 | The simulator is the same simulator | Oracle CSVs **bit-identical** to the committed ones across machine, GPU, fresh servers, and windowed vs headless; photometry 0.000–0.003% off reference |
 | Fog is the failing condition | Every experiment agrees; no other condition rejected an arm |
+| **The arterial fog result is not a model-size artifact** | **E7 (exploratory):** shrinking the arterial student toward the highway student's size makes its fog bound *worse* — 1.69x → 4.15x → 10.21x tolerance at 101,888 → 19,104 → 12,736 ReLU. The obvious sceptical reading of the cross-road comparison is refuted by measurement |
 | **The verifier prefers shallow-and-wide** | **E4-F2, newly measured:** at matched ReLU count a 5-conv student's bounds are **2.30x / 3.73x / 3.70x wider** than a 3-conv student's, and the cell the shallow one certifies the deep one does not. The paper asserted this; it is now measured |
 | Verification is not the obstruction | E4-F3: depth is worse at driving *and* worse to verify. Shallow-and-wide costs nothing here |
 
@@ -123,7 +124,9 @@ never swept**, not something intrinsic to distilling into a small verifiable stu
 
 ## 5. Experiments still needed before this can be closed out
 
-**In priority order. The first is a blocker for the paper as currently written.**
+**`docs/EXPERIMENT_QUEUE.md` is the runnable version of this list**, with commands, costs
+and preflight. Summary below; priority order, and the first is a blocker for the paper as
+currently written.
 
 1. **Confirm the learning-rate effect at n >= 15 per arm, and sweep it properly.**
    Only `1e-3 / 3e-4 / 1e-4` were tried, at one seed, selected on validation KD MSE. Cost:

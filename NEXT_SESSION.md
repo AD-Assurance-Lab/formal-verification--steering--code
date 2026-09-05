@@ -24,6 +24,7 @@ The result is written up and the artifacts are committed.
 | you are… | read |
 |---|---|
 | **asking whether the published result still stands** | **`docs/OVERALL_STATUS.md`** — start here |
+| **about to run experiments** | **`docs/EXPERIMENT_QUEUE.md`** — commands, costs, preflight |
 | picking up after the desktop migration | **`docs/MIGRATION_2026-09-03.md`** — six defects, all fixed |
 | looking at the E1 result | **`docs/E1_FINDINGS.md`** — run 2026-09-03/04, 48 cells |
 | writing the arXiv paper | **`docs/PAPER_HANDOFF.md`** — authoritative on what to publish |
