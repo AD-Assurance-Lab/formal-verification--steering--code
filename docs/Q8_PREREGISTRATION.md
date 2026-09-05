@@ -141,3 +141,80 @@ findings document read `alpha-CROWN` off a stale docstring when the code ran pla
 
 `PROTOCOL.md` R4, standing rules 1, 7, 8. No CARLA, no driving, no promotion, nothing
 written to either ledger, either certificate, or any `.selected` pin.
+
+---
+
+# AMENDMENT A-1 — Route 1 cannot be installed into `.venv`, and this was measured
+
+**Recorded 2026-09-05, before any Q8 bound was computed.** No Q8 result existed when this
+was written; Q1 was still driving.
+
+## What was measured
+
+`Verified-Intelligence/alpha-beta-CROWN` at `e5c7e17` (HEAD on 2026-09-05) declares in its
+`pyproject.toml`:
+
+```
+  requires-python = "~=3.11.0"
+  torch==2.11.0        (a hard pin)
+  numpy>=2.0.0
+```
+
+The study environment is **Python 3.12.3, torch 2.13.0+cu130, numpy 1.26.4**. All three
+conflict, and the torch pin and the numpy floor conflict *irreconcilably* — there is no
+resolution that satisfies both the verifier and this repo.
+
+The Q8 pre-registration already declared what happens here: *"the new dependency ... must
+not move `torch` or `numpy`. If installing it would upgrade either, the install is
+**aborted** ... Q8b runs in a **separate environment** if that constraint cannot be met in
+`.venv`."* **That branch is now taken, on measurement rather than on caution.**
+
+This matters beyond convenience. torch 2.13.0+cu130 was adopted because the RTX 5090 is
+**sm_120** and the previously pinned torch had no kernels for it while
+`torch.cuda.is_available()` reported True — the defect that produced `require_cuda()`.
+Every checkpoint and every published number in this repo is tied to that environment.
+Downgrading it to run a verifier would re-derive the study to check a bound.
+
+## Consequence for the design
+
+Q8b runs **out of process**, in its own environment, and the two sides communicate through
+the standard interchange rather than through a shared Python:
+
+* the network is exported to **ONNX**, and the property to **VNNLIB** — which is
+  alpha-beta-CROWN's native input format, and which the study already fits: `Bounder`
+  reparameterises each pose to a one-dimensional input feeding an affine head, so the
+  spec is "output in safe set for input in a box" with the box `[0,1]` in one variable.
+
+This is a **better** decomposition than linking the verifier into the study process, and
+it is worth saying why rather than presenting it as a workaround: the verifier can no
+longer perturb the environment that produced the checkpoints, and the exported artifact is
+the thing other people can re-verify with a different tool.
+
+## The new hazard it creates, and the check for it
+
+An ONNX export is a **re-implementation of the network by a translator**. If the exported
+graph is not the same function as `nn.Sequential(head, student)`, every Q8b verdict is
+about a different network — sound, and about something that is not the policy. This is the
+same class of error as A-3's mis-rigged camera: correct downstream of a wrong artifact.
+
+**Declared check, before any Q8b verdict is reported:** the exported ONNX is evaluated on
+at least 1,000 inputs drawn across the certified interval and compared against the study's
+own forward pass, and the maximum absolute output difference must be **below 1e-5**. If it
+is not, the export is wrong and no Q8b result is reported.
+
+## What is unchanged
+
+Q8a is untouched — it needs no new dependency and runs in `.venv` today. The Q8b
+validation requirement (reproduce `FALSIFIED` on the three `S_clear_t06` cells that already
+carry witnesses, before touching the undecided ones), the 2 h per-cell timeout, and the
+prediction set Q8b-P1..P3 all stand exactly as written.
+
+## Open decision, deliberately not taken here
+
+The separate environment needs **Python 3.11**, and only 3.12.3 is installed on this
+desktop. Installing another interpreter is a change to a shared lab machine, so it is
+Zach's call and is not made inside a pre-registration. The two candidates are a
+user-local 3.11 (via `uv` or `pyenv`, touching nothing system-wide) or attempting
+alpha-beta-CROWN on 3.12 in a separate venv, ignoring a metadata pin that may or may not
+reflect a real runtime requirement. **Neither is chosen here**, and Q8b does not start
+until it is.
