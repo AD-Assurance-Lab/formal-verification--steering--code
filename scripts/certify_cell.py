@@ -383,7 +383,12 @@ def shadow_map(xf, w, h, mask):
 
 # ── branch and bound ─────────────────────────────────────────────────────────
 class Bounder:
-    """alpha-CROWN over a rebindable affine head.
+    """CROWN over a rebindable affine head.
+
+    NOTE the default below is CROWN-Optimized (alpha-CROWN), but BOTH certifiers in this
+    repo construct this class with method="CROWN" -- see the measurement in __init__.
+    This docstring said "alpha-CROWN" and was read that way into several follow-on
+    findings documents before being corrected; the paper always had it right.
 
     Constructing a BoundedModule costs far more than the bound itself here -- the network
     is tiny and the graph trace dominates. Since every sub-box differs only in the WEIGHTS
