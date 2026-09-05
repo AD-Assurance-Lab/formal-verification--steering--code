@@ -163,3 +163,50 @@ exactly the kind of claim this study exists to refuse.
 `PROTOCOL.md`, standing rules 1, 3, 7 and 8. No CARLA, no promotion, no `.selected` pin,
 nothing written to either ledger or either certificate. The code change is proved
 bit-neutral against two committed reference hashes before any Q6 number is taken.
+
+---
+
+# AMENDMENT A-1 — the `both` arm is not free after all, and is run explicitly
+
+**Recorded 2026-09-05, after the code change was proved bit-neutral and before any Q6
+distillation.** No Q6 number existed when this was written.
+
+## What was wrong
+
+The pre-registration said the `both` arm — init and data seeds varying together, the
+study's current notion of "a seed" — was **free**, being Q1's `lr3e4` arm at n = 15.
+
+Tracing the two code paths after implementing them shows that is not sound:
+
+* **Un-opted (Q1's arm):** `torch.manual_seed(s)`; the DataLoader is built but draws
+  nothing at construction; `StudentNet` draws its weights from the global stream; every
+  epoch then draws its permutation **from that same global stream**.
+* **Opt-in with init = data = s:** `torch.manual_seed(s)`; a `torch.Generator` is seeded
+  with `s`; `torch.manual_seed(s)` again immediately before construction, so **the weights
+  are identical to the un-opted path**; but every epoch then draws its permutation **from
+  the separate generator**.
+
+So the two paths agree on initialisation and **disagree on minibatch order**. Using Q1's
+seeds as the `both` reference would compare two arms on the opt-in path against a
+reference on the un-opted one, and the difference between the paths is *exactly the
+variable Q6 is decomposing*. That is the same shape of error as E4's amendment A-1 — one
+variable named, two variables moved.
+
+## The correction
+
+`both` is **run explicitly**, on the opt-in path, `DISTILL_INIT_SEED = DISTILL_DATA_SEED = s`
+for s in 0–7. Eight extra distillations, about 25 minutes, and all three Q6a arms then sit
+on one code path with one variable moving between them.
+
+For the same reason **Q6b's fraction arms also use the opt-in path with the seeds tied**,
+so `TRAIN_FRAC = 1.0` *is* the `both` arm and the three pool sizes are directly comparable.
+
+Q1's `lr3e4` arm is still reported alongside as the un-opted reference — and the
+comparison between it and the tied `both` arm is now an incidental measurement of whether
+the shuffling stream matters at all, which is worth having.
+
+## What is unchanged
+
+Predictions Q6a-P1, Q6a-P2, Q6b-P1, Q6b-P2, Q6c-P1 and Q6c-P2 stand exactly as written.
+Q6c still needs no new training, but it now draws its ensemble members from the tied
+`both` arm (n = 8) rather than from Q1 (n = 15), so its subset counts are smaller.
