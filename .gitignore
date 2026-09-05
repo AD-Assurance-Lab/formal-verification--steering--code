@@ -142,3 +142,6 @@ pipeline/results/*
 # record that a stated precondition was actually checked. It must be in git.
 !results/town06/captures/capture_gate.json
 .venv*/
+
+# Q8b verifier source (pinned clone, rebuilt by scripts/bootstrap_abcrown_env.sh)
+.abcrown-src/
