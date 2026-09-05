@@ -1,8 +1,8 @@
 # Experiment queue — everything still to run, in order, with commands
 
-**Written 2026-09-05.** Companion to `docs/OVERALL_STATUS.md`, which says what stands and
-what does not. This file is the runnable plan. Total ~16–20 h of wall clock, most of it
-CARLA-bound and unattended.
+**Written 2026-09-05, updated with Q8.** Companion to `docs/OVERALL_STATUS.md`, which says
+what stands and what does not. This file is the runnable plan. Total ~2–3 days of wall
+clock; most of the driving is unattended, and Q6 and Q8 need no simulator at all.
 
 **Every item below needs a pre-registration committed before its first scored run**
 (standing rule 1, and it is what made E1–E6 interpretable). Templates:
@@ -182,6 +182,92 @@ answers the size objection without it.
 
 ---
 
+## Q8. β-CROWN on the undecided cells — turn "we cannot tell" into a verdict
+
+**Why.** `NOT_CERTIFIED` currently means two different things, and the paper says so:
+*falsified* (a witness was found — proven unsafe somewhere in the interval) or *undecided*
+(the bound sits outside the corridor, no witness was found, and the excess may be pure
+relaxation slack). Two of the six Town06 cells are undecided — `S_mixed`/fog and
+`S_mixed`/night — and a correct refusal and an inconclusive one look identical on the page.
+
+β-CROWN is the standard instrument for exactly that: α-CROWN plus branch-and-bound over
+**neuron splits**, with the split constraints carried by Lagrangian β multipliers, which
+makes it complete for ReLU networks given enough time. It decides.
+
+**This is an upgrade to the headline table, not a new study.** Every other experiment in
+this queue is about the policy; this one is about what the verifier can say.
+
+### Staged, cheapest first
+
+**Q8a — α-CROWN spot-check (hours, no new dependency).** Before adding machinery, re-bound
+the two undecided cells with `method="CROWN-Optimized"`, which the installed auto_LiRPA
+already provides. §Methodology measured α-CROWN at 6% tighter for 78x the cost on one cell,
+which is why plain CROWN is used everywhere — but 6% on a *marginal* cell is worth buying,
+and this is two cells rather than a sweep.
+
+```bash
+# certify_town06.py builds the Bounder with method="CROWN"; expose it, or edit locally
+# for the run and write to a scratch path -- never to the canonical certificate.
+STUDY_MAP=Town06 TOWN06_STUDENTS_OVERRIDE="S_mixed:S_mixed_t06lap_168x56_w4_s3:32,64,64:128" \
+  python3 scripts/certify_town06.py --out results/town06/beta/cert_alpha.json
+```
+
+If α-CROWN moves either cell inside the corridor, the cell was slack and is now
+`CERTIFIED` — a result on its own, and it closes the question without β-CROWN.
+
+**Q8b — β-CROWN proper.** Two routes, and the choice belongs in the pre-registration:
+
+* **Route 1, add the verifier.** Pin `Verified-Intelligence/alpha-beta-CROWN` as a new
+  dependency alongside auto_LiRPA. It is the reference implementation and is what the
+  literature means by β-CROWN. Cost is integration: its spec format expects
+  "output in safe set for input in box", which **this study already fits** — the `Bounder`
+  reparameterises each pose to a *one-dimensional* input feeding an affine head, so the
+  input box is `[0,1]` in one variable.
+* **Route 2, a BaB loop on what is installed.** auto_LiRPA 0.7.2 already ships
+  `beta_crown.py` with the β/split-constraint machinery; what it does not ship is the
+  search loop — branching heuristic, split selection, queue. For a 1-D input and a network
+  this size a simple loop is tractable, and it avoids a new dependency in a repo whose
+  `requirements.txt` deliberately pins one verifier.
+
+Route 1 is less work and more citable; Route 2 keeps the dependency surface where it is.
+
+### Scope it by network size, and expect timeouts
+
+Complete verification does not scale like bound propagation. **101,888 ReLU is large** and
+β-CROWN may simply not finish on the shipped student. Run it in this order and report
+timeouts *as timeouts*, never as `NOT_CERTIFIED`:
+
+| target | ReLU | why |
+|---|---|---|
+| Town04 `S_clear` / `S_mixed` | 5,152 / 15,456 | most tractable; also has `FALSIFIED` cells to check the loop against |
+| Town06 small students (E7) | 12,736 / 19,104 | same road and captures as the shipped cells |
+| Town06 shipped `S_mixed` | 101,888 | the cells that actually matter; likely the hard case |
+
+**Cost** ~1 day including integration, no simulator at any point. Certification reads
+captured frames.
+
+### What counts as an answer
+
+* An undecided cell becoming `CERTIFIED` — the excess was relaxation slack, and plain
+  CROWN was refusing a safe policy.
+* An undecided cell becoming `FALSIFIED` with a witness — the refusal was correct, and the
+  dense 1-D search had missed it.
+* **A timeout is a result too**, and an honest one: it says the cell is undecidable at this
+  network size with today's complete verifiers, which is a fair statement about the
+  method's reach and belongs in Limitations rather than being hidden.
+
+Whatever the outcome, the three-way reading in §Results gets firmer: today it rests on a
+witness search that can only ever find counterexamples, never prove their absence.
+
+### Do not
+
+Re-run the canonical certificate with a different method and overwrite it. The committed
+certificate is a plain-CROWN artifact and PROTOCOL R4 requires it to stand; every β-CROWN
+result is a *separate* artifact reported alongside it. `certify_town06.py` refuses to
+overwrite it, and `TOWN06_STUDENTS_OVERRIDE` refuses to write the canonical path at all.
+
+---
+
 ## Ordering summary
 
 | | item | cost | gates what |
@@ -191,8 +277,10 @@ answers the size objection without it.
 | 3 | **Q2** pass-3 gate at the tuned recipe | 20 min/candidate | pass 3's conclusion |
 | 4 | **Q3** blind certificate on a tuned student | ~1.5 h | the study's central claim, on a good policy |
 | 5 | **Q4** balancing confirmation | 2.5 h | a cheap default worth turning on |
-| 6 | **Q5** KDIGA | ~1 day | needs the §Q5 decision first |
-| 7 | **Q7** 84x28 recapture | 2 h | optional |
+| 6 | **Q8a** α-CROWN on the two undecided cells | hours | may resolve them with no new tooling |
+| 7 | **Q8b** β-CROWN proper | ~1 day | the falsified/undecided split, and the paper's stated weakness |
+| 8 | **Q5** KDIGA | ~1 day | needs the §Q5 decision first |
+| 9 | **Q7** 84x28 recapture | 2 h | optional |
 
 **Do not** re-run: the Town06 certificate, either ledger, the witness exhibit, or the
 two-scope comparison. All were re-verified or are untouched.
