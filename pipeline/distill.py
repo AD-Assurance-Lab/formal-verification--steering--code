@@ -33,6 +33,30 @@ TAIL_ALPHA = float(os.environ.get("DISTILL_TAIL_ALPHA", "0") or 0)
 # 84% straight, downsampling straight frames trains the student for a distribution it will
 # not meet") is sound and simply does not apply to reweighting. 0.0 = plain MSE.
 CURV_BETA = float(os.environ.get("DISTILL_CURV_BETA", "0") or 0)
+
+# Q6 knobs. DISTILL_SEED seeds torch, numpy and python once, after which the student's
+# INITIALISATION and the DataLoader's minibatch ORDER both draw from the same global torch
+# stream -- so "the seed" is two variables wearing one name, and the dispersion this study
+# keeps paying for (fog p99 CV 42.6%, r ~ 0 between objectives at the same seed) cannot be
+# attributed to either.
+#
+# These separate them. Both are OPT-IN and unset by default, and that is deliberate rather
+# than cautious: passing a `generator=` to the DataLoader changes the RNG stream even when
+# it is seeded identically, because shuffling currently consumes the same global stream the
+# initialisation drew from. With them unset, `generator=None` is exactly the DataLoader
+# default and not one line of the existing path changes -- proved by SHA-256 against
+# S_mixed_taildet_a0p0_s0 and S_mixed_depth_d3lr3_s0, and pinned by
+# tests/test_distill_seed_split.py.
+#
+# DISTILL_TRAIN_FRAC subsamples the TRAINING index only (never validation), from a fixed
+# independent RNG so the subset is a property of the fraction and not of the seed under
+# study -- otherwise a dispersion measured across seeds would also be a dispersion across
+# which frames were kept.
+INIT_SEED = os.environ.get("DISTILL_INIT_SEED")
+DATA_SEED = os.environ.get("DISTILL_DATA_SEED")
+SPLIT_SEEDS = INIT_SEED is not None or DATA_SEED is not None
+TRAIN_FRAC = float(os.environ.get("DISTILL_TRAIN_FRAC", "1") or 1)
+TRAIN_FRAC_RNG_SEED = 90125          # fixed; NOT the seed under study
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 
@@ -234,13 +258,40 @@ def distill_student(in_w, in_h, out_name, teacher_name="steering_dagger_r02",
             print(f"balance: {n0} -> {len(tr_idx)} training frames "
                   f"(near-straight downsampled)")
 
+    # Q6b: shrink the TRAINING pool to ask whether the dispersion is a sample-size effect
+    # or intrinsic to the objective. Validation is untouched, so the metric keeps meaning
+    # the same thing across fractions -- subsampling val too would move the yardstick with
+    # the knob, which is the mistake the augment comment below is guarding against.
+    if TRAIN_FRAC < 1.0:
+        n0 = len(tr_idx)
+        _rng = np.random.RandomState(TRAIN_FRAC_RNG_SEED)
+        _keep = _rng.choice(n0, int(round(n0 * TRAIN_FRAC)), replace=False)
+        tr_idx = [tr_idx[i] for i in sorted(_keep)]
+        if not quiet:
+            print(f"  DISTILL_TRAIN_FRAC={TRAIN_FRAC} (training frames {n0} -> "
+                  f"{len(tr_idx)}; validation untouched)", flush=True)
+
     # Train augments, validation NEVER does: augmenting val would move the metric with
     # the knob and make runs at different augment strengths incomparable.
     tr = KDDataset(rows, tr_idx, targets, in_w, in_h, augment=augment)
     va = KDDataset(rows, va_idx, targets, in_w, in_h)
-    tl = DataLoader(tr, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
+    # generator=None IS the DataLoader default, so the un-opted path is byte-for-byte the
+    # call that was here before.
+    _gen = None
+    if SPLIT_SEEDS:
+        _gen = torch.Generator()
+        _gen.manual_seed(int(DATA_SEED) if DATA_SEED is not None else _seed)
+    tl = DataLoader(tr, batch_size=batch_size, shuffle=True, num_workers=0,
+                    pin_memory=True, generator=_gen)
     vl = DataLoader(va, batch_size=256, shuffle=False, num_workers=0, pin_memory=True)
 
+    # Reseed immediately before the weights are drawn, so INIT_SEED controls the
+    # initialisation and nothing else. Only on the opt-in path.
+    if SPLIT_SEEDS:
+        torch.manual_seed(int(INIT_SEED) if INIT_SEED is not None else _seed)
+        if not quiet:
+            print(f"  Q6: init seed {INIT_SEED if INIT_SEED is not None else _seed}, "
+                  f"data seed {DATA_SEED if DATA_SEED is not None else _seed}", flush=True)
     student = StudentNet(in_h, in_w, channels=channels, fc=fc).to(device)
     if init_from:  # warm-start (fine-tune) from a prior student; stabilizes multi-condition re-distill
         student.load_state_dict(torch.load(os.path.join(C.CHECKPOINT_DIR, f"{init_from}.pth"),
