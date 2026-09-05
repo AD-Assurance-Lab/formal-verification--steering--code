@@ -649,6 +649,20 @@ chk("--force" in _t, "certify_town06.py has an explicit --force escape hatch")
 chk(_t.index("REFUSING to overwrite") < _t.index("for nm, ck_base, ch, fc in STUDENTS"),
     "certify_town06.py refuses BEFORE certifying, not after")
 
+# Q8a exposed --method. The canonical certificate is a PLAIN-CROWN artifact, so a tighter
+# method must not be able to land there -- and, like the overwrite guard above, must
+# refuse before spending the run rather than at the write site.
+chk("may not write the canonical" in _t,
+    "certify_town06.py refuses a non-CROWN method on the canonical certificate")
+chk(_t.index("may not write the canonical") < _t.index("for nm, ck_base, ch, fc in STUDENTS"),
+    "certify_town06.py refuses a non-CROWN method BEFORE certifying, not after")
+# A bound is not interpretable without its method, and this repo has already read
+# "alpha-CROWN" off a stale docstring while the code ran plain CROWN.
+chk("method=args.method," in _t,
+    "certify_town06.py records the bound method in the certificate's _meta")
+chk("alpha-CROWN over the one-parameter family" not in _t,
+    "certify_town06.py's docstring no longer claims alpha-CROWN where it runs CROWN")
+
 # --- the environment must be buildable, and prove itself ---------------------------
 # torch 2.5.1+cu121 builds sm_50..sm_90; the lab desktop's RTX 5090 is sm_120. Every
 # kernel failed while torch.cuda.is_available() reported True. A version pin cannot catch

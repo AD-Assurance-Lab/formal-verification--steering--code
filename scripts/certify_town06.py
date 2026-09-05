@@ -8,10 +8,16 @@ here. A held-out cell must not be scored by the tool that predicts it, so this s
 cannot print agreement even if someone wants it to: there is nothing to compare against.
 
 The bound math is IDENTICAL to the Town04 certifier, deliberately and line for line:
-alpha-CROWN over the one-parameter family with `nsplit` branch-and-bound sub-intervals,
+CROWN over the one-parameter family with `nsplit` branch-and-bound sub-intervals,
 route-mean (sustained) bias, compared against config.CLOSED_LOOP_TOLERANCE. The frozen
 constants come from PROTOCOL.md section 3 and this script refuses to run if the lock
 has moved.
+
+CROWN, not alpha-CROWN. This docstring said "alpha-CROWN" while the code passed
+method="CROWN", and it was read that way into several follow-on findings documents
+before being corrected -- the same slip `certify_cell.Bounder` carries a warning about.
+`--method CROWN-Optimized` selects alpha-CROWN explicitly, may not write the canonical
+certificate, and is recorded in the artifact's own `_meta.method`.
 
     STUDY_MAP=Town06 python3 scripts/certify_town06.py
 
@@ -222,6 +228,17 @@ def main():
     ap.add_argument("--stride", type=int, default=8, help="pose subsampling (frozen: 8)")
     ap.add_argument("--nsplit", type=int, default=16, help="BaB sub-intervals (frozen: 16)")
     ap.add_argument("--allow-missing", action="store_true")
+    # Q8a. The bound METHOD, exposed rather than edited in place for a run (standing
+    # rule 8: a number in a paper comes from a committed driver, not a hand edit).
+    #
+    # Default "CROWN" reproduces every committed certificate exactly. "CROWN-Optimized"
+    # is alpha-CROWN: measured on this network at 6% tighter for 78x the cost, which is
+    # why plain CROWN is the default everywhere -- but 6% on a MARGINAL cell is worth
+    # buying, and Q8a buys it on two cells rather than a sweep.
+    ap.add_argument("--method", default="CROWN",
+                    choices=("CROWN", "CROWN-Optimized"),
+                    help="bound method (frozen default: CROWN; CROWN-Optimized is "
+                         "alpha-CROWN, ~78x slower)")
     ap.add_argument("--scope", default="full", choices=("full", "capped"),
                     help="scored road the bound is pooled over. 'full' is the committed "
                          "Town06 certificate; 'capped' drops road over SMAX_CAP.")
@@ -281,6 +298,16 @@ def main():
         sys.exit("REFUSING: TOWN06_STUDENTS_OVERRIDE is set, so this run is not about the "
                  "shipped students.\n  Pass --out to write it somewhere else; the "
                  "canonical certificate must describe config.TOWN06_STUDENTS.")
+    # The canonical certificate is a PLAIN-CROWN artifact and PROTOCOL R4 requires it to
+    # stand. A tighter method is a separate result reported alongside it, never a
+    # replacement for it -- so the canonical path is refused for any non-default method
+    # BEFORE the run, not at the write site hours later.
+    if args.method != "CROWN" and dest == OUT:
+        sys.exit(f"REFUSING: --method {args.method} may not write the canonical "
+                 f"certificate.\n"
+                 f"  {_rel(OUT)} is a plain-CROWN artifact and PROTOCOL R4 requires it "
+                 f"to stand.\n"
+                 f"  Pass --out PATH; every non-CROWN result is a separate artifact.")
     if dest.exists() and not args.force:
         sys.exit(f"REFUSING to overwrite {_rel(dest)}\n"
                  f"  It already exists, and PROTOCOL R4 requires the committed "
@@ -335,7 +362,8 @@ def main():
         net = StudentNet(C.TOWN06_INPUT_H, C.TOWN06_INPUT_W, channels=ch, fc=fc).to(dev)
         net.load_state_dict(torch.load(wpath, map_location=dev, weights_only=True))
         net.eval()
-        bd = cc.Bounder(1, net, dev, C.TOWN06_INPUT_H, C.TOWN06_INPUT_W, method="CROWN")
+        bd = cc.Bounder(1, net, dev, C.TOWN06_INPUT_H, C.TOWN06_INPUT_W,
+                        method=args.method)
         for cond in conds:
             los, his, per_section, origins = [], [], {}, set()
             for sec in D.SECTIONS:
@@ -413,6 +441,10 @@ def main():
         t_closed_loop_s=C.T_CLOSED_LOOP_S, lane_width_m=C.LANE_WIDTH_M,
         cte_budget_m=C.CTE_BUDGET_M, lap_end_m=C.LAP_END_M,
         cells_expected=n_expected, cells_scored=n, git_commit=git_head(), device=dev,
+        # A certificate SAYS which method produced it. This repo has already had a
+        # findings document read "alpha-CROWN" off a stale docstring while the code
+        # ran plain CROWN; a bound is not interpretable without its method.
+        method=args.method,
         torch=torch.__version__, numpy=np.__version__,
         blind="no truth table; agreement is not computable by this tool")
     dest.parent.mkdir(parents=True, exist_ok=True)
