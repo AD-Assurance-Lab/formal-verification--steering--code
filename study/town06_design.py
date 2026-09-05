@@ -168,3 +168,50 @@ LEDGER_SUBDIR = os.path.join(
 CAPPED_CERT_ARTIFACT = os.path.join(RESULTS_SUBDIR, "certificate_town06_capped.json")
 CERT_ARTIFACTS = ([CERT_ARTIFACT] if TOWN06_PASS == 1
                   else [CERT_ARTIFACT, CAPPED_CERT_ARTIFACT])
+
+# THE CANONICAL CERTIFICATE, always, whatever scope is selected below. Guards that mean
+# "do not touch the published artifact" must compare against THIS and not against
+# whatever CERT_ARTIFACT currently resolves to -- otherwise selecting a scope would move
+# the thing the guard protects, which is the opposite of what a guard is for.
+CANONICAL_CERT_ARTIFACT = os.path.join(RESULTS_SUBDIR, "certificate_town06.json")
+CANONICAL_LEDGER_SUBDIRS = (os.path.join(RESULTS_SUBDIR, "ledger"),
+                            os.path.join(RESULTS_SUBDIR, "ledger_pass2"))
+
+# EXPLORATORY BLIND SCOPE (Q3). An experiment that wants the blind protocol -- certify,
+# commit, then drive, checkable against git -- but is NOT the deployment test needs
+# somewhere to put its certificate and its scored cells.
+#
+# Without this there was nowhere. TOWN06_PASS accepts only 1 and 2, both of which name
+# directories PROTOCOL R4 requires to stand, so an exploratory blind run had exactly two
+# options: write its cells into a protected ledger, or skip the blind check that is the
+# entire point of running it. The first corrupts the record and the second makes the
+# experiment worthless.
+#
+# A tag redirects BOTH the ledger and the certificate under results/town06/<tag>/, and
+# every consumer -- the ledger writer, the order checker, compare_town06, score_scopes --
+# reads them from here, so the guard and the writer cannot drift apart.
+#
+# Unset by default: with no tag, nothing below executes and the paths are exactly what
+# they were.
+TOWN06_LEDGER_TAG = os.environ.get("TOWN06_LEDGER_TAG", "").strip()
+if TOWN06_LEDGER_TAG:
+    import re as _re
+    if not _re.fullmatch(r"[a-z0-9][a-z0-9_]{0,31}", TOWN06_LEDGER_TAG):
+        raise SystemExit(
+            f"TOWN06_LEDGER_TAG={TOWN06_LEDGER_TAG!r}: expected [a-z0-9_], <= 32 chars, "
+            "not starting with '_'.")
+    # 'ledger' and 'ledger_pass2' as tags would resolve to the protected directories
+    # themselves. Refuse by name as well as by pattern.
+    if TOWN06_LEDGER_TAG in ("ledger", "ledger_pass2", "captures"):
+        raise SystemExit(
+            f"TOWN06_LEDGER_TAG={TOWN06_LEDGER_TAG!r} would alias a protected directory.")
+    if TOWN06_PASS != 1:
+        raise SystemExit(
+            f"TOWN06_LEDGER_TAG is for exploratory runs and TOWN06_PASS={TOWN06_PASS} "
+            "selects a deployment-test pass. Set one or the other, not both.")
+    EXPLORATORY_SUBDIR = os.path.join(RESULTS_SUBDIR, TOWN06_LEDGER_TAG)
+    LEDGER_SUBDIR = os.path.join(EXPLORATORY_SUBDIR, "ledger")
+    CERT_ARTIFACT = os.path.join(EXPLORATORY_SUBDIR, "certificate.json")
+    CERT_ARTIFACTS = [CERT_ARTIFACT]
+    assert LEDGER_SUBDIR not in CANONICAL_LEDGER_SUBDIRS
+    assert CERT_ARTIFACT != CANONICAL_CERT_ARTIFACT
