@@ -1,4 +1,23 @@
-# Q8b — β-CROWN on the undecided cells: findings (INCOMPLETE, and the reason is measured)
+# Q8b — β-CROWN on the undecided cells: findings (SUPERSEDED IN PART -- see the header)
+
+> **CORRECTION, 2026-09-06 00:45.** Two central claims below are WRONG and are corrected in
+> `docs/Q8C_FINDINGS.md`:
+>
+> 1. **"The shipped cells do not run"** -- they do. The blocker was the ROOT INPUT SHAPE,
+>    not scale or memory. auto_LiRPA's memory-efficient patches path asserts a 4-D root;
+>    this study's root is the 1-D disturbance parameter. Behind a `(1,1,1,1)` root the
+>    identical shipped sub-problem returns **`unsat` in 1.29 s** instead of exhausting a
+>    32 GB card.
+> 2. **"Neither undecided cell is resolved"** -- both are. Searching the family the
+>    certificate actually quantifies over (one intensity per pose, not one global
+>    intensity) exhibits a **witness for each**: fog at +1.179x tolerance, night at
+>    -1.210x. Both cells are FALSIFIED, not undecided, and no complete verifier was needed
+>    to establish it.
+>
+> Everything else below stands, including the clamp finding and the export gate. The
+> document is kept rather than rewritten so the wrong conclusion and its correction sit
+> together.
+
 
 **Run 2026-09-05, 20:20–21:10.** Pre-registration `docs/Q8_PREREGISTRATION.md` with
 amendment A-1, both committed before any bound. Environment built by
