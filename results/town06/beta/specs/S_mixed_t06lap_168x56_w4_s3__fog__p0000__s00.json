@@ -22,9 +22,14 @@
   "torch_grid_min": -0.18331149220466614,
   "crown_lb": -0.18491746485233307,
   "crown_ub": -0.15689751505851746,
-  "export_max_abs_diff": 7.450580596923828e-07,
+  "export_max_abs_diff": 8.195638656616211e-07,
   "export_ok": true,
   "export_checked_by": "q8b_build_onnx.py (.venv-abcrown)",
-  "onnx_grid_max": -0.1580064594745636,
-  "onnx_grid_min": -0.18331122398376465
+  "onnx_grid_max": -0.15800635516643524,
+  "onnx_grid_min": -0.18331141769886017,
+  "preclamp_range": [
+    0.0243006544187665,
+    0.5807777652516961
+  ],
+  "clamp_dropped": true
 }
