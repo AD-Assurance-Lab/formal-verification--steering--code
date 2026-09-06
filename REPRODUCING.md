@@ -149,8 +149,10 @@ python3 scripts/fetch_captures.py --stage /tmp/captures-upload
 It copies the fifteen files, refuses if any digest differs from the table in
 `scripts/fetch_captures.py`, writes `SHA256SUMS`, and adds
 `scripts/captures_dataset_card.md` as the dataset's front page. It then prints the upload
-command. Publishing a capture whose digest is not the recorded one would leave every
-reader's fetch rejecting the real dataset, which is why it refuses rather than warns.
+command, which needs the Hugging Face client (`pip install -U huggingface_hub`, which
+provides `hf`). Publishing a capture whose digest is not the recorded one would leave
+every reader's fetch rejecting the real dataset, which is why it refuses rather than
+warns.
 
 ---
 
