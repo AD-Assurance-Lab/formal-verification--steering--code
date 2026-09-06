@@ -26,7 +26,8 @@ RUN_ON_IMPORT = {"scripts/audit_repo.py", "scripts/check_gpu_usable.py"}
 
 
 def _modules():
-    out = subprocess.run(["git", "ls-files", "scripts/*.py", "src/steering/*.py", "src/steering/study/*.py",],
+    out = subprocess.run(["git", "ls-files", "scripts/*.py", "scripts/training/*.py",
+                          "src/steering/*.py", "src/steering/study/*.py"],
                          capture_output=True, text=True, cwd=REPO).stdout.split()
     return sorted(f for f in out
                   if f not in RUN_ON_IMPORT and not f.endswith("__init__.py"))
@@ -37,8 +38,11 @@ def _modules():
 def test_module_imports(mod, study_map):
     """Import it, do not run it. A timeout means the body is no longer guarded."""
     path = os.path.join(REPO, mod)
+    # Put the script's own directory on the path, which is what running it does.
+    # scripts/training/dagger.py imports its neighbour `train` that way.
     code = ("import importlib.util, sys, os; "
             f"os.chdir({REPO!r}); "
+            f"sys.path.insert(0, os.path.dirname({path!r})); "
             f"spec = importlib.util.spec_from_file_location('_probe', {path!r}); "
             "m = importlib.util.module_from_spec(spec); "
             "spec.loader.exec_module(m)")

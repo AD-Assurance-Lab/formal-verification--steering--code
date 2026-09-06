@@ -42,8 +42,8 @@ conditions. It reveals nothing about fog, night or low sun, so it does not weake
 blind protocol (PROTOCOL R3, section 5). It is the same kind of precondition check as
 the teacher gate.
 
-    STUDY_MAP=Town06 python3 scripts/check_student_competence.py
-    STUDY_MAP=Town06 python3 scripts/check_student_competence.py --require   # gate mode
+    STUDY_MAP=Town06 python3 scripts/training/check_student_competence.py
+    STUDY_MAP=Town06 python3 scripts/training/check_student_competence.py --require   # gate mode
 """
 import argparse
 import json

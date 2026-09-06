@@ -9,16 +9,16 @@ certified verdict in the paper. It is the one most readers want, and it runs on 
 
 | | where | size | why |
 |---|---|---|---|
-| code, protocol, routes | git | 1.4 MB | the study |
-| every artifact behind a reported number | git | 2.8 MB | including each individual lap |
-| the two README images | git | 6.2 MB | |
-| **every shipped policy and its teacher** | **git** | **8.5 MB** | see below |
+| code, protocol, routes | git | 1.2 MB | the study |
+| every artifact behind a reported number | git | 2.4 MB | including each individual lap |
+| the README animation | git | 6.2 MB | |
+| **every shipped policy and its teacher** | **git** | **8.8 MB** | see below |
 | the captures the certifier reads | [Hugging Face](https://huggingface.co/datasets/AD-Assurance-Lab/steering-verification-captures) | 641 MB | `scripts/fetch_captures.py` |
 | training frames | **not shipped** | 59 GB | regenerable; see Level 3 |
 
-A clone checks out 19 MB.
+A clone checks out 19 MB, of which 6.2 MB is the README animation.
 
-**All eight networks are in git.** They total 8.5 MB, so there is no reason to make you rebuild
+**All eight networks are in git.** They total 8.8 MB, so there is no reason to make you rebuild
 them — and because the renderer is not bit-reproducible (a scene where nothing moves still
 renders about 30 differing pixels per frame across repetitions), a rebuild would not give
 byte-identical weights even with identical code and seeds. Shipping the weights is what
@@ -124,9 +124,19 @@ looks wrong — with `bash scripts/carla_restart.sh`. It costs about 30 seconds.
 
 ## Level 3 — rebuild the networks from scratch. Days.
 
+Everything for this level is in `scripts/training/`, kept apart because most readers will
+never run it: the networks are shipped, so verifying and re-driving need none of it.
+
 ```bash
-bash scripts/run_town06_pipeline.sh      # or run_town04_pipeline.sh; both resumable
+bash scripts/training/run_town06_pipeline.sh   # or run_town04_pipeline.sh; both resumable
 ```
+
+The pipeline is the study's method, not its search. It collects laps, trains a behaviour-
+cloning teacher, runs teacher DAgger until the teacher holds the road, distils a student
+small enough to verify, runs student DAgger, and gates the result on clear-weather
+competence. The seed sweeps and architecture searches that chose the shipped students are
+**not** here — they are in git history. Reproducing this study means reproducing the
+method; it does not mean re-running every experiment that led to it.
 
 Collects the training laps, trains the teachers, runs teacher DAgger, distils, and gates.
 Your checkpoints will not be byte-identical to the shipped ones, and **they may not be
@@ -135,7 +145,7 @@ student that departed at 30 ft, because the teacher gate stopped at the first pa
 round. The drivers now pass `--min-rounds 8 --gate-reps 3` for exactly that reason. If your
 student fails where the shipped one passes, compare teachers before reaching for capacity.
 
-`python3 scripts/audit_training_data.py` checks a collected dataset for the degraded-server
+`python3 scripts/training/audit_training_data.py` checks a collected dataset for the degraded-server
 signature — reported speed disagreeing with actual displacement — before you train on it.
 
 ---

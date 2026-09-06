@@ -96,7 +96,7 @@ def test_nominal_keeps_the_pose_axis(tmp_path):
 
 
 def test_load_model_is_importable_from_the_library():
-    """It moved out of scripts/evaluate.py, and gate_teacher_lap.py depends on it being
+    """It moved out of scripts/training/evaluate.py, and gate_teacher_lap.py depends on it being
     reachable without importing another script."""
     pytest.importorskip("torch")
     from steering.model import load_model

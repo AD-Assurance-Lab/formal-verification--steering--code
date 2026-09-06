@@ -14,9 +14,13 @@ Companion code for *Proving End-to-End Steering in Poor Visibility*.
 **AD Assurance Lab, Western Michigan University.**
 
 <p align="center">
-  <img src="figures/night_comparison.gif" width="760"
+  <img src="night_comparison.gif" width="760"
        alt="Night on the highway: the clear-only network leaves the lane, the mixed-conditions network holds it">
 </p>
+
+<p align="center"><sub>Night on the highway. The clear-only network departs on every one
+of six runs, each time at 34.0 m, reaching 27–41 ft of cross-track error. The
+mixed-conditions network never departs and stays within 1.40 ft.</sub></p>
 
 ## What was done
 
@@ -31,16 +35,6 @@ steering error at the captured condition sits well inside safe limits leaves its
 every lap, and its worst case lies in between. Driving alone shows the same shape with no
 verifier involved — a network holds its lane in clear weather, holds it again in heavy
 fog, and leaves it at fog densities between the two on four of six road sections.
-
-<p align="center">
-  <img src="figures/witness.png" width="620"
-       alt="Sustained steering bias per cell: the driven condition sits inside tolerance while the worst intermediate intensity lies well outside it">
-</p>
-
-Circles are the rendered conditions, which is what a campaign measures. Squares are the
-worst intensity in between, found from the weights alone. For the clear-only network under
-fog and low sun, checking only the circles would have cleared a network that departs the
-lane on every lap.
 
 The disturbance families are physically parameterized — fog density, sun altitude — never
 balls in pixel space, which would contain physically impossible images and make the safety
@@ -66,8 +60,9 @@ days. All three levels, and exactly what reproduces to what precision, are in
 | | |
 |---|---|
 | `src/steering/` | the library: simulator interface, routes, networks, disturbance families, certification |
-| `scripts/` | everything you run — certify, drive, capture, train |
-| `checkpoints/` | the eight shipped networks, so nothing has to be retrained |
+| `scripts/` | everything you run — certify, drive, capture |
+| `scripts/training/` | building the networks: collect, train, DAgger, distil, gate |
+| `checkpoints/` | the eight shipped networks, 8.8 MB, so nothing has to be retrained |
 | `results/highway`, `results/arterial` | every artifact behind a reported number, including each individual lap |
 | `routes/` | the two pre-registered routes, one per road |
 | `PROTOCOL.md` | the frozen study protocol, hash-locked against `PROTOCOL.lock` |
