@@ -8,13 +8,16 @@ before any capture. New capture set `results/town06/captures_84x28/`, student
 ```
 FOG certified bound width, in units of tolerance
 
-  road     student                        ReLU     input     bound    verdict
+  road     student                        ReLU     input     WIDTH    verdict
   Town04   S_clear   (published)          5,152    84x28      0.79    CERTIFIED
   Town04   S_mixed   (published)         15,456    84x28      0.23    CERTIFIED
-  Town06   S_q7      (Q7, this run)      20,608    84x28      7.14    not certified   <-- new
+  Town06   S_q7      (Q7, this run)      20,608    84x28      8.62    not certified   <-- new
   Town06   S_mixed   (19,104, E7)        19,104   168x56      4.15    not certified
   Town06   S_mixed   (101,888, tuned)   101,888   168x56      1.86    not certified
-  Town06   S_mixed   (shipped)          101,888   168x56      1.24    not certified
+  Town06   S_mixed   (shipped)          101,888   168x56      1.69    not certified
+
+  WIDTH is hi - lo, the convention E7 and the paper use. Q7's cell is
+  [-1.480, +7.139], so its width is 8.619 and its upper edge is 7.14.
 ```
 
 ## The short answer
@@ -27,14 +30,14 @@ Town06 students were all 168x56 while Town04's are 84x28, so the published compa
 confounded **road** with **projection**. Q7 removes that confound by capturing Town06 at
 84x28 and certifying a student there.
 
-At the **same 84x28 input**, Town06's fog bound is **7.14x tolerance** against Town04's
-**0.23x and 0.79x** — **9x to 31x wider**, and on the wrong side of the corridor where both
-Town04 cells certify comfortably.
+At the **same 84x28 input**, Town06's fog bound is **8.62x tolerance wide** against
+Town04's **0.23x and 0.79x** — **11x to 37x wider**, and on the wrong side of the corridor
+where both Town04 cells certify comfortably.
 
 ## Q7-P1 — HELD. The small-input student's bound is worse
 
 Predicted the 84x28 Town06 student's fog bound would be worse than the 168x56 one's.
-Measured **7.14x against 1.86x** at the tuned recipe — 3.8x worse — and worse than E7's
+Measured **8.62x against 1.86x** at the tuned recipe — 4.6x worse — and worse than E7's
 19,104-ReLU 168x56 student (4.15x) at a *larger* neuron count (20,608).
 
 This extends E7's ladder in the direction it predicted: shrinking the representation, by
@@ -66,13 +69,17 @@ at 1.8 MB against a published 1.7 GB.
 ## Q7-P3 — HELD. This is the result Q7 was run for
 
 Predicted the arterial's fog bound stays worse than the highway's at matched input size. It
-does, by 9–31x.
+does, by 11–37x.
 
 **And the comparison is conservative in the right direction.** Q7's student is *larger* than
 Town04's (20,608 vs 15,456 ReLU) — and E7 established that for Town06, smaller networks
 certify fog *worse*. So matching Town04's capacity exactly would have made Town06's bound
 worse still, not better. The gap measured here is a lower bound on the gap at fully matched
 capacity and projection.
+
+**A units note, because I got it wrong first.** E7 and the paper report bound **width**
+(hi − lo). This document first quoted Q7's **upper edge** (7.14) in a column labelled
+width, which compared an edge against widths. Corrected throughout to 8.62.
 
 ## What this closes
 
