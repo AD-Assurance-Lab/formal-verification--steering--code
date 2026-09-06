@@ -150,8 +150,8 @@ def stage(out):
 
     print(f"staged {n} files and the dataset card into {out}")
     print("\nUpload with:")
-    print("  pip install -U 'huggingface_hub[cli]'")
-    print("  hf auth login")
+    print("  pip install -U huggingface_hub      # provides the `hf` command")
+    print("  hf auth login                       # a token with write access")
     print(f"  hf upload {DATASET} {out} . --repo-type dataset --create")
     print("\nThen check the round trip from a clean clone:")
     print("  python3 scripts/fetch_captures.py --force")
