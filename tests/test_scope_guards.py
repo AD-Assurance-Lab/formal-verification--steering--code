@@ -48,8 +48,8 @@ def _scored_len(study_map, cell, **env):
 
 TARGETS = [
     ("certify_sustained_bound", "certify_sustained_bound",
-     dict(STUDY_MAP="Town04", TOWN04_REDO="1"), "eastbound",
-     _scored_len("Town04", "eastbound", TOWN04_REDO="1")),
+     dict(STUDY_MAP="Town04"), "eastbound",
+     _scored_len("Town04", "eastbound")),
     # Town06 is ONE LAP, and its scored road is the route MINUS the two bridged
     # intersections: pure pursuit drives them and nothing scores them, so a certificate
     # that covered them would not be comparable to the drives it is validated against.
@@ -146,9 +146,9 @@ def main():
 
 def _routes():
     import numpy as np
-    root = Path(__file__).resolve().parents[1] / "data"
-    return (np.load(root / "routes_town06" / "lap.npy"),
-            np.load(root / "routes" / "eastbound.npy"))
+    root = Path(__file__).resolve().parents[1] / "routes"
+    return (np.load(root / "arterial" / "lap.npy"),
+            np.load(root / "highway" / "eastbound.npy"))
 
 
 def test_route_closure_is_detected():

@@ -6,7 +6,7 @@ against git -- on a student that is NOT the shipped one. Before the tag there wa
 nowhere to put it. `TOWN06_PASS` accepts only 1 and 2, and both name directories
 PROTOCOL R4 requires to stand, so an exploratory blind run had two options:
 
-  * write its scored cells into results/town06/ledger (pass 1's blind record), or
+  * write its scored cells into results/arterial/ledger (pass 1's blind record), or
   * skip the order check, which is the entire reason to run the experiment.
 
 The first corrupts the record the study rests on; the second makes the experiment
@@ -31,8 +31,8 @@ import pytest
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 
-PROTECTED_LEDGERS = ("results/town06/ledger", "results/town06/ledger_pass2")
-CANONICAL_CERT = "results/town06/certificate_town06.json"
+PROTECTED_LEDGERS = ("results/arterial/ledger", "results/arterial/ledger_pass2")
+CANONICAL_CERT = "results/arterial/certificate_town06.json"
 
 
 def design(**env):
@@ -54,8 +54,8 @@ def design(**env):
 
 def test_no_tag_leaves_every_path_unchanged():
     D = design()
-    assert D.LEDGER_SUBDIR == os.path.join("results", "town06", "ledger")
-    assert D.CERT_ARTIFACT == os.path.join("results", "town06",
+    assert D.LEDGER_SUBDIR == os.path.join("results", "arterial", "ledger")
+    assert D.CERT_ARTIFACT == os.path.join("results", "arterial",
                                            "certificate_town06.json")
     assert D.CERT_ARTIFACTS == [D.CERT_ARTIFACT]
     assert D.CANONICAL_CERT_ARTIFACT == D.CERT_ARTIFACT
@@ -63,15 +63,15 @@ def test_no_tag_leaves_every_path_unchanged():
 
 def test_pass_2_still_scopes_its_own_ledger():
     D = design(TOWN06_PASS="2")
-    assert D.LEDGER_SUBDIR == os.path.join("results", "town06", "ledger_pass2")
+    assert D.LEDGER_SUBDIR == os.path.join("results", "arterial", "ledger_pass2")
     # pass 2 scores both scopes and must predict with both certificates
     assert len(D.CERT_ARTIFACTS) == 2
 
 
 def test_a_tag_moves_the_ledger_and_certificate_together():
     D = design(TOWN06_LEDGER_TAG="q3_tuned")
-    assert D.LEDGER_SUBDIR == os.path.join("results", "town06", "q3_tuned", "ledger")
-    assert D.CERT_ARTIFACT == os.path.join("results", "town06", "q3_tuned",
+    assert D.LEDGER_SUBDIR == os.path.join("results", "arterial", "q3_tuned", "ledger")
+    assert D.CERT_ARTIFACT == os.path.join("results", "arterial", "q3_tuned",
                                            "certificate.json")
     assert D.CERT_ARTIFACTS == [D.CERT_ARTIFACT]
 

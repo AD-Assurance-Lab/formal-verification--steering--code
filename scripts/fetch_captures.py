@@ -6,8 +6,8 @@ simulator, so anyone can reproduce them on a laptop -- but the captures are 641 
 do not belong in git. They are published as a dataset instead, and this script puts them
 where the certifier looks:
 
-    results/town06/captures/          four full-lap captures, one per condition
-    results/town04_v2/calibration/    eight, two directions by four conditions
+    results/arterial/captures/      four full-lap captures, one per condition
+    results/highway/calibration/    eight, two directions by four conditions
 
     python3 scripts/fetch_captures.py           # download what is missing
     python3 scripts/fetch_captures.py --check   # verify what is already here
@@ -37,43 +37,43 @@ BASE = f"https://huggingface.co/datasets/{DATASET}/resolve/main/captures"
 
 # (path in the dataset, path in this repository, sha256)
 FILES = [
-    ("town06/capture_gate.json", "results/town06/captures/capture_gate.json",
+    ("arterial/capture_gate.json", "results/arterial/captures/capture_gate.json",
      "591b909c5a5605ffa76e33fe897b451928c5aead0fc4255af5b8dece870bfe3b"),
-    ("town06/lap_lap_clear.npz", "results/town06/captures/lap_lap_clear.npz",
+    ("arterial/lap_lap_clear.npz", "results/arterial/captures/lap_lap_clear.npz",
      "cd583d61cb9f8c812d48106ed0c1e8c552476f4fd09d91e8c8f7b3043c174f21"),
-    ("town06/lap_lap_fog.npz", "results/town06/captures/lap_lap_fog.npz",
+    ("arterial/lap_lap_fog.npz", "results/arterial/captures/lap_lap_fog.npz",
      "f6cbb3fd3aa3168b796460bda62e4f68893185192416e9bfe1d297f4443cab1e"),
-    ("town06/lap_lap_low_sun.npz", "results/town06/captures/lap_lap_low_sun.npz",
+    ("arterial/lap_lap_low_sun.npz", "results/arterial/captures/lap_lap_low_sun.npz",
      "9107aecf74cf6fc96ce6276e5782071b6b83e14970ad8e327c3cf8ab83b76fc4"),
-    ("town06/lap_lap_night.npz", "results/town06/captures/lap_lap_night.npz",
+    ("arterial/lap_lap_night.npz", "results/arterial/captures/lap_lap_night.npz",
      "abe8f269cbd03f4853445f005b008ee20c82096abf3aeaf53738c523e1723c6b"),
-    ("town04_v2/capture_gate.json", "results/town04_v2/calibration/capture_gate.json",
+    ("highway/capture_gate.json", "results/highway/calibration/capture_gate.json",
      "85f0a7ceae809837615b57dc4c242f895c97247b39e3ad0d9158bdbcef24232c"),
-    ("town04_v2/scope.json", "results/town04_v2/calibration/scope.json",
+    ("highway/scope.json", "results/highway/calibration/scope.json",
      "22cf8d35d04eaa43b12ae4251bf18e5a1b67b91c23e00a34a3adcf1376f90cd1"),
-    ("town04_v2/lap_eastbound_clear.npz",
-     "results/town04_v2/calibration/lap_eastbound_clear.npz",
+    ("highway/lap_eastbound_clear.npz",
+     "results/highway/calibration/lap_eastbound_clear.npz",
      "9e3a19fd60e03ff58530779134716e23506c55956591b12ff5a5bf0c4a9fcb96"),
-    ("town04_v2/lap_eastbound_fog.npz",
-     "results/town04_v2/calibration/lap_eastbound_fog.npz",
+    ("highway/lap_eastbound_fog.npz",
+     "results/highway/calibration/lap_eastbound_fog.npz",
      "23f56df0565a787f0ccc3b13faf66ca43105659eef9fd120d7825c4c24a7f573"),
-    ("town04_v2/lap_eastbound_night.npz",
-     "results/town04_v2/calibration/lap_eastbound_night.npz",
+    ("highway/lap_eastbound_night.npz",
+     "results/highway/calibration/lap_eastbound_night.npz",
      "2a4ada73c230d13be0495f9713c889cefecaeb0b997d49d74c048baa6ea078a8"),
-    ("town04_v2/lap_eastbound_shadows.npz",
-     "results/town04_v2/calibration/lap_eastbound_shadows.npz",
+    ("highway/lap_eastbound_shadows.npz",
+     "results/highway/calibration/lap_eastbound_shadows.npz",
      "b58d68c51f565c2280a0128e0e5a946b70c528cb18180e3cfb48aa364d777427"),
-    ("town04_v2/lap_westbound_clear.npz",
-     "results/town04_v2/calibration/lap_westbound_clear.npz",
+    ("highway/lap_westbound_clear.npz",
+     "results/highway/calibration/lap_westbound_clear.npz",
      "368dc433a70a29e53a51690cbf26bb07e14bb770514fd585d306114db216f098"),
-    ("town04_v2/lap_westbound_fog.npz",
-     "results/town04_v2/calibration/lap_westbound_fog.npz",
+    ("highway/lap_westbound_fog.npz",
+     "results/highway/calibration/lap_westbound_fog.npz",
      "c07b5caa4e21f9efb48fa4ef8c695be01c4120fee4f7b326b00dcec30d94d78e"),
-    ("town04_v2/lap_westbound_night.npz",
-     "results/town04_v2/calibration/lap_westbound_night.npz",
+    ("highway/lap_westbound_night.npz",
+     "results/highway/calibration/lap_westbound_night.npz",
      "46d02215d96bd2b4846b94ad80c17bfbaf82ab924811a7387bcae611998ee3fa"),
-    ("town04_v2/lap_westbound_shadows.npz",
-     "results/town04_v2/calibration/lap_westbound_shadows.npz",
+    ("highway/lap_westbound_shadows.npz",
+     "results/highway/calibration/lap_westbound_shadows.npz",
      "3f45779f32b0ba92b7d8d0b9cc6da59b7dc7f584ca8a508ddfa32d290cb9623f"),
 ]
 
@@ -101,9 +101,12 @@ def download(url, dest):
                 break
             f.write(chunk)
             seen += len(chunk)
-            if total:
+            # Only animate on a terminal. Piped to a file or a CI log, carriage
+            # returns turn a 95 MB download into several hundred lines of noise.
+            if total and sys.stdout.isatty():
                 print(f"\r    {seen / 1e6:7.1f} / {total / 1e6:.1f} MB", end="")
-        print("\r" + " " * 40 + "\r", end="")
+        if sys.stdout.isatty():
+            print("\r" + " " * 40 + "\r", end="")
     return tmp
 
 
@@ -218,7 +221,7 @@ def main():
         return 1
     print("\nReady. Reproduce the certificates with:")
     print("  STUDY_MAP=Town06 python3 scripts/certify_town06.py --out /tmp/cert.json")
-    print("  STUDY_MAP=Town04 TOWN04_REDO=1 python3 scripts/certify_sustained_bound.py")
+    print("  STUDY_MAP=Town04 python3 scripts/certify_sustained_bound.py")
     return 0
 
 

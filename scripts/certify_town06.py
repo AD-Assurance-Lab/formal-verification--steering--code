@@ -181,7 +181,7 @@ def main():
                          "not for producing a certificate of record.")
     ap.add_argument("--force", action="store_true",
                     help="overwrite an existing certificate. Refused by default: "
-                         "results/town06/certificate_town06.json is the pass-1 artifact "
+                         "results/arterial/certificate_town06.json is the pass-1 artifact "
                          "PROTOCOL R4 requires to stand, and this script's default "
                          "output path IS that file.")
     ap.add_argument("--out", default=None,
@@ -199,7 +199,7 @@ def main():
     # can be uniformly wrong in a way that is STABLE across s, and stability is what
     # this criterion rewards. So refuse to certify a student whose clear-weather
     # competence has not been recorded.
-    comp = REPO / "results" / "town06" / "competence_clear.json"
+    comp = REPO / "results" / "arterial" / "competence_clear.json"
     if not comp.exists():
         sys.exit("REFUSING: no clear-weather competence record.\n"
                  "  The certificate bounds deviation FROM clear and assumes the model\n"

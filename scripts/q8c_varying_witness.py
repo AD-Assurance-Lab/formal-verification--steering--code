@@ -51,7 +51,7 @@ def main():
     ap.add_argument("--conditions", default="fog,night,low_sun")
     ap.add_argument("--grid", type=int, default=401)
     ap.add_argument("--stride", type=int, default=8)
-    ap.add_argument("--out", default="results/town06/beta/varying_witness.json")
+    ap.add_argument("--out", default="results/arterial/beta/varying_witness.json")
     a = ap.parse_args()
 
     dev = require_cuda(tries=1, wait_s=0)

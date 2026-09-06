@@ -170,7 +170,7 @@ DEGENERATE_IF_ALL_AGREE = (
 # And if the three laps disagree, that is a BUG -- the cell is void, not uncertain.
 MIN_CLOSED_LOOP_REPS = LAPS_PER_CELL
 
-RESULTS_SUBDIR = os.path.join("results", "town06")
+RESULTS_SUBDIR = os.path.join("results", "arterial")
 CERT_ARTIFACT = os.path.join(RESULTS_SUBDIR, "certificate_town06.json")
 
 # PROTOCOL A-5 pass 2. A pass writes its OWN ledger directory, so pass 1 -- the blind
@@ -208,7 +208,7 @@ CANONICAL_LEDGER_SUBDIRS = (os.path.join(RESULTS_SUBDIR, "ledger"),
 # entire point of running it. The first corrupts the record and the second makes the
 # experiment worthless.
 #
-# A tag redirects BOTH the ledger and the certificate under results/town06/<tag>/, and
+# A tag redirects BOTH the ledger and the certificate under results/arterial/<tag>/, and
 # every consumer -- the ledger writer, the order checker, compare_town06, score_scopes --
 # reads them from here, so the guard and the writer cannot drift apart.
 #

@@ -77,7 +77,7 @@ def checkpoint_digest(ck):
             h.update(chunk)
     return h.hexdigest()[:16]
 
-OUT = REPO / "results" / "town06" / "competence_clear.json"
+OUT = REPO / "results" / "arterial" / "competence_clear.json"
 
 # One definition, in config. Four scripts previously named checkpoints independently
 # and drifted apart.

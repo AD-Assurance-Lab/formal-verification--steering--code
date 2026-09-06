@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The scored scope of a route, recomputed from its GEOMETRY. No CARLA, no models.
 
-WHY THIS EXISTS. `steering/route_design.py` declares, before any Town06 model existed:
+WHY THIS EXISTS. The route-selection criterion declared, before any model on this road existed:
 
     REF      = dict(s50=0.0023, s90=0.0168, s99=0.0467, smax=0.0467)   # Town04's lap
     SMAX_CAP = 0.060        # steering demand regime that actually trained on Town04
@@ -20,7 +20,7 @@ reports where that road is, so a verdict can be scored with it and without it an
 DIFFERENCE reported. Excluding it happens to make the Town06 mixed student look better,
 which is exactly why the choice must not be made silently by one tool.
 
-The demand statistic is `route_design.demand`, unchanged:
+The demand statistic is the route-selection criterion's, unchanged:
 
     demand(kappa) = arctan(WHEELBASE * kappa) / MAX_STEER
 
@@ -46,7 +46,7 @@ REPO = Path(_REPO_ROOT)
 from steering import config as C
 from steering.route import load_route
 
-# The two declared thresholds, both from steering/route_design.py. SMAX_CAP is the one the
+# The two declared thresholds, from the route-selection criterion. SMAX_CAP is the one the
 # section builder ENFORCED, so it defines the capped scope; REF_SMAX is Town04's own
 # maximum and is reported beside it as a sensitivity, never as a second answer.
 SMAX_CAP = 0.060
@@ -67,7 +67,7 @@ def demand_profile(route, step_m=None):
     arc = np.concatenate([[0.0], np.cumsum(seg)])
     hd = np.unwrap(np.arctan2(np.diff(rt[:, 1]), np.diff(rt[:, 0])))
     # kappa at interior vertex i uses the heading change across it over the segment
-    # length after it, which is the same discretisation route_design uses.
+    # length after it, which is the same discretisation the route builder used.
     kappa = np.abs(np.diff(hd)) / np.maximum(seg[1:], 1e-9)
     d = np.arctan(C.WHEELBASE_M * kappa) / C.MAX_STEER_RAD
     return arc[1:-1], d

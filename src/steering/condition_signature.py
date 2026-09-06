@@ -88,7 +88,7 @@ def assert_condition(frame, want):
 
 def main():
     """Validate the rule against captures whose condition is known from their filename."""
-    caps = sorted((REPO / "results" / "town06" / "captures").glob("lap_*.npz"))
+    caps = sorted((REPO / "results" / "arterial" / "captures").glob("lap_*.npz"))
     if not caps:
         print("no captures to validate against")
         return 1

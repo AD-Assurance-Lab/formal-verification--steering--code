@@ -2,7 +2,7 @@
 # The committed driver for the INTERPOLATION-FIDELITY captures.
 #
 # There was no such script. The fidelity captures were driven by hand, and they carry
-# exactly the defect that reached the Town04 finding: results/diagnostic/
+# exactly the defect that reached the Town04 finding: results/fidelity/
 # interpolation_fidelity.json records n_poses 81, which is the 160 m default, while the
 # Town04-era captures archived beside it are 200 poses over 2,798 m. The measurement that
 # validates the DISTURBANCE FAMILY -- the thing the whole certificate is quantified over --
@@ -31,8 +31,8 @@ export STUDY_MAP=${STUDY_MAP:-Town06}
 SECTIONS=("$@")
 [ ${#SECTIONS[@]} -eq 0 ] && { echo "usage: $0 <section> [section...]"; exit 2; }
 
-DIAG=results/diagnostic
-mkdir -p "$DIAG" results/town06_logs
+DIAG=results/fidelity
+mkdir -p "$DIAG" results/arterial_logs
 
 cap () {   # cap <out.npz> <conds> <direction> <env assignments...>
     local out="$1" conds="$2" dir="$3"; shift 3
@@ -45,15 +45,15 @@ cap () {   # cap <out.npz> <conds> <direction> <env assignments...>
     # Two Teslas and two cameras were found in the world, so the first captures of that
     # run photographed a road with a parked car in it. Nothing in the resulting arrays
     # would have shown that. The lap drivers already restart per capture; this now does.
-    bash scripts/carla_restart.sh > "results/town06_logs/restart_${out%.npz}.log" 2>&1 \
+    bash scripts/carla_restart.sh > "results/arterial_logs/restart_${out%.npz}.log" 2>&1 \
         || { echo "  restart FAILED for $out"; return 1; }
     echo "  capturing $out ($conds, $dir) $*"
     env "$@" OY_CONDS="$conds" OY_OUT="$DIAG/$out" \
         python3 scripts/capture_offset_yaw.py --poses 200 --direction "$dir" \
-        > "results/town06_logs/cap_${out%.npz}.log" 2>&1
+        > "results/arterial_logs/cap_${out%.npz}.log" 2>&1
     local rc=$?
     echo -n "    rc=$rc  "
-    grep -E "route coverage|WHOLE route" "results/town06_logs/cap_${out%.npz}.log" | tail -1
+    grep -E "route coverage|WHOLE route" "results/arterial_logs/cap_${out%.npz}.log" | tail -1
     return $rc
 }
 

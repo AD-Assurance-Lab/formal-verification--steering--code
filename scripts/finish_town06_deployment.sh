@@ -20,7 +20,7 @@ export STUDY_MAP=Town06
 export CARLA_PORT=${CARLA_PORT:-3000}
 export PYTHONUNBUFFERED=1
 
-LOG_DIR=$REPO/results/town06_logs
+LOG_DIR=$REPO/results/arterial_logs
 mkdir -p "$LOG_DIR"
 LOG=$LOG_DIR/finish.log
 say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG"; }
@@ -55,7 +55,7 @@ python3 -m carla_determinism --lock-only >/dev/null || {
 python3 - <<'PY' || exit 1
 import json, os, sys
 from pathlib import Path
-p = Path("results/town06/competence_clear.json")
+p = Path("results/arterial/competence_clear.json")
 if not p.exists():
     sys.exit("FATAL: no competence record. Run the pipeline first.")
 d = json.loads(p.read_text())
@@ -102,10 +102,10 @@ import numpy as np
 import steering.config as C
 from steering.study import town06_design as D
 need = [f"lap_{d}_{c}.npz" for d in D.SECTIONS for c in D.CONDITIONS]
-missing = [n for n in need if not os.path.exists(os.path.join("results/town06/captures", n))]
+missing = [n for n in need if not os.path.exists(os.path.join("results/arterial/captures", n))]
 wrong = []
 for n in need:
-    p = os.path.join("results/town06/captures", n)
+    p = os.path.join("results/arterial/captures", n)
     if os.path.exists(p):
         try:
             s = np.load(p)["frames"].shape[-2:]
@@ -131,7 +131,7 @@ import sys, numpy as np
 from pathlib import Path
 import steering.config as C
 bad = []
-for p in sorted(Path("results/town06/captures").glob("*.npz")):
+for p in sorted(Path("results/arterial/captures").glob("*.npz")):
     a = np.load(p)
     k = "frames" if "frames" in a.files else a.files[0]
     s = a[k].shape
@@ -143,7 +143,7 @@ if bad:
 print(f"  captures OK at {C.TOWN06_INPUT_H}x{C.TOWN06_INPUT_W}")
 PY
 
-CERT=results/town06/certificate_town06.json
+CERT=results/arterial/certificate_town06.json
 
 # ------------------------------------------------ 1b. THE CAPTURE GATE (PROTOCOL A-3)
 # A-3 makes this a PRECONDITION of certification, and audit_repo.py fails when a
@@ -157,7 +157,7 @@ CERT=results/town06/certificate_town06.json
 # committed driver produces the traces first. Both are clear-weather training telemetry
 # and not scored cells, so they sit on the correct side of the leakage boundary
 # (PROTOCOL section 5) and may run before the certificate exists.
-if [ -f results/town06/captures/capture_gate.json ]; then
+if [ -f results/arterial/captures/capture_gate.json ]; then
     say "SKIP capture gate (capture_gate.json present)"
 else
     carla_up 6 || carla_start || exit 1
@@ -169,7 +169,7 @@ else
     # tee's success would mask the gate's failure and the "FATAL" branch could never be
     # reached. That is the same shape as the teacher gate that failed open and passed a
     # teacher missing its budget by 13x. Capture the status, then show the output.
-    python3 scripts/capture_driven_gate.py --captures results/town06/captures \
+    python3 scripts/capture_driven_gate.py --captures results/arterial/captures \
         >>"$LOG_DIR/capture_gate.log" 2>&1
     GATE_RC=$?
     tail -20 "$LOG_DIR/capture_gate.log" | tee -a "$LOG"

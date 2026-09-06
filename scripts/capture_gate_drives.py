@@ -15,7 +15,7 @@ One clear-weather pass per student per section. No repetitions: the gate is a ch
 capture rig, not a failure rate, and rule 3 does not apply to it.
 
     STUDY_MAP=Town06 python3 scripts/capture_gate_drives.py
-    STUDY_MAP=Town04 TOWN04_REDO=1 python3 scripts/capture_gate_drives.py
+    STUDY_MAP=Town04 python3 scripts/capture_gate_drives.py
 """
 import argparse
 import os

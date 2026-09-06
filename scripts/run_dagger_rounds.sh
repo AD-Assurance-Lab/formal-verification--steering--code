@@ -43,7 +43,7 @@ fi
 echo $$ > "$LOCK"
 trap 'rm -f "$LOCK"' EXIT
 
-LOG_DIR=$REPO/results/town06_logs
+LOG_DIR=$REPO/results/arterial_logs
 # The log name carries the study namespace, exactly as the datasets and checkpoints
 # do. It did not, and the six-section study's dagger_mixed.log -- which legitimately says
 # "PASSED at round 12" -- was read by the LAP study's gate, which skipped a stage that had

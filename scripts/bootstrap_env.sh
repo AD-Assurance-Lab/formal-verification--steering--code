@@ -37,7 +37,7 @@ cd "$REPO"
 # with --no-deps so it cannot pull numpy 2 back over the top.
 #
 # These four versions are the environment of record, read from the _meta of the
-# published artifacts themselves (results/town06/certificate_town06.json and the
+# published artifacts themselves (results/arterial/certificate_town06.json and the
 # Town04-redo sustained bound), NOT from whatever happens to be installed. Change them
 # only with a measurement to back it up.
 TORCH_VER=2.13.0

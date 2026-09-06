@@ -14,10 +14,10 @@
 # No CARLA. Everything here reads artifacts that already exist.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-export STUDY_MAP=Town04 TOWN04_REDO=1
+export STUDY_MAP=Town04
 
-CAL=results/town04_v2/calibration
-LOG=results/town04_v2/logs
+CAL=results/highway/calibration
+LOG=results/highway/logs
 mkdir -p "$LOG"
 
 echo "=== capture gate (precondition) ==="

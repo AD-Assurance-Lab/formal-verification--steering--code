@@ -32,7 +32,7 @@ FETCH = _fetcher()
 
 # Where the two certifiers look. Anything the fetcher places outside these is a file
 # nothing reads, and anything they need that it omits is a reader stuck at level 1.
-CERTIFIER_DIRS = ("results/town06/captures", "results/town04_v2/calibration")
+CERTIFIER_DIRS = ("results/arterial/captures", "results/highway/calibration")
 
 
 def test_the_table_is_well_formed():
@@ -53,8 +53,8 @@ def test_both_studies_are_covered():
     four conditions on the highway. A table that quietly lost one would leave a reader
     with a certificate over a subset and no sign of it."""
     npz = [rel for _, rel, _ in FETCH.FILES if rel.endswith(".npz")]
-    t06 = [r for r in npz if "town06" in r]
-    t04 = [r for r in npz if "town04_v2" in r]
+    t06 = [r for r in npz if "arterial" in r]
+    t04 = [r for r in npz if "highway" in r]
     assert len(t06) == 4, f"expected 4 arterial captures, table has {len(t06)}"
     assert len(t04) == 8, f"expected 8 highway captures, table has {len(t04)}"
 

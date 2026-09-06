@@ -47,7 +47,7 @@ from steering.gpu import require_cuda
 from steering import config as C
 from steering.student import StudentNet
 
-DIAG = REPO / "results" / "diagnostic"
+DIAG = REPO / "results" / "fidelity"
 
 # AXES. The test is the same for any one-parameter family; only the file naming, the
 # condition held at the far endpoint, and which end of the swept parameter IS that

@@ -29,7 +29,7 @@ export TOWN06_PASS=${TOWN06_PASS:-1}
 LEDGER_DIR=$REPO/$(python3 -c "from steering.study import town06_design as D;print(D.LEDGER_SUBDIR)")
 NSEC=$(STUDY_MAP=Town06 python3 -c "import steering.config as C;print(len(C.SECTIONS))")
 
-LOG_DIR=$REPO/results/town06_logs
+LOG_DIR=$REPO/results/arterial_logs
 mkdir -p "$LOG_DIR"
 say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/ledger.log"; }
 

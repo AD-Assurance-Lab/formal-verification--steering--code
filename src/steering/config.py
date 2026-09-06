@@ -222,56 +222,49 @@ LANE_WIDTH_M = 3.500
 # 2,988 m is 6 m past the turn's exit (long enough to confirm the car straightens) and 8 m
 # short of the junction, with dashed markings continuing ~34 m ahead of that point.
 #
-# The published Town04 run keeps 2,861 m so its artifacts still reproduce exactly; only the
-# redo moves. The value is not in PROTOCOL section 3's frozen constants.
-# (read the env var directly: TOWN04_REDO is defined further down, and a forward
-# reference here would be a NameError on every import.)
-LAP_END_M = 2988.0 if os.environ.get("TOWN04_REDO", "0") == "1" else 2861.0
+# The value is not in PROTOCOL section 3's frozen constants.
+LAP_END_M = 2988.0
 
 # ── The two verifiable students ──────────────────────────────────────────────
 # (name, checkpoint stem, conv channels, FC width). The mixed student is 3x the width of the
 # clear-only one -- width, not input resolution, is the verifier-friendly capacity lever,
 # because width adds parameters at fixed input-perturbation dimension. This registry was
 # copy-pasted into ~20 scripts in three mutually incompatible shapes.
-# TOWN04_REDO re-runs the Town04 study under the corrected simulator harness (T06-F22).
+# The highway study is a DISCOVERY test: the closed-loop horizon was back-solved from
+# this road's own stability cliff, so its agreement measures sensitivity rather than
+# prediction. The arterial is the deployment test, where the criterion was frozen first.
 #
-# It is a DISCOVERY test, as the published one was -- T_CLOSED_LOOP_S was back-solved from
-# Town04's own closed-loop cliff, so its agreement measures sensitivity rather than
-# prediction, and re-running it does not turn it into a deployment test. Town06 is the
-# deployment test and a third map would be needed for another.
-#
-# Everything the redo writes is NAMESPACED, because the published artifacts are tracked in
-# git under exactly these names and a redo would otherwise overwrite the record it is meant
-# to be compared against: `results/ledger/clear__S_clear__closed_loop.json` and
-# `checkpoints/S_clear_84x28.pth` are the paper's, not scratch space.
-TOWN04_REDO = os.environ.get("TOWN04_REDO", "0") == "1"
-_V2 = "_v2" if TOWN04_REDO else ""
-
-STUDENTS = (("S_clear", f"S_clear_84x28{_V2}", (8, 16, 16), 32),
-            ("S_mixed", f"S_mixed_84x28_w3{_V2}", (24, 48, 48), 96))
+# The `_v2` in these checkpoint names is provenance, not a variant to choose between.
+# An earlier highway run was collected before the determinism harness existed, and rule
+# D-11 makes that data unusable; this study is the rebuild, and it is the only one here.
+# The committed artifacts record these names, so they stay as they are.
+STUDENTS = (("S_clear", "S_clear_84x28_v2", (8, 16, 16), 32),
+            ("S_mixed", "S_mixed_84x28_w3_v2", (24, 48, 48), 96))
 
 # ── Spawn points (start just after the western intersection) ─────────────────
 SPAWN_EASTBOUND = {"x": -357.1, "y": 30.0, "z": 0.5, "yaw": 0.0}
 SPAWN_WESTBOUND = {"x": -396.8, "y": 12.8, "z": 0.5, "yaw": 180.0}
 
-# ── Map-scoped overrides (Town06 deployment test) ────────────────────────────
-# Applied only when STUDY_MAP != Town04, and sourced entirely from the committed
-# route artifact so the code cannot drift from the pre-registered route.
-ROUTES_SUBDIR = "routes"
+# ── Road-scoped overrides (the arterial deployment test) ─────────────────────
+# Applied only on the arterial, and sourced entirely from the committed route
+# artifact so the code cannot drift from the pre-registered route.
+#
+# The two roads are named for what they are rather than for the simulator map they
+# happen to be built on: Town04 is the highway, everything else here is the arterial.
+ROAD = "highway" if STUDY_MAP == "Town04" else "arterial"
+ROUTES_SUBDIR = ROAD
 
 if STUDY_MAP != "Town04":
     import json as _json
     from steering import REPO_ROOT as _RR
-    _rd = os.path.join(_RR, "data", f"routes_{STUDY_MAP.lower()}")
+    _rd = os.path.join(_RR, "routes", ROAD)
     _meta_path = os.path.join(_rd, "route_meta.json")
     if not os.path.exists(_meta_path):
         raise RuntimeError(
             f"STUDY_MAP={STUDY_MAP} but {_meta_path} is missing. The route is a PROTOCOL\n"
-            f"artifact and must be built and committed before anything runs on this map:\n"
-            f"    CARLA_PORT=$PORT python3 scripts/build_{STUDY_MAP.lower()}_routes.py")
+            f"artifact and must be committed before anything runs on this road.")
     with open(_meta_path) as _f:
         ROUTE_META = _json.load(_f)
-    ROUTES_SUBDIR = f"routes_{STUDY_MAP.lower()}"
 
     # ── ONE LAP, with PPC bridges (Town06, from 2026-08-31) ──────────────────
     # If lap_meta.json exists it supersedes the section layout. The six sections were
@@ -398,8 +391,6 @@ def steps_for(section, margin=1.0):
     evidence covered less than it claimed, here the driving covered more.
     """
     if not SECTION_BASED:
-        if os.environ.get("TOWN04_REDO", "0") != "1":
-            return 10 ** 9                      # published run: unchanged, on purpose
         return int(LAP_END_M * margin / (TARGET_SPEED_MS * FIXED_DT))
     length = SECTION_LEN_M.get(section, LAP_END_M)
     return int(length * margin / (TARGET_SPEED_MS * FIXED_DT))
@@ -758,11 +749,7 @@ DATASET_DIR = os.path.join(REPO_ROOT, "data")
 CHECKPOINT_DIR = os.path.join(REPO_ROOT, "checkpoints")
 RESULTS_DIR = os.path.join(REPO_ROOT, "results")
 
-# The Town04 redo keeps its results beside the published ones rather than on top of them,
-# so old and new can be compared directly in the working tree. Comparing them IS the
-# result of a discovery-test redo.
-LEDGER_DIR = os.path.join(REPO_ROOT, "results",
-                          "town04_v2" if TOWN04_REDO else "", "ledger")
+LEDGER_DIR = os.path.join(REPO_ROOT, "results", "highway", "ledger")
 
 
 def summary():
