@@ -73,7 +73,7 @@ fi
 restart_carla_retrying() {   # restart_carla_retrying <logfile> <label>
     local logf=$1 label=$2 i
     for i in 1 2 3; do
-        if bash scripts/carla_restart.sh > "$logf" 2>&1; then
+        if bash scripts/simulator/carla_restart.sh > "$logf" 2>&1; then
             [ "$i" -gt 1 ] && say "  restart succeeded on attempt $i ($label)"
             rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null
             return 0

@@ -48,7 +48,7 @@ on a laptop:
 ```bash
 pip install -e .
 python3 scripts/fetch_captures.py            # 641 MB, every file digest-checked
-STUDY_MAP=Town06 python3 scripts/certify_town06.py --out /tmp/cert.json
+STUDY_MAP=Town06 python3 scripts/verify/certify_town06.py --out /tmp/cert.json
 ```
 
 Re-driving the closed loop needs CARLA 0.9.16 and a GPU; rebuilding the networks takes
@@ -60,8 +60,11 @@ days. All three levels, and exactly what reproduces to what precision, are in
 | | |
 |---|---|
 | `src/steering/` | the library: simulator interface, routes, networks, disturbance families, certification |
-| `scripts/` | everything you run — certify, drive, capture |
-| `scripts/training/` | building the networks: collect, train, DAgger, distil, gate |
+| `scripts/verify/` | recompute the certificates — no simulator needed |
+| `scripts/capture/` | render the frames the certifier reads |
+| `scripts/drive/` | the closed-loop ledger: drive the cells, aggregate, report |
+| `scripts/simulator/` | launch, restart and health-check CARLA |
+| `scripts/training/` | build the networks: collect, train, DAgger, distil, gate |
 | `checkpoints/` | the eight shipped networks, 8.8 MB, so nothing has to be retrained |
 | `results/highway`, `results/arterial` | every artifact behind a reported number, including each individual lap |
 | `routes/` | the two pre-registered routes, one per road |
@@ -72,7 +75,7 @@ The highway is CARLA's Town04 and the arterial is Town06. The code takes the map
 
 The certificate for each cell was committed to git **before** the corresponding lap was
 driven, which is what makes a verdict a prediction rather than a description. That
-ordering is checkable against commit timestamps with `scripts/check_blind_order.py`.
+ordering is checkable against commit timestamps with `scripts/verify/check_blind_order.py`.
 
 ## The research record
 

@@ -100,6 +100,54 @@
         "step": 1178,
         "x": 661.2237548828125,
         "y": 203.01145935058594
+      },
+      "provenance": {
+        "run_started": "2026-09-03T00:59:39-04:00",
+        "weather": {
+          "cloudiness": 80.0,
+          "dust_storm": 0.0,
+          "fog_density": 0.0,
+          "fog_distance": 0.0,
+          "fog_falloff": 0.0,
+          "mie_scattering_scale": 0.0,
+          "precipitation": 0.0,
+          "precipitation_deposits": 0.0,
+          "scattering_intensity": 0.0,
+          "sun_altitude_angle": 5.0,
+          "sun_azimuth_angle": 0.0,
+          "wetness": 0.0,
+          "wind_intensity": 0.0
+        },
+        "env_overrides": {},
+        "fixed_delta_seconds": 0.2,
+        "substepping": {
+          "max_substeps": 16,
+          "max_substep_delta_time": 0.0125
+        },
+        "map": "Town06",
+        "target_speed_ms": 8.9408,
+        "lap_end_m": 2289.037517334472,
+        "git_sha": "19f6ff3c8d7fa6b21b104f1d8a5f0897368b636c",
+        "git_dirty": false,
+        "determinism": {
+          "deterministic_control": true,
+          "package_version": "1.0.0",
+          "rules_digest": "bed0851fb1571d9e65be70c6872e9f00e54ac6fbd120c4e2991469a7d457fc4a",
+          "lock_problems": [],
+          "server_cmdline": [
+            "/home/za/carla/CarlaUE4/Binaries/Linux/CarlaUE4-Linux-Shipping",
+            "CarlaUE4",
+            "-carla-rpc-port=3000",
+            "-RenderOffScreen",
+            "-quality-level=Epic",
+            "-notexturestreaming",
+            ""
+          ],
+          "notexturestreaming": true,
+          "quality_level": "Epic"
+        },
+        "independent_runs": true,
+        "restart_granularity": "per_run"
       }
     },
     {
@@ -113,6 +161,54 @@
         "step": 1179,
         "x": 661.5301513671875,
         "y": 201.30601501464844
+      },
+      "provenance": {
+        "run_started": "2026-09-03T01:01:14-04:00",
+        "weather": {
+          "cloudiness": 80.0,
+          "dust_storm": 0.0,
+          "fog_density": 0.0,
+          "fog_distance": 0.0,
+          "fog_falloff": 0.0,
+          "mie_scattering_scale": 0.0,
+          "precipitation": 0.0,
+          "precipitation_deposits": 0.0,
+          "scattering_intensity": 0.0,
+          "sun_altitude_angle": 5.0,
+          "sun_azimuth_angle": 0.0,
+          "wetness": 0.0,
+          "wind_intensity": 0.0
+        },
+        "env_overrides": {},
+        "fixed_delta_seconds": 0.2,
+        "substepping": {
+          "max_substeps": 16,
+          "max_substep_delta_time": 0.0125
+        },
+        "map": "Town06",
+        "target_speed_ms": 8.9408,
+        "lap_end_m": 2289.037517334472,
+        "git_sha": "19f6ff3c8d7fa6b21b104f1d8a5f0897368b636c",
+        "git_dirty": false,
+        "determinism": {
+          "deterministic_control": true,
+          "package_version": "1.0.0",
+          "rules_digest": "bed0851fb1571d9e65be70c6872e9f00e54ac6fbd120c4e2991469a7d457fc4a",
+          "lock_problems": [],
+          "server_cmdline": [
+            "/home/za/carla/CarlaUE4/Binaries/Linux/CarlaUE4-Linux-Shipping",
+            "CarlaUE4",
+            "-carla-rpc-port=3000",
+            "-RenderOffScreen",
+            "-quality-level=Epic",
+            "-notexturestreaming",
+            ""
+          ],
+          "notexturestreaming": true,
+          "quality_level": "Epic"
+        },
+        "independent_runs": true,
+        "restart_granularity": "per_run"
       }
     },
     {
@@ -126,6 +222,54 @@
         "step": 1178,
         "x": 661.2182006835938,
         "y": 203.0127716064453
+      },
+      "provenance": {
+        "run_started": "2026-09-03T01:13:34-04:00",
+        "weather": {
+          "cloudiness": 80.0,
+          "dust_storm": 0.0,
+          "fog_density": 0.0,
+          "fog_distance": 0.0,
+          "fog_falloff": 0.0,
+          "mie_scattering_scale": 0.0,
+          "precipitation": 0.0,
+          "precipitation_deposits": 0.0,
+          "scattering_intensity": 0.0,
+          "sun_altitude_angle": 5.0,
+          "sun_azimuth_angle": 0.0,
+          "wetness": 0.0,
+          "wind_intensity": 0.0
+        },
+        "env_overrides": {},
+        "fixed_delta_seconds": 0.2,
+        "substepping": {
+          "max_substeps": 16,
+          "max_substep_delta_time": 0.0125
+        },
+        "map": "Town06",
+        "target_speed_ms": 8.9408,
+        "lap_end_m": 2289.037517334472,
+        "git_sha": "5c8b34061d65f3e810fc5454e66e3a8aa930f250",
+        "git_dirty": false,
+        "determinism": {
+          "deterministic_control": true,
+          "package_version": "1.0.0",
+          "rules_digest": "bed0851fb1571d9e65be70c6872e9f00e54ac6fbd120c4e2991469a7d457fc4a",
+          "lock_problems": [],
+          "server_cmdline": [
+            "/home/za/carla/CarlaUE4/Binaries/Linux/CarlaUE4-Linux-Shipping",
+            "CarlaUE4",
+            "-carla-rpc-port=3000",
+            "-RenderOffScreen",
+            "-quality-level=Epic",
+            "-notexturestreaming",
+            ""
+          ],
+          "notexturestreaming": true,
+          "quality_level": "Epic"
+        },
+        "independent_runs": true,
+        "restart_granularity": "per_run"
       }
     }
   ]

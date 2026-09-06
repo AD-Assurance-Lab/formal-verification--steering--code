@@ -66,12 +66,12 @@ carla_restart() {
     #
     # Adding the flag back fixed that instance and left the class of defect in place. A
     # copy of the launch sequence cannot inherit anything added to the real one, and
-    # something WAS added: scripts/carla_launch.sh now checks render photometry on every
+    # something WAS added: scripts/simulator/carla_launch.sh now checks render photometry on every
     # fresh server (T06-F42, where a 15% render drift went unnoticed for half a day and
     # both teachers trained on it). This copy would have skipped that check for every
     # restart the unattended driver makes -- which is most of them.
     say "restarting CARLA on port $CARLA_PORT"
-    if bash "$REPO/scripts/carla_restart.sh" >>"$LOG_DIR/pipeline_restart.log" 2>&1; then
+    if bash "$REPO/scripts/simulator/carla_restart.sh" >>"$LOG_DIR/pipeline_restart.log" 2>&1; then
         say "CARLA back up"; return 0
     fi
     say "FATAL: CARLA did not come back on port $CARLA_PORT (see pipeline_restart.log)"
@@ -85,7 +85,7 @@ carla_up 12 || carla_restart || exit 1
 # started by hand answers perfectly and quietly poisons the whole campaign.
 python3 -m carla_determinism --port "$CARLA_PORT" >>"$LOG_DIR/pipeline.log" 2>&1 || {
     say "FATAL: the server on $CARLA_PORT violates the determinism rules."
-    say "       Relaunch it with: bash scripts/carla_restart.sh"
+    say "       Relaunch it with: bash scripts/simulator/carla_restart.sh"
     say "       (see $LOG_DIR/pipeline.log for which rule)"; exit 1; }
 say "determinism preflight OK on the live server"
 
@@ -438,7 +438,7 @@ run competence python3 "$REPO/scripts/training/check_student_competence.py" --re
     say "       distillation before proceeding."; exit 1; }
 
 say "PIPELINE COMPLETE -- students built and competent in clear weather."
-say "NEXT: bash scripts/finish_town06_deployment.sh"
+say "NEXT: bash scripts/drive/finish_town06_deployment.sh"
 say "  It captures at the students' resolution, stops CARLA, certifies blind, COMMITS"
 say "  the certificate, and only then drives the scored ledger. That order is PROTOCOL"
 say "  R1 and check_order_town06.py enforces it independently."

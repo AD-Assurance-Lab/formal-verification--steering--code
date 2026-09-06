@@ -354,7 +354,7 @@ def main():
                     time.sleep(1.0)
                 time.sleep(3)
                 with open(_rlog, "a") as _fh:
-                    subprocess.run(["bash", os.path.join(C.REPO_ROOT, "scripts", "carla_launch.sh")],
+                    subprocess.run(["bash", os.path.join(C.REPO_ROOT, "scripts", "simulator", "carla_launch.sh")],
                                    stdout=_fh, stderr=subprocess.STDOUT,
                                    stdin=subprocess.DEVNULL, timeout=600)
                 # RECONNECT WITH RETRIES. carla_launch.sh's readiness probe returning

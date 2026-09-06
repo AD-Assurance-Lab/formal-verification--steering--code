@@ -35,12 +35,12 @@ carla_up(){ for i in $(seq 1 "${1:-60}"); do
     ss -ltn 2>/dev/null | grep -q ":$CARLA_PORT" && return 0; sleep 5; done; return 1; }
 carla_restart(){ say "restarting CARLA"
     pkill -f "[C]arlaUE4-Linux-Shipping.*rpc-port=$CARLA_PORT" 2>/dev/null; sleep 8
-    bash "$REPO/scripts/carla_launch.sh" >>"$LOG_DIR/carla_launch.log" 2>&1 \
+    bash "$REPO/scripts/simulator/carla_launch.sh" >>"$LOG_DIR/carla_launch.log" 2>&1 \
         && { say "CARLA back"; sleep 5; return 0; }
     say "FATAL: CARLA did not return"; return 1; }
 carla_up 12 || carla_restart || exit 1
 python3 -m carla_determinism --port "$CARLA_PORT" >>"$LOG_DIR/pipeline.log" 2>&1 || {
-    say "FATAL: the server violates the determinism rules; relaunch via scripts/carla_launch.sh"
+    say "FATAL: the server violates the determinism rules; relaunch via scripts/simulator/carla_launch.sh"
     exit 1; }
 say "determinism preflight OK on the live server"
 rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null

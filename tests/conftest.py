@@ -21,8 +21,8 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Both, because that is what happens when you run one: Python puts the script's own
 # directory on the path, so scripts/training/dagger.py can say `from train import ...`
 # about its neighbour. A test that loads it by file path gets no such directory.
-sys.path.insert(0, os.path.join(REPO, "scripts"))
-sys.path.insert(0, os.path.join(REPO, "scripts", "training"))
+for _d in ("", "verify", "drive", "capture", "simulator", "training"):
+    sys.path.insert(0, os.path.join(REPO, "scripts", _d))
 
 # Installable only alongside the simulator, or only from git.
 UNRESOLVABLE = ("carla", "auto_LiRPA")

@@ -220,8 +220,8 @@ def main():
               "from the exact files recorded here.", file=sys.stderr)
         return 1
     print("\nReady. Reproduce the certificates with:")
-    print("  STUDY_MAP=Town06 python3 scripts/certify_town06.py --out /tmp/cert.json")
-    print("  STUDY_MAP=Town04 python3 scripts/certify_sustained_bound.py")
+    print("  STUDY_MAP=Town06 python3 scripts/verify/certify_town06.py --out /tmp/cert.json")
+    print("  STUDY_MAP=Town04 python3 scripts/verify/certify_sustained_bound.py")
     return 0
 
 

@@ -28,7 +28,7 @@ from steering.imaging import raw_to_bgr, preprocess_for_model  # noqa: F401
 # Determinism rules and their enforcement live in the `carla-determinism` package, so
 # every study in the lab shares one copy rather than each vendoring its own that drifts.
 # See its RULES.md (D-1..D-11); the two that bite here are D-2 (acknowledged commands)
-# and D-3 (-notexturestreaming, applied by scripts/carla_restart.sh).
+# and D-3 (-notexturestreaming, applied by scripts/simulator/carla_restart.sh).
 import carla_determinism as cd
 
 
@@ -473,7 +473,7 @@ def require_clean_world(world):
             "    that was killed, since SIGTERM skips cleanup. Measuring here means\n"
             "    rendering a road with someone else's vehicle parked on it, which no\n"
             "    array shape or verdict can reveal.\n"
-            "    Restart the server first (R-SIM-1): bash scripts/carla_restart.sh")
+            "    Restart the server first (R-SIM-1): bash scripts/simulator/carla_restart.sh")
 
 
 def spawn_vehicle(world, spawn):
@@ -550,7 +550,7 @@ def spawn_camera_at(world, transform, exposure=None, condition=None):
 
     For measuring the renderer rather than a drive: no vehicle means no physics, no
     spawn collision and no settling, so the only thing that can move the number is the
-    render path. Used by scripts/check_render_photometry.py.
+    render path. Used by scripts/simulator/check_render_photometry.py.
 
     NOTE for night: `set_weather` turns headlights on through the VEHICLE, so an
     unattached camera sees an unlit night. That is fine for a photometric reference --

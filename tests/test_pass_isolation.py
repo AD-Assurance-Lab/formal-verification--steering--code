@@ -18,6 +18,8 @@ import sys
 
 import pytest
 
+from conftest import skip_if_missing_dependency
+
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -32,14 +34,18 @@ def _ledger_for(pass_n):
         "import sys;"
         f"sys.path.insert(0, {REPO!r});"
 
-        f"sys.path.insert(0, {os.path.join(REPO, 'scripts')!r});"
+        f"sys.path.insert(0, {os.path.join(REPO, 'scripts', 'drive')!r});"
         "from closed_loop_ledger import LEDGER;print(LEDGER)"
     )
     env = dict(os.environ, STUDY_MAP="Town06", TOWN06_PASS=str(pass_n))
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
                          env=env, cwd=REPO)
     if out.returncode != 0:
-        pytest.skip(f"ledger module will not import here: {out.stderr.strip()[-200:]}")
+        # NOT a skip. This test exists to pin which directory a ledger pass writes to,
+        # and a module that will not import is exactly how that pin stops being checked
+        # while the suite still reads green.
+        skip_if_missing_dependency("closed_loop_ledger", out.stderr)
+        raise AssertionError(f"the ledger module will not import: {out.stderr[-400:]}")
     return out.stdout.strip().splitlines()[-1]
 
 

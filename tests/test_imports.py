@@ -22,11 +22,11 @@ import pytest
 from conftest import skip_if_missing_dependency
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RUN_ON_IMPORT = {"scripts/audit_repo.py", "scripts/check_gpu_usable.py"}
+RUN_ON_IMPORT = {"scripts/audit_repo.py", "scripts/simulator/check_gpu_usable.py"}
 
 
 def _modules():
-    out = subprocess.run(["git", "ls-files", "scripts/*.py", "scripts/training/*.py",
+    out = subprocess.run(["git", "ls-files", "scripts/**/*.py", "scripts/*.py",
                           "src/steering/*.py", "src/steering/study/*.py"],
                          capture_output=True, text=True, cwd=REPO).stdout.split()
     return sorted(f for f in out
