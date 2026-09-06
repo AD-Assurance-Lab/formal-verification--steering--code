@@ -29,24 +29,22 @@ import numpy as np
 import torch
 
 REPO = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO / "pipeline"))
 
 # BELOW the sys.path insert, not above it. `gpu` lives in pipeline/, so this import only
 # ever succeeded when something else had already put pipeline/ on the path -- and when the
 # ledger was finally run as its own process from the repo root it died with
 # ModuleNotFoundError before driving a single lap. Same failure as the teacher gate's six
 # silent rounds, recorded in run_dagger_rounds.sh.
-from gpu import require_cuda  # noqa: E402
+from steering.gpu import require_cuda  # noqa: E402
 
 import carla  # noqa: E402
-import carla_env as env  # noqa: E402
-import config as C  # noqa: E402
+from steering import carla_env as env  # noqa: E402
+from steering import config as C  # noqa: E402
 
-sys.path.insert(0, str(REPO))
-from study import town06_design as _D  # noqa: E402
-from route import (load_route, signed_cte_route, pure_pursuit_route,  # noqa: E402
+from steering.study import town06_design as _D  # noqa: E402
+from steering.route import (load_route, signed_cte_route, pure_pursuit_route,  # noqa: E402
                    lap_finished)
-from student import StudentNet, student_preprocess  # noqa: E402
+from steering.student import StudentNet, student_preprocess  # noqa: E402
 
 # Map-scoped, and now REDO-scoped. Town04 keeps results/ledger; the Town06 deployment
 # test writes to results/town06/ledger; the Town04 REDO writes to results/town04_v2/ledger.
@@ -60,8 +58,7 @@ from student import StudentNet, student_preprocess  # noqa: E402
 # and this would have written every one of them into pass 1's directory, overwriting the
 # blind result R4 requires to stand. The guard and the writer must read the same
 # definition or the guard protects nothing.
-LEDGER = (REPO / _D.LEDGER_SUBDIR if C.STUDY_MAP != "Town04"
-          else pathlib.Path(C.LEDGER_DIR))
+from steering.ledger import LEDGER, wilson  # noqa: E402
 # Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).
 SPAWNS = C.SPAWNS
 
@@ -156,21 +153,6 @@ def _determinism_provenance():
     except Exception as e:
         out["server_cmdline_error"] = str(e)
     return out
-
-
-def wilson(k, n, z=1.96):
-    """Wilson score interval for a binomial proportion.
-
-    Used rather than the normal approximation because it stays inside [0,1] and behaves
-    at k=0 and k=n, which is exactly where these rates land.
-    """
-    if n == 0:
-        return (0.0, 1.0)
-    p = k / n
-    d = 1.0 + z * z / n
-    centre = (p + z * z / (2 * n)) / d
-    half = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
-    return (max(0.0, centre - half), min(1.0, centre + half))
 
 
 def restart_and_respawn(condition):
@@ -461,8 +443,7 @@ def main():
     # this experiment and the Town04 discovery test, so it is enforced here rather than
     # left to whoever remembers to run the checker afterwards.
     if C.STUDY_MAP != "Town04":
-        sys.path.insert(0, str(REPO / "scripts"))
-        from check_order_town06 import require_certificate_committed
+        from steering.blind_order import require_certificate_committed
         require_certificate_committed()
 
     prov = run_provenance(args.condition)
@@ -513,8 +494,7 @@ def main():
         # therefore settled differently, and the closed loop amplified a millimetre of
         # difference into a different discrete basin. That is why the same checkpoint
         # scored 1.42 ft through this driver and 0.97-1.34 ft through evaluate.py.
-        sys.path.insert(0, os.path.join(C.REPO_ROOT, "scripts"))
-        from condition_signature import assert_condition, identify  # noqa: E402
+        from steering.condition_signature import assert_condition, identify  # noqa: E402
         for _ in range(6):
             _f = world.tick()
         _sig = student_preprocess(env.raw_to_bgr(env.grab_frame(cam_queue, _f)), 168, 28)
@@ -645,7 +625,7 @@ def main():
 if __name__ == "__main__":
     # One CARLA client per port. Two synchronous clients on one world interleave ticks
     # and silently corrupt each other -- see pipeline/carla_lock.py for the run this cost.
-    from carla_lock import carla_lock, CarlaBusy
+    from steering.carla_lock import carla_lock, CarlaBusy
     try:
         with carla_lock(owner=" ".join(sys.argv[:3])):
             sys.exit(main())

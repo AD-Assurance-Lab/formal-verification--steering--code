@@ -81,7 +81,7 @@ PROMOTE=${PROMOTE:-1}
 OUT_DIR=${OUT_DIR:-results/town06}
 mkdir -p "$REPO/$OUT_DIR"
 
-BUDGET_FT=$(python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(C.CTE_BUDGET_FT)")
+BUDGET_FT=$(python3 -c "import steering.config as C;print(C.CTE_BUDGET_FT)")
 GATE_FT=$(python3 -c "print(f'{$BUDGET_FT * $MARGIN_FRAC:.4f}')")
 SCREEN_FT=$(python3 -c "print(f'{$BUDGET_FT * $SCREEN_FRAC:.4f}')")
 
@@ -120,9 +120,9 @@ say "=== seed sweep for $CK -> pin $PIN_CK: conditions [$CONDS], $REPS laps each
 say "    budget $BUDGET_FT ft | screen <= $SCREEN_FT ft | GATE <= $GATE_FT ft (${MARGIN_FRAC}x)"
 for SEED in $SEEDS; do
     SCK="${CK}_s${SEED}"
-    if [ ! -f "$REPO/pipeline/checkpoints/$SCK.pth" ]; then
+    if [ ! -f "$REPO/checkpoints/$SCK.pth" ]; then
         say "seed $SEED: distilling $SCK"
-        ( cd pipeline && DISTILL_SEED="$SEED" python3 distill.py --in-w "$IN_W" --in-h "$IN_H" \
+        ( DISTILL_SEED="$SEED" python3 scripts/distill.py --in-w "$IN_W" --in-h "$IN_H" \
             --out "$SCK" --teacher "$TEACHER" --base "$BASE" \
             --dagger-dirs "$DAGGER_DIRS" --channels "$CH" --fc "$FC" ) \
             >>"$REPO/results/town06_logs/distill_${SCK}.log" 2>&1 \
@@ -169,10 +169,10 @@ for SEED in $SEEDS; do
     say "  seed $SEED held $HELD/$NEED"
     if [ "$HELD" -eq "$NEED" ]; then
         if [ "$PROMOTE" = "1" ]; then
-            cp -p "$REPO/pipeline/checkpoints/$SCK.pth" \
-                  "$REPO/pipeline/checkpoints/${CK}.pth"
+            cp -p "$REPO/checkpoints/$SCK.pth" \
+                  "$REPO/checkpoints/${CK}.pth"
         fi
-        echo "$SCK" > "$REPO/pipeline/checkpoints/${PIN_CK}.selected"
+        echo "$SCK" > "$REPO/checkpoints/${PIN_CK}.selected"
         say "*** $PIN_CK PASSES $HELD/$NEED at <= $GATE_FT ft: $SCK (seed $SEED, pinned) ***"
         exit 0
     fi

@@ -31,7 +31,7 @@ def main():
     args = ap.parse_args()
 
     import carla
-    import config as C
+    from steering import config as C
     want = getattr(C, "MAP_NAME", None) or C.STUDY_MAP
     t0 = time.time()
     last = None

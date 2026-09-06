@@ -99,14 +99,14 @@ for r in $(seq 1 "$MAX"); do
     # so the checkpoint it produced can be told apart from one already on disk.
     ROUND_START=$(date +%s)
     LOG_MARK=$(wc -l < "$LOG" 2>/dev/null || echo 0)
-    python3 pipeline/dagger.py --base "${WHICH}_t06lap" \
+    python3 scripts/dagger.py --base "${WHICH}_t06lap" \
         --init "teacher_${WHICH}_t06lap_bc" --rounds 1 --min-rounds 1 --gate-reps 1 --external-gate \
         --weathers "$WEATHERS" --dagger-dir "dagger_${WHICH}_t06lap" \
         --out-prefix "teacher_${WHICH}_t06lap_dagger" >>"$LOG" 2>&1
     TRAIN_RC=$?
     say "  round exited rc=$TRAIN_RC"
 
-    NEWEST=$(ls -t "$REPO"/pipeline/checkpoints/teacher_${WHICH}_t06lap_dagger_r*.pth \
+    NEWEST=$(ls -t "$REPO"/checkpoints/teacher_${WHICH}_t06lap_dagger_r*.pth \
              2>/dev/null | head -1)
     [ -n "$NEWEST" ] || { say "  no checkpoint produced; stopping"; exit 1; }
     CK=$(basename "$NEWEST" .pth)

@@ -32,8 +32,7 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO / "pipeline"))
-import config as C  # noqa: E402
+from steering import config as C  # noqa: E402
 
 
 def main():
@@ -46,8 +45,8 @@ def main():
     args = ap.parse_args()
 
     import carla
-    import carla_env as env
-    from route import load_route, signed_cte_route, pure_pursuit_route
+    from steering import carla_env as env
+    from steering.route import load_route, signed_cte_route, pure_pursuit_route
 
     sec = args.section or min(C.SECTIONS, key=lambda s: C.SECTION_LEN_M[s])
     route = load_route(sec)

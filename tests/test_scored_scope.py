@@ -1,7 +1,7 @@
 """The two scored scopes must partition the same road, and neither may be silently fitted.
 
 `scored_scope.py` exists because the lap route dropped a constraint the SECTION route
-enforced: `SMAX_CAP = 0.060`, declared in build_study_route.py as "steering demand regime
+enforced: `SMAX_CAP = 0.060`, declared in steering/route_design.py as "steering demand regime
 that actually trained on Town04". The lap's smax is 0.0670.
 
 Excluding that road makes the Town06 mixed student look better, so these tests pin the
@@ -15,6 +15,7 @@ properties that stop the scope from becoming a knob:
 
 No CARLA and no models: this is route geometry only.
 """
+import importlib
 import os
 import sys
 
@@ -22,24 +23,22 @@ import numpy as np
 import pytest
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(REPO, "pipeline"))
-sys.path.insert(0, os.path.join(REPO, "scripts"))
 
 
 @pytest.fixture(scope="module")
 def mod():
     os.environ["STUDY_MAP"] = "Town06"
-    for m in ("config", "route", "scored_scope"):
+    for m in ("steering.config", "steering.route", "steering.scored_scope"):
         sys.modules.pop(m, None)
-    import config as C
-    import scored_scope as S
+    C = importlib.import_module("steering.config")
+    S = importlib.import_module("steering.scored_scope")
     return C, S
 
 
 def test_thresholds_are_the_declared_constants(mod):
     """SMAX_CAP and Town04's smax come from build_study_route, not from this study."""
     _, S = mod
-    import build_study_route as B
+    from steering import route_design as B
     assert S.SMAX_CAP == B.SMAX_CAP
     assert S.REF_SMAX == B.REF["smax"]
 
@@ -66,7 +65,7 @@ def test_capped_is_a_strict_subset_of_full(mod):
 def test_the_route_really_does_exceed_the_cap(mod):
     """If this ever fails, the premise of the whole scope exercise is gone."""
     _, S = mod
-    from route import load_route
+    from steering.route import load_route
     _, d = S.demand_profile(load_route("lap"))
     assert d.max() > S.SMAX_CAP
 
@@ -78,7 +77,7 @@ def test_spans_are_undilated(mod):
     is how a study selects the road that flatters it.
     """
     _, S = mod
-    from route import load_route
+    from steering.route import load_route
     arc, d = S.demand_profile(load_route("lap"))
     for a, b in S.excluded_spans("lap", S.SMAX_CAP):
         m = (arc >= a) & (arc <= b)

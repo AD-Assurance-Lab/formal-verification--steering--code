@@ -75,9 +75,9 @@ print(f\"{max(l['max_cte_ft'] for l in laps):.2f}\")"
 say "=== seed sweep: $(echo $SEEDS | wc -w) draws on a fixed dataset ==="
 for SEED in $SEEDS; do
     CK="${BASE_CK}_s${SEED}"
-    if [ ! -f "$REPO/pipeline/checkpoints/$CK.pth" ]; then
+    if [ ! -f "$REPO/checkpoints/$CK.pth" ]; then
         say "seed $SEED: distilling $CK"
-        ( cd pipeline && DISTILL_SEED="$SEED" python3 distill.py --in-w "$IN_W" --in-h "$IN_H" \
+        ( DISTILL_SEED="$SEED" python3 scripts/distill.py --in-w "$IN_W" --in-h "$IN_H" \
             --out "$CK" --teacher "$TEACHER" --base mixed_t06lap \
             --dagger-dirs "dagger_mixed_t06lap,$DDIR" --channels "$CH" --fc "$FC" ) \
             >>"$REPO/results/town06_logs/distill_seed_${SEED}.log" 2>&1 \
@@ -116,9 +116,9 @@ for SEED in $SEEDS; do
     done
     say "  seed $SEED held $HELD/12"
     if [ "$HELD" -eq 12 ]; then
-        cp -p "$REPO/pipeline/checkpoints/$CK.pth" \
-              "$REPO/pipeline/checkpoints/${BASE_CK}.pth"
-        echo "$CK" > "$REPO/pipeline/checkpoints/${BASE_CK}.selected"
+        cp -p "$REPO/checkpoints/$CK.pth" \
+              "$REPO/checkpoints/${BASE_CK}.pth"
+        echo "$CK" > "$REPO/checkpoints/${BASE_CK}.selected"
         say "*** MIXED STUDENT PASSES 12/12: $CK (seed $SEED, pinned) ***"
         exit 0
     fi

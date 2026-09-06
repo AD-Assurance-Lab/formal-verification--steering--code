@@ -36,8 +36,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 os.environ.setdefault("CARLA_PORT", "3000")
-sys.path.insert(0, str(REPO / "pipeline"))
-import config as C  # noqa: E402
+from steering import config as C  # noqa: E402
 
 
 def restart_carla(log):
@@ -152,7 +151,7 @@ def drive(ckpt, channels, fc, in_w, in_h, weather):
     cmd = [sys.executable, "evaluate.py", "--model", ckpt, "--direction", "all",
            "--weather", weather, "--max-steps", "2000", "--channels", channels,
            "--fc", str(fc), "--student", "--in-w", str(in_w), "--in-h", str(in_h)]
-    p = subprocess.run(cmd, cwd=str(REPO / "pipeline"), capture_output=True, text=True,
+    p = subprocess.run(cmd, cwd=str(REPO), capture_output=True, text=True,
                        env=dict(os.environ, STUDY_MAP=C.STUDY_MAP, PYTHONUNBUFFERED="1"))
     out = p.stdout + p.stderr
     for line in out.splitlines():

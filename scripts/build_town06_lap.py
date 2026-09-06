@@ -25,10 +25,9 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO)); sys.path.insert(0, str(REPO / "pipeline"))
 import numpy as np                                            # noqa: E402
 import carla                                                  # noqa: E402
-import config as C                                            # noqa: E402
+from steering import config as C                                            # noqa: E402
 
 STEP_M = 2.0
 MAX_PTS = 6000
@@ -134,7 +133,7 @@ def main():
         print(f"     bridge {a:7.0f} -> {b:7.0f} m   ({b-a:5.0f} m)")
 
     if not args.dry_run:
-        out = REPO / "pipeline" / "data" / "routes_town06"
+        out = REPO / "data" / "routes_town06"
         out.mkdir(parents=True, exist_ok=True)
         np.save(out / "lap.npy", pts)
         (out / "lap_meta.json").write_text(json.dumps(

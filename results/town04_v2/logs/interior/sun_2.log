@@ -1,0 +1,13 @@
+  OVERRIDE ACTIVE {'SUN_ALTITUDE_OVERRIDE': '2'}: preset assert skipped by design. Rendered signature: looks like 'shadows' (mean=0.0341 sigma=0.0211 p01=0.0000)
+
+=== EASTBOUND (network in control) ===
+  loop closed at step 1698
+  [eastbound] PASS | steps=1699 max|CTE|=1.52ft over-budget=0.0%
+
+=== WESTBOUND (network in control) ===
+  OFF-ROAD (departed lane) at step 1278, x=364
+  [westbound] FAIL | steps=1279 max|CTE|=18.52ft over-budget=1.9%
+
+============================================================
+eastbound : PASS steps=1699 max|CTE|=1.52ft over-budget=0.0%
+westbound : FAIL steps=1279 max|CTE|=18.52ft over-budget=1.9%

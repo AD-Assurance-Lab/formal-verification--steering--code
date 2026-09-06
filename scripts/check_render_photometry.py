@@ -43,16 +43,14 @@ import sys
 import numpy as np
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(REPO, "scripts"))
-sys.path.insert(0, os.path.join(REPO, "pipeline"))
 
 import carla  # noqa: E402
 import carla_determinism as cd  # noqa: E402
-import carla_env as env  # noqa: E402
-import config as C  # noqa: E402
-from imaging import preprocess_for_model  # noqa: E402
-from student import student_preprocess  # noqa: E402
-from condition_signature import identify  # noqa: E402
+from steering import carla_env as env  # noqa: E402
+from steering import config as C  # noqa: E402
+from steering.imaging import preprocess_for_model  # noqa: E402
+from steering.student import student_preprocess  # noqa: E402
+from steering.condition_signature import identify  # noqa: E402
 
 REF_PATH = os.path.join(REPO, "results", "photometry_reference.json")
 

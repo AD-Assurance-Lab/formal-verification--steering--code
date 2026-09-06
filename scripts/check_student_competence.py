@@ -53,10 +53,8 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO))
-sys.path.insert(0, str(REPO / "pipeline"))
 
-import config as C  # noqa: E402
+from steering import config as C  # noqa: E402
 
 
 def checkpoint_digest(ck):
@@ -132,7 +130,7 @@ def run_eval(ckpt, channels, fc):
            "--weather", "clear", "--max-steps", "2000",
            "--channels", channels, "--fc", str(fc), "--student",
            "--in-w", str((C.TOWN06_INPUT_W if C.STUDY_MAP == 'Town06' else 84)), "--in-h", str((C.TOWN06_INPUT_H if C.STUDY_MAP == 'Town06' else 28))]
-    p = subprocess.run(cmd, cwd=str(REPO / "pipeline"), env=env,
+    p = subprocess.run(cmd, cwd=str(REPO), env=env,
                        capture_output=True, text=True)
     return p.stdout + p.stderr
 

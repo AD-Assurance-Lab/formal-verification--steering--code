@@ -11,9 +11,8 @@ import numpy as np
 import pytest
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(REPO, "scripts"))
 
-from condition_signature import assert_condition, identify  # noqa: E402
+from steering.condition_signature import assert_condition, identify  # noqa: E402
 
 
 # The four conditions as they MEASURE on the Town06 lap (T06-F42), on the student's

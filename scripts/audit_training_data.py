@@ -29,9 +29,8 @@ from collections import defaultdict
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO / "pipeline"))
 import numpy as np                                            # noqa: E402
-import config as C                                            # noqa: E402
+from steering import config as C                                            # noqa: E402
 
 MPH_TO_MS = 0.44704
 SPEED_AGREEMENT_FLOOR = 0.80      # actual/reported below this is the degradation tell
@@ -101,7 +100,7 @@ def main():
     # DAgger sets keep a manifest PER ROUND, so a top-level-manifest-only scan skipped
     # them entirely -- and they run the same collection loop, so they carry the same
     # defects. They are the majority of the frames a teacher sees.
-    root = REPO / "pipeline" / "data"
+    root = REPO / "data"
     datasets = [p for p in sorted(root.iterdir())
                 if p.is_dir() and (p / "manifest.csv").exists()]
     datasets += [p for p in sorted(root.glob("*/round*"))

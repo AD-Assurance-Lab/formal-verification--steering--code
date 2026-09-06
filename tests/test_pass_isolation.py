@@ -32,7 +32,7 @@ def _ledger_for(pass_n):
     code = (
         "import sys;"
         f"sys.path.insert(0, {REPO!r});"
-        f"sys.path.insert(0, {os.path.join(REPO, 'pipeline')!r});"
+
         f"sys.path.insert(0, {os.path.join(REPO, 'scripts')!r});"
         "from closed_loop_ledger import LEDGER;print(LEDGER)"
     )
@@ -46,7 +46,7 @@ def _ledger_for(pass_n):
 
 def _design_for(pass_n):
     code = (f"import sys;sys.path.insert(0, {REPO!r});"
-            "from study import town06_design as D;print(D.LEDGER_SUBDIR)")
+            "from steering.study import town06_design as D;print(D.LEDGER_SUBDIR)")
     env = dict(os.environ, STUDY_MAP="Town06", TOWN06_PASS=str(pass_n))
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
                          env=env, cwd=REPO)
@@ -73,7 +73,7 @@ def test_pass_1_is_still_the_unsuffixed_directory():
 
 def test_an_unknown_pass_refuses():
     code = (f"import sys;sys.path.insert(0, {REPO!r});"
-            "from study import town06_design as D;print(D.LEDGER_SUBDIR)")
+            "from steering.study import town06_design as D;print(D.LEDGER_SUBDIR)")
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
                          env=dict(os.environ, STUDY_MAP="Town06", TOWN06_PASS="7"),
                          cwd=REPO)
@@ -83,7 +83,7 @@ def test_an_unknown_pass_refuses():
 def test_pass_2_predicts_with_both_certificates():
     """A-5: pass 2 scores both scopes, so R1 must cover both bounds."""
     code = (f"import sys;sys.path.insert(0, {REPO!r});"
-            "from study import town06_design as D;print('|'.join(D.CERT_ARTIFACTS))")
+            "from steering.study import town06_design as D;print('|'.join(D.CERT_ARTIFACTS))")
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
                          env=dict(os.environ, STUDY_MAP="Town06", TOWN06_PASS="2"),
                          cwd=REPO)
@@ -102,8 +102,8 @@ def test_pass3_pins_are_a_separate_namespace():
     but must pin under its own name, or the winner would silently become the model the
     committed pass-1 and pass-2 results refer to.
     """
-    code = (f"import sys;sys.path.insert(0, {os.path.join(REPO, 'pipeline')!r});"
-            "import config as C;"
+    code = (f"import sys;"
+            "import steering.config as C;"
             "print('|'.join(f'{sw}>{pin}' for _,sw,pin,_,_ in C.TOWN06_PASS3_WIDTHS));"
             "print('|'.join(b for _,b,_,_ in C.TOWN06_STUDENTS))")
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
@@ -139,8 +139,8 @@ def test_pass3_gate_would_reject_the_shipped_student():
     """The pre-registered criterion is strict enough to matter, checked against the
     shipped student's own committed gate artifacts rather than asserted."""
     import glob, json
-    code = (f"import sys;sys.path.insert(0, {os.path.join(REPO, 'pipeline')!r});"
-            "import config as C;print(C.CTE_BUDGET_FT, C.TOWN06_PASS3_GATE_MARGIN)")
+    code = (f"import sys;"
+            "import steering.config as C;print(C.CTE_BUDGET_FT, C.TOWN06_PASS3_GATE_MARGIN)")
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
                          env=dict(os.environ, STUDY_MAP="Town06"), cwd=REPO)
     bud, margin = (float(x) for x in out.stdout.split()[-2:])

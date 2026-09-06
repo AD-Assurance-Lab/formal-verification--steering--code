@@ -26,10 +26,10 @@ LOG_DIR=$REPO/results/town06_logs; mkdir -p "$LOG_DIR"
 LOG=$LOG_DIR/finish_lap.log
 say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG"; }
 
-CK_DIR=$REPO/pipeline/checkpoints
+CK_DIR=$REPO/checkpoints
 read -r CLEAR_CK CLEAR_CH CLEAR_FC MIXED_CK MIXED_CH MIXED_FC IN_W IN_H <<<"$(
 python3 - <<'PY'
-import sys; sys.path.insert(0,'pipeline'); import config as C
+import steering.config as C
 rows = {nm: (ck, ",".join(str(c) for c in ch), fc) for nm, ck, ch, fc in C.TOWN06_STUDENTS}
 c = rows["S_clear_t06"]; m = rows["S_mixed_t06"]
 print(c[0], c[1], c[2], m[0], m[1], m[2], C.TOWN06_INPUT_W, C.TOWN06_INPUT_H)

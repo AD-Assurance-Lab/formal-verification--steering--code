@@ -54,7 +54,7 @@ mkdir -p "$LOG_DIR"
 LOG=$LOG_DIR/dagger_student_${CK}.log
 say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/student_dagger_rounds_${CK}.log"; }
 
-n_rounds() { ls -d "$REPO/pipeline/data/$DDIR"/round*/ 2>/dev/null | wc -l; }
+n_rounds() { ls -d "$REPO/data/$DDIR"/round*/ 2>/dev/null | wc -l; }
 
 if grep -q "\*\*\* STUDENT DAGGER COMPLETE" "$LOG" 2>/dev/null; then
     say "$CK student DAgger already complete"; exit 0
@@ -94,7 +94,7 @@ for r in $(seq 1 "$ROUNDS"); do
     restart_carla_retrying "$LOG_DIR/dagger_student_restart.log" "round $r" || exit 1
 
     ROUND_START=$(date +%s)
-    python3 pipeline/dagger_student.py --student "$CK" --w "$IN_W" --h "$IN_H" \
+    python3 scripts/dagger_student.py --student "$CK" --w "$IN_W" --h "$IN_H" \
         --rounds 1 --weathers "$WEATHERS" --teacher "$TEACHER" --base "$BASE" \
         --dagger-dir "$DDIR" --channels "$CHANNELS" --fc "$FC" >>"$LOG" 2>&1
     RC=$?
@@ -120,7 +120,7 @@ for r in $(seq 1 "$ROUNDS"); do
         say "  no new round on disk ($HAVE -> $NOW); not pretending otherwise -- stopping"
         exit 3
     fi
-    NEWEST=$(ls -t "$REPO"/pipeline/checkpoints/${CK}_dagger_r*.pth 2>/dev/null | head -1)
+    NEWEST=$(ls -t "$REPO"/checkpoints/${CK}_dagger_r*.pth 2>/dev/null | head -1)
     if [ -n "$NEWEST" ] && [ "$(stat -c %Y "$NEWEST")" -ge "$ROUND_START" ]; then
         say "  round trained $(basename "$NEWEST" .pth)"
     else
@@ -135,7 +135,7 @@ for r in $(seq 1 "$ROUNDS"); do
 done
 
 HAVE=$(n_rounds)
-FINAL=$(ls -t "$REPO"/pipeline/checkpoints/${CK}_dagger_r*.pth 2>/dev/null | head -1)
+FINAL=$(ls -t "$REPO"/checkpoints/${CK}_dagger_r*.pth 2>/dev/null | head -1)
 if [ -z "$FINAL" ]; then
     say "$CK: no student-DAgger checkpoint was produced"; exit 1
 fi

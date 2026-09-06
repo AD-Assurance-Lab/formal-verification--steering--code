@@ -39,7 +39,7 @@ def _scored_len(study_map, cell, **env):
     code = ("import os,sys;"
             + "".join(f"os.environ[{k!r}]={v!r};" for k, v in
                       dict(STUDY_MAP=study_map, **env).items())
-            + "sys.path.insert(0,'pipeline');import config as C;"
+            + "import steering.config as C;"
               f"print(C.scored_len_m({cell!r}))")
     out = subprocess.run([sys.executable, "-c", code], cwd=str(REPO),
                          capture_output=True, text=True, check=True)
@@ -63,7 +63,7 @@ def _bridged_m(study_map, cell, env):
     code = ("import os,sys;"
             + "".join(f"os.environ[{k!r}]={v!r};" for k, v in
                       dict(env, STUDY_MAP=study_map).items())
-            + "sys.path.insert(0,'pipeline');import config as C;"
+            + "import steering.config as C;"
               f"print(sum(b-a for a,b in C.bridge_spans_for({cell!r})))")
     out = subprocess.run([sys.executable, "-c", code], cwd=str(REPO),
                          capture_output=True, text=True, check=True)
@@ -85,8 +85,9 @@ def make_capture(path, span_m, claimed_span=None, n=200):
 def run_guard(module, env, path, cell):
     """Call the module's check_coverage in a subprocess; return (exitcode, output)."""
     code = (
-        "import sys; sys.path.insert(0, 'scripts'); sys.path.insert(0, 'pipeline');"
-        "sys.path.insert(0, '.');"
+        # scripts/ is entry points, not a package, so a subprocess that imports one
+        # by name has to be told where they live. The library itself is installed.
+        "import os, sys; sys.path.insert(0, os.path.join(os.getcwd(), 'scripts'));"
         f"import {module} as m;"
         f"m.check_coverage(__import__('pathlib').Path({str(path)!r}), {cell!r});"
         "print('ACCEPTED')"
@@ -145,22 +146,20 @@ def main():
 
 def _routes():
     import numpy as np
-    root = Path(__file__).resolve().parents[1] / "pipeline" / "data"
+    root = Path(__file__).resolve().parents[1] / "data"
     return (np.load(root / "routes_town06" / "lap.npy"),
             np.load(root / "routes" / "eastbound.npy"))
 
 
 def test_route_closure_is_detected():
-    import sys; sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pipeline"))
-    import route
+    from steering import route
     lap, eastbound = _routes()
     assert route.route_is_closed(eastbound), "Town04's lap closes (7.9 m) and must keep wrapping"
     assert not route.route_is_closed(lap), "the Town06 lap is open (173.8 m) and must not wrap"
 
 
 def test_open_route_never_wraps_to_the_start():
-    import sys; sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pipeline"))
-    import route
+    from steering import route
     lap, eastbound = _routes()
     n = len(lap)
     for k in range(1, 8):
@@ -173,8 +172,8 @@ def test_open_route_never_wraps_to_the_start():
 def test_pure_pursuit_does_not_saturate_at_an_open_route_end():
     """Clamping the lookahead to the last vertex makes the target the vehicle's
     own position, ld -> 0, and the steer saturate. It must extrapolate instead."""
-    import sys, math; sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pipeline"))
-    import route
+    import math
+    from steering import route
     lap, _ = _routes()
     n = len(lap)
 

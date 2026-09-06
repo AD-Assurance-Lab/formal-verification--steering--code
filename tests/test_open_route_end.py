@@ -14,9 +14,8 @@ import numpy as np
 import pytest
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(REPO, "pipeline"))
 
-from route import lap_finished, route_is_closed  # noqa: E402
+from steering.route import lap_finished, route_is_closed  # noqa: E402
 
 # Pure pursuit commands at most ~0.09 on these routes at 20 mph.
 STEER_CEILING = 0.25
@@ -57,7 +56,7 @@ def test_no_hint_is_not_a_finish():
 def test_every_collector_stops_before_it_records(driver):
     """The check must precede the write, so a degenerate label is never recorded at all
     rather than recorded and filtered later."""
-    src = open(os.path.join(REPO, "pipeline", driver)).read()
+    src = open(os.path.join(REPO, "scripts", driver)).read()
     assert "lap_finished(" in src, f"{driver} does not stop at an open route's end"
     stop = src.index("if lap_finished(")
     write = src.index("cv2.imwrite(")
@@ -82,7 +81,7 @@ def test_the_data_auditor_would_catch_a_recurrence():
     assert "degenerate = (st > STEER_LABEL_CEILING) & (ct < STEER_LABEL_CTE_FLOOR_M)" in src
 
 
-@pytest.mark.parametrize("path", ["pipeline/evaluate.py", "scripts/closed_loop_ledger.py"])
+@pytest.mark.parametrize("path", ["scripts/evaluate.py", "scripts/closed_loop_ledger.py"])
 def test_every_measuring_loop_stops_at_the_route_end(path):
     """The loops that SCORE a policy must stop too.
 

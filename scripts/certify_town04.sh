@@ -21,7 +21,7 @@ LOG=results/town04_v2/logs
 mkdir -p "$LOG"
 
 echo "=== capture gate (precondition) ==="
-python3 scripts/capture_driven_gate.py --captures "$CAL" --drives pipeline/results \
+python3 scripts/capture_driven_gate.py --captures "$CAL" --drives results/oracle \
     2>&1 | tee "$LOG/capture_gate.log"
 
 echo

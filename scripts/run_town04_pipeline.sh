@@ -24,8 +24,8 @@ export CARLA_PORT=${CARLA_PORT:-3000}
 export PYTHONUNBUFFERED=1
 
 LOG_DIR=$REPO/results/town04_v2/logs; mkdir -p "$LOG_DIR"
-CK_DIR=$REPO/pipeline/checkpoints
-DATA=$REPO/pipeline/data
+CK_DIR=$REPO/checkpoints
+DATA=$REPO/data
 say(){ echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/pipeline.log"; }
 
 python3 -m carla_determinism --lock-only >/dev/null || {
@@ -63,17 +63,17 @@ teacher_gate(){ local log="$LOG_DIR/$1.log"
     say "FATAL: $1 exhausted its rounds WITHOUT meeting budget. Refusing to distil."; return 1; fi
   say "GATE  $1: teacher met budget"; return 0; }
 
-cd "$REPO/pipeline"
+cd "$REPO"
 
 # ------------------------------------------------------------------ base data
 if [ ! -f "$DATA/conditions_v2/manifest.csv" ]; then
-  run collect python3 collect_data.py --dataset conditions_v2 \
+  run collect python3 scripts/collect_data.py --dataset conditions_v2 \
       --weathers clear,fog,night,shadows --laps 2 --direction both || exit 1
 else say "SKIP  collect (manifest exists)"; fi
 
 # ------------------------------------------------------------------ teachers
 if [ ! -f "$CK_DIR/teacher_clear_v2_bc.pth" ]; then
-  run train_clear_bc python3 train.py --dataset conditions_v2 --weathers clear \
+  run train_clear_bc python3 scripts/train.py --dataset conditions_v2 --weathers clear \
       --epochs 120 --out teacher_clear_v2_bc || exit 1
 else say "SKIP  train_clear_bc"; fi
 
@@ -83,19 +83,19 @@ if ! ls "$CK_DIR"/teacher_clear_v2_dagger_r*.pth >/dev/null 2>&1; then
   # DISTIL -- measured in T04-R3/R4, where the first-passing teacher drove eastbound at
   # 0.48 ft and its student departed the same curve at 30 ft, and six more rounds fixed
   # the student at the published architecture with nothing else changed.
-  run dagger_clear python3 dagger.py --base conditions_v2 --init teacher_clear_v2_bc \
+  run dagger_clear python3 scripts/dagger.py --base conditions_v2 --init teacher_clear_v2_bc \
       --rounds 12 --min-rounds 8 --gate-reps 3 --weathers clear --dagger-dir dagger_clear_v2 \
       --out-prefix teacher_clear_v2_dagger || exit 1
   teacher_gate dagger_clear || exit 1
 else say "SKIP  dagger_clear"; teacher_gate dagger_clear || exit 1; fi
 
 if [ ! -f "$CK_DIR/teacher_mixed_v2_bc.pth" ]; then
-  run train_mixed_bc python3 train.py --dataset conditions_v2 \
+  run train_mixed_bc python3 scripts/train.py --dataset conditions_v2 \
       --weathers clear,fog,night,shadows --epochs 120 --out teacher_mixed_v2_bc || exit 1
 else say "SKIP  train_mixed_bc"; fi
 
 if ! ls "$CK_DIR"/teacher_mixed_v2_dagger_r*.pth >/dev/null 2>&1; then
-  run dagger_mixed python3 dagger.py --base conditions_v2 --init teacher_mixed_v2_bc \
+  run dagger_mixed python3 scripts/dagger.py --base conditions_v2 --init teacher_mixed_v2_bc \
       --rounds 16 --min-rounds 8 --gate-reps 3 --weathers clear,fog,night,shadows \
       --dagger-dir dagger_mixed_v2 --out-prefix teacher_mixed_v2_dagger || exit 1
   teacher_gate dagger_mixed || exit 1
@@ -111,13 +111,13 @@ say "teachers: clear=$TC mixed=$TM"
 # the width. They are NOT matched; an early methodology draft required that and it was
 # discarded, because w1 failed all four conditions and w3 passed everything (4b2ad73).
 if [ ! -f "$CK_DIR/S_clear_84x28_v2.pth" ]; then
-  run distill_clear python3 distill.py --in-w 84 --in-h 28 --out S_clear_84x28_v2 \
+  run distill_clear python3 scripts/distill.py --in-w 84 --in-h 28 --out S_clear_84x28_v2 \
       --teacher "$TC" --base conditions_v2 --dagger-dirs dagger_clear_v2 \
       --weathers clear --channels 8,16,16 --fc 32 || exit 1
 else say "SKIP  distill_clear"; fi
 
 if [ ! -f "$CK_DIR/S_mixed_84x28_w3_v2.pth" ]; then
-  run distill_mixed python3 distill.py --in-w 84 --in-h 28 --out S_mixed_84x28_w3_v2 \
+  run distill_mixed python3 scripts/distill.py --in-w 84 --in-h 28 --out S_mixed_84x28_w3_v2 \
       --teacher "$TM" --base conditions_v2 --dagger-dirs dagger_mixed_v2 \
       --channels 24,48,48 --fc 96 || exit 1
 else say "SKIP  distill_mixed"; fi
@@ -127,14 +127,14 @@ else say "SKIP  distill_mixed"; fi
 # and dagger_student_w3 round directories). Town06 removed it (T06-F14) and did not need
 # it; Town04 is being reproduced as published, so it runs.
 if ! ls "$CK_DIR"/S_clear_84x28_v2_dagger_r*.pth >/dev/null 2>&1; then
-  run dagger_student_clear python3 dagger_student.py --student S_clear_84x28_v2 \
+  run dagger_student_clear python3 scripts/dagger_student.py --student S_clear_84x28_v2 \
       --w 84 --h 28 --rounds 3 --weathers clear --teacher "$TC" \
       --base conditions_v2 --dagger-dir dagger_student_clear_v2 \
       --channels 8,16,16 --fc 32 || exit 1
 else say "SKIP  dagger_student_clear"; fi
 
 if ! ls "$CK_DIR"/S_mixed_84x28_w3_v2_dagger_r*.pth >/dev/null 2>&1; then
-  run dagger_student_mixed python3 dagger_student.py --student S_mixed_84x28_w3_v2 \
+  run dagger_student_mixed python3 scripts/dagger_student.py --student S_mixed_84x28_w3_v2 \
       --w 84 --h 28 --rounds 3 --weathers clear,fog,night,shadows --teacher "$TM" \
       --base conditions_v2 --dagger-dir dagger_student_mixed_v2 \
       --channels 24,48,48 --fc 96 || exit 1

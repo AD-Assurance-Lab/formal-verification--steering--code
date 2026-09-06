@@ -44,7 +44,7 @@ def _provenance():
     """Call lap_provenance() in a fresh interpreter and return it as JSON."""
     code = (
         "import sys, json;"
-        f"sys.path.insert(0, {os.path.join(REPO, 'pipeline')!r});"
+        f""
         f"sys.path.insert(0, {os.path.join(REPO, 'scripts')!r});"
         "import importlib.util as u;"
         f"spec = u.spec_from_file_location('gate', {GATE!r});"

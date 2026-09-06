@@ -16,7 +16,7 @@ export STUDY_MAP=Town06
 export CARLA_PORT=${CARLA_PORT:-3000}
 export PYTHONUNBUFFERED=1
 
-python3 scripts/check_protocol_lock.py >/dev/null || { echo "PROTOCOL lock mismatch"; exit 1; }
+python3 -m steering.protocol_lock >/dev/null || { echo "PROTOCOL lock mismatch"; exit 1; }
 
 # Q7: OY_CAPTURE_DIR retargets the capture set. A capture set is what a certificate is
 # computed against, so a stray value here would silently certify a different set of frames
@@ -34,14 +34,14 @@ mkdir -p "$OUTDIR" "$LOGD"
 
 # The sampling RULE is frozen (every 8th control-rate pose, PROTOCOL section 3); the
 # pose count follows from each section's length rather than being fixed at Town04's 200.
-SECTIONS=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(' '.join(C.SECTIONS))")
+SECTIONS=$(STUDY_MAP=Town06 python3 -c "import steering.config as C;print(' '.join(C.SECTIONS))")
 echo "sections: $SECTIONS"
 
 for SEC in $SECTIONS; do
   # THE SCORED LENGTH. SECTION_LEN_M is the route's GEOMETRY, and on the lap the two
   # differ by the 170 m of bridged intersection that no closed-loop cell scores.
-  LEN=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(f\"{C.scored_len_m('$SEC'):.1f}\")")
-  POSES=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(C.steps_for('$SEC'))")
+  LEN=$(STUDY_MAP=Town06 python3 -c "import steering.config as C;print(f\"{C.scored_len_m('$SEC'):.1f}\")")
+  POSES=$(STUDY_MAP=Town06 python3 -c "import steering.config as C;print(C.steps_for('$SEC'))")
   for COND in clear fog night low_sun; do
     OUT="$CAPDIR/lap_${SEC}_${COND}.npz"
     if [ -f "$REPO/$OUT" ]; then echo "SKIP  $OUT"; continue; fi
