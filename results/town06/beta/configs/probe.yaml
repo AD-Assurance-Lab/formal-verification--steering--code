@@ -1,0 +1,16 @@
+general:
+  device: cuda
+  conv_mode: matrix
+  complete_verifier: bab
+model:
+  onnx_path: /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06/beta/specs/S_mixed_t06lap_168x56_w4_s3__fog__p0000__s00.onnx
+  onnx_quirks: "{'Reshape': {'fix_batch_size': True}}"
+  input_shape: [-1, 1]
+specification:
+  vnnlib_path: /home/za/ad-assurance--workspace/formal-verification--steering--code/results/town06/beta/specs/S_mixed_t06lap_168x56_w4_s3__fog__p0000__s00__max.vnnlib
+attack:
+  pgd_order: skip
+bab:
+  timeout: 1200
+solver:
+  batch_size: 64

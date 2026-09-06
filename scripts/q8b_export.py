@@ -155,12 +155,19 @@ def main():
     prob_path = outdir / f"{stem}__problem.npz"
     np.savez(prob_path, W=W.astype(np.float32), bias=bias.astype(np.float32))
 
-    rec = {"student": a.student, "channels": a.channels, "fc": a.fc,
+    # MERGE, never clobber. A second run that only adds a --threshold used to rewrite
+    # this file from scratch and silently delete the A-1 fidelity evidence
+    # (reference/export_ok/export_max_abs_diff) recorded by an earlier --check run. The
+    # gate's whole purpose is that a verdict cannot be reported without it, so the
+    # evidence must not be destroyable by a later invocation that happens to omit a flag.
+    meta_path = outdir / f"{stem}.json"
+    rec = json.loads(meta_path.read_text()) if meta_path.exists() else {}
+    rec.update({"student": a.student, "channels": a.channels, "fc": a.fc,
            "condition": a.condition, "pose": a.pose,
            "split": a.split, "nsplit": a.nsplit, "stride": a.stride,
            "in_h": h, "in_w": w,
            "problem": str(prob_path.relative_to(REPO)),
-           "onnx": str(onnx_path.relative_to(REPO)), "poses_available": len(pairs)}
+           "onnx": str(onnx_path.relative_to(REPO)), "poses_available": len(pairs)})
 
     if a.check:
         # A-1's export-fidelity gate, in two halves that CANNOT share an environment.
@@ -214,8 +221,8 @@ def main():
         rec["threshold"] = a.threshold
         rec["direction"] = a.direction
 
-    (outdir / f"{stem}.json").write_text(json.dumps(rec, indent=2))
-    print(f"wrote {onnx_path.relative_to(REPO)}")
+    meta_path.write_text(json.dumps(rec, indent=2))
+    print(f"wrote {meta_path.relative_to(REPO)}")
     print(json.dumps(rec, indent=2))
 
 
