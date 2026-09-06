@@ -19,14 +19,20 @@ artifacts already exist.
     STUDY_MAP=Town04 TOWN04_REDO=1 python3 scripts/capture_driven_gate.py \
         --captures results/town04_v2/calibration --drives results/oracle
 """
-import argparse, glob, json, os, sys
+import argparse
+import glob
+import json
+import os
+import sys
 from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 
-from steering.gpu import require_cuda  # noqa: E402
-import numpy as np, torch, csv                                  # noqa: E402
-from steering import config as C                                              # noqa: E402
-from steering.student import StudentNet                                  # noqa: E402
+from steering.gpu import require_cuda
+import numpy as np
+import torch
+import csv
+from steering import config as C
+from steering.student import StudentNet
 
 THRESHOLD = 0.05          # the paper's stated gate
 

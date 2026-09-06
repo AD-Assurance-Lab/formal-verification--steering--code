@@ -18,7 +18,9 @@ capture rig, not a failure rate, and rule 3 does not apply to it.
     STUDY_MAP=Town04 TOWN04_REDO=1 python3 scripts/capture_gate_drives.py
 """
 import argparse
-import os, subprocess, sys
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -30,7 +32,7 @@ REPO = Path(__file__).resolve().parent.parent
 # rest of the repo.
 os.environ.setdefault("CARLA_PORT", "3000")
 
-from steering import config as C                                              # noqa: E402
+from steering import config as C
 
 
 def server_listening(port):

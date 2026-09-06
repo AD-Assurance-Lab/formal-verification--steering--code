@@ -29,8 +29,6 @@ over, which is the only thing that makes a refusal correct or incorrect.
 """
 import argparse
 import json
-import os
-import sys
 from pathlib import Path
 
 import numpy as np
@@ -38,11 +36,11 @@ import torch
 
 REPO = Path(__file__).resolve().parent.parent
 
-from steering import config as C  # noqa: E402
-from steering.gpu import require_cuda  # noqa: E402
-from steering.student import StudentNet  # noqa: E402
-from steering import captures as ct  # noqa: E402
-from steering.study import town06_design as D  # noqa: E402
+from steering import config as C
+from steering.gpu import require_cuda
+from steering.student import StudentNet
+from steering import captures as ct
+from steering.study import town06_design as D
 
 
 def main():
@@ -110,7 +108,7 @@ def main():
         verdict = "WITNESS" if rec["witness"] else "no witness found"
         print(f"  {cond:9s} {len(dev_hi):4d} poses   "
               f"lo {blo / tol:+7.3f}x  hi {bhi / tol:+7.3f}x   -> {verdict}"
-              + (f"  (hi side)" if hit_hi else (f"  (lo side)" if hit_lo else "")))
+              + ("  (hi side)" if hit_hi else ("  (lo side)" if hit_lo else "")))
         print(f"            distinct intensities used: {rec['distinct_s_hi']} (hi), "
               f"{rec['distinct_s_lo']} (lo)")
 

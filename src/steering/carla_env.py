@@ -94,7 +94,7 @@ def load_study_map(client, fresh=True):
     try:
         import carla_determinism as _cd
         age = _cd.server_age_s(int(os.environ.get("CARLA_PORT", str(PORT))))
-    except Exception:                                          # noqa: BLE001
+    except Exception:
         age = None
     if age is not None and age < 180.0:
         print(f"  server is {age:.0f}s old: world is already fresh, skipping reload",

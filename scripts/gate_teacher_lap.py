@@ -18,16 +18,16 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-import carla                                                   # noqa: E402
-import numpy as np                                             # noqa: E402
-import torch                                                   # noqa: E402
-import carla_determinism as cd                                 # noqa: E402
-from steering import carla_env as env                                        # noqa: E402
-from steering import config as C                                             # noqa: E402
-from steering.gpu import require_cuda                                   # noqa: E402
-from steering.model import load_model                          # noqa: E402
-from steering.imaging import preprocess_for_model                       # noqa: E402
-from steering.route import load_route, signed_cte_route, pure_pursuit_route   # noqa: E402
+import carla
+import numpy as np
+import torch
+import carla_determinism as cd
+from steering import carla_env as env
+from steering import config as C
+from steering.gpu import require_cuda
+from steering.model import load_model
+from steering.imaging import preprocess_for_model
+from steering.route import load_route, signed_cte_route, pure_pursuit_route
 
 
 def main():

@@ -50,12 +50,12 @@ import torch
 
 REPO = Path(__file__).resolve().parent.parent
 
-from steering.gpu import require_cuda  # noqa: E402
+from steering.gpu import require_cuda
 
-from steering import config as C  # noqa: E402
-from steering.student import StudentNet  # noqa: E402
-from steering.study import town06_design as D  # noqa: E402
-from steering.captures import nominal, scope_mask, CAPTURES  # noqa: E402
+from steering import config as C
+from steering.student import StudentNet
+from steering.study import town06_design as D
+from steering.captures import nominal, scope_mask, CAPTURES
 
 CONDS = ("fog", "night", "low_sun")
 
@@ -94,7 +94,7 @@ def main():
 
     print(f"\nFALSIFICATION WITNESS SEARCH -- scope '{args.scope}', tolerance {tol:.6f}")
     print(f"  certificate: {cert_rel}")
-    print(f"  a witness is a SINGLE GLOBAL s whose lap-mean bias exceeds tolerance\n")
+    print("  a witness is a SINGLE GLOBAL s whose lap-mean bias exceeds tolerance\n")
     print(f"  {'student':13s} {'cond':8s} {'s=1 (driven)':>13s} {'worst s':>9s} "
           f"{'s*':>6s}  {'witness':8s} certificate")
 

@@ -16,7 +16,7 @@ import sys
 try:
     import torch
     torch.zeros(8, device="cuda")
-except Exception as exc:                                       # noqa: BLE001
+except Exception as exc:
     print(f"FATAL: the GPU is present but CUDA cannot initialise "
           f"({type(exc).__name__}: {exc}).", file=sys.stderr)
     print("  nvidia_uvm is probably wedged after repeated restarts. In a terminal:\n"

@@ -30,15 +30,13 @@ Usage:
 import argparse
 import json
 import math
-import os
-import sys
 
 import numpy as np
 
 
-import carla  # noqa: E402
-from steering import config as C  # noqa: E402
-from steering.carla_lock import carla_lock  # noqa: E402
+import carla
+from steering import config as C
+from steering.carla_lock import carla_lock
 
 STEP_M = 2.0
 CURV_WINDOW = 10          # +/- vertices for the curvature estimate (~40 m base)

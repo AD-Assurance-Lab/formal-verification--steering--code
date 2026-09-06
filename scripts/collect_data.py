@@ -19,12 +19,12 @@ import argparse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import cv2  # noqa: E402
-import carla  # noqa: E402
+import cv2
+import carla
 
-from steering import config as C  # noqa: E402
-from steering import carla_env as env  # noqa: E402
-from steering.route import (load_route, signed_cte_route, pure_pursuit_route,  # noqa: E402
+from steering import config as C
+from steering import carla_env as env
+from steering.route import (load_route, signed_cte_route, pure_pursuit_route,
                    lap_finished)
 
 # Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).

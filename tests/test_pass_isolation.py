@@ -12,7 +12,6 @@ the writer must resolve the same definition, and nothing but a test keeps them t
 
 No CARLA and no models: this is path resolution only.
 """
-import importlib
 import os
 import subprocess
 import sys
@@ -102,7 +101,7 @@ def test_pass3_pins_are_a_separate_namespace():
     but must pin under its own name, or the winner would silently become the model the
     committed pass-1 and pass-2 results refer to.
     """
-    code = (f"import sys;"
+    code = ("import sys;"
             "import steering.config as C;"
             "print('|'.join(f'{sw}>{pin}' for _,sw,pin,_,_ in C.TOWN06_PASS3_WIDTHS));"
             "print('|'.join(b for _,b,_,_ in C.TOWN06_STUDENTS))")
@@ -138,8 +137,9 @@ def test_sweep_default_margin_is_unchanged_behaviour():
 def test_pass3_gate_would_reject_the_shipped_student():
     """The pre-registered criterion is strict enough to matter, checked against the
     shipped student's own committed gate artifacts rather than asserted."""
-    import glob, json
-    code = (f"import sys;"
+    import glob
+    import json
+    code = ("import sys;"
             "import steering.config as C;print(C.CTE_BUDGET_FT, C.TOWN06_PASS3_GATE_MARGIN)")
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
                          env=dict(os.environ, STUDY_MAP="Town06"), cwd=REPO)

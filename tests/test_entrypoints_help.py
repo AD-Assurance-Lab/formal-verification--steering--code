@@ -37,6 +37,21 @@ ENTRYPOINTS = [
     "scripts/score_scopes.py",
     "scripts/scored_scope.py",
     "scripts/falsify_witness.py",
+    "scripts/audit_training_data.py",
+    "scripts/fetch_captures.py",
+    "scripts/interpolation_fidelity.py",
+    "scripts/aggregate_ledger_runs.py",
+    "scripts/report_laps.py",
+    "scripts/q8c_varying_witness.py",
+    "scripts/capture_offset_yaw.py",
+    "scripts/certify_sustained_bound.py",
+    "scripts/train.py",
+    "scripts/distill.py",
+    "scripts/dagger.py",
+    "scripts/dagger_student.py",
+    "scripts/collect_data.py",
+    "scripts/drive_expert.py",
+    "scripts/evaluate.py",
 ]
 
 

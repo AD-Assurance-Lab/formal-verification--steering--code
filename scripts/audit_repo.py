@@ -7,10 +7,15 @@ checkpoint mismatches, protocol locks, and whether the shipped models are presen
 
     python3 scripts/audit_repo.py
 """
-import hashlib, json, os, subprocess, sys, glob
+import hashlib
+import json
+import os
+import subprocess
+import sys
+import glob
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(REPO)
-from steering import config as C  # noqa: E402
+from steering import config as C
 ok, bad = [], []
 def chk(c, m): (ok if c else bad).append(m)
 

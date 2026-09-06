@@ -24,20 +24,20 @@ import argparse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import cv2  # noqa: E402
-import torch  # noqa: E402
+import cv2
+import torch
 
-from steering.gpu import require_cuda  # noqa: E402
-import carla  # noqa: E402
+from steering.gpu import require_cuda
+import carla
 
-from steering import config as C  # noqa: E402
-from steering import carla_env as env  # noqa: E402
-from steering.imaging import preprocess_for_model  # noqa: E402
-from steering.route import load_route, signed_cte_route, pure_pursuit_route  # noqa: E402
-from steering.route import lap_finished  # noqa: E402
-from steering.metrics import summarize_cte  # noqa: E402
-from steering.model import CarlaSteeringNet  # noqa: E402
-from train import train_model  # noqa: E402
+from steering import config as C
+from steering import carla_env as env
+from steering.imaging import preprocess_for_model
+from steering.route import load_route, signed_cte_route, pure_pursuit_route
+from steering.route import lap_finished
+from steering.metrics import summarize_cte
+from steering.model import CarlaSteeringNet
+from train import train_model
 
 # Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).
 SPAWNS = C.SPAWNS

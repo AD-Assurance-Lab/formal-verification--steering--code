@@ -30,20 +30,20 @@ import cv2
 import numpy as np
 import torch
 
-from steering.gpu import require_cuda  # noqa: E402
+from steering.gpu import require_cuda
 import torch.nn as nn
 
 from steering import REPO_ROOT as _REPO_ROOT
 
 REPO = Path(_REPO_ROOT)
 
-from steering import config as C  # noqa: E402
-from steering import disturbance_models as dm  # noqa: E402
-from steering import verifiable_disturbance as vd  # noqa: E402
-from steering.student import StudentNet  # noqa: E402
-from steering.study import design  # noqa: E402
+from steering import config as C
+from steering import disturbance_models as dm
+from steering import verifiable_disturbance as vd
+from steering.student import StudentNet
+from steering.study import design
 
-from auto_LiRPA import BoundedModule, BoundedTensor, PerturbationLpNorm  # noqa: E402
+from auto_LiRPA import BoundedModule, BoundedTensor, PerturbationLpNorm
 
 
 LEDGER = REPO / "results" / "ledger"

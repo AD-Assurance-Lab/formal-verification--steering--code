@@ -21,7 +21,6 @@ was needed at all, and it is recorded here so the next person does not pay for i
 import argparse
 import csv
 import json
-import os
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -30,9 +29,9 @@ import numpy as np
 
 REPO = Path(__file__).resolve().parent.parent
 
-from steering import config as C  # noqa: E402
-from steering import scored_scope as ss  # noqa: E402
-from steering.study import town06_design as D  # noqa: E402
+from steering import config as C
+from steering import scored_scope as ss
+from steering.study import town06_design as D
 
 LEDGER = REPO / D.LEDGER_SUBDIR
 TRACES = LEDGER / "runs" / "traces"
@@ -40,7 +39,7 @@ TRACES = LEDGER / "runs" / "traces"
 
 def _route_arc():
     """TRUE cumulative arc length per route vertex, from the vertices themselves."""
-    from steering.route import load_route  # noqa: E402
+    from steering.route import load_route
     rt = np.asarray(load_route("lap"), float)[:, :2]
     seg = np.linalg.norm(np.diff(rt, axis=0), axis=1)
     return np.concatenate([[0.0], np.cumsum(seg)])
@@ -143,7 +142,7 @@ def main():
                 n_scored=ns, n_steps=n, departed=departed,
                 passed=(not departed) and mx <= C.CTE_BUDGET_M))
 
-    print(f"\nTOWN06 -- one set of drives, scored under both scopes")
+    print("\nTOWN06 -- one set of drives, scored under both scopes")
     print(f"  budget {C.CTE_BUDGET_M:.3f} m   "
           f"full {ss.scored_length_m('lap','full'):.0f} m   "
           f"capped {ss.scored_length_m('lap','capped'):.0f} m\n")

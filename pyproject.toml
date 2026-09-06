@@ -45,5 +45,17 @@ where = ["src"]
 testpaths = ["tests"]
 
 [tool.ruff]
-line-length = 95
+line-length = 100
 src = ["src", "scripts", "tests"]
+
+# Pyflakes and the pycodestyle errors, plus RUF100 so a `# noqa` that has stopped
+# applying gets removed rather than accumulating. Deliberately not the stylistic
+# families: this repository is a finished record, and a lint sweep that rewrites
+# comments would break the paper's checker, which asserts on strings inside three
+# of these files.
+[tool.ruff.lint]
+select = ["E", "F", "RUF100"]
+# Deliberate style, not defects. Several modules import after setting an environment
+# variable that the import reads (E402); the codebase uses semicolons and `l` where
+# they read fine (E70x, E741). E501 is covered by line-length above.
+ignore = ["E402", "E501", "E701", "E702", "E741"]

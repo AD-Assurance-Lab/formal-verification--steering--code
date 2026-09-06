@@ -35,13 +35,13 @@ import torch
 
 REPO = Path(__file__).resolve().parent.parent
 
-from steering.protocol_lock import require_locked  # noqa: E402
+from steering.protocol_lock import require_locked
 
-from steering import config as C  # noqa: E402
-from steering import certify as cc  # noqa: E402
-from steering.gpu import require_cuda  # noqa: E402
-from steering.student import StudentNet  # noqa: E402
-from steering.study import town06_design as D  # noqa: E402
+from steering import config as C
+from steering import certify as cc
+from steering.gpu import require_cuda
+from steering.student import StudentNet
+from steering.study import town06_design as D
 
 # One definition, in config.
 #
@@ -62,7 +62,7 @@ if _OVERRIDE:
          tuple(int(x) for x in f.split(":")[2].split(",")), int(f.split(":")[3]))
         for f in _OVERRIDE.split(";") if f.strip())
 
-from steering.captures import (CAPTURES, CANONICAL_CAPTURES,  # noqa: E402
+from steering.captures import (CAPTURES, CANONICAL_CAPTURES,
                                baseline_for, nominal, scope_mask)
 
 # One bound per (student, condition), pooling poses across all sections. The statistic
@@ -119,7 +119,7 @@ def check_coverage(path, sec):
     # span as covered road. route.scored_span_m is the one definition, computed from the
     # POSES ALONE so this remains a recomputation from primary data rather than a reading
     # of anything the artifact or the config asserts (standing rule 7).
-    from steering.route import scored_span_m  # noqa: E402
+    from steering.route import scored_span_m
     span = scored_span_m(x, y)
     claimed = float(z["route_span_m"]) if "route_span_m" in z.files else None
     if claimed is not None and abs(claimed - span) > 25.0:

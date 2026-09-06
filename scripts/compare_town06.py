@@ -20,8 +20,8 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 
-from steering.blind_order import require_certificate_committed, first_commit_epoch  # noqa: E402
-from steering.study import town06_design as D  # noqa: E402
+from steering.blind_order import require_certificate_committed, first_commit_epoch
+from steering.study import town06_design as D
 
 CERT = REPO / D.CERT_ARTIFACT
 LEDGER = REPO / D.LEDGER_SUBDIR
@@ -44,7 +44,7 @@ SCOPE_ARTIFACTS = {
 # checkpoint names; once the students moved to 168x28 nothing matched, every cell
 # reported its certificate as MISSING, and the summary announced "agreement 0/6" with
 # six CONTRADICTS -- a broken join wearing the costume of a catastrophic result.
-from steering import config as C  # noqa: E402
+from steering import config as C
 STU = {}
 for _nm, _ck, _, _ in C.TOWN06_STUDENTS:
     STU[_ck] = _nm
@@ -176,8 +176,8 @@ def main():
             print(f"    {v}")
         return 1
 
-    print(f"\nTOWN06 DEPLOYMENT TEST -- certificate vs closed loop")
-    print(f"  certificate committed before every drive (R1 satisfied)\n")
+    print("\nTOWN06 DEPLOYMENT TEST -- certificate vs closed loop")
+    print("  certificate committed before every drive (R1 satisfied)\n")
     hdr = f"  {'condition':10s} {'student':13s} {'driving':16s} {'certificate':15s} {'':6s} pre-reg"
     print(hdr); print("  " + "-" * (len(hdr) - 2))
     scored = [r for r in rows if r["cond"] not in D.VACUOUS_CELLS

@@ -36,7 +36,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 os.environ.setdefault("CARLA_PORT", "3000")
-from steering import config as C  # noqa: E402
+from steering import config as C
 
 
 def restart_carla(log):

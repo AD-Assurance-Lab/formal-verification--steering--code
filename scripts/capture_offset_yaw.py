@@ -26,7 +26,6 @@ else in the study.
 """
 import sys
 import csv
-import json
 import math
 import argparse
 import signal
@@ -38,11 +37,11 @@ import carla
 
 REPO = Path(__file__).resolve().parent.parent
 
-from steering import config as C  # noqa: E402
-from steering import carla_env as env  # noqa: E402
-from steering import verifiable_disturbance as vd  # noqa: E402
-from steering.imaging import raw_to_bgr  # noqa: E402
-from steering.carla_lock import carla_lock  # noqa: E402
+from steering import config as C
+from steering import carla_env as env
+from steering import verifiable_disturbance as vd
+from steering.imaging import raw_to_bgr
+from steering.carla_lock import carla_lock
 
 # OY_OFFSETS / OY_YAWS let the nominal-only capture (offset 0, yaw 0) run cheaply: the
 # for-all-disturbance coverage claim is per-frame and needs no state grid, so it costs

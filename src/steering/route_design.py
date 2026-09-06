@@ -47,10 +47,10 @@ import numpy as np
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 
-import carla  # noqa: E402
-from steering import config as C  # noqa: E402
-from steering.carla_lock import carla_lock  # noqa: E402
-from steering.mapsurvey import trace, curvature, STEP_M  # noqa: E402
+import carla
+from steering import config as C
+from steering.carla_lock import carla_lock
+from steering.mapsurvey import trace, curvature, STEP_M
 
 TARGET_LEN_M = 2861.0
 WHEELBASE, MAXSTEER = 3.005, 1.2217

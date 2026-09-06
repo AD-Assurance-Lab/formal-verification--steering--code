@@ -210,7 +210,6 @@ def signed_cte_route(route, x, y, hint=None):
     """Signed perpendicular distance (m) from the vehicle to the reference path.
     + = left of the route direction, - = right. Returns (cte, nearest_index)."""
     i = nearest_index(route, x, y, hint)
-    n = len(route)
     a, b = route[i], route[_step_idx(route, i, 1)]
     seg = b - a
     L = math.hypot(seg[0], seg[1])
