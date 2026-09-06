@@ -33,6 +33,10 @@ results/**
 data/**
 checkpoints/**
 
+# routes/ is NOT here on purpose: the two routes are a committed study artifact,
+# and they used to sit under data/ beside the training frames, which is what made
+# that folder confusing.
+
 # The captures live on Hugging Face; scripts/fetch_captures.py puts them back.
 # The training frames, about 59 GB, are regenerable and deliberately not shipped.
 
