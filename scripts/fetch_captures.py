@@ -12,6 +12,7 @@ where the certifier looks:
     python3 scripts/fetch_captures.py           # download what is missing
     python3 scripts/fetch_captures.py --check   # verify what is already here
     python3 scripts/fetch_captures.py --force   # download again regardless
+    python3 scripts/fetch_captures.py --stage DIR   # build the upload tree from here
 
 EVERY FILE IS CHECKED AGAINST A DIGEST RECORDED HERE, and a mismatch is fatal. This is
 not about transport errors. A capture is the certifier's whole input, and a bound
@@ -25,6 +26,7 @@ rather use the Hugging Face client, `hf download` on the same repository is equi
 import argparse
 import hashlib
 import os
+import shutil
 import sys
 import urllib.error
 import urllib.request
@@ -105,13 +107,70 @@ def download(url, dest):
     return tmp
 
 
+def stage(out):
+    """Build the upload tree from the captures here. The reverse of downloading, and
+    it shares this file's table so the two cannot describe different files.
+
+    Refuses on any mismatch. Publishing a capture whose digest is not the one recorded
+    here would leave every reader's `fetch_captures.py` rejecting the real dataset.
+    """
+    missing, wrong, n = [], [], 0
+    for name, rel, want in FILES:
+        src = os.path.join(REPO, rel)
+        if not os.path.exists(src):
+            missing.append(rel)
+            continue
+        if digest(src) != want:
+            wrong.append(rel)
+            continue
+        dest = os.path.join(out, "captures", name)
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        shutil.copyfile(src, dest)
+        n += 1
+
+    if missing or wrong:
+        for rel in missing:
+            print(f"  missing: {rel}", file=sys.stderr)
+        for rel in wrong:
+            print(f"  digest does not match the table: {rel}", file=sys.stderr)
+        print("\nRefusing to stage. The dataset must hold exactly the files this "
+              "script's table describes, or every reader's fetch will reject it.",
+              file=sys.stderr)
+        return 1
+
+    with open(os.path.join(out, "SHA256SUMS"), "w") as f:
+        for name, _, want in FILES:
+            f.write(f"{want}  captures/{name}\n")
+
+    # The dataset's front page ships from here too, so what is published describes what
+    # is published. A card maintained only on the hub drifts from the files under it.
+    shutil.copyfile(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                 "captures_dataset_card.md"),
+                    os.path.join(out, "README.md"))
+
+    print(f"staged {n} files and the dataset card into {out}")
+    print("\nUpload with:")
+    print("  pip install -U 'huggingface_hub[cli]'")
+    print("  hf auth login")
+    print(f"  hf upload {DATASET} {out} . --repo-type dataset --create")
+    print("\nThen check the round trip from a clean clone:")
+    print("  python3 scripts/fetch_captures.py --force")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--check", action="store_true",
                     help="verify what is already on disk and download nothing")
     ap.add_argument("--force", action="store_true",
                     help="download every file again, even if it is present and correct")
+    ap.add_argument("--stage", metavar="DIR",
+                    help="build the tree to upload to the dataset, from the captures on "
+                         "this machine, checking each against the table below")
     args = ap.parse_args()
+
+    if args.stage:
+        return stage(args.stage)
 
     bad, got, have = [], 0, 0
     for name, rel, want in FILES:

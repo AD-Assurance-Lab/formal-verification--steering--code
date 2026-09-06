@@ -137,6 +137,23 @@ signature — reported speed disagreeing with actual displacement — before you
 
 ---
 
+## Publishing the captures again
+
+The dataset is built from this repository, by the same script that fetches it, so the two
+cannot come to describe different files:
+
+```bash
+python3 scripts/fetch_captures.py --stage /tmp/captures-upload
+```
+
+It copies the fifteen files, refuses if any digest differs from the table in
+`scripts/fetch_captures.py`, writes `SHA256SUMS`, and adds
+`scripts/captures_dataset_card.md` as the dataset's front page. It then prints the upload
+command. Publishing a capture whose digest is not the recorded one would leave every
+reader's fetch rejecting the real dataset, which is why it refuses rather than warns.
+
+---
+
 ## The environment
 
 `bash scripts/bootstrap_env.sh` builds `.venv` and then refuses to finish unless a real
