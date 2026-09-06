@@ -37,6 +37,24 @@ the circle would have cleared a network that departs the lane on every lap.
 lane in clear weather, holds it again in heavy fog, and leaves it at fog densities between
 the two on four of six road sections.
 
+## The setup
+
+Two roads, both in CARLA with a Tesla Model 3 ego vehicle: a grade-separated highway loop
+driven in both directions, and one continuous lap of an urban arterial. Intersections are
+driven by the expert and excluded from every measurement, so a certificate never covers
+road the drives are not scored on.
+
+<p align="center">
+  <img src="figures/routes.png" width="420"
+       alt="The two routes: a highway loop driven both ways, and one arterial lap, with intersections excluded">
+  <img src="figures/conditions.png" width="360"
+       alt="What the network sees: clear, fog, night and low sun, at each road's input resolution">
+</p>
+
+The right-hand column is what the network actually sees — the cropped, low-resolution
+input, in each of the four conditions. Keeping the input this small is what makes the
+network verifiable at all.
+
 ## How it works
 
 Two small steering networks are trained per road, one on clear weather alone and one on
