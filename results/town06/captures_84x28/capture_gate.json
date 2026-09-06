@@ -1,0 +1,16 @@
+{
+  "threshold": 0.05,
+  "worst": 0.015044155722192679,
+  "cells": [
+    {
+      "student": "S_q7",
+      "checkpoint": "S_q7_84x28_s0",
+      "direction": "lap",
+      "cond": "clear",
+      "mean_abs_diff": 0.015044155722192679,
+      "poses": 1055,
+      "passed": true
+    }
+  ],
+  "cells_expected": 1
+}
