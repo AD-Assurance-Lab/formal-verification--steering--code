@@ -113,7 +113,15 @@ for ROW in "${STUDENT_ROWS[@]}"; do
       STU=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(C.final_student('$BASE'))")
   fi
   say "student $BASE -> $STU"
-  for COND in clear fog night low_sun; do
+  # TOWN06_LEDGER_CONDS restricts which conditions are driven. A deployment pass must
+  # drive all four -- a partial pass that still printed "LEDGER COMPLETE" would be the
+  # scope error standing rule 7 exists for -- so this is gated on the exploratory tag,
+  # exactly like the student override above.
+  if [ -n "${TOWN06_LEDGER_CONDS:-}" ] && [ -z "${TOWN06_LEDGER_TAG:-}" ]; then
+      say "FATAL: TOWN06_LEDGER_CONDS is set but TOWN06_LEDGER_TAG is not."
+      say "A canonical pass drives every condition. Set a tag."; exit 1
+  fi
+  for COND in ${TOWN06_LEDGER_CONDS:-clear fog night low_sun}; do
     CELL="$LEDGER_DIR/${COND}__${STU}__closed_loop.json"
     if [ -f "$CELL" ]; then say "SKIP  $COND/$STU (cell exists)"; continue; fi
     say "START $COND/$STU"
