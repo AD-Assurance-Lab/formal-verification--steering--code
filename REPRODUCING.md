@@ -11,7 +11,7 @@ certified verdict in the paper. It is the one most readers want, and it runs on 
 |---|---|---|---|
 | code, protocol, routes | git | 1.4 MB | the study |
 | every artifact behind a reported number | git | 2.8 MB | including each individual lap |
-| README figures and the animation | git | 7.7 MB | |
+| README figures and the animation | git | 7.1 MB | |
 | **every shipped policy and its teacher** | **git** | **8.9 MB** | see below |
 | the captures the certifier reads | [Hugging Face](https://huggingface.co/datasets/AD-Assurance-Lab/steering-verification-captures) | 641 MB | `scripts/fetch_captures.py` |
 | training frames | **not shipped** | 59 GB | regenerable; see Level 3 |
