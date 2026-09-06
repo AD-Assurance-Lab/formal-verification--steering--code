@@ -487,7 +487,7 @@ chk(_gate.index("LAP GATE PASSED") < _gate.index("without passing"),
 
 # --- every entry point must IMPORT, before it is trusted to drive ---------------
 # closed_loop_ledger.py had `from gpu import require_cuda` ABOVE the sys.path insert that
-# adds pipeline/, so it only worked when a caller had already put pipeline/ on the path.
+# added the library directory, so it only worked when a caller had already put it on the path.
 # Run as its own process it died with ModuleNotFoundError before driving a single lap --
 # the same failure that cost the teacher gate six silent rounds. An import error is
 # indistinguishable from a policy failure to whatever reads the exit code.
@@ -698,7 +698,7 @@ chk("STU=$BASE" in _rtl,
 
 # --- R-SIM-4 on the SCORED driver, not only the diagnostic one --------------------
 # CLAUDE.md states R-SIM-4 as "verify the rendered condition from a FRAME, every run".
-# It was implemented only in pipeline/evaluate.py, the sweep and gate driver. The driver
+# It was implemented only in scripts/evaluate.py, the sweep and gate driver. The driver
 # that writes the published ledger did not have it, so the rule was enforced on the
 # diagnostic path and not the authoritative one -- and the failure it guards against
 # (Town04 fog leaking into night cells) is invisible in every downstream number.

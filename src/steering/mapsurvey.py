@@ -46,7 +46,7 @@ TARGET_LEN_M = 2861.0
 
 def trace(world_map, start_wp, step=STEP_M, max_pts=4000):
     """Trace a lane centreline with the same straightest-at-junction policy the study
-    uses (pipeline/route.build_route), recording junction hits as we go."""
+    uses (steering.route.build_route), recording junction hits as we go."""
     pts = [(start_wp.transform.location.x, start_wp.transform.location.y)]
     junc = [bool(start_wp.is_junction)]
     lane_w = [float(start_wp.lane_width)]

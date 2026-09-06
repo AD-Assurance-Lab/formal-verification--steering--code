@@ -203,7 +203,7 @@ fi
 
 # ---------------------------------------------------------------- 3. COMMIT (R1)
 [ -f "$CERT" ] || { say "FATAL: no certificate written"; carla_start; exit 1; }
-git add "$CERT" docs/TOWN06_FINDINGS.md 2>/dev/null
+git add "$CERT" 2>/dev/null
 if git diff --cached --quiet; then
     say "certificate already committed, nothing to add"
 else

@@ -185,7 +185,7 @@ lane-width constancy, junction character, lane count, street-light proximity. In
 forbidden: anything a policy does on the route.
 
 Chosen: Town06 outer highway loop, 2861 m window, both carriageways of the same physical
-road. Cached under `pipeline/data/routes_town06/` with `route_meta.json` recording the
+road. Cached under `data/routes_town06/` with `route_meta.json` recording the
 full selection record.
 
 ---
