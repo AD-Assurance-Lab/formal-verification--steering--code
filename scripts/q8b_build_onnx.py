@@ -22,6 +22,7 @@ the version gap, which is exactly what a verdict computed in this environment de
 Exits non-zero on failure; no Q8b verdict may be reported from a graph that fails it.
 """
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -35,7 +36,7 @@ from student import StudentNet            # noqa: E402  -- the study's own defin
 from verifiable_disturbance import LinearDisturbance   # noqa: E402
 
 
-def build(meta):
+def build(meta, four_d=False):
     ch = tuple(int(x) for x in meta["channels"].split(","))
     h, w = int(meta["in_h"]), int(meta["in_w"])
     net_s = StudentNet(h, w, channels=ch, fc=int(meta["fc"]))
@@ -76,7 +77,25 @@ def build(meta):
     # wrong answer. The static graph is kept and the verifier is told not to batch
     # (attack: pgd_order: skip), which is the only stage that needed one.
     head = LinearDisturbance(prob["W"], prob["bias"], (1, 3, h, w), clamp=False)
-    return torch.nn.Sequential(head, net_s).eval()
+    net = torch.nn.Sequential(head, net_s).eval()
+    if four_d:
+        # EXPERIMENT B. auto_LiRPA's patches path -- the memory-efficient one -- asserts
+        # `image.ndim == 4` on the ROOT input when it concretizes. This study's root is
+        # the ONE-DIMENSIONAL disturbance parameter, so patches is unavailable and the
+        # matrix path is forced, which is what exhausted 32 GB on the shipped student.
+        #
+        # This wraps the SAME network behind a (1,1,1,1) root that is immediately
+        # flattened to (1,1). The function is unchanged -- a reshape of a single scalar --
+        # and the A-1 replay still compares against the study's own forward pass, so a
+        # mistake here cannot pass silently.
+        class FourD(torch.nn.Module):
+            def __init__(self, inner):
+                super().__init__()
+                self.inner = inner
+            def forward(self, t):
+                return self.inner(t.reshape(1, 1))
+        net = FourD(net).eval()
+    return net
 
 
 def main(meta_path):
@@ -85,10 +104,12 @@ def main(meta_path):
         if k not in meta:
             sys.exit(f"{meta_path}: no '{k}' -- rerun q8b_export.py with --check")
 
-    net = build(meta)
+    four_d = os.environ.get("Q8B_FOUR_D") == "1"
+    net = build(meta, four_d=four_d)
+    dummy = torch.zeros(1, 1, 1, 1) if four_d else torch.zeros(1, 1)
     onnx_path = REPO / meta["onnx"]
     onnx_path.parent.mkdir(parents=True, exist_ok=True)
-    torch.onnx.export(net, torch.zeros(1, 1), str(onnx_path),
+    torch.onnx.export(net, dummy, str(onnx_path),
                       input_names=["X_0"], output_names=["Y_0"],
                       opset_version=17, dynamo=False)
 
@@ -99,7 +120,8 @@ def main(meta_path):
     sess = ort.InferenceSession(str(onnx_path), providers=["CPUExecutionProvider"])
     name = sess.get_inputs()[0].name
     # Batch-1, matching the head's .view(1, 3, h, w) -- see q8b_export.py.
-    got = np.array([float(sess.run(None, {name: t.reshape(1, 1)})[0].reshape(-1)[0])
+    shp = (1, 1, 1, 1) if four_d else (1, 1)
+    got = np.array([float(sess.run(None, {name: t.reshape(shp)})[0].reshape(-1)[0])
                     for t in ts], dtype=np.float32)
 
     diff = float(np.abs(want - got).max())
