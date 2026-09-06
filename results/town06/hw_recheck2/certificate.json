@@ -1,0 +1,127 @@
+{
+  "S_clear_t06/fog": {
+    "lo": -0.029243881500823268,
+    "hi": 0.013739329368432746,
+    "lo_x_tol": -2.4346967265097224,
+    "hi_x_tol": 1.143866631959249,
+    "verdict": "NOT_CERTIFIED",
+    "poses": 133,
+    "sections": {
+      "lap": {
+        "lo": -0.029243881500823268,
+        "hi": 0.013739329368432746,
+        "poses": 133
+      }
+    },
+    "baseline": "foreign"
+  },
+  "S_clear_t06/night": {
+    "lo": -0.15685895362149405,
+    "hi": 0.11091466163481145,
+    "lo_x_tol": -13.059278088486327,
+    "hi_x_tol": 9.234190187667348,
+    "verdict": "NOT_CERTIFIED",
+    "poses": 133,
+    "sections": {
+      "lap": {
+        "lo": -0.15685895362149405,
+        "hi": 0.11091466163481145,
+        "poses": 133
+      }
+    },
+    "baseline": "foreign"
+  },
+  "S_clear_t06/low_sun": {
+    "lo": -0.033323121874215066,
+    "hi": 0.013908727376378681,
+    "lo_x_tol": -2.7743135172378515,
+    "hi_x_tol": 1.1579698478887632,
+    "verdict": "NOT_CERTIFIED",
+    "poses": 133,
+    "sections": {
+      "lap": {
+        "lo": -0.033323121874215066,
+        "hi": 0.013908727376378681,
+        "poses": 133
+      }
+    },
+    "baseline": "foreign"
+  },
+  "S_mixed_t06/fog": {
+    "lo": -0.005419464965584632,
+    "hi": 0.014893912629721532,
+    "lo_x_tol": -0.4511970687191976,
+    "hi_x_tol": 1.2399913576275428,
+    "verdict": "NOT_CERTIFIED",
+    "poses": 133,
+    "sections": {
+      "lap": {
+        "lo": -0.005419464965584632,
+        "hi": 0.014893912629721532,
+        "poses": 133
+      }
+    },
+    "baseline": "foreign"
+  },
+  "S_mixed_t06/night": {
+    "lo": -0.028910768989480584,
+    "hi": 0.03406529637015095,
+    "lo_x_tol": -2.4069634743112194,
+    "hi_x_tol": 2.836103188205546,
+    "verdict": "NOT_CERTIFIED",
+    "poses": 133,
+    "sections": {
+      "lap": {
+        "lo": -0.028910768989480584,
+        "hi": 0.03406529637015095,
+        "poses": 133
+      }
+    },
+    "baseline": "foreign"
+  },
+  "S_mixed_t06/low_sun": {
+    "lo": -0.0025898221572966114,
+    "hi": 0.003592923519689996,
+    "lo_x_tol": -0.2156154109855389,
+    "hi_x_tol": 0.2991285247733876,
+    "verdict": "CERTIFIED",
+    "poses": 133,
+    "sections": {
+      "lap": {
+        "lo": -0.0025898221572966114,
+        "hi": 0.003592923519689996,
+        "poses": 133
+      }
+    },
+    "baseline": "foreign"
+  },
+  "_meta": {
+    "map": "Town06",
+    "checkpoints": {
+      "S_clear_t06": "S_clear_t06lap_168x56_w2_s0",
+      "S_mixed_t06": "S_mixed_t06lap_168x56_w4_s3"
+    },
+    "input_size": [
+      168,
+      56
+    ],
+    "relu": {
+      "S_clear_t06": 50944,
+      "S_mixed_t06": 101888
+    },
+    "nsplit": 16,
+    "stride": 8,
+    "tolerance": 0.012011303577323182,
+    "t_closed_loop_s": 1.85,
+    "lane_width_m": 3.5,
+    "cte_budget_m": 0.6679999999999999,
+    "lap_end_m": 2289.037517334472,
+    "cells_expected": 6,
+    "cells_scored": 6,
+    "git_commit": "412056e389577432c44bf320c053f5e1b35750d7",
+    "device": "cuda",
+    "torch": "2.13.0+cu130",
+    "numpy": "1.26.4",
+    "blind": "no truth table; agreement is not computable by this tool"
+  }
+}
