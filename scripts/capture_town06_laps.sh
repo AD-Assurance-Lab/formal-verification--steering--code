@@ -18,7 +18,17 @@ export PYTHONUNBUFFERED=1
 
 python3 scripts/check_protocol_lock.py >/dev/null || { echo "PROTOCOL lock mismatch"; exit 1; }
 
-OUTDIR=$REPO/results/town06/captures
+# Q7: OY_CAPTURE_DIR retargets the capture set. A capture set is what a certificate is
+# computed against, so a stray value here would silently certify a different set of frames
+# than the committed one -- and standing rule 7 is explicit that a default which quietly
+# changes scope is the worst kind. It is therefore REQUIRED to name a directory that does
+# not already exist, and the canonical path is refused outright.
+CAPDIR=${OY_CAPTURE_DIR:-results/town06/captures}
+if [ "$CAPDIR" != "results/town06/captures" ]; then
+    [ -d "$REPO/$CAPDIR" ] && { echo "FATAL: $CAPDIR already exists; refusing to mix capture sets"; exit 1; }
+    echo "capture set: $CAPDIR  (projection ${OY_IN_W:-default}x${OY_IN_H:-default})"
+fi
+OUTDIR=$REPO/$CAPDIR
 LOGD=$REPO/results/town06_logs
 mkdir -p "$OUTDIR" "$LOGD"
 
@@ -33,7 +43,7 @@ for SEC in $SECTIONS; do
   LEN=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(f\"{C.scored_len_m('$SEC'):.1f}\")")
   POSES=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(C.steps_for('$SEC'))")
   for COND in clear fog night low_sun; do
-    OUT="results/town06/captures/lap_${SEC}_${COND}.npz"
+    OUT="$CAPDIR/lap_${SEC}_${COND}.npz"
     if [ -f "$REPO/$OUT" ]; then echo "SKIP  $OUT"; continue; fi
     echo "[$(date '+%F %T')] capture $SEC/$COND  (${LEN} m, ${POSES} poses)"
     # R-SIM-1: restart before EVERY measurement. This driver took all captures in one
