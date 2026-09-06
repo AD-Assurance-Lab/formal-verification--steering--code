@@ -694,6 +694,23 @@ chk(_rtl.index("An overridden student may not write a canonical ledger")
 chk("STU=$BASE" in _rtl,
     "an overridden checkpoint is driven exactly, not rewritten by final_student()")
 
+# --- R-SIM-4 on the SCORED driver, not only the diagnostic one --------------------
+# CLAUDE.md states R-SIM-4 as "verify the rendered condition from a FRAME, every run".
+# It was implemented only in pipeline/evaluate.py, the sweep and gate driver. The driver
+# that writes the published ledger did not have it, so the rule was enforced on the
+# diagnostic path and not the authoritative one -- and the failure it guards against
+# (Town04 fog leaking into night cells) is invisible in every downstream number.
+_cll = open("scripts/closed_loop_ledger.py").read()
+chk("assert_condition" in _cll,
+    "closed_loop_ledger asserts the rendered condition from a frame (R-SIM-4)")
+# Anchor on the CALL site, not `def drive_once(`, which is defined far above main.
+chk(_cll.index("assert_condition") < _cll.index("= drive_once("),
+    "closed_loop_ledger checks the condition BEFORE it drives, not after")
+for _p in ("pipeline/evaluate.py", "scripts/closed_loop_ledger.py"):
+    chk("for _ in range(6):" in open(_p).read(),
+        f"{_p} settles the same number of ticks before driving "
+        f"(a mismatch here selects a different basin)")
+
 # --- the environment must be buildable, and prove itself ---------------------------
 # torch 2.5.1+cu121 builds sm_50..sm_90; the lab desktop's RTX 5090 is sm_120. Every
 # kernel failed while torch.cuda.is_available() reported True. A version pin cannot catch
