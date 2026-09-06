@@ -11,17 +11,17 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 REPO=$PWD
-# THIS IS THE REDO'S DRIVER: it writes to results/town04_v2/, so it must run under the
+# THIS IS THE REDO'S DRIVER: it writes to results/highway/, so it must run under the
 # REDO's config. It set only STUDY_MAP, so it captured with the PUBLISHED constants while
 # writing into the redo's directory. That was invisible for as long as the two agreed --
 # and the moment LAP_END_M diverged (2,861 published, 2,988 redo) it silently captured
 # 127 m of the wrong road into the redo's artifacts.
-export STUDY_MAP=Town04 TOWN04_REDO=1
+export STUDY_MAP=Town04
 export CARLA_PORT=${CARLA_PORT:-3000}
 export PYTHONUNBUFFERED=1
 export OY_OFFSETS=0.0 OY_YAWS=0.0
-OUTDIR=${OY_DIR:-$REPO/results/town04_v2/calibration}
-LOGD=$REPO/results/town04_v2/logs/capture
+OUTDIR=${OY_DIR:-$REPO/results/highway/calibration}
+LOGD=$REPO/results/highway/logs/capture
 mkdir -p "$OUTDIR" "$LOGD"
 POSES=${POSES:-1600}          # matches the published captures' pose count
 

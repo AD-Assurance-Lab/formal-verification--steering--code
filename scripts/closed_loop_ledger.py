@@ -44,7 +44,7 @@ from steering.route import (load_route, signed_cte_route, pure_pursuit_route,
 from steering.student import StudentNet, student_preprocess
 
 # Map-scoped, and now REDO-scoped. Town04 keeps results/ledger; the Town06 deployment
-# test writes to results/town06/ledger; the Town04 REDO writes to results/town04_v2/ledger.
+# test writes to results/arterial/ledger; the Town04 REDO writes to results/highway/ledger.
 # A cell can therefore never be mistaken for, or overwrite, a published one -- and the
 # published cells are tracked in git under exactly these filenames, so an unscoped redo
 # would overwrite the record it exists to be compared against.

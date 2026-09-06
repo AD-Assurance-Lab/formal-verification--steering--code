@@ -15,7 +15,7 @@ Two things it reports that a pass/fail bit cannot:
            BUG until proven otherwise and VOIDS the cell -- it is never answered with
            more laps.
 
-    STUDY_MAP=Town04 TOWN04_REDO=1 python3 scripts/report_laps.py
+    STUDY_MAP=Town04 python3 scripts/report_laps.py
 """
 import argparse
 import glob

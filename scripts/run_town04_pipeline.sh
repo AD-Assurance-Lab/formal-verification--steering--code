@@ -12,25 +12,24 @@
 #                      -- the paper's own numbers; the mixed student TRIPLES the width
 #   student DAgger     part of Town04's procedure (unlike Town06, where T06-F14 removed it)
 #
-# Everything is written under _v2 names and results/town04_v2 (TOWN04_REDO=1), because the
+# Everything is written under _v2 names and results/highway, because the
 # published artifacts are tracked in git under exactly the unsuffixed names and comparing
 # old against new IS the result.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 REPO=$PWD
 export STUDY_MAP=Town04
-export TOWN04_REDO=1
 export CARLA_PORT=${CARLA_PORT:-3000}
 export PYTHONUNBUFFERED=1
 
-LOG_DIR=$REPO/results/town04_v2/logs; mkdir -p "$LOG_DIR"
+LOG_DIR=$REPO/results/highway/logs; mkdir -p "$LOG_DIR"
 CK_DIR=$REPO/checkpoints
 DATA=$REPO/data
 say(){ echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/pipeline.log"; }
 
 python3 -m carla_determinism --lock-only >/dev/null || {
     say "FATAL: carla-determinism rules lock mismatch"; exit 1; }
-say "determinism rules lock OK; STUDY_MAP=$STUDY_MAP TOWN04_REDO=1 port $CARLA_PORT"
+say "determinism rules lock OK; STUDY_MAP=$STUDY_MAP port $CARLA_PORT"
 
 carla_up(){ for i in $(seq 1 "${1:-60}"); do
     ss -ltn 2>/dev/null | grep -q ":$CARLA_PORT" && return 0; sleep 5; done; return 1; }
@@ -141,5 +140,5 @@ if ! ls "$CK_DIR"/S_mixed_84x28_w3_v2_dagger_r*.pth >/dev/null 2>&1; then
 else say "SKIP  dagger_student_mixed"; fi
 
 say "TOWN04 REDO BUILD COMPLETE"
-say "NEXT: capture -> certify -> drive the ledger into results/town04_v2/ledger,"
+say "NEXT: capture -> certify -> drive the ledger into results/highway/ledger,"
 say "      then compare against the published cells in results/ledger."

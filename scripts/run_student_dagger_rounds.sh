@@ -49,7 +49,7 @@ fi
 echo $$ > "$LOCK"
 trap 'rm -f "$LOCK"' EXIT
 
-LOG_DIR=$REPO/results/town06_logs
+LOG_DIR=$REPO/results/arterial_logs
 mkdir -p "$LOG_DIR"
 LOG=$LOG_DIR/dagger_student_${CK}.log
 say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/student_dagger_rounds_${CK}.log"; }

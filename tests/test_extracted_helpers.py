@@ -14,8 +14,6 @@ import math
 import numpy as np
 import pytest
 
-from conftest import requires
-
 from steering.ledger import LEDGER, wilson
 
 
@@ -103,13 +101,3 @@ def test_load_model_is_importable_from_the_library():
     pytest.importorskip("torch")
     from steering.model import load_model
     assert callable(load_model)
-
-
-@requires("carla")
-def test_route_design_constants_are_what_scored_scope_enforces():
-    """scored_scope's thresholds are quoted from the route-selection criterion. They
-    moved into the library together and must not drift apart."""
-    from steering import route_design as B
-    from steering import scored_scope as S
-    assert S.SMAX_CAP == B.SMAX_CAP
-    assert S.REF_SMAX == B.REF["smax"]

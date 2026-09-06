@@ -185,7 +185,7 @@ lane-width constancy, junction character, lane count, street-light proximity. In
 forbidden: anything a policy does on the route.
 
 Chosen: Town06 outer highway loop, 2861 m window, both carriageways of the same physical
-road. Cached under `data/routes_town06/` with `route_meta.json` recording the
+road. Cached under `routes/arterial/` with `route_meta.json` recording the
 full selection record.
 
 ---
@@ -363,14 +363,14 @@ it, because every one of them is computed downstream of the frames.
 **What it invalidates.** Section 9.5 says an amendment made after the corresponding result
 exists invalidates that result. Applied honestly:
 
-  * The certificate **superseded** on 2026-08-30 (`results/town06/_superseded_20260830_1731/`)
+  * The certificate **superseded** on 2026-08-30 (`results/arterial/_superseded_20260830_1731/`)
     was computed with no gate artifact and does **not** satisfy this amendment. It is
     already withdrawn and replaced; this records why it could not simply be reinstated.
   * The **current** Town06 certificate does satisfy it. The rebuild ran
     captures -> gate -> certificate -> commit -> drives, so the gate preceded
     certification rather than following it: worst mean |capture - driven| **0.0261**
     against the 0.05 threshold, 12/12 cells
-    (`results/town06/captures/capture_gate.json`).
+    (`results/arterial/captures/capture_gate.json`).
   * Town04 (discovery test) likewise: worst **0.0065**, gated by
     `scripts/certify_town04.sh` before its certifier runs.
 
@@ -494,7 +494,7 @@ checked.
 **What it invalidates.** Section 9.5: an amendment made after the corresponding result
 exists invalidates that result. Applied honestly:
 
-  * The **first Town06 pass** (certificate `73415e5`, ledger `results/town06/ledger`,
+  * The **first Town06 pass** (certificate `73415e5`, ledger `results/arterial/ledger`,
     agreement 4/5, T06-F50) is **not withdrawn and not re-scored**. It is a correctly
     executed blind deployment test of the scope it declared, and PROTOCOL R4 requires the
     original to stand in the record. What it lacks is a second scope to compare against and

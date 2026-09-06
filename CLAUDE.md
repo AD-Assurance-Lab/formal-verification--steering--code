@@ -5,10 +5,10 @@ Everything you can import lives in `src/steering`. Everything you run lives in
 `scripts`. Install the package with `pip install -e .` and import it normally; if you
 find yourself adding a directory to the import path, something is in the wrong place.
 
-Three checks decide whether a change is safe, and all three have to stay green:
-`python -m pytest tests`, `python scripts/audit_repo.py`, and the checker in the paper
-repository, which reads about two hundred files here and refuses if any reported number
-has moved. Run all three before and after anything you touch, and compare the counts.
+Two checks decide whether a change is safe: `python -m pytest tests`, and the checker
+that lives in the paper repository, which reads about two hundred files here and refuses
+if any reported number has moved. Run both before and after anything you touch, and
+compare the counts. Do not edit the paper repository to make its checker pass.
 
 The simulator lies when it is unwell. It keeps answering, keeps reporting plausible
 speeds, and quietly stops advancing the physics, and nothing in the resulting data shows

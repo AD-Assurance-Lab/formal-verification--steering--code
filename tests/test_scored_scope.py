@@ -1,7 +1,7 @@
 """The two scored scopes must partition the same road, and neither may be silently fitted.
 
 `scored_scope.py` exists because the lap route dropped a constraint the SECTION route
-enforced: `SMAX_CAP = 0.060`, declared in steering/route_design.py as "steering demand regime
+enforced: `SMAX_CAP = 0.060`, declared by the route-selection criterion as "steering demand regime
 that actually trained on Town04". The lap's smax is 0.0670.
 
 Excluding that road makes the Town06 mixed student look better, so these tests pin the
@@ -21,8 +21,6 @@ import sys
 
 import pytest
 
-from conftest import requires
-
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -36,13 +34,15 @@ def mod():
     return C, S
 
 
-@requires("carla")
 def test_thresholds_are_the_declared_constants(mod):
-    """SMAX_CAP and Town04's smax come from build_study_route, not from this study."""
+    """These two were declared by the route-selection criterion before any model on this
+    road existed, which is what makes the capped scope a pre-registered quantity rather
+    than one chosen after seeing the result. The route builder itself is not shipped --
+    the routes are committed, so nothing here rebuilds them -- so the values are pinned
+    against the literals it declared. Changing either changes what was scored."""
     _, S = mod
-    from steering import route_design as B
-    assert S.SMAX_CAP == B.SMAX_CAP
-    assert S.REF_SMAX == B.REF["smax"]
+    assert S.SMAX_CAP == 0.060, "the enforced steering-demand cap moved"
+    assert S.REF_SMAX == 0.0467, "the highway's own maximum demand moved"
 
 
 def test_full_scope_reproduces_the_committed_scored_length(mod):

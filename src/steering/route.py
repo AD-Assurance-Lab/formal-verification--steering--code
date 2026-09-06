@@ -16,12 +16,16 @@ import math
 
 import numpy as np
 
-from steering.config import DATASET_DIR, WHEELBASE_M, LOOKAHEAD_M, MAX_STEER_RAD, ROUTES_SUBDIR
+from steering.config import WHEELBASE_M, LOOKAHEAD_M, MAX_STEER_RAD, ROUTES_SUBDIR
 
-# Map-scoped: Town04 keeps "routes", the Town06 deployment test reads
-# "routes_town06". Selected by config.STUDY_MAP so a run cannot silently load the
-# wrong map's centreline -- which would produce a plausible, wrong CTE.
-ROUTES_DIR = os.path.join(DATASET_DIR, ROUTES_SUBDIR)
+# Road-scoped: routes/highway or routes/arterial, selected by config.STUDY_MAP so a
+# run cannot silently load the wrong road's centreline -- which would produce a
+# plausible, wrong cross-track error.
+from steering import REPO_ROOT as _REPO_ROOT
+
+# The routes are a committed study artifact and live at the top level, not beside the
+# training frames -- those are 59 GB of regenerable working data and are not shipped.
+ROUTES_DIR = os.path.join(_REPO_ROOT, "routes", ROUTES_SUBDIR)
 STEP_M = 2.0  # route vertex spacing
 
 

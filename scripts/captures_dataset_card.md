@@ -26,8 +26,8 @@ on a CPU, more slowly.
 
 | | route | conditions | captured poses | frame size |
 |---|---|---|---|---|
-| `captures/town06/` | Town06 arterial, one 2,289 m lap (2,119 m scored) | clear, fog, night, low sun | 1,060 | 168×56 |
-| `captures/town04_v2/` | Town04 highway, both directions, 2,988 m spanned and 2,861 m scored | clear, fog, night, low sun | 1,492 per direction | 84×28 |
+| `captures/arterial/` | Town06 arterial, one 2,289 m lap (2,119 m scored) | clear, fog, night, low sun | 1,060 | 168×56 |
+| `captures/highway/` | Town04 highway, both directions, 2,988 m spanned and 2,861 m scored | clear, fog, night, low sun | 1,492 per direction | 84×28 |
 
 The certifier bounds over every eighth captured pose — 133 per Town06 cell — which is the
 stride recorded in the committed certificate.
@@ -55,7 +55,7 @@ Then, with no simulator running:
 
 ```bash
 STUDY_MAP=Town06 python3 scripts/certify_town06.py --out /tmp/cert.json
-STUDY_MAP=Town04 TOWN04_REDO=1 python3 scripts/certify_sustained_bound.py
+STUDY_MAP=Town04 python3 scripts/certify_sustained_bound.py
 ```
 
 `SHA256SUMS` lists the digest of every file, and the same digests are recorded in

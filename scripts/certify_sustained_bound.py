@@ -58,15 +58,12 @@ from steering.route import load_route
 from steering import certify as cc
 from steering.student import StudentNet
 
-# FROM CONFIG, not hardcoded. This tuple duplicated config.STUDENTS with the PUBLISHED
-# checkpoint names, so under TOWN04_REDO the certifier silently certified the PUBLISHED
-# students while the ledger drove the redo's -- two runs produced byte-identical bounds
-# across all 12 cells, which is what exposed it. A registry that exists in config must be
-# read from config; a second copy is a second thing to forget to update.
+# FROM CONFIG, not hardcoded. This tuple once duplicated config.STUDENTS with different
+# checkpoint names, and the certifier silently certified one pair of students while the
+# ledger drove another -- two runs produced byte-identical bounds across all 12 cells,
+# which is what exposed it. A registry that exists in config must be read from config; a
+# second copy is a second thing to forget to update.
 STUDENTS = C.STUDENTS
-# Under TOWN04_REDO the hardcoded outcomes below belong to DIFFERENT students and must
-# not be used; see the REDO branch in the verdict loop.
-REDO = os.environ.get("TOWN04_REDO", "0") == "1"
 
 # A CELL POOLED FROM A HANDFUL OF POSES, OR FROM A SLIVER OF THE ROUTE, IS NOT A
 # CERTIFICATE OF ANYTHING. certify_town06.py has carried MIN_POSES_PER_CELL since the
@@ -79,9 +76,6 @@ REDO = os.environ.get("TOWN04_REDO", "0") == "1"
 MIN_POSES_PER_CELL = 60
 MIN_ROUTE_COVERAGE = 0.80        # fraction of the scored route the capture must span
 
-TRUTH = {("S_clear", "fog"): "PASS", ("S_clear", "night"): "FAIL",
-         ("S_clear", "shadows"): "FAIL", ("S_mixed", "fog"): "PASS",
-         ("S_mixed", "night"): "PASS", ("S_mixed", "shadows"): "PASS"}
 # Branch-and-bound sub-intervals of s. At 4 the bound on S_mixed/night reads -0.0128 while
 # direct sampling of the interval peaks at -0.0039 -- 3.3x conservative, enough to falsify a
 # model that is safe at every intensity. The relaxation is the only thing between them, so
@@ -206,11 +200,7 @@ def main():
     # TRUE on a card with no matching kernels (sm_120 vs a sm_90 build). Prove the device.
     dev = require_cuda(tries=1, wait_s=0, allow_cpu=args.allow_cpu)
     tol = C.CLOSED_LOOP_TOLERANCE
-    # The redo reads and writes its OWN captures. results/calibration holds the
-    # published ones, taken under the old harness -- D-11 says they are not reusable, and
-    # overwriting them would destroy the record the redo is meant to be compared against.
-    cal = (REPO / "results" / "town04_v2" / "calibration" if REDO
-           else REPO / "results" / "calibration")
+    cal = REPO / "results" / "highway" / "calibration"
     cal.mkdir(parents=True, exist_ok=True)
 
     # Refuse to produce a partial score that reads like a complete one. A silent `continue`
@@ -236,7 +226,7 @@ def main():
     print(f"  stride {stride}, {nsplit}-way branch and bound, {n_expected} cells expected\n")
     print(f"  {'dir':10s} {'model':9s} {'cond':9s} {'base':8s} {'bias bound':>22s}"
           f" {'x tol':>12s}  verdict     drive")
-    out, ok, n = {}, 0, 0
+    out, n = {}, 0
     for direction in ("westbound", "eastbound"):
         base = cal / f"lap_{direction}_clear.npz"
         if not base.exists():
@@ -302,32 +292,17 @@ def main():
                 # (and much weaker) statement -- that error scored 6 cells INCONCLUSIVE.
                 v = "CERTIFIED" if (bhi <= tol and blo >= -tol) else "FALSIFIED"
                 n += 1
-                if REDO:
-                    # TRUTH holds the PUBLISHED students' driven outcomes. Under the redo
-                    # these are DIFFERENT students, so scoring new bounds against old
-                    # outcomes would print an agreement that means nothing. The redo's own
-                    # agreement is computed afterwards, from its own ledger, the way the
-                    # Town06 deployment test does it.
-                    out[f"{direction}/{nm}/{cond}"] = dict(lo=blo, hi=bhi, verdict=v,
-                                                          baseline=origin)
-                    print(f"  {direction:10s} {nm:9s} {cond:9s} {origin:8s} "
-                          f"[{blo:+.5f},{bhi:+.5f}] [{blo/tol:+5.2f},{bhi/tol:+5.2f}]"
-                          f"  {v:12s}", flush=True)
-                else:
-                    t = TRUTH[(nm, cond)]
-                    match = (v == "CERTIFIED") == (t == "PASS")
-                    ok += match
-                    out[f"{direction}/{nm}/{cond}"] = dict(lo=blo, hi=bhi, verdict=v,
-                                                          truth=t, baseline=origin)
-                    print(f"  {direction:10s} {nm:9s} {cond:9s} {origin:8s} "
-                          f"[{blo:+.5f},{bhi:+.5f}] [{blo/tol:+5.2f},{bhi/tol:+5.2f}]"
-                          f"  {v:12s} {t:5s} {'agree' if match else '-'}", flush=True)
-    if REDO:
-        print(f"\n  {n} cells bounded. NO agreement column: these are different\n"
-              f"  students from the published ones, so the hardcoded outcomes do not\n"
-              f"  apply. Agreement comes from this redo's OWN ledger.")
-    else:
-        print(f"\n  decisive and correct: {ok}/{n} of {n_expected} expected")
+                # NO agreement column here. Agreement is computed afterwards from
+                # this study's own ledger, the way the arterial deployment test does
+                # it -- printing it beside the bound invites reading a bound that was
+                # computed blind as though it had been scored against an answer key.
+                out[f"{direction}/{nm}/{cond}"] = dict(lo=blo, hi=bhi, verdict=v,
+                                                      baseline=origin)
+                print(f"  {direction:10s} {nm:9s} {cond:9s} {origin:8s} "
+                      f"[{blo:+.5f},{bhi:+.5f}] [{blo/tol:+5.2f},{bhi/tol:+5.2f}]"
+                      f"  {v:12s}", flush=True)
+    print(f"\n  {n} cells bounded. No agreement column: agreement comes from this\n"
+          f"  study's own ledger, not from an answer key inside the certifier.")
     if n != n_expected:
         print(f"  WARNING: {n_expected - n} cell(s) did not run. This score is NOT "
               f"comparable to the published 12/12.")
@@ -350,10 +325,9 @@ def main():
                 _x, _y = np.asarray(_z["pose_x"], float), np.asarray(_z["pose_y"], float)
                 _spans[_d] = round(float(np.hypot(np.diff(_x), np.diff(_y)).sum()), 1)
     out["_meta"] = dict(nsplit=nsplit, stride=stride, tolerance=tol,
-                        cells_expected=n_expected, cells_scored=n, correct=ok,
+                        cells_expected=n_expected, cells_scored=n,
                         lap_end_m=float(C.LAP_END_M),
                         capture_span_m=_spans,
-                        town04_redo=bool(REDO),
                         git_commit=git_head(), device=dev,
                         torch=torch.__version__, numpy=np.__version__)
     (cal / "sustained_bound.json").write_text(json.dumps(out, indent=2))

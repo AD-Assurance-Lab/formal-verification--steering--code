@@ -11,28 +11,31 @@ certified verdict in the paper. It is the one most readers want, and it runs on 
 |---|---|---|---|
 | code, protocol, routes | git | 1.4 MB | the study |
 | every artifact behind a reported number | git | 2.8 MB | including each individual lap |
-| README figures and the animation | git | 7.1 MB | |
-| **every shipped policy and its teacher** | **git** | **8.9 MB** | see below |
+| the two README images | git | 6.2 MB | |
+| **every shipped policy and its teacher** | **git** | **8.5 MB** | see below |
 | the captures the certifier reads | [Hugging Face](https://huggingface.co/datasets/AD-Assurance-Lab/steering-verification-captures) | 641 MB | `scripts/fetch_captures.py` |
 | training frames | **not shipped** | 59 GB | regenerable; see Level 3 |
 
-A clone checks out 21 MB.
+A clone checks out 19 MB.
 
-**All ten networks are in git.** They total 8.9 MB, so there is no reason to make you rebuild
+**All eight networks are in git.** They total 8.5 MB, so there is no reason to make you rebuild
 them — and because the renderer is not bit-reproducible (a scene where nothing moves still
 renders about 30 differing pixels per frame across repetitions), a rebuild would not give
 byte-identical weights even with identical code and seeds. Shipping the weights is what
 makes the numbers checkable.
 
-| checkpoint | study | role | ReLU |
+| checkpoint | road | role | ReLU |
 |---|---|---|---|
-| `S_clear_84x28` | highway, published | clear-only policy | 5,152 |
-| `S_mixed_84x28_w3` | highway, published | mixed policy | 15,456 |
-| `S_clear_84x28_v2` | highway, rebuilt on the corrected harness | clear-only policy | 5,152 |
-| `S_mixed_84x28_w3_v2_dagger_r00` | highway, rebuilt | mixed policy | 15,456 |
+| `S_clear_84x28_v2` | highway | clear-only policy | 5,152 |
+| `S_mixed_84x28_w3_v2_dagger_r00` | highway | mixed policy | 15,456 |
 | `S_clear_t06lap_168x56_w2_s0` | arterial | clear-only policy | 50,944 |
 | `S_mixed_t06lap_168x56_w4_s3` | arterial | mixed policy | 101,888 |
 | four `teacher_*` checkpoints | both | so a policy can be re-distilled without re-running DAgger | — |
+
+The `_v2` on the highway names is provenance, not a choice. An earlier highway run was
+collected before the determinism harness existed, and rule D-11 makes that data unusable;
+this study is the rebuild, and it is the only highway study here. The committed artifacts
+record these names, so they are left alone.
 
 Note `S_mixed_84x28_w3_v2_dagger_r00`: the highway procedure includes student DAgger, so
 the policy is the DAgger'd checkpoint, not the distilled intermediate.
@@ -53,11 +56,11 @@ bash scripts/bootstrap_env.sh          # builds .venv and proves it works; see b
 python3 scripts/fetch_captures.py      # 641 MB, every file checked against a digest
 
 STUDY_MAP=Town06 python3 scripts/certify_town06.py --out /tmp/cert.json     # 6 cells, blind
-STUDY_MAP=Town04 TOWN04_REDO=1 python3 scripts/certify_sustained_bound.py   # 12 cells
+STUDY_MAP=Town04 python3 scripts/certify_sustained_bound.py                 # 12 cells
 ```
 
 `--out` is not optional in practice: the default path IS
-`results/town06/certificate_town06.json`, the pass-1 artifact the protocol requires to
+`results/arterial/certificate_town06.json`, the pass-1 artifact the protocol requires to
 stand, so the script refuses to overwrite it without `--force`.
 
 **A GPU is wanted but not required.** The certifier calls `require_cuda()` and refuses to

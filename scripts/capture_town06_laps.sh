@@ -23,13 +23,13 @@ python3 -m steering.protocol_lock >/dev/null || { echo "PROTOCOL lock mismatch";
 # than the committed one -- and standing rule 7 is explicit that a default which quietly
 # changes scope is the worst kind. It is therefore REQUIRED to name a directory that does
 # not already exist, and the canonical path is refused outright.
-CAPDIR=${OY_CAPTURE_DIR:-results/town06/captures}
-if [ "$CAPDIR" != "results/town06/captures" ]; then
+CAPDIR=${OY_CAPTURE_DIR:-results/arterial/captures}
+if [ "$CAPDIR" != "results/arterial/captures" ]; then
     [ -d "$REPO/$CAPDIR" ] && { echo "FATAL: $CAPDIR already exists; refusing to mix capture sets"; exit 1; }
     echo "capture set: $CAPDIR  (projection ${OY_IN_W:-default}x${OY_IN_H:-default})"
 fi
 OUTDIR=$REPO/$CAPDIR
-LOGD=$REPO/results/town06_logs
+LOGD=$REPO/results/arterial_logs
 mkdir -p "$OUTDIR" "$LOGD"
 
 # The sampling RULE is frozen (every 8th control-rate pose, PROTOCOL section 3); the

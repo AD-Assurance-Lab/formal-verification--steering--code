@@ -21,8 +21,8 @@ REPO = Path(_REPO_ROOT)
 # non-canonical capture set may not write the canonical certificate, because that
 # file's whole meaning is "the shipped students, on the committed frames".
 CAPTURES = Path(os.environ.get("TOWN06_CAPTURES_DIR",
-                               REPO / "results" / "town06" / "captures"))
-CANONICAL_CAPTURES = REPO / "results" / "town06" / "captures"
+                               REPO / "results" / "arterial" / "captures"))
+CANONICAL_CAPTURES = REPO / "results" / "arterial" / "captures"
 
 
 def scope_mask(path, scope):

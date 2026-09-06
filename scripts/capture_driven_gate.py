@@ -16,8 +16,8 @@ Compares, per pose: the student's steering on the CAPTURED frame against the ste
 same student commanded while DRIVING, matched on position. No simulator needed; both
 artifacts already exist.
 
-    STUDY_MAP=Town04 TOWN04_REDO=1 python3 scripts/capture_driven_gate.py \
-        --captures results/town04_v2/calibration --drives results/oracle
+    STUDY_MAP=Town04 python3 scripts/capture_driven_gate.py \
+        --captures results/highway/calibration --drives results/oracle
 """
 import argparse
 import glob

@@ -23,7 +23,7 @@ export STUDY_MAP=Town06
 export CARLA_PORT=${CARLA_PORT:-3000}
 export PYTHONUNBUFFERED=1
 
-LOG_DIR=$REPO/results/town06_logs
+LOG_DIR=$REPO/results/arterial_logs
 mkdir -p "$LOG_DIR"
 CK_DIR=$REPO/checkpoints
 DATA=$REPO/data

@@ -22,7 +22,7 @@ REPO=$PWD
 PORT=${CARLA_PORT:-3000}
 CARLA_ROOT=${CARLA_ROOT:-$HOME/carla}
 QUALITY=${CARLA_QUALITY:-Epic}          # D-5: High measured catastrophically worse
-LOG=${CARLA_LOG:-$REPO/results/town06_logs/carla.log}
+LOG=${CARLA_LOG:-$REPO/results/arterial_logs/carla.log}
 mkdir -p "$(dirname "$LOG")"
 
 # D-3, defaulted per map so Town04 relaunches exactly as the published study did.
