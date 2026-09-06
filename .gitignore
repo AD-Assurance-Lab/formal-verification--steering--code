@@ -145,3 +145,8 @@ pipeline/results/*
 
 # Q8b verifier source (pinned clone, rebuilt by scripts/bootstrap_abcrown_env.sh)
 .abcrown-src/
+
+# Q8b sub-problem exports: ONNX graphs and reference arrays are regenerable from
+# scripts/q8b_export.py + q8b_build_onnx.py and are large. The JSON metadata IS tracked.
+results/town06/beta/specs/*.onnx
+results/town06/beta/specs/*.npz
