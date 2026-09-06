@@ -20,7 +20,7 @@ On a healthy server these agree. On a degraded one the reported figure keeps say
 while the car barely moves. Lap length is also compared against the section's scored
 length, since a lap that covered 40% of the road is short whatever the speeds say.
 
-    python3 scripts/audit_training_data.py
+    python3 scripts/training/audit_training_data.py
 """
 import argparse
 import csv

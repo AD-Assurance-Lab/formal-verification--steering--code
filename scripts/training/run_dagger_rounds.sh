@@ -12,8 +12,8 @@
 # per invocation loses no work, and the crash it used to die on cannot happen because
 # there is no in-process restart left to make.
 #
-#   bash scripts/run_dagger_rounds.sh clear  12
-#   bash scripts/run_dagger_rounds.sh mixed  12
+#   bash scripts/training/run_dagger_rounds.sh clear  12
+#   bash scripts/training/run_dagger_rounds.sh mixed  12
 set -uo pipefail
 cd "$(dirname "$0")/.."
 REPO=$PWD
@@ -99,7 +99,7 @@ for r in $(seq 1 "$MAX"); do
     # so the checkpoint it produced can be told apart from one already on disk.
     ROUND_START=$(date +%s)
     LOG_MARK=$(wc -l < "$LOG" 2>/dev/null || echo 0)
-    python3 scripts/dagger.py --base "${WHICH}_t06lap" \
+    python3 scripts/training/dagger.py --base "${WHICH}_t06lap" \
         --init "teacher_${WHICH}_t06lap_bc" --rounds 1 --min-rounds 1 --gate-reps 1 --external-gate \
         --weathers "$WEATHERS" --dagger-dir "dagger_${WHICH}_t06lap" \
         --out-prefix "teacher_${WHICH}_t06lap_dagger" >>"$LOG" 2>&1
@@ -154,7 +154,7 @@ for r in $(seq 1 "$MAX"); do
         for W in ${WEATHERS//,/ }; do
             restart_carla_retrying "$LOG_DIR/dagger_${WHICH}_t06lap_restart.log" \
                 "gate lap $lap/$W" || break 2
-            python3 scripts/gate_teacher_lap.py --checkpoint "$CK" --weather "$W" \
+            python3 scripts/training/gate_teacher_lap.py --checkpoint "$CK" --weather "$W" \
                 --lap "$lap" >>"$LOG" 2>&1
             rc=$?
             case $rc in

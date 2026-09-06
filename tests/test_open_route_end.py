@@ -55,7 +55,7 @@ def test_no_hint_is_not_a_finish():
 def test_every_collector_stops_before_it_records(driver):
     """The check must precede the write, so a degenerate label is never recorded at all
     rather than recorded and filtered later."""
-    src = open(os.path.join(REPO, "scripts", driver)).read()
+    src = open(os.path.join(REPO, "scripts", "training", driver)).read()
     assert "lap_finished(" in src, f"{driver} does not stop at an open route's end"
     stop = src.index("if lap_finished(")
     write = src.index("cv2.imwrite(")
@@ -70,7 +70,7 @@ def test_the_data_auditor_would_catch_a_recurrence():
     first clean round, 217 of 369 frames carry |steer| > 0.25 and every one is at |CTE|
     between 0.53 and 5.89 m. The defect is a large correction with the car ON THE LINE.
     """
-    src = open(os.path.join(REPO, "scripts", "audit_training_data.py")).read()
+    src = open(os.path.join(REPO, "scripts", "training", "audit_training_data.py")).read()
     ns = {}
     for line in src.splitlines():
         if line.startswith(("STEER_LABEL_CEILING", "STEER_LABEL_CTE_FLOOR_M")):
@@ -80,7 +80,7 @@ def test_the_data_auditor_would_catch_a_recurrence():
     assert "degenerate = (st > STEER_LABEL_CEILING) & (ct < STEER_LABEL_CTE_FLOOR_M)" in src
 
 
-@pytest.mark.parametrize("path", ["scripts/evaluate.py", "scripts/closed_loop_ledger.py"])
+@pytest.mark.parametrize("path", ["scripts/training/evaluate.py", "scripts/closed_loop_ledger.py"])
 def test_every_measuring_loop_stops_at_the_route_end(path):
     """The loops that SCORE a policy must stop too.
 

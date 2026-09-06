@@ -141,7 +141,7 @@ the condition is no guarantee that its student does.
 The published study half-encodes this already, in that the clear cell is driven while
 its certificate is recorded as vacuous (`Δ_p ≡ 0` by construction), but the assumption
 is never named. Here it is a gate:
-`scripts/check_student_competence.py` drives each student over every section in clear
+`scripts/training/check_student_competence.py` drives each student over every section in clear
 weather and records the result, and `certify_town06.py` REFUSES to run without that
 record, or with a student that failed it.
 

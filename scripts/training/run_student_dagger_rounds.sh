@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Drive STUDENT DAgger one round per process, restarting CARLA between rounds.
 #
-# The teacher path got this treatment on 2026-09-01 (scripts/run_dagger_rounds.sh) and
+# The teacher path got this treatment on 2026-09-01 (scripts/training/run_dagger_rounds.sh) and
 # the student path did not, so it kept the two defects that driver exists to remove:
 #
 #   1. dagger_student.py restarts CARLA in-process between rounds and dies doing it:
@@ -21,7 +21,7 @@
 # per invocation loses no work. A completion MARKER settles (2): the stage is done when
 # this driver says it is, not when a file exists.
 #
-#   bash scripts/run_student_dagger_rounds.sh S_clear_t06lap_168x28_w2 3 clear "16,32,32" 64 168 28
+#   bash scripts/training/run_student_dagger_rounds.sh S_clear_t06lap_168x28_w2 3 clear "16,32,32" 64 168 28
 set -uo pipefail
 cd "$(dirname "$0")/.."
 REPO=$PWD
@@ -94,7 +94,7 @@ for r in $(seq 1 "$ROUNDS"); do
     restart_carla_retrying "$LOG_DIR/dagger_student_restart.log" "round $r" || exit 1
 
     ROUND_START=$(date +%s)
-    python3 scripts/dagger_student.py --student "$CK" --w "$IN_W" --h "$IN_H" \
+    python3 scripts/training/dagger_student.py --student "$CK" --w "$IN_W" --h "$IN_H" \
         --rounds 1 --weathers "$WEATHERS" --teacher "$TEACHER" --base "$BASE" \
         --dagger-dir "$DDIR" --channels "$CHANNELS" --fc "$FC" >>"$LOG" 2>&1
     RC=$?

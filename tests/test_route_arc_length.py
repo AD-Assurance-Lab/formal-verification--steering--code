@@ -50,7 +50,7 @@ def test_the_lap_measures_its_declared_length():
         sys.modules.pop(m, None)
 
 
-@pytest.mark.parametrize("path", ["scripts/evaluate.py", "scripts/capture_offset_yaw.py"])
+@pytest.mark.parametrize("path", ["scripts/training/evaluate.py", "scripts/capture_offset_yaw.py"])
 def test_no_driver_measures_distance_over_a_whole_route_array(path):
     """The specific expression that caused it, in the files that drive and capture."""
     src = open(os.path.join(REPO, path)).read()

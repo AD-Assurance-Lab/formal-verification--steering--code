@@ -13,7 +13,7 @@
 # Each stage is skipped if its output already exists, so the pipeline is resumable
 # after an interrupt, an OOM, or a CARLA restart.
 #
-#   bash scripts/run_town06_pipeline.sh            # run it
+#   bash scripts/training/run_town06_pipeline.sh            # run it
 #   STAGES=teacher_clear bash scripts/...          # run one stage
 set -uo pipefail
 
@@ -185,7 +185,7 @@ teacher_gate() {   # teacher_gate <logname>
     fi
     # THE STRICT MARKER DECIDES, AND IT IS CHECKED FIRST.
     #
-    # Written only by scripts/run_dagger_rounds.sh, after three laps with a clean server
+    # Written only by scripts/training/run_dagger_rounds.sh, after three laps with a clean server
     # before each. dagger.py's own one-rep internal gate is a progress signal (it is run
     # with --external-gate) and it prints "Exhausted N rounds without passing" on EVERY
     # round, because each invocation is given --rounds 1 and the policy it evaluates is
@@ -271,7 +271,7 @@ collect_to() {   # collect_to <name> <dataset> <weathers-csv> <target-laps>
     fi
     short=$(( target - have ))
     say "$name: $have/$target laps per condition on disk; collecting $short more"
-    run "$name" python3 scripts/collect_data.py --dataset "$ds" --weathers "$weathers" \
+    run "$name" python3 scripts/training/collect_data.py --dataset "$ds" --weathers "$weathers" \
         --laps "$short" --direction all || return 1
     fp_stamp "$DATA/$ds"
     return 0
@@ -286,7 +286,7 @@ if [ ! -f "$DATA/clear_t06lap/manifest.csv" ]; then
 else collect_to collect_clear_t06lap clear_t06lap clear "$CLEAR_LAPS" || exit 1; fi
 
 if [ ! -f "$CK_DIR/teacher_clear_t06lap_bc.pth" ]; then
-    run train_clear_bc_t06lap python3 scripts/train.py --dataset clear_t06lap --epochs 120 \
+    run train_clear_bc_t06lap python3 scripts/training/train.py --dataset clear_t06lap --epochs 120 \
         --out teacher_clear_t06lap_bc || exit 1
 else say "SKIP  train_clear_bc_t06lap"; fi
 
@@ -302,10 +302,10 @@ else say "SKIP  train_clear_bc_t06lap"; fi
 # DAgger resumes from its newest round by itself, so re-running an unfinished one is
 # cheap and correct.
 if ! grep -q "\*\*\* LAP GATE PASSED" "$LOG_DIR/dagger_clear_t06lap.log" 2>/dev/null; then
-    # ONE ROUND PER PROCESS -- see scripts/run_dagger_rounds.sh. dagger.py
+    # ONE ROUND PER PROCESS -- see scripts/training/run_dagger_rounds.sh. dagger.py
     # restarting CARLA in-process died with "terminate called" after every
     # round, with the round already trained.
-    run dagger_clear_t06lap bash "$REPO/scripts/run_dagger_rounds.sh" clear 12 || exit 1
+    run dagger_clear_t06lap bash "$REPO/scripts/training/run_dagger_rounds.sh" clear 12 || exit 1
     teacher_gate dagger_clear_t06lap || exit 1
 else say "SKIP  dagger_clear_t06lap"; teacher_gate dagger_clear_t06lap || exit 1; fi
 
@@ -316,7 +316,7 @@ if [ ! -f "$DATA/mixed_t06lap/manifest.csv" ]; then
 else collect_to collect_mixed_t06lap mixed_t06lap clear,fog,night,low_sun "$MIXED_LAPS" || exit 1; fi
 
 if [ ! -f "$CK_DIR/teacher_mixed_t06lap_bc.pth" ]; then
-    run train_mixed_bc_t06lap python3 scripts/train.py --dataset mixed_t06lap --epochs 120 \
+    run train_mixed_bc_t06lap python3 scripts/training/train.py --dataset mixed_t06lap --epochs 120 \
         --out teacher_mixed_t06lap_bc || exit 1
 else say "SKIP  train_mixed_bc_t06lap"; fi
 
@@ -332,10 +332,10 @@ else say "SKIP  train_mixed_bc_t06lap"; fi
 # DAgger resumes from its newest round by itself, so re-running an unfinished one is
 # cheap and correct.
 if ! grep -q "\*\*\* LAP GATE PASSED" "$LOG_DIR/dagger_mixed_t06lap.log" 2>/dev/null; then
-    # ONE ROUND PER PROCESS -- see scripts/run_dagger_rounds.sh. dagger.py
+    # ONE ROUND PER PROCESS -- see scripts/training/run_dagger_rounds.sh. dagger.py
     # restarting CARLA in-process died with "terminate called" after every
     # round, with the round already trained.
-    run dagger_mixed_t06lap bash "$REPO/scripts/run_dagger_rounds.sh" mixed 12 || exit 1
+    run dagger_mixed_t06lap bash "$REPO/scripts/training/run_dagger_rounds.sh" mixed 12 || exit 1
     teacher_gate dagger_mixed_t06lap || exit 1
 else say "SKIP  dagger_mixed_t06lap"; teacher_gate dagger_mixed_t06lap || exit 1; fi
 
@@ -372,7 +372,7 @@ for ROW in "${ROWS[@]}"; do
     esac
     if [ ! -f "$CK_DIR/$CK.pth" ]; then
         say "distil $NM -> $CK (${IN_W}x${IN_H}, $RELU ReLU) from $TEACH"
-        run "distill_$NM" python3 scripts/distill.py --in-w "$IN_W" --in-h "$IN_H" \
+        run "distill_$NM" python3 scripts/training/distill.py --in-w "$IN_W" --in-h "$IN_H" \
             --out "$CK" --teacher "$TEACH" --base "$DSET" \
             --dagger-dirs "$DDIR" --channels "$CH" --fc "$FC"|| exit 1
     else say "SKIP  distil $NM ($CK exists)"; fi
@@ -407,7 +407,7 @@ for ROW in "${ROWS[@]}"; do
     if ! grep -q "\*\*\* STUDENT DAGGER COMPLETE" "$SLOG" 2>/dev/null; then
         run "dagger_student_$NM" env TEACHER="$TEACH" BASE="$DSET" \
             DDIR="dagger_student_${NM}_t06lap" \
-            bash "$REPO/scripts/run_student_dagger_rounds.sh" \
+            bash "$REPO/scripts/training/run_student_dagger_rounds.sh" \
             "$CK" "$STUDENT_DAGGER_ROUNDS" "$W" "$CH" "$FC" "$IN_W" "$IN_H" || exit 1
         grep -q "\*\*\* STUDENT DAGGER COMPLETE" "$SLOG" 2>/dev/null || {
             say "FATAL: dagger_student_$NM did not complete its rounds."; exit 1; }
@@ -432,7 +432,7 @@ done
 # Clear-weather competence, before anything is certified. The certificate bounds
 # deviation FROM clear, so a student that is wrong in clear -- or that ignores its input
 # -- certifies perfectly and drives off the road. Distillation is where that can arise.
-run competence python3 "$REPO/scripts/check_student_competence.py" --require || {
+run competence python3 "$REPO/scripts/training/check_student_competence.py" --require || {
     say "FATAL: a student is not competent in clear weather. Certifying it would bound"
     say "       deviation from an output that is already wrong. Fix capacity or"
     say "       distillation before proceeding."; exit 1; }

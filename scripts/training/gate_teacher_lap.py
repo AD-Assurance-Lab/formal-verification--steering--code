@@ -9,7 +9,7 @@ reclaims the client.
 
 DAgger's own per-round gate stays as a cheap progress signal. THIS is what decides.
 
-    STUDY_MAP=Town06 python3 scripts/gate_teacher_lap.py \
+    STUDY_MAP=Town06 python3 scripts/training/gate_teacher_lap.py \
         --checkpoint teacher_clear_t06lap_dagger_r05 --weather clear --lap 0
 """
 import argparse

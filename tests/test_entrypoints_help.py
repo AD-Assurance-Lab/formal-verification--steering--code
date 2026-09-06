@@ -30,9 +30,9 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # that take arguments. Any script here that reaches its body on --help is the defect.
 ENTRYPOINTS = [
     "scripts/closed_loop_ledger.py",
-    "scripts/gate_teacher_lap.py",
+    "scripts/training/gate_teacher_lap.py",
     "scripts/certify_town06.py",
-    "scripts/check_student_competence.py",
+    "scripts/training/check_student_competence.py",
     "scripts/compare_student_variants.py",
     "scripts/capture_gate_drives.py",
     "scripts/capture_driven_gate.py",
@@ -40,7 +40,7 @@ ENTRYPOINTS = [
     "scripts/score_scopes.py",
     "scripts/scored_scope.py",
     "scripts/falsify_witness.py",
-    "scripts/audit_training_data.py",
+    "scripts/training/audit_training_data.py",
     "scripts/fetch_captures.py",
     "scripts/interpolation_fidelity.py",
     "scripts/aggregate_ledger_runs.py",
@@ -48,13 +48,13 @@ ENTRYPOINTS = [
     "scripts/q8c_varying_witness.py",
     "scripts/capture_offset_yaw.py",
     "scripts/certify_sustained_bound.py",
-    "scripts/train.py",
-    "scripts/distill.py",
-    "scripts/dagger.py",
-    "scripts/dagger_student.py",
-    "scripts/collect_data.py",
+    "scripts/training/train.py",
+    "scripts/training/distill.py",
+    "scripts/training/dagger.py",
+    "scripts/training/dagger_student.py",
+    "scripts/training/collect_data.py",
     "scripts/drive_expert.py",
-    "scripts/evaluate.py",
+    "scripts/training/evaluate.py",
 ]
 
 

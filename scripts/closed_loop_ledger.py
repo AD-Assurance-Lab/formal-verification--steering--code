@@ -271,7 +271,7 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps,
         cte, hint = signed_cte_route(route, loc.x, loc.y, hint)
 
         # ODD BOUNDARY: pure pursuit bridges the intersections, and those steps are
-        # neither driven by the policy nor scored. See scripts/evaluate.py for why --
+        # neither driven by the policy nor scored. See scripts/training/evaluate.py for why --
         # briefly: no lane markings means no input signal for a lane-follower, and
         # scoring the expert's road would compare a verdict against road the certificate
         # does not cover.
@@ -481,7 +481,7 @@ def main():
         # Town04 fog-into-night failure, where fog leaked into the night cells and no
         # result could reveal it.
         #
-        # This check lived ONLY in scripts/evaluate.py, which is the sweep and gate
+        # This check lived ONLY in scripts/training/evaluate.py, which is the sweep and gate
         # driver. The driver that writes the SCORED LEDGER -- the numbers that get
         # published -- did not have it. A rule that CLAUDE.md states as "every run" was
         # enforced on the diagnostic path and not on the authoritative one.

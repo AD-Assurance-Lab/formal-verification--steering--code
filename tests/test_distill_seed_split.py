@@ -30,7 +30,7 @@ import torch
 from torch.utils.data import DataLoader
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
-SRC = (REPO / "scripts" / "distill.py").read_text()
+SRC = (REPO / "scripts" / "training" / "distill.py").read_text()
 
 
 def test_generator_none_is_the_dataloader_default():

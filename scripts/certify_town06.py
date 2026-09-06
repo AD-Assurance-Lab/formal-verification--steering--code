@@ -203,7 +203,7 @@ def main():
     if not comp.exists():
         sys.exit("REFUSING: no clear-weather competence record.\n"
                  "  The certificate bounds deviation FROM clear and assumes the model\n"
-                 "  drives clear weather. Run scripts/check_student_competence.py first.")
+                 "  drives clear weather. Run scripts/training/check_student_competence.py first.")
     rec = json.loads(comp.read_text())
     if not rec.get("all_competent"):
         bad = [k for k, v in rec.get("students", {}).items()

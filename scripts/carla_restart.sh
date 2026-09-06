@@ -109,7 +109,7 @@ fi
 #
 # `pkill -f collect_data.py` matches EVERY process whose command line contains that
 # string -- including the shell that is running this script, whenever the caller wrote
-# `bash scripts/carla_restart.sh && python3 scripts/collect_data.py ...` on one line. The
+# `bash scripts/carla_restart.sh && python3 scripts/training/collect_data.py ...` on one line. The
 # bracket trick ([c]ollect) only stops pkill matching its OWN pattern argument; it does
 # nothing about an ancestor. So the restart killed its own invoker, part way through,
 # and the log read "...GPU after restart: 5693 MiB" followed by "Terminated" with a
