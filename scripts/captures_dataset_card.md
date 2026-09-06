@@ -33,7 +33,7 @@ looks and checks each against a recorded digest:
 
 ```bash
 python3 scripts/fetch_captures.py
-STUDY_MAP=Town06 python3 scripts/certify_town06.py --out /tmp/cert.json
+STUDY_MAP=Town06 python3 scripts/verify/certify_town06.py --out /tmp/cert.json
 ```
 
 **Check the digests.** A capture is the certifier's entire input, so a bound computed from

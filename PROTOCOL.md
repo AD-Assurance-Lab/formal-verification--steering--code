@@ -348,7 +348,7 @@ paper states it as though it were already enforced:
 
 **It was not enforced anywhere.** No script computed it, on either map, and neither
 rebuild ran it. The number quoted in the paper (0.0137 over 1,600 poses) comes from the
-published era. It is now `scripts/capture_driven_gate.py`, it must pass before a
+published era. It is now `scripts/capture/capture_driven_gate.py`, it must pass before a
 certificate is computed, and `scripts/audit_repo.py` fails when a certificate exists with
 no gate artifact beside it.
 
@@ -372,7 +372,7 @@ exists invalidates that result. Applied honestly:
     against the 0.05 threshold, 12/12 cells
     (`results/arterial/captures/capture_gate.json`).
   * Town04 (discovery test) likewise: worst **0.0065**, gated by
-    `scripts/certify_town04.sh` before its certifier runs.
+    `scripts/verify/certify_town04.sh` before its certifier runs.
 
 So no current result is invalidated. That is a fact about the rebuild, not a convenience
 -- had the amendment been adopted a day earlier it would have withdrawn the then-current
@@ -479,7 +479,7 @@ at the LAST step of the lap, and passed by 1.4 mm of a 668 mm budget.
 **What this amendment does NOT do.** It does not exclude that road. Excluding it makes the
 mixed student look better, and a scope narrowed after seeing which cells were marginal is
 indistinguishable from tuning no matter how good the reason. **Both scopes are scored, from
-one set of drives, and both are reported.** `scripts/score_scopes.py` refuses to pick, and
+one set of drives, and both are reported.** `scripts/verify/score_scopes.py` refuses to pick, and
 `scripts/scored_scope.py` prints "Neither scope is the answer."
 
 **What makes that possible, and it was missing.** `closed_loop_ledger.py` kept only a max

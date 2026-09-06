@@ -246,7 +246,7 @@ def restart_carla_and_reconnect(camera, vehicle, world, original):
     time.sleep(3)
     log = os.path.join(C.REPO_ROOT, "results", "carla_restart_dagger.log")
     with open(log, "a") as fh:
-        subprocess.run(["bash", os.path.join(C.REPO_ROOT, "scripts", "carla_launch.sh")],
+        subprocess.run(["bash", os.path.join(C.REPO_ROOT, "scripts", "simulator", "carla_launch.sh")],
                        stdout=fh, stderr=subprocess.STDOUT,
                        stdin=subprocess.DEVNULL, timeout=600)
     last = None

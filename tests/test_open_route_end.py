@@ -80,7 +80,7 @@ def test_the_data_auditor_would_catch_a_recurrence():
     assert "degenerate = (st > STEER_LABEL_CEILING) & (ct < STEER_LABEL_CTE_FLOOR_M)" in src
 
 
-@pytest.mark.parametrize("path", ["scripts/training/evaluate.py", "scripts/closed_loop_ledger.py"])
+@pytest.mark.parametrize("path", ["scripts/training/evaluate.py", "scripts/drive/closed_loop_ledger.py"])
 def test_every_measuring_loop_stops_at_the_route_end(path):
     """The loops that SCORE a policy must stop too.
 

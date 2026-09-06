@@ -10,7 +10,7 @@ certified verdict in the paper. It is the one most readers want, and it runs on 
 | | where | size | why |
 |---|---|---|---|
 | code, protocol, routes | git | 1.2 MB | the study |
-| every artifact behind a reported number | git | 2.4 MB | including each individual lap |
+| every artifact behind a reported number | git | 2.4 MB | each lap is a row inside its cell file |
 | the README animation | git | 6.2 MB | |
 | **every shipped policy and its teacher** | **git** | **8.8 MB** | see below |
 | the captures the certifier reads | [Hugging Face](https://huggingface.co/datasets/AD-Assurance-Lab/steering-verification-captures) | 641 MB | `scripts/fetch_captures.py` |
@@ -55,8 +55,8 @@ Certification reads captured frames, not a live simulator.
 bash scripts/bootstrap_env.sh          # builds .venv and proves it works; see below
 python3 scripts/fetch_captures.py      # 641 MB, every file checked against a digest
 
-STUDY_MAP=Town06 python3 scripts/certify_town06.py --out /tmp/cert.json     # 6 cells, blind
-STUDY_MAP=Town04 python3 scripts/certify_sustained_bound.py                 # 12 cells
+STUDY_MAP=Town06 python3 scripts/verify/certify_town06.py --out /tmp/cert.json     # 6 cells, blind
+STUDY_MAP=Town04 python3 scripts/verify/certify_sustained_bound.py                 # 12 cells
 ```
 
 `--out` is not optional in practice: the default path IS
@@ -98,9 +98,9 @@ something real is different and should be investigated rather than accepted.
 ## Level 2 — re-drive the closed loop. Needs CARLA 0.9.16 and a GPU.
 
 ```bash
-bash scripts/carla_launch.sh             # applies the determinism flags and verifies them
+bash scripts/simulator/carla_launch.sh             # applies the determinism flags and verifies them
 python3 -m carla_determinism --port 3000 # preflight; refuses a misconfigured server
-STUDY_MAP=Town06 python3 scripts/closed_loop_ledger.py \
+STUDY_MAP=Town06 python3 scripts/drive/closed_loop_ledger.py \
     --student S_mixed_t06lap_168x56_w4_s3 --channels 32,64,64 --fc 128 \
     --w 168 --h 56 --condition night --reps 3
 ```
@@ -113,14 +113,14 @@ reproducible in the sense that matters:
   reading the server's real command line — the flags that matter are set at launch and are
   invisible over the network interface;
 * the *oracle* is bit-identical across fresh servers on every section, so if your setup is
-  right, `python3 scripts/drive_expert.py --direction all` twice produces identical CSVs,
+  right, `python3 scripts/drive/drive_expert.py --direction all` twice produces identical CSVs,
   which you can diff against `results/oracle/`. That is the cheapest check that your
   simulator is configured correctly.
 
 **A degraded server does not announce itself.** It keeps answering, keeps reporting
 plausible speeds, and stops advancing physics correctly, and nothing in the resulting data
 reveals which server produced it. Restart before every measurement run — not when something
-looks wrong — with `bash scripts/carla_restart.sh`. It costs about 30 seconds.
+looks wrong — with `bash scripts/simulator/carla_restart.sh`. It costs about 30 seconds.
 
 ## Level 3 — rebuild the networks from scratch. Days.
 
@@ -188,3 +188,17 @@ handles each:
 * **carla-determinism** is the lab's rules package and is pinned in `pyproject.toml`.
 
 Everything else installs with `pip install -e '.[dev]'`.
+
+---
+
+## How the results are filed
+
+One file per cell, not one per run. A cell — a student under a condition on a road — is
+`results/<road>/ledger/<condition>__<checkpoint>__closed_loop.json`, and it carries the
+verdict, the lap-level detail, and a `runs` array with every individual lap and the
+provenance of the server it was driven on. The step-by-step trajectories are one
+`traces.csv` per ledger with a `run` column.
+
+That is a deliberate change from one file per lap, which was 171 files saying largely the
+same thing. `scripts/drive/aggregate_ledger_runs.py` writes this shape from the per-run
+artifacts the driver emits, so re-driving a cell reproduces it.

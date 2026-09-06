@@ -89,24 +89,37 @@
           "x": -314.72662353515625,
           "y": 29.179227828979492
         }
-      }
-    },
-    {
-      "rep": 0,
-      "direction": "westbound",
-      "max_cte_m": 8.318330169982548,
-      "frac_over_budget": 0.7463768115942029,
-      "departed": true,
-      "passed": false,
-      "max_cte_at": {
-        "step": 272,
-        "x": -440.8243408203125,
-        "y": 395.6824951171875,
-        "onset": {
-          "step": 19,
-          "x": -439.0267333984375,
-          "y": 15.116333961486816
-        }
+      },
+      "provenance": {
+        "run_started": "2026-08-31T19:17:46-04:00",
+        "weather": {
+          "cloudiness": 80.0,
+          "dust_storm": 0.0,
+          "fog_density": 0.0,
+          "fog_distance": 0.0,
+          "fog_falloff": 0.0,
+          "mie_scattering_scale": 0.0,
+          "precipitation": 0.0,
+          "precipitation_deposits": 0.0,
+          "scattering_intensity": 0.0,
+          "sun_altitude_angle": -25.0,
+          "sun_azimuth_angle": 0.0,
+          "wetness": 0.0,
+          "wind_intensity": 0.0
+        },
+        "env_overrides": {},
+        "fixed_delta_seconds": 0.2,
+        "substepping": {
+          "max_substeps": 16,
+          "max_substep_delta_time": 0.0125
+        },
+        "map": "Town04",
+        "target_speed_ms": 8.9408,
+        "lap_end_m": 2988.0,
+        "git_sha": "038ff0c6a81efaa90ca3a0b0bfaab3ae202e932b",
+        "git_dirty": true,
+        "independent_runs": true,
+        "restart_granularity": "per_run"
       }
     },
     {
@@ -125,24 +138,37 @@
           "x": -314.7283020019531,
           "y": 29.16940689086914
         }
-      }
-    },
-    {
-      "rep": 1,
-      "direction": "westbound",
-      "max_cte_m": 9.893349721764618,
-      "frac_over_budget": 0.8309090909090909,
-      "departed": true,
-      "passed": false,
-      "max_cte_at": {
-        "step": 542,
-        "x": -15.462778091430664,
-        "y": 339.0835876464844,
-        "onset": {
-          "step": 19,
-          "x": -439.0181884765625,
-          "y": 15.140791893005371
-        }
+      },
+      "provenance": {
+        "run_started": "2026-08-31T19:20:10-04:00",
+        "weather": {
+          "cloudiness": 80.0,
+          "dust_storm": 0.0,
+          "fog_density": 0.0,
+          "fog_distance": 0.0,
+          "fog_falloff": 0.0,
+          "mie_scattering_scale": 0.0,
+          "precipitation": 0.0,
+          "precipitation_deposits": 0.0,
+          "scattering_intensity": 0.0,
+          "sun_altitude_angle": -25.0,
+          "sun_azimuth_angle": 0.0,
+          "wetness": 0.0,
+          "wind_intensity": 0.0
+        },
+        "env_overrides": {},
+        "fixed_delta_seconds": 0.2,
+        "substepping": {
+          "max_substeps": 16,
+          "max_substep_delta_time": 0.0125
+        },
+        "map": "Town04",
+        "target_speed_ms": 8.9408,
+        "lap_end_m": 2988.0,
+        "git_sha": "038ff0c6a81efaa90ca3a0b0bfaab3ae202e932b",
+        "git_dirty": true,
+        "independent_runs": true,
+        "restart_granularity": "per_run"
       }
     },
     {
@@ -161,6 +187,135 @@
           "x": -314.72802734375,
           "y": 29.17637825012207
         }
+      },
+      "provenance": {
+        "run_started": "2026-08-31T19:22:38-04:00",
+        "weather": {
+          "cloudiness": 80.0,
+          "dust_storm": 0.0,
+          "fog_density": 0.0,
+          "fog_distance": 0.0,
+          "fog_falloff": 0.0,
+          "mie_scattering_scale": 0.0,
+          "precipitation": 0.0,
+          "precipitation_deposits": 0.0,
+          "scattering_intensity": 0.0,
+          "sun_altitude_angle": -25.0,
+          "sun_azimuth_angle": 0.0,
+          "wetness": 0.0,
+          "wind_intensity": 0.0
+        },
+        "env_overrides": {},
+        "fixed_delta_seconds": 0.2,
+        "substepping": {
+          "max_substeps": 16,
+          "max_substep_delta_time": 0.0125
+        },
+        "map": "Town04",
+        "target_speed_ms": 8.9408,
+        "lap_end_m": 2988.0,
+        "git_sha": "038ff0c6a81efaa90ca3a0b0bfaab3ae202e932b",
+        "git_dirty": true,
+        "independent_runs": true,
+        "restart_granularity": "per_run"
+      }
+    },
+    {
+      "rep": 0,
+      "direction": "westbound",
+      "max_cte_m": 8.318330169982548,
+      "frac_over_budget": 0.7463768115942029,
+      "departed": true,
+      "passed": false,
+      "max_cte_at": {
+        "step": 272,
+        "x": -440.8243408203125,
+        "y": 395.6824951171875,
+        "onset": {
+          "step": 19,
+          "x": -439.0267333984375,
+          "y": 15.116333961486816
+        }
+      },
+      "provenance": {
+        "run_started": "2026-08-31T19:19:01-04:00",
+        "weather": {
+          "cloudiness": 80.0,
+          "dust_storm": 0.0,
+          "fog_density": 0.0,
+          "fog_distance": 0.0,
+          "fog_falloff": 0.0,
+          "mie_scattering_scale": 0.0,
+          "precipitation": 0.0,
+          "precipitation_deposits": 0.0,
+          "scattering_intensity": 0.0,
+          "sun_altitude_angle": -25.0,
+          "sun_azimuth_angle": 0.0,
+          "wetness": 0.0,
+          "wind_intensity": 0.0
+        },
+        "env_overrides": {},
+        "fixed_delta_seconds": 0.2,
+        "substepping": {
+          "max_substeps": 16,
+          "max_substep_delta_time": 0.0125
+        },
+        "map": "Town04",
+        "target_speed_ms": 8.9408,
+        "lap_end_m": 2988.0,
+        "git_sha": "038ff0c6a81efaa90ca3a0b0bfaab3ae202e932b",
+        "git_dirty": true,
+        "independent_runs": true,
+        "restart_granularity": "per_run"
+      }
+    },
+    {
+      "rep": 1,
+      "direction": "westbound",
+      "max_cte_m": 9.893349721764618,
+      "frac_over_budget": 0.8309090909090909,
+      "departed": true,
+      "passed": false,
+      "max_cte_at": {
+        "step": 542,
+        "x": -15.462778091430664,
+        "y": 339.0835876464844,
+        "onset": {
+          "step": 19,
+          "x": -439.0181884765625,
+          "y": 15.140791893005371
+        }
+      },
+      "provenance": {
+        "run_started": "2026-08-31T19:21:26-04:00",
+        "weather": {
+          "cloudiness": 80.0,
+          "dust_storm": 0.0,
+          "fog_density": 0.0,
+          "fog_distance": 0.0,
+          "fog_falloff": 0.0,
+          "mie_scattering_scale": 0.0,
+          "precipitation": 0.0,
+          "precipitation_deposits": 0.0,
+          "scattering_intensity": 0.0,
+          "sun_altitude_angle": -25.0,
+          "sun_azimuth_angle": 0.0,
+          "wetness": 0.0,
+          "wind_intensity": 0.0
+        },
+        "env_overrides": {},
+        "fixed_delta_seconds": 0.2,
+        "substepping": {
+          "max_substeps": 16,
+          "max_substep_delta_time": 0.0125
+        },
+        "map": "Town04",
+        "target_speed_ms": 8.9408,
+        "lap_end_m": 2988.0,
+        "git_sha": "038ff0c6a81efaa90ca3a0b0bfaab3ae202e932b",
+        "git_dirty": true,
+        "independent_runs": true,
+        "restart_granularity": "per_run"
       }
     },
     {
@@ -179,6 +334,37 @@
           "x": -439.0297546386719,
           "y": 15.109267234802246
         }
+      },
+      "provenance": {
+        "run_started": "2026-08-31T19:23:52-04:00",
+        "weather": {
+          "cloudiness": 80.0,
+          "dust_storm": 0.0,
+          "fog_density": 0.0,
+          "fog_distance": 0.0,
+          "fog_falloff": 0.0,
+          "mie_scattering_scale": 0.0,
+          "precipitation": 0.0,
+          "precipitation_deposits": 0.0,
+          "scattering_intensity": 0.0,
+          "sun_altitude_angle": -25.0,
+          "sun_azimuth_angle": 0.0,
+          "wetness": 0.0,
+          "wind_intensity": 0.0
+        },
+        "env_overrides": {},
+        "fixed_delta_seconds": 0.2,
+        "substepping": {
+          "max_substeps": 16,
+          "max_substep_delta_time": 0.0125
+        },
+        "map": "Town04",
+        "target_speed_ms": 8.9408,
+        "lap_end_m": 2988.0,
+        "git_sha": "038ff0c6a81efaa90ca3a0b0bfaab3ae202e932b",
+        "git_dirty": true,
+        "independent_runs": true,
+        "restart_granularity": "per_run"
       }
     }
   ]

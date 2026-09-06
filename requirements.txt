@@ -1,0 +1,15 @@
+# This file is a pointer, not the pins. Installing it directly will not give you a
+# working environment.
+#
+#     pip install -e .                  # the four dependencies a resolver can handle,
+#                                       # pinned in pyproject.toml
+#     bash scripts/bootstrap_env.sh     # the exact environment the published bounds
+#                                       # were computed under, and it proves itself
+#
+# Four dependencies cannot come from a resolver and are installed by the bootstrap:
+# torch from the CUDA index matching your card, auto_LiRPA from upstream git with
+# --no-deps, the CARLA client wheel that ships with the simulator, and opencv, which
+# declares numpy>=2 and would otherwise replace the numpy the bounds were computed on.
+#
+# See REPRODUCING.md.
+-e .
