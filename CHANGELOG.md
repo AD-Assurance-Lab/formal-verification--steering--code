@@ -33,10 +33,14 @@ artifact: same results, far less around them.
     `steering.route_design`
 - `REPO_ROOT` is defined once, in `steering/__init__.py`, and honours
   `STEERING_REPO_ROOT`. Every module used to count directories up from its own file.
-- `pyproject.toml` replaces `requirements.txt` as the dependency source of truth. The
-  four packages a resolver can install are declared there; torch, auto_LiRPA and the
-  CARLA client stay in `scripts/bootstrap_env.sh`, which installs them in the required
-  order and then proves the result works.
+- `pyproject.toml` replaces `requirements.txt` as the dependency source of truth, and
+  `requirements.txt` is deleted rather than left to drift. The four packages a resolver
+  can install are declared there and `bootstrap_env.sh` now installs them *from* there;
+  torch, auto_LiRPA and the CARLA client cannot come from a resolver and stay in the
+  bootstrap, which installs them in the required order and then proves the result works.
+  `tests/test_dependency_pins.py` holds the split in place — each version is written
+  down once, because the certificates record in their own metadata which versions
+  produced them.
 - `.gitignore` ignores `results/`, `data/` and `checkpoints/` wholesale. Files already
   tracked are unaffected; what it stops is `git add -A` enlarging the published record
   with working output.
@@ -48,9 +52,17 @@ artifact: same results, far less around them.
   and checks every file against a recorded digest. This is what makes the certificates
   reproducible with no simulator.
 - `tests/test_imports.py` — imports every module as its own process under both maps,
-  112 cases. The training and capture paths need CARLA and a GPU, so nothing else here
+  116 cases. The training and capture paths need CARLA and a GPU, so nothing else here
   touches them; without this a refactor that broke one would surface months later on
   someone else's clone.
+- `tests/test_extracted_helpers.py` — calls each helper that moved into the library.
+  Importing a module proves its imports resolve; it does not prove its functions run.
+  `wilson` was extracted without carrying `import math` and all 116 import cases still
+  passed, because nothing calls it at module scope. It would have failed the first time
+  someone aggregated a ledger, at the end of a long run.
+- Two entry points ran their body on `--help`, one of them exiting non-zero when the
+  ledger it reads is empty. Both now parse arguments first, and the entry-point test
+  covers 26 scripts rather than 11.
 - Continuous integration running the tests that need neither CARLA nor a GPU.
 - `CITATION.cff`, this changelog, and README figures generated from the paper's own.
 
@@ -63,7 +75,9 @@ artifact: same results, far less around them.
   does not report.
 
 Nothing removed is lost: the full research record is in this repository's git history,
-before this release. Tracked files went from 1,438 to 371.
+before this release. Tracked files went from 1,438 to 371, and what a clone checks out
+from 36 MB to 21 MB. (The 109 GB in a working directory here is untracked simulator
+output and was never in git.)
 
 ### Verified
 
@@ -72,8 +86,9 @@ Unchanged across every step above:
 | | |
 |---|---|
 | the paper's `figures/check_data.py` | 402 checks, 0 failures |
-| `pytest` | 209 passed, 4 skipped (was 100 passed) |
-| `scripts/audit_repo.py` | 266 passed, 0 failed |
+| `pytest` | 259 passed, 4 skipped (was 100 passed) |
+| `scripts/audit_repo.py` | 267 passed, 0 failed |
+| `ruff` | clean |
 
 ## [1.2.0] — 2026-09-03
 

@@ -25,14 +25,17 @@ VENV=${1:-.venv}
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO"
 
-# The environment of record, read from the _meta of the published artifacts themselves
-# (results/town06/certificate_town06.json and the Town04-redo sustained bound), NOT from
-# whatever happens to be installed. Change these only with a measurement to back it up.
+# ONLY the dependencies a resolver cannot install are pinned here. numpy, scipy,
+# opencv, matplotlib and carla-determinism are pinned in pyproject.toml and installed
+# from it below, so each version is written down exactly once. Two copies of a pin is
+# how the recorded environment and the installed one come apart.
+#
+# These four versions are the environment of record, read from the _meta of the
+# published artifacts themselves (results/town06/certificate_town06.json and the
+# Town04-redo sustained bound), NOT from whatever happens to be installed. Change them
+# only with a measurement to back it up.
 TORCH_VER=2.13.0
 TORCH_INDEX=https://download.pytorch.org/whl/cu130
-NUMPY_VER=1.26.4
-SCIPY_VER=1.15.3
-OPENCV_VER=4.13.0.92
 AUTO_LIRPA_REF=5a098e8f9fb5786a428a024981d833d303921f2d
 CARLA_WHEEL_DIR="$HOME/carla/PythonAPI/carla/dist"
 
@@ -59,10 +62,18 @@ $PIP install -q --upgrade pip wheel setuptools
 echo "==> torch $TORCH_VER from $TORCH_INDEX"
 $PIP install -q "torch==$TORCH_VER" torchvision --index-url "$TORCH_INDEX"
 
-echo "==> scientific stack"
-$PIP install -q "numpy==$NUMPY_VER" "scipy==$SCIPY_VER" "matplotlib>=3.7" "pytest>=7.4"
-# opencv declares numpy>=2; that is a declared pin, not an ABI need (defect 3).
-$PIP install -q --no-deps "opencv-python==$OPENCV_VER"
+echo "==> this package and its pinned dependencies, from pyproject.toml"
+# opencv declares numpy>=2; that is a declared pin, not an ABI need, and installing it
+# normally drags numpy 2 in on top of the 1.26.4 the artifacts were produced under.
+# So it goes in first with --no-deps, and the editable install below finds it satisfied.
+OPENCV_PIN=$("$PY" - <<'PYEOF'
+import re, pathlib
+t = pathlib.Path("pyproject.toml").read_text()
+print(re.search(r'"(opencv-python==[^"]+)"', t).group(1))
+PYEOF
+)
+$PIP install -q --no-deps "$OPENCV_PIN"
+$PIP install -q -e ".[dev]"
 
 echo "==> auto_LiRPA (pinned commit, --no-deps so torch is never rewritten)"
 $PIP install -q --no-deps --ignore-requires-python \
@@ -80,7 +91,7 @@ if [ -n "$CARLA_WHEEL" ]; then
 else
     echo "    WARNING: no CARLA wheel for $CPTAG in $CARLA_WHEEL_DIR -- closed-loop work will not run"
 fi
-$PIP install -q "git+https://github.com/AD-Assurance-Lab/carla-determinism--simulation--package@v1.0.0"
+# carla-determinism came in with the editable install above, pinned in pyproject.toml.
 
 # --- prove it, do not assume it ------------------------------------------------
 echo "==> verifying"
