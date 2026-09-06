@@ -1,4 +1,36 @@
-# V2 — what the paper's "0.98 ft" student actually does: findings
+# V2 — what the paper's "0.98 ft" student actually does: findings (RETRACTED — see header)
+
+> **RETRACTION, 2026-09-06 09:05.** The central conclusion below is WRONG and its
+> recommendation must not be acted on.
+>
+> V2 measured this checkpoint through `closed_loop_ledger.py` **before** that driver was
+> given the R-SIM-4 rendered-frame check. That check costs six `world.tick()` calls, which
+> `evaluate.py` had and the ledger did not, so the vehicle settled differently and the
+> closed loop committed to a different discrete basin. V2's "1.42 ft in twelve of twelve
+> laps" was that basin, not the student.
+>
+> Re-run on the corrected driver (`results/town06/lr_seed0_fixed/`, 12 laps):
+>
+> ```
+>   0.97 ft x8   0.98 ft x1   1.34 ft x3      median 0.97
+>   clears pass 3's 1.0958 ft margin: 9 of 12
+>   evaluate.py, same night: 0.97 x3, 0.99, 1.34 x2  -- the SAME two modes
+> ```
+>
+> **So the paper's "drives fog at 0.98 ft" is corroborated, not contradicted**, and
+> E4-F1's "the first student in this study to clear pass 3's margin gate on fog" is also
+> corroborated — it clears it in three quarters of laps. **Do not remove that number from
+> `sec_results.tex`.**
+>
+> What survives from below: the cross-driver discrepancy was real and is now diagnosed and
+> fixed (six ticks, and a missing R-SIM-4 check on the scored driver); and quoting an arm
+> with its interval is still better practice than quoting one seed, because the two modes
+> here are 0.97 and 1.34. But the reason is ordinary multimodality, not a failure to
+> replicate.
+>
+> The document is kept unedited below so the wrong conclusion and its correction sit
+> together.
+
 
 **Run 2026-09-05, 23:08–23:29.** Pre-registration `docs/V2_PREREGISTRATION.md`, committed
 before the first lap. 12 laps of `S_mixed_depth_d3lr3_s0` under fog through the scored
