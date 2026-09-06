@@ -9,12 +9,16 @@ certified verdict in the paper. It is the one most readers want, and it runs on 
 
 | | where | size | why |
 |---|---|---|---|
-| code, protocol, routes, results | git | 20 MB | the study |
-| **every shipped policy and its teacher** | **git** | **9 MB** | see below |
+| code, protocol, routes | git | 1.4 MB | the study |
+| every artifact behind a reported number | git | 2.8 MB | including each individual lap |
+| README figures and the animation | git | 7.7 MB | |
+| **every shipped policy and its teacher** | **git** | **8.9 MB** | see below |
 | the captures the certifier reads | [Hugging Face](https://huggingface.co/datasets/AD-Assurance-Lab/steering-verification-captures) | 641 MB | `scripts/fetch_captures.py` |
 | training frames | **not shipped** | 59 GB | regenerable; see Level 3 |
 
-**All ten networks are in git.** They total 9 MB, so there is no reason to make you rebuild
+A clone checks out 21 MB.
+
+**All ten networks are in git.** They total 8.9 MB, so there is no reason to make you rebuild
 them — and because the renderer is not bit-reproducible (a scene where nothing moves still
 renders about 30 differing pixels per frame across repetitions), a rebuild would not give
 byte-identical weights even with identical code and seeds. Shipping the weights is what

@@ -35,3 +35,6 @@ checkpoints/**
 
 # The captures live on Hugging Face; scripts/fetch_captures.py puts them back.
 # The training frames, about 59 GB, are regenerable and deliberately not shipped.
+
+# Downloaded wheels. One reached a commit before this line existed.
+*.whl

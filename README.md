@@ -102,7 +102,7 @@ in **[REPRODUCING.md](REPRODUCING.md)**.
 |---|---|
 | `src/steering/` | the library: simulator interface, routes, networks, disturbance families, certification |
 | `scripts/` | everything you run — capture, certify, drive, train, audit |
-| `checkpoints/` | the ten shipped networks — six policies, four teachers — 9 MB, so nothing has to be retrained |
+| `checkpoints/` | the ten shipped networks — six policies, four teachers — 8.9 MB, so nothing has to be retrained |
 | `results/` | every artifact behind a reported number, including each individual lap |
 | `data/routes*/` | the two pre-registered routes |
 | `PROTOCOL.md` | the frozen study protocol, hash-locked against `PROTOCOL.lock` |
