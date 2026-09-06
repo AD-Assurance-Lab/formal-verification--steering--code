@@ -9,6 +9,18 @@ artifact: same results, far less around them.
 
 ### Fixed
 
+- **`pip install -e .` did not work.** numpy was pinned to the 1.26.4 the artifacts
+  record while opencv-python declares numpy>=2, so the first command the README gives
+  was unsatisfiable on a clean environment. pyproject now carries a floor and
+  `bootstrap_env.sh` installs the recorded version with opencv under `--no-deps`, then
+  checks which numpy survived.
+- **`interpolation_fidelity.py --help` waited two minutes for a GPU.** It called
+  `require_cuda()` above its argument parser, and that retries for two minutes by
+  design. On any machine without a GPU — which is every machine a reader checks this
+  work on — `--help` simply hung.
+- **`steering.route` could not be imported without the simulator client**, which ships
+  with CARLA. It used the client in one function that needs a live world anyway, so the
+  import is now local and the whole no-simulator certification path is free of it.
 - **51 files the paper depends on were never committed.** `.gitignore` excluded every
   `runs/` directory, and the un-ignore rules had been written for the arterial study
   only, never extended to the highway rebuild. A fresh clone therefore could not verify
@@ -63,7 +75,11 @@ artifact: same results, far less around them.
 - Two entry points ran their body on `--help`, one of them exiting non-zero when the
   ledger it reads is empty. Both now parse arguments first, and the entry-point test
   covers 26 scripts rather than 11.
-- Continuous integration running the tests that need neither CARLA nor a GPU.
+- `tests/test_capture_manifest.py` — checks the fetcher's digest table is well formed,
+  lands every file where a certifier reads, covers both studies, and, on a machine that
+  has the captures, matches them byte for byte.
+- Continuous integration running the tests that need neither CARLA nor a GPU, verified
+  by building this repository from a clean checkout in an empty virtual environment.
 - `CITATION.cff`, this changelog, and README figures generated from the paper's own.
 
 ### Removed
@@ -86,9 +102,10 @@ Unchanged across every step above:
 | | |
 |---|---|
 | the paper's `figures/check_data.py` | 402 checks, 0 failures |
-| `pytest` | 259 passed, 4 skipped (was 100 passed) |
+| `pytest` | 276 passed, 19 skipped (was 100 passed, 1 skipped) |
 | `scripts/audit_repo.py` | 267 passed, 0 failed |
 | `ruff` | clean |
+| the same suite on a clean checkout, no CARLA, CPU torch | 129 passed, 45 skipped |
 
 ## [1.2.0] — 2026-09-03
 

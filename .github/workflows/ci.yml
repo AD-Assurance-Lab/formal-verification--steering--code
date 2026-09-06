@@ -36,8 +36,6 @@ jobs:
       - name: Tests
         run: python -m pytest tests -q
 
-      - name: Capture digests are well formed
-        run: python scripts/fetch_captures.py --check || true
 
   lint:
     runs-on: ubuntu-latest

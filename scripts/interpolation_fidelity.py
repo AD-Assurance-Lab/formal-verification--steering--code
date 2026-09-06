@@ -116,10 +116,6 @@ def steer(net, x, dev):
 
 
 def main():
-    # require_cuda, not is_available(): the flag is False while CARLA initialises on
-    # the same device, and was True on a card the installed torch had no kernels for
-    # (sm_120 vs an sm_90 build). Both end in a silent CPU run that still prints numbers.
-    dev = require_cuda()
     tol = C.CLOSED_LOOP_TOLERANCE
 
     import argparse
@@ -135,6 +131,17 @@ def main():
                     help="comma-separated sections to pool over; default is EVERY "
                          "section of the map")
     args = ap.parse_args()
+
+    # ARGUMENTS FIRST, THEN THE DEVICE. require_cuda retries for two minutes before it
+    # gives up, so calling it above the parser made `--help` block that long on any
+    # machine without a GPU -- and this script's whole point is that it can be checked
+    # off the lab machine.
+    #
+    # require_cuda, not is_available(): the flag is False while CARLA initialises on the
+    # same device, and was True on a card the installed torch had no kernels for
+    # (sm_120 against an sm_90 build). Both end in a silent CPU run that still prints
+    # numbers.
+    dev = require_cuda()
     ax = AXES[args.axis]
     sections = args.sections.split(",") if args.sections else list(C.SECTIONS)
 

@@ -15,7 +15,6 @@ import os
 import math
 
 import numpy as np
-import carla
 
 from steering.config import DATASET_DIR, WHEELBASE_M, LOOKAHEAD_M, MAX_STEER_RAD, ROUTES_SUBDIR
 
@@ -28,7 +27,14 @@ STEP_M = 2.0  # route vertex spacing
 
 def build_route(world_map, spawn, step=STEP_M, max_pts=4000):
     """Trace the intended lane centerline from a spawn using a straightest-at-
-    junction policy until the loop closes. Returns an (N, 2) array of (x, y)."""
+    junction policy until the loop closes. Returns an (N, 2) array of (x, y).
+
+    The simulator client is imported here rather than at module scope. This is the
+    only function in the module that needs it, and it needs a live world map anyway
+    -- so importing it at the top would make every geometry helper below, and the
+    whole no-simulator certification path, depend on a wheel that ships with CARLA."""
+    import carla
+
     start = world_map.get_waypoint(
         carla.Location(x=spawn["x"], y=spawn["y"], z=spawn["z"]),
         project_to_road=True, lane_type=carla.LaneType.Driving)

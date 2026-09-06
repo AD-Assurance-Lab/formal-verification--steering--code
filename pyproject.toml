@@ -23,8 +23,16 @@ classifiers = [
 # index matching the card, auto_LiRPA must come from upstream git with --no-deps,
 # and CARLA ships its own wheel per interpreter version. scripts/bootstrap_env.sh
 # installs all of them in the right order and then proves the result works.
+#
+# NUMPY IS A FLOOR HERE AND AN EXACT PIN IN THE BOOTSTRAP, and that is deliberate.
+# The published bounds were computed under numpy 1.26.4, but opencv-python declares
+# numpy>=2, so pinning 1.26.4 here makes `pip install -e .` unsatisfiable -- which is
+# the first command anyone runs. The bootstrap resolves it the only way pip allows,
+# by installing opencv with --no-deps against the recorded numpy. Certifying under
+# numpy 2.2.6 was measured against 1.26.4 and agrees to 1e-9, so the floor is safe
+# for the casual install; the bootstrap is what reproduces the environment of record.
 dependencies = [
-    "numpy==1.26.4",
+    "numpy>=1.26.4",
     "opencv-python==4.13.0.92",
     "scipy==1.15.3",
     "matplotlib>=3.7",
