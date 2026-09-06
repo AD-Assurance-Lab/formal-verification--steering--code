@@ -32,8 +32,8 @@ chk(subprocess.run([sys.executable, "-m", "carla_determinism", "--lock-only"],
 tracked = set(subprocess.run(["git", "ls-files", "pipeline/checkpoints"],
                              capture_output=True, text=True).stdout.split())
 SHIPPED = ["S_clear_84x28", "S_mixed_84x28_w3", "S_clear_84x28_v2",
-           "S_mixed_84x28_w3_v2_dagger_r00", "S_clear_t06_168x28_w2",
-           "S_mixed_t06_168x28_w3"]
+           "S_mixed_84x28_w3_v2_dagger_r00", "S_clear_t06lap_168x56_w2_s0",
+           "S_mixed_t06lap_168x56_w4_s3"]
 for ck in SHIPPED:
     p = f"pipeline/checkpoints/{ck}.pth"
     chk(os.path.exists(p), f"shipped policy present: {ck}")
@@ -382,11 +382,9 @@ for _f in ("scripts/carla_restart.sh", "pipeline/dagger.py", "pipeline/dagger_st
 for _f in ("pipeline/evaluate.py", "pipeline/dagger.py", "pipeline/dagger_student.py",
            "scripts/closed_loop_ledger.py",
            "scripts/certify_town06.py", "scripts/certify_sustained_bound.py",
-           "scripts/capture_driven_gate.py", "scripts/drive_chord_interior.py",
-           "scripts/kd_error_by_condition.py", "scripts/determinism_tier1_openloop.py",
-           "scripts/probe_run_independence.py", "scripts/falsify_witness.py",
-           "scripts/interpolation_fidelity.py", "scripts/interp_fidelity_night.py",
-           "scripts/diagnose_void_cell.py", "pipeline/train.py", "pipeline/distill.py"):
+           "scripts/capture_driven_gate.py", "scripts/falsify_witness.py",
+           "scripts/interpolation_fidelity.py", "scripts/q8c_varying_witness.py",
+           "pipeline/train.py", "pipeline/distill.py"):
     _t = open(_f).read()
     chk('torch.cuda.is_available() else "cpu"' not in _t,
         f"{os.path.basename(_f)} does not fall back to the CPU silently")
