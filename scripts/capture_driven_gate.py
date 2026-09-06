@@ -47,18 +47,37 @@ def main():
     ap.add_argument("--captures", required=True)
     ap.add_argument("--drives", default="pipeline/results")
     ap.add_argument("--cond", default="clear")
+    ap.add_argument("--students", default=None,
+                    help="override the student list: name:ck:c1,c2,c3:fc[;...]")
+    ap.add_argument("--in-w", type=int, default=None, dest="in_w")
+    ap.add_argument("--in-h", type=int, default=None, dest="in_h")
     args = ap.parse_args()
     # require_cuda, not is_available(): the flag is False while CARLA initialises on
     # the same device, and was True on a card the installed torch had no kernels for
     # (sm_120 vs an sm_90 build). Both end in a silent CPU run that still prints numbers.
     dev = require_cuda()
+    # A capture set is gated for the STUDENT and INPUT SIZE it was captured at. Q7's
+    # 84x28 set cannot be gated against the study's 168x56 students -- the frames are a
+    # different projection, so the comparison would be meaningless rather than merely
+    # wrong. Both are therefore overridable together, and neither default moves.
     students = C.TOWN06_STUDENTS if C.STUDY_MAP == "Town06" else C.STUDENTS
     in_h, in_w = ((C.TOWN06_INPUT_H, C.TOWN06_INPUT_W) if C.STUDY_MAP == "Town06" else (28, 84))
+    if args.students:
+        students = tuple((f.split(":")[0], f.split(":")[1],
+                          tuple(int(x) for x in f.split(":")[2].split(",")),
+                          int(f.split(":")[3]))
+                         for f in args.students.split(";") if f.strip())
+    if (args.in_w is None) != (args.in_h is None):
+        sys.exit("--in-w and --in-h must be given together: a capture set has ONE "
+                 "projection and half of it is not a projection.")
+    if args.in_w:
+        in_h, in_w = args.in_h, args.in_w
+    print(f"  students: {[n for n, *_ in students]}   projection {in_w}x{in_h}")
 
     print(f"\nCAPTURE GATE -- {C.STUDY_MAP}, condition '{args.cond}', threshold {THRESHOLD}")
     worst, rows = 0.0, []
     for nm, ck_base, ch, fc in students:
-        ck = C.final_student(ck_base)
+        ck = ck_base if args.students else C.final_student(ck_base)
         net = StudentNet(in_h, in_w, channels=ch, fc=fc).to(dev)
         net.load_state_dict(torch.load(f"{C.CHECKPOINT_DIR}/{ck}.pth", map_location=dev,
                                        weights_only=True))

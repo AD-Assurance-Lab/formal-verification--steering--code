@@ -65,7 +65,16 @@ if _OVERRIDE:
          tuple(int(x) for x in f.split(":")[2].split(",")), int(f.split(":")[3]))
         for f in _OVERRIDE.split(";") if f.strip())
 
-CAPTURES = REPO / "results" / "town06" / "captures"
+# The capture set. Q7 certifies an 84x28 student, whose frames are a DIFFERENT
+# PROJECTION and live in their own directory -- certifying it against the committed
+# 168x56 captures would silently bound a different network on the wrong frames.
+#
+# Overridable, and the override is chained to the output path below: a non-canonical
+# capture set may not write the canonical certificate, because that file's whole meaning
+# is "the shipped students, on the committed frames".
+CAPTURES = Path(os.environ.get("TOWN06_CAPTURES_DIR",
+                               REPO / "results" / "town06" / "captures"))
+CANONICAL_CAPTURES = REPO / "results" / "town06" / "captures"
 
 # One bound per (student, condition), pooling poses across all sections. The statistic
 # is the deviation SUSTAINED along the route, so it is a mean over every scored pose --
@@ -233,6 +242,8 @@ def main():
     ap.add_argument("--stride", type=int, default=8, help="pose subsampling (frozen: 8)")
     ap.add_argument("--nsplit", type=int, default=16, help="BaB sub-intervals (frozen: 16)")
     ap.add_argument("--allow-missing", action="store_true")
+    ap.add_argument("--in-w", type=int, default=None, dest="in_w")
+    ap.add_argument("--in-h", type=int, default=None, dest="in_h")
     # Q8a. The bound METHOD, exposed rather than edited in place for a run (standing
     # rule 8: a number in a paper comes from a committed driver, not a hand edit).
     #
@@ -299,6 +310,10 @@ def main():
     dest = Path(args.out) if args.out else (
         OUT if args.scope == "full"
         else OUT.with_name(OUT.stem + f"_{args.scope}" + OUT.suffix))
+    if CAPTURES.resolve() != CANONICAL_CAPTURES.resolve() and dest == CANONICAL:
+        sys.exit(f"REFUSING: TOWN06_CAPTURES_DIR is {_rel(CAPTURES)}, not the committed "
+                 f"capture set.\n  The canonical certificate is about the shipped "
+                 f"students on the committed frames.\n  Pass --out PATH.")
     if _OVERRIDE and dest == CANONICAL:
         sys.exit("REFUSING: TOWN06_STUDENTS_OVERRIDE is set, so this run is not about the "
                  "shipped students.\n  Pass --out to write it somewhere else; the "
@@ -328,6 +343,17 @@ def main():
     # tensor, which catches both. tries=1: nothing here races CARLA, so do not sit in a
     # two-minute retry loop -- but still refuse to certify silently on the CPU, because a
     # bound computed on a different device is a bound about a different computation.
+    global IN_H, IN_W
+    IN_H, IN_W = C.TOWN06_INPUT_H, C.TOWN06_INPUT_W
+    if (args.in_w is None) != (args.in_h is None):
+        sys.exit("--in-w and --in-h must be given together.")
+    if args.in_w:
+        IN_H, IN_W = args.in_h, args.in_w
+        if CAPTURES.resolve() == CANONICAL_CAPTURES.resolve():
+            sys.exit("REFUSING: a non-default input size with the COMMITTED capture set. "
+                     "Those frames are 168x56; bounding them as another projection would "
+                     "certify a network the frames do not depict.")
+    print(f"  projection {IN_W}x{IN_H}, captures {_rel(CAPTURES)}")
     dev = require_cuda(tries=1, wait_s=0, allow_cpu=args.allow_cpu)
     tol = C.CLOSED_LOOP_TOLERANCE
     # THE CONDITION IS low_sun. The capture rig writes lap_<sec>_low_sun.npz, and this
@@ -364,11 +390,10 @@ def main():
         wpath = Path(C.CHECKPOINT_DIR) / f"{ck}.pth"
         if not wpath.exists():
             sys.exit(f"missing checkpoint {wpath}")
-        net = StudentNet(C.TOWN06_INPUT_H, C.TOWN06_INPUT_W, channels=ch, fc=fc).to(dev)
+        net = StudentNet(IN_H, IN_W, channels=ch, fc=fc).to(dev)
         net.load_state_dict(torch.load(wpath, map_location=dev, weights_only=True))
         net.eval()
-        bd = cc.Bounder(1, net, dev, C.TOWN06_INPUT_H, C.TOWN06_INPUT_W,
-                        method=args.method)
+        bd = cc.Bounder(1, net, dev, IN_H, IN_W, method=args.method)
         for cond in conds:
             los, his, per_section, origins = [], [], {}, set()
             for sec in D.SECTIONS:
@@ -440,8 +465,8 @@ def main():
         checkpoints={nm: C.final_student(b) for nm, b, _, _ in STUDENTS},
         # 4ac6002: report ReLU count next to every certified rate, so bound looseness
         # from a larger model stays visible rather than being engineered away.
-        input_size=[C.TOWN06_INPUT_W, C.TOWN06_INPUT_H],
-        relu={nm: C.relu_count(ch, fc, C.TOWN06_INPUT_H, C.TOWN06_INPUT_W)
+        input_size=[IN_W, IN_H], captures=str(_rel(CAPTURES)),
+        relu={nm: C.relu_count(ch, fc, IN_H, IN_W)
               for nm, _, ch, fc in STUDENTS}, nsplit=args.nsplit, stride=args.stride, tolerance=tol,
         t_closed_loop_s=C.T_CLOSED_LOOP_S, lane_width_m=C.LANE_WIDTH_M,
         cte_budget_m=C.CTE_BUDGET_M, lap_end_m=C.LAP_END_M,
