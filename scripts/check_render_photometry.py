@@ -8,7 +8,7 @@ WHY. The determinism preflight (D-1..D-11) verifies HOW the server was launched,
 verify_condition() reads the weather struct back. Both passed, every run, while the
 server rendered the identical scene 15% darker for half a day.
 
-Measured, 2026-09-02: `pipeline/data/dagger_clear_t06lap` holds two renderings of the
+Measured, 2026-09-02: `data/dagger_clear_t06lap` holds two renderings of the
 same road under the same declared condition. Rounds 00-05 average 0.2508-0.2537 on the
 network's input; rounds 06-14 average 0.2140-0.2141. At matched poses 0.5 m apart the
 frames are geometrically identical and uniformly 0.84x -- a photometric gain, not

@@ -28,9 +28,9 @@ import torch
 
 REPO = Path(__file__).resolve().parent.parent
 
-# BELOW the sys.path insert, not above it. `gpu` lives in pipeline/, so this import only
-# ever succeeded when something else had already put pipeline/ on the path -- and when the
-# ledger was finally run as its own process from the repo root it died with
+# `gpu` used to live beside the drivers rather than in the library, so this import only
+# succeeded when something else had already put that directory on the path -- and when
+# the ledger was finally run as its own process from the repo root it died with
 # ModuleNotFoundError before driving a single lap. Same failure as the teacher gate's six
 # silent rounds, recorded in run_dagger_rounds.sh.
 from steering.gpu import require_cuda
@@ -271,7 +271,7 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps,
         cte, hint = signed_cte_route(route, loc.x, loc.y, hint)
 
         # ODD BOUNDARY: pure pursuit bridges the intersections, and those steps are
-        # neither driven by the policy nor scored. See pipeline/evaluate.py for why --
+        # neither driven by the policy nor scored. See scripts/evaluate.py for why --
         # briefly: no lane markings means no input signal for a lane-follower, and
         # scoring the expert's road would compare a verdict against road the certificate
         # does not cover.
@@ -481,7 +481,7 @@ def main():
         # Town04 fog-into-night failure, where fog leaked into the night cells and no
         # result could reveal it.
         #
-        # This check lived ONLY in pipeline/evaluate.py, which is the sweep and gate
+        # This check lived ONLY in scripts/evaluate.py, which is the sweep and gate
         # driver. The driver that writes the SCORED LEDGER -- the numbers that get
         # published -- did not have it. A rule that CLAUDE.md states as "every run" was
         # enforced on the diagnostic path and not on the authoritative one.
@@ -621,7 +621,7 @@ def main():
 
 if __name__ == "__main__":
     # One CARLA client per port. Two synchronous clients on one world interleave ticks
-    # and silently corrupt each other -- see pipeline/carla_lock.py for the run this cost.
+    # and silently corrupt each other -- see steering/carla_lock.py for the run this cost.
     from steering.carla_lock import carla_lock, CarlaBusy
     try:
         with carla_lock(owner=" ".join(sys.argv[:3])):

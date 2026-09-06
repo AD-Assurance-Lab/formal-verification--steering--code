@@ -87,7 +87,7 @@ def drive_collect(world, vehicle, img_queue, model, device, w, h, weather, direc
         cte, hint = signed_cte_route(route, loc.x, loc.y, hint)
         exp_steer, exp_rad, _ = pure_pursuit_route(route, tf, hint)  # reference (label = teacher at distill)
 
-        # ODD BOUNDARY: pure pursuit bridges the intersections -- see pipeline/dagger.py.
+        # ODD BOUNDARY: pure pursuit bridges the intersections -- see scripts/dagger.py.
         # The student drives the same lap as the teacher and hits the same intersections,
         # so it needs the same handover. Bridged steps stay in the DATA (their expert
         # labels are what DAgger learns from) and are excluded from the SCORE.
@@ -333,7 +333,7 @@ def main():
                 # child inherits the pipe and the call never returns.
                 _rlog = os.path.join(C.REPO_ROOT, "results", "carla_restart_dagger_student.log")
                 _port = os.environ.get("CARLA_PORT", str(C.PORT))
-                # Kill, then WAIT for the port -- see pipeline/dagger.py. A fixed sleep
+                # Kill, then WAIT for the port -- see scripts/dagger.py. A fixed sleep
                 # lets the old server keep the socket, the relaunch fail to bind, and
                 # every reconnect time out against a listener that never serves.
                 import socket as _socket
@@ -440,7 +440,7 @@ def main():
 
 if __name__ == "__main__":
     # One CARLA client per port. Two synchronous clients on one world interleave ticks
-    # and silently corrupt each other -- see pipeline/carla_lock.py for the run this
+    # and silently corrupt each other -- see steering/carla_lock.py for the run this
     # cost. Every entry point that ticks the world takes the lock, in both directions:
     # it refuses to start over someone else's run, and its own run is visible to them.
     from steering.carla_lock import carla_lock, CarlaBusy

@@ -8,7 +8,7 @@
 #
 # torch 2.13.0+cu130 is not a preference here. The RTX 5090 is sm_120, and the previously
 # pinned torch had no kernels for it while torch.cuda.is_available() reported True -- the
-# defect that produced pipeline/gpu.py's require_cuda(). Every checkpoint and every
+# defect that produced steering.gpu's require_cuda(). Every checkpoint and every
 # published number in this repo is tied to that environment. Downgrading it to run a
 # verifier would re-derive the study in order to check a bound.
 #
