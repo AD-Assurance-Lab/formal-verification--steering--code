@@ -496,6 +496,40 @@ def main():
     try:
         vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
         camera, cam_queue = env.set_condition(world, vehicle, args.condition)
+
+        # R-SIM-4, ON THE SCORED DRIVER. set_condition already reads the weather STRUCT
+        # back, but the struct is what was asked for, not what the camera sees --
+        # exposure, headlights and the sensor all sit between them. That gap is the
+        # Town04 fog-into-night failure, where fog leaked into the night cells and no
+        # result could reveal it.
+        #
+        # This check lived ONLY in pipeline/evaluate.py, which is the sweep and gate
+        # driver. The driver that writes the SCORED LEDGER -- the numbers that get
+        # published -- did not have it. A rule that CLAUDE.md states as "every run" was
+        # enforced on the diagnostic path and not on the authoritative one.
+        #
+        # It also aligns the two drivers' tick counts before the drive, which is not
+        # cosmetic: evaluate.py ticked six times here and the ledger did not, the vehicle
+        # therefore settled differently, and the closed loop amplified a millimetre of
+        # difference into a different discrete basin. That is why the same checkpoint
+        # scored 1.42 ft through this driver and 0.97-1.34 ft through evaluate.py.
+        sys.path.insert(0, os.path.join(C.REPO_ROOT, "scripts"))
+        from condition_signature import assert_condition, identify  # noqa: E402
+        for _ in range(6):
+            _f = world.tick()
+        _sig = student_preprocess(env.raw_to_bgr(env.grab_frame(cam_queue, _f)), 168, 28)
+        _ovr = {k: os.environ[k] for k in OVERRIDE_VARS if os.environ.get(k)}
+        if _ovr:
+            # An override renders an INTERMEDIATE member of the family, which by
+            # construction is not the preset, so identify() will not name it and an
+            # assert would abort a run doing exactly what was asked. Measure and print.
+            _got, _st = identify(_sig)
+            print(f"  OVERRIDE ACTIVE {_ovr}: preset assert skipped by design. "
+                  f"Rendered signature looks like '{_got}'.")
+        else:
+            assert_condition(_sig, args.condition)
+            print(f"  R-SIM-4: rendered frame confirms '{args.condition}'")
+
         print(f"{args.student} under '{args.condition}' "
               f"(exposure shutter={C.exposure_for(args.condition)['shutter']:.0f})")
         print(f"budget {C.CTE_BUDGET_M:.3f} m ({C.CTE_BUDGET_FT:.2f} ft), "
