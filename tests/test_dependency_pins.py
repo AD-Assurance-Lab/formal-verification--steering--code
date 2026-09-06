@@ -26,7 +26,8 @@ with open(os.path.join(REPO, "pyproject.toml")) as f:
 DEPS = re.search(r"^dependencies = \[(.*?)^\]", PYPROJECT, re.S | re.M).group(1)
 
 # What pyproject pins, and therefore what the bootstrap must not pin again.
-RESOLVABLE = ["numpy", "scipy", "matplotlib", "carla-determinism"]
+# numpy is deliberately absent: see test_numpy_is_a_floor_here_and_exact_there.
+RESOLVABLE = ["scipy", "matplotlib", "carla-determinism"]
 
 
 def test_bootstrap_does_not_repin_what_pyproject_pins():
@@ -64,3 +65,30 @@ def test_the_four_unresolvable_dependencies_stay_in_the_bootstrap():
         "torch is in pyproject.toml's dependencies, where a plain resolver installs a "\
         "build that may not match the card: cuda.is_available() returns True and every "\
         "kernel then fails"
+
+
+def test_numpy_is_a_floor_here_and_exact_there():
+    """The one dependency pinned in both files, on purpose, to different things.
+
+    The published bounds were computed under numpy 1.26.4. Pinning that exactly in
+    pyproject.toml makes `pip install -e .` unsatisfiable, because opencv-python
+    declares numpy>=2 -- and that is the first command the README gives. So pyproject
+    carries a floor and the bootstrap installs the recorded version, with opencv going
+    in under --no-deps so it cannot pull numpy 2 back over the top.
+
+    The failure this guards is silent: an install that quietly lands on numpy 2 still
+    certifies, still prints verdicts and margins, and is no longer the environment the
+    artifacts record.
+    """
+    assert re.search(r'"numpy>=', DEPS), \
+        ("pyproject.toml pins numpy exactly again; opencv-python declares numpy>=2, so "
+         "`pip install -e .` becomes unsatisfiable")
+    m = re.search(r'NUMPY_VER=(\S+)', BOOTSTRAP)
+    assert m, "bootstrap_env.sh no longer installs the recorded numpy"
+    floor = re.search(r'"numpy>=([^"]+)"', DEPS).group(1)
+    assert m.group(1) == floor, \
+        (f"the bootstrap installs numpy {m.group(1)} but pyproject's floor is {floor}; "
+         "the recorded version must be the floor, or the casual install is below it")
+    assert "INSTALLED_NUMPY" in BOOTSTRAP, \
+        ("bootstrap_env.sh does not check which numpy survived the editable install. "
+         "Resolving numpy>= can move it, and nothing downstream would say so")

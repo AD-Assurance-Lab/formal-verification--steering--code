@@ -21,6 +21,8 @@ import sys
 
 import pytest
 
+from conftest import requires
+
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -34,6 +36,7 @@ def mod():
     return C, S
 
 
+@requires("carla")
 def test_thresholds_are_the_declared_constants(mod):
     """SMAX_CAP and Town04's smax come from build_study_route, not from this study."""
     _, S = mod

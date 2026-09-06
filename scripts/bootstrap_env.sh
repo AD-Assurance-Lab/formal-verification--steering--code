@@ -25,10 +25,16 @@ VENV=${1:-.venv}
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO"
 
-# ONLY the dependencies a resolver cannot install are pinned here. numpy, scipy,
-# opencv, matplotlib and carla-determinism are pinned in pyproject.toml and installed
-# from it below, so each version is written down exactly once. Two copies of a pin is
-# how the recorded environment and the installed one come apart.
+# ONLY what a resolver cannot install is pinned here. scipy, opencv, matplotlib and
+# carla-determinism are pinned in pyproject.toml and installed from it below, so each
+# version is written down exactly once. Two copies of a pin is how the recorded
+# environment and the installed one come apart.
+#
+# numpy is the exception and it is pinned in BOTH, to different things on purpose.
+# pyproject declares a floor, because opencv-python declares numpy>=2 and an exact
+# 1.26.4 there makes `pip install -e .` unsatisfiable. The published bounds were
+# computed under 1.26.4, so this script installs exactly that, and then opencv goes in
+# with --no-deps so it cannot pull numpy 2 back over the top.
 #
 # These four versions are the environment of record, read from the _meta of the
 # published artifacts themselves (results/town06/certificate_town06.json and the
@@ -36,6 +42,7 @@ cd "$REPO"
 # only with a measurement to back it up.
 TORCH_VER=2.13.0
 TORCH_INDEX=https://download.pytorch.org/whl/cu130
+NUMPY_VER=1.26.4          # the environment of record; see the note above
 AUTO_LIRPA_REF=5a098e8f9fb5786a428a024981d833d303921f2d
 CARLA_WHEEL_DIR="$HOME/carla/PythonAPI/carla/dist"
 
@@ -72,8 +79,17 @@ t = pathlib.Path("pyproject.toml").read_text()
 print(re.search(r'"(opencv-python==[^"]+)"', t).group(1))
 PYEOF
 )
+$PIP install -q "numpy==$NUMPY_VER"
 $PIP install -q --no-deps "$OPENCV_PIN"
 $PIP install -q -e ".[dev]"
+
+# The editable install resolves numpy>=1.26.4 and must have left 1.26.4 alone. If it
+# did not, every bound below is computed under a numpy the artifacts do not record.
+INSTALLED_NUMPY=$("$PY" -c 'import numpy;print(numpy.__version__)')
+if [ "$INSTALLED_NUMPY" != "$NUMPY_VER" ]; then
+    echo "    FATAL: numpy is $INSTALLED_NUMPY, not the recorded $NUMPY_VER" >&2
+    exit 1
+fi
 
 echo "==> auto_LiRPA (pinned commit, --no-deps so torch is never rewritten)"
 $PIP install -q --no-deps --ignore-requires-python \

@@ -14,6 +14,8 @@ import math
 import numpy as np
 import pytest
 
+from conftest import requires
+
 from steering.ledger import LEDGER, wilson
 
 
@@ -103,6 +105,7 @@ def test_load_model_is_importable_from_the_library():
     assert callable(load_model)
 
 
+@requires("carla")
 def test_route_design_constants_are_what_scored_scope_enforces():
     """scored_scope's thresholds are quoted from the route-selection criterion. They
     moved into the library together and must not drift apart."""
