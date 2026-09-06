@@ -8,14 +8,13 @@ last vertex, and recorded a label produced by a lookahead clamped onto that vert
 0.001 m: the car perfectly on the line and the label meaningless.
 """
 import os
-import sys
 
 import numpy as np
 import pytest
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-from steering.route import lap_finished, route_is_closed  # noqa: E402
+from steering.route import lap_finished, route_is_closed
 
 # Pure pursuit commands at most ~0.09 on these routes at 20 mph.
 STEER_CEILING = 0.25

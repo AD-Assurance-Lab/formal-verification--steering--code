@@ -52,11 +52,11 @@ import torch
 
 REPO = Path(__file__).resolve().parent.parent
 
-from steering.gpu import require_cuda  # noqa: E402
-from steering import config as C  # noqa: E402
-from steering.route import load_route  # noqa: E402
-from steering import certify as cc  # noqa: E402
-from steering.student import StudentNet  # noqa: E402
+from steering.gpu import require_cuda
+from steering import config as C
+from steering.route import load_route
+from steering import certify as cc
+from steering.student import StudentNet
 
 # FROM CONFIG, not hardcoded. This tuple duplicated config.STUDENTS with the PUBLISHED
 # checkpoint names, so under TOWN04_REDO the certifier silently certified the PUBLISHED

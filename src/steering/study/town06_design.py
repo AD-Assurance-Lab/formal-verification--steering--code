@@ -50,8 +50,6 @@ CONDITIONS = ("clear", "fog", "night", "low_sun")
 # Reading config means this module and the route CANNOT disagree, which is what the
 # original comment claimed the route_meta read was for.
 def _sections():
-    import sys, os
-    here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     from steering import config as _C
     return tuple(_C.SECTIONS)
 

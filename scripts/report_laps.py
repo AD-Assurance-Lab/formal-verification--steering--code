@@ -17,6 +17,7 @@ Two things it reports that a pass/fail bit cannot:
 
     STUDY_MAP=Town04 TOWN04_REDO=1 python3 scripts/report_laps.py
 """
+import argparse
 import glob
 import json
 import sys
@@ -24,7 +25,7 @@ from collections import defaultdict
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-from steering import config as C                                            # noqa: E402
+from steering import config as C
 
 STANDARD_LAPS = 3
 
@@ -41,8 +42,8 @@ def main():
         return 2
 
     print(f"\n{C.STUDY_MAP} LEDGER -- LAPS (PROTOCOL A-4)")
-    print(f"  a lap is one traversal of all the scored road, and fails if any part of it "
-          f"departs")
+    print("  a lap is one traversal of all the scored road, and fails if any part of it "
+          "departs")
     print(f"  budget {budget_ft:.2f} ft;  standard is {STANDARD_LAPS} laps\n")
     print(f"  {'condition':9s} {'student':26s} {'laps failed':>12s} {'verdict':8s} "
           f"{'worst':>8s} {'margin':>8s}")
@@ -86,4 +87,7 @@ def main():
 
 
 if __name__ == "__main__":
+    # It takes no options, but --help must answer rather than fall through into the
+    # body, which reads the ledger and exits non-zero when there is nothing to read.
+    argparse.ArgumentParser(description=__doc__.splitlines()[0]).parse_args()
     sys.exit(main())

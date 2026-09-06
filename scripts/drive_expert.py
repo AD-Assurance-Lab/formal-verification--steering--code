@@ -15,16 +15,16 @@ import argparse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import carla  # noqa: E402
-import matplotlib  # noqa: E402
+import carla
+import matplotlib
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
+import matplotlib.pyplot as plt
 
-from steering import config as C  # noqa: E402
-from steering import carla_env as env  # noqa: E402
-from steering.expert import nearest_waypoint  # noqa: E402
-from steering.metrics import summarize_cte  # noqa: E402
-from steering.route import load_route, signed_cte_route, pure_pursuit_route  # noqa: E402
+from steering import config as C
+from steering import carla_env as env
+from steering.expert import nearest_waypoint
+from steering.metrics import summarize_cte
+from steering.route import load_route, signed_cte_route, pure_pursuit_route
 
 # Sections, not a hardcoded pair: Town06 has six, Town04 has its two directions.
 SPAWNS = C.SPAWNS

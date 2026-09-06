@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cv2
 import torch
 
-from steering.gpu import require_cuda  # noqa: E402
+from steering.gpu import require_cuda
 import carla
 
 from steering import config as C

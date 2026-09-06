@@ -1,152 +1,37 @@
-# Data, weights, and simulator output stay out of git
-data/
-datasets/
-checkpoints/
-# ...except the two students the published certificate actually loads. 403 KB total:
-# without them a clone contains the answer (sustained_bound.json) and nothing that
-# produced it. Every other checkpoint (teachers, DAgger rounds, width variants) stays out.
-!pipeline/checkpoints/
-pipeline/checkpoints/*
-# EVERY SHIPPED POLICY, and the final teacher each was distilled from. 5.5 MB in total,
-# so there is no reason to make an external researcher reconstruct them -- and with the
-# renderer's irreducible per-frame nondeterminism (carla-determinism D-7) a reconstruction
-# would not be bit-identical anyway. Training checkpoints (BC, intermediate DAgger rounds,
-# width variants) stay out: they are scaffolding, not results.
-#
-# Town04, published:
-!pipeline/checkpoints/S_clear_84x28.pth
-!pipeline/checkpoints/S_mixed_84x28_w3.pth
-# Town04, redo under the corrected harness (T04-R5; the mixed policy is the
-# student-DAgger'd checkpoint, which is what final_student resolves to):
-!pipeline/checkpoints/S_clear_84x28_v2.pth
-!pipeline/checkpoints/S_mixed_84x28_w3_v2_dagger_r00.pth
-# Town06 deployment test:
-!pipeline/checkpoints/S_clear_t06_168x28_w2.pth
-!pipeline/checkpoints/S_mixed_t06_168x28_w3.pth
-# the final teachers, so a student can be re-distilled without re-running DAgger:
-!pipeline/checkpoints/teacher_clear_v3_dagger_r05.pth
-!pipeline/checkpoints/teacher_mixed_v2_dagger_r03.pth
-!pipeline/checkpoints/teacher_clear_t06_dagger_r06.pth
-!pipeline/checkpoints/teacher_mixed_t06_dagger_r11.pth
-# THE MODELS THE TOWN06 RESULT IS ABOUT. The four above are the SIX-SECTION era; the lap
-# rebuild superseded them, and its checkpoints were never added -- so a clone of this
-# repository could not reproduce certificate_town06.json and shipped two retired students
-# instead of the two that were certified and driven. 6 MB for the artifact to be what it
-# says it is.
-!pipeline/checkpoints/S_clear_t06lap_168x56_w2_s0.pth
-!pipeline/checkpoints/S_mixed_t06lap_168x56_w4_s3.pth
-!pipeline/checkpoints/teacher_clear_t06lap_dagger_r04.pth
-!pipeline/checkpoints/teacher_mixed_t06lap_dagger_r03.pth
-# ...and the pins that say WHICH checkpoint is the student. final_student() resolves
-# through these, so without them the registry names a base that does not exist.
-!pipeline/checkpoints/*.selected
-# ...and the Town06 deployment-test routes. These are PROTOCOL artifacts, not data:
-# the route had to be fixed, on geometry alone, before any Town06 model existed, and
-# committing it is what makes that checkable later. ~23 KB each.
-!pipeline/data/
-pipeline/data/*
-!pipeline/data/routes_town06/
-# ...and the TOWN04 routes, for exactly the same reason. They are the geometric
-# definition of the published lap and they were never tracked -- the published artifact
-# could not be reproduced from its own repository without them. 52 KB.
-!pipeline/data/routes/
-runs/
-results/**/*.png
-results/**/*.npy
-# .npz captures are simulator output: 18 GB of them, regenerable from the scripts.
-# The .npy rule above did not cover the compressed archives the capture scripts write.
-results/**/*.npz
-results/traces/
-results/**/*.pt
-!results/ledger/
-
 # Python
 __pycache__/
 *.py[cod]
-.venv/
-venv*/
-.pytest_cache/
 *.egg-info/
-
-# Local notes
-scratch/
-
-# trajectory frame logs: ~0.5 GB per lap, regenerable
-results/traj/
-results/trajectory/*.json
-
-# driven-frame logs (regenerable; 144 MB per run)
-results/framelog/
-
-# Town06 deployment test: captures are simulator output (~38 MB x 8) and regenerable.
-# The CERTIFICATE is not -- it is the pre-drive prediction and must be committed.
-# EXCLUDE THE CONTENTS, NOT THE DIRECTORY. `results/town06/captures/` excluded the
-# directory itself, and git cannot re-include a file inside an excluded directory -- so
-# the `!.../capture_gate.json` rule at the bottom of this file never took effect and had
-# no way to. The A-3 gate artifact was read from disk by audit_repo.py and was absent
-# from every clone, which is why "a certificate exists with no gate artifact beside it"
-# never fired.
-results/town06/captures/*
-results/town06_logs/
-!results/town06/
-!results/town06/certificate_town06.json
-!results/town06/ledger/
-# The PER-RUN artifacts and their step traces. `runs/` above excluded these, so the
-# committed Town06 result carried only eight aggregated cells: the three laps behind each
-# verdict, their margins, and where each one peaked were all untracked. That is the
-# evidence A-4 asks for ("report the margin with every verdict") and R-SIM-6 asks for
-# ("check step counts before reading verdicts"), and none of it was in the repository.
-#
-# The traces also make a cell RE-SCORABLE. Without them a scored span is baked into the
-# verdict at drive time, and asking what a different span would have given means driving
-# 24 laps again -- which is exactly what it cost to ask that question once.
-# ~95 KB per lap, 24 laps per pass.
-!results/town06/ledger/runs/
-!results/town06/ledger/runs/**
-# ...and for every A-5 pass and scope. A pass writes ledger_pass<N>/ and the scope
-# scorer writes ledger_<scope>/, and `runs/` above would exclude their per-run artifacts
-# exactly as it excluded pass 1's. Spelling only pass 1 here is how the next pass
-# silently loses its evidence again.
-#
-# Only .json and .csv are re-included. A bare `**` would also re-admit the .npz and .png
-# rules above, which exist because these directories are where 18 GB of simulator output
-# lands -- the re-inclusion must be narrower than the exclusion it is reopening.
-!results/town06/ledger_*/
-!results/town06/ledger_*/**/
-!results/town06/ledger_*/**/*.json
-!results/town06/ledger_*/**/*.csv
-!results/town06/ledger_*/*.json
-!results/town06/ledger_*/*.csv
-
-# Determinism campaign (T06-F22). The SUMMARIES are the result and are committed; the
-# per-rep traces and raw frame dumps are bulk evidence, regenerable from the probes in
-# scripts/determinism_*.py, and raw frames are large binaries.
-results/town06/determinism/*_rep*.json
-results/town06/determinism/frames/
-
-# pipeline/results is evaluate.py's SCRATCH directory -- every exploratory run writes a
-# per-step CSV and PNG there, and a sweep writes dozens. Only the traces the paper reports
-# are tracked. 572 scratch files were committed during the Town06 rebuild and the Town04
-# redo before this rule existed; they are archived, not deleted.
-pipeline/results/*
-!pipeline/results/eval_teacher_clear_bc_*.csv
-!pipeline/results/eval_teacher_clear_bc_*.png
-!pipeline/results/oracle_*.csv
-!pipeline/results/oracle_*.png
-!pipeline/results/reference_routes.png
-!pipeline/results/teacher_clear_bc_training.png
-!pipeline/results/teacher_mixed_bc_training.png
-
-# The gate artifact is EVIDENCE, not bulk data: the captures it describes are
-# gigabytes and stay out, but the JSON that says they reproduce the vehicle is the
-# record that a stated precondition was actually checked. It must be in git.
-!results/town06/captures/capture_gate.json
-.venv*/
-
-# Q8b verifier source (pinned clone, rebuilt by scripts/bootstrap_abcrown_env.sh)
+build/
+dist/
+.venv/
+.venv-*/
+.pytest_cache/
+.ruff_cache/
 .abcrown-src/
 
-# Q8b sub-problem exports: ONNX graphs and reference arrays are regenerable from
-# scripts/q8b_export.py + q8b_build_onnx.py and are large. The JSON metadata IS tracked.
-results/town06/beta/specs/*.onnx
-results/town06/beta/specs/*.npz
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+*.log
+
+# ---------------------------------------------------------------------------
+# Artifacts are added on purpose, never swept in.
+#
+# The three directories below hold what the study measured, and they also hold
+# whatever the last run happened to leave on disk -- 653 MB of checkpoints from
+# seed sweeps, 22 GB of superseded captures, results from experiments that were
+# retired. Ignoring them wholesale does NOT untrack anything: a file already in
+# git stays in git and its edits still show up. What it stops is `git add -A`
+# quietly enlarging the published record with working output, which is how a
+# repository ends up shipping results nobody chose to publish.
+#
+# To add a new artifact, name it: `git add -f results/<the file>`.
+# ---------------------------------------------------------------------------
+results/**
+data/**
+checkpoints/**
+
+# The captures live on Hugging Face; scripts/fetch_captures.py puts them back.
+# The training frames, about 59 GB, are regenerable and deliberately not shipped.

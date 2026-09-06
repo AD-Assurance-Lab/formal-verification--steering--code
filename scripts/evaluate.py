@@ -12,31 +12,28 @@ condition as data collection); the network then drives the evaluated loop.
 """
 import os
 import sys
-from pathlib import Path
 import csv
 import argparse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import torch  # noqa: E402
+import torch
 
-from steering.gpu import require_cuda  # noqa: E402
+from steering.gpu import require_cuda
 import numpy as np
-import carla  # noqa: E402
-import matplotlib  # noqa: E402
+import carla
+import matplotlib
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
+import matplotlib.pyplot as plt
 
 from steering import config as C
-from steering.model import load_model  # noqa: E402
-from steering import carla_env as env  # noqa: E402
-from steering.imaging import preprocess_for_model  # noqa: E402
-from steering.student import student_preprocess  # noqa: E402
-from steering.expert import pure_pursuit_steer  # noqa: E402
-from steering.metrics import summarize_cte  # noqa: E402
-from steering.model import CarlaSteeringNet  # noqa: E402
-from steering.route import load_route, signed_cte_route, pure_pursuit_route  # noqa: E402
-from steering.route import lap_finished, arc_lengths  # noqa: E402
+from steering.model import load_model
+from steering import carla_env as env
+from steering.imaging import preprocess_for_model
+from steering.student import student_preprocess
+from steering.metrics import summarize_cte
+from steering.route import load_route, signed_cte_route, pure_pursuit_route
+from steering.route import lap_finished, arc_lengths
 
 # Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).
 SPAWNS = C.SPAWNS
@@ -256,7 +253,7 @@ def main():
     # Town04 is excluded deliberately: it is the published artifact and must keep
     # reproducing exactly until its own re-measurement is authorised.
     if C.STUDY_MAP == "Town06":
-        import carla_determinism as cd  # noqa: E402
+        import carla_determinism as cd
         cd.require_deterministic(C.PORT, world, fixed_dt=C.FIXED_DT,
                                  deterministic_control=C.DETERMINISTIC_CONTROL)
 
@@ -275,7 +272,7 @@ def main():
         # being drawn. set_condition already reads the weather struct back, but the
         # struct is what we asked for, not what the camera sees -- exposure, headlights
         # and the sensor all sit between them. One frame, and it costs a few ticks.
-        from steering.condition_signature import assert_condition, identify  # noqa: E402
+        from steering.condition_signature import assert_condition, identify
         for _ in range(6):
             f_ = world.tick()
         _img = env.grab_frame(img_queue, f_)

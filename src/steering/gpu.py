@@ -34,7 +34,7 @@ def require_cuda(tries=12, wait_s=10.0, allow_cpu=False, verbose=True):
                 torch.zeros(8, device="cuda") + 1.0     # prove it, do not assume it
                 return "cuda"
             last = "torch.cuda.is_available() is False"
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:
             last = f"{type(exc).__name__}: {exc}"
         if verbose:
             print(f"  GPU not ready ({last}); CARLA is probably still starting "

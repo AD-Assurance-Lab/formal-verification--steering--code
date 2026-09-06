@@ -18,10 +18,8 @@ import gc
 import subprocess
 import time
 import json
-import math
 import os
 import sys
-import pathlib
 from pathlib import Path
 
 import cv2
@@ -35,16 +33,15 @@ REPO = Path(__file__).resolve().parent.parent
 # ledger was finally run as its own process from the repo root it died with
 # ModuleNotFoundError before driving a single lap. Same failure as the teacher gate's six
 # silent rounds, recorded in run_dagger_rounds.sh.
-from steering.gpu import require_cuda  # noqa: E402
+from steering.gpu import require_cuda
 
-import carla  # noqa: E402
-from steering import carla_env as env  # noqa: E402
-from steering import config as C  # noqa: E402
+import carla
+from steering import carla_env as env
+from steering import config as C
 
-from steering.study import town06_design as _D  # noqa: E402
-from steering.route import (load_route, signed_cte_route, pure_pursuit_route,  # noqa: E402
+from steering.route import (load_route, signed_cte_route, pure_pursuit_route,
                    lap_finished)
-from steering.student import StudentNet, student_preprocess  # noqa: E402
+from steering.student import StudentNet, student_preprocess
 
 # Map-scoped, and now REDO-scoped. Town04 keeps results/ledger; the Town06 deployment
 # test writes to results/town06/ledger; the Town04 REDO writes to results/town04_v2/ledger.
@@ -58,7 +55,7 @@ from steering.student import StudentNet, student_preprocess  # noqa: E402
 # and this would have written every one of them into pass 1's directory, overwriting the
 # blind result R4 requires to stand. The guard and the writer must read the same
 # definition or the guard protects nothing.
-from steering.ledger import LEDGER, wilson  # noqa: E402
+from steering.ledger import LEDGER, wilson
 # Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).
 SPAWNS = C.SPAWNS
 
@@ -205,7 +202,7 @@ def restart_and_respawn(condition):
             vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
             camera, q = env.set_condition(world, vehicle, condition)
             return client, world, original, vehicle, camera, q
-        except Exception as exc:          # noqa: BLE001
+        except Exception as exc:
             last = exc
             time.sleep(15)
     raise RuntimeError(f"could not reconnect after restart: {last}")
@@ -494,7 +491,7 @@ def main():
         # therefore settled differently, and the closed loop amplified a millimetre of
         # difference into a different discrete basin. That is why the same checkpoint
         # scored 1.42 ft through this driver and 0.97-1.34 ft through evaluate.py.
-        from steering.condition_signature import assert_condition, identify  # noqa: E402
+        from steering.condition_signature import assert_condition, identify
         for _ in range(6):
             _f = world.tick()
         _sig = student_preprocess(env.raw_to_bgr(env.grab_frame(cam_queue, _f)), 168, 28)

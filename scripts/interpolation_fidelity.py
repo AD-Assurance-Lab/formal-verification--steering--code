@@ -42,10 +42,10 @@ import torch
 
 REPO = Path(__file__).resolve().parent.parent
 
-from steering.gpu import require_cuda  # noqa: E402
+from steering.gpu import require_cuda
 
-from steering import config as C  # noqa: E402
-from steering.student import StudentNet  # noqa: E402
+from steering import config as C
+from steering.student import StudentNet
 
 DIAG = REPO / "results" / "diagnostic"
 
@@ -157,7 +157,7 @@ def main():
     end = ax["endpoint"]
     sets = {sec: tuple(sorted(c)) for sec, c in per_sec.items()}
     if len(set(sets.values())) != 1:
-        print(f"sections were swept at different intensities and cannot be pooled:\n"
+        print("sections were swept at different intensities and cannot be pooled:\n"
               + "\n".join(f"  {sec}: {v}" for sec, v in sets.items()), file=sys.stderr)
         return 2
     for sec, caps in per_sec.items():
@@ -192,7 +192,7 @@ def main():
     print(f"\n  scope: {len(sections)} sections ({','.join(sections)}), "
           f"{n} poses, {total_span:.0f} m of road")
 
-    print(f"\nINTERPOLATION FIDELITY -- is the family's interior a real condition?")
+    print("\nINTERPOLATION FIDELITY -- is the family's interior a real condition?")
     print(f"  axis '{args.axis}': clear -> {ax['cond']} at {end:g} {ax['unit']}")
     print(f"  chord endpoints per section from interp_{args.axis}_<sec>_{end:g} (same session)")
     print(f"  {n} poses, tolerance {tol:.4f}\n")

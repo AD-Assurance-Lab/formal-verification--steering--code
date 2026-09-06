@@ -43,8 +43,8 @@ from steering import REPO_ROOT as _REPO_ROOT
 
 REPO = Path(_REPO_ROOT)
 
-from steering import config as C  # noqa: E402
-from steering.route import load_route  # noqa: E402
+from steering import config as C
+from steering.route import load_route
 
 # The two declared thresholds, both from steering/route_design.py. SMAX_CAP is the one the
 # section builder ENFORCED, so it defines the capped scope; REF_SMAX is Town04's own
@@ -159,8 +159,8 @@ def main():
           f"  s99 {rec['demand']['s99']:.4f}  smax {rec['demand']['smax']:.4f}")
     print(f"  Town04 reference smax {REF_SMAX}      SMAX_CAP {SMAX_CAP}")
     if rec["demand"]["smax"] > SMAX_CAP:
-        print(f"  *** this route EXCEEDS SMAX_CAP, which build_town06_sections.py "
-              f"enforced and the lap builder does not ***")
+        print("  *** this route EXCEEDS SMAX_CAP, which build_town06_sections.py "
+              "enforced and the lap builder does not ***")
     for label, key in (("over SMAX_CAP", "over_cap"),
                        ("over Town04 smax", "over_town04_smax")):
         spans = rec[key]

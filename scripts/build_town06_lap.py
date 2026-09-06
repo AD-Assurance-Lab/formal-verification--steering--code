@@ -25,9 +25,9 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-import numpy as np                                            # noqa: E402
-import carla                                                  # noqa: E402
-from steering import config as C                                            # noqa: E402
+import numpy as np
+import carla
+from steering import config as C
 
 STEP_M = 2.0
 MAX_PTS = 6000

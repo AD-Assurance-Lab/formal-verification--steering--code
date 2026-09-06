@@ -21,7 +21,7 @@ import pytest
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-from steering.route import arc_lengths, route_length_m  # noqa: E402
+from steering.route import arc_lengths, route_length_m
 
 
 def test_a_third_column_cannot_change_the_length():

@@ -22,15 +22,15 @@ length, since a lap that covered 40% of the road is short whatever the speeds sa
 
     python3 scripts/audit_training_data.py
 """
+import argparse
 import csv
-import os
 import sys
 from collections import defaultdict
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-import numpy as np                                            # noqa: E402
-from steering import config as C                                            # noqa: E402
+import numpy as np
+from steering import config as C
 
 MPH_TO_MS = 0.44704
 SPEED_AGREEMENT_FLOOR = 0.80      # actual/reported below this is the degradation tell
@@ -156,4 +156,8 @@ def main():
 
 
 if __name__ == "__main__":
+    # It takes no options, but it must still answer --help rather than fall through
+    # into a full scan of every dataset on disk. A script whose --help runs its body
+    # is how the repository audit came to restart the simulator.
+    argparse.ArgumentParser(description=__doc__.splitlines()[0]).parse_args()
     sys.exit(main())

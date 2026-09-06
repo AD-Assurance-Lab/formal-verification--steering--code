@@ -25,7 +25,7 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-from steering import config as C  # noqa: E402
+from steering import config as C
 
 OUT = REPO / "results" / "town06" / "gate_candidates.json"
 STRAIGHT_M = {"s00": 166, "s01": 558, "s02": 404, "s03": 620, "s04": 264, "s05": 232}
@@ -117,7 +117,7 @@ def main():
         print(f"  -> {results[label]['all_held']}/{len(secs)} sections held on ALL "
               f"{reps} reps", flush=True)
 
-    print(f"\n===== 3-REP CLEAR GATE (a section counts only if it holds on EVERY rep) =====",
+    print("\n===== 3-REP CLEAR GATE (a section counts only if it holds on EVERY rep) =====",
           flush=True)
     order = sorted(C.SECTIONS, key=lambda s: -STRAIGHT_M.get(s, 0))
     print(f"{'candidate':24s} {'ReLU':>7s} {'held':>6s} " +

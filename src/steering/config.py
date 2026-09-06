@@ -8,7 +8,6 @@ silently disagree. All primitives marked [MEASURED] were verified in CARLA
 """
 import math
 import os
-import re
 
 # ── CARLA connection ─────────────────────────────────────────────────────────
 HOST = "127.0.0.1"
@@ -753,7 +752,7 @@ CLOSED_LOOP_TOLERANCE = CLOSED_LOOP_TOLERANCE_RAD / MAX_STEER_RAD
 # The package lives in src/steering, so the repository is two directories up. Set
 # STEERING_REPO_ROOT to point an installed copy at a checkout somewhere else; without
 # it an installed package would write its datasets into site-packages.
-from steering import REPO_ROOT  # noqa: E402  (defined once, in the package root)
+from steering import REPO_ROOT
 _BASE = REPO_ROOT
 DATASET_DIR = os.path.join(REPO_ROOT, "data")
 CHECKPOINT_DIR = os.path.join(REPO_ROOT, "checkpoints")

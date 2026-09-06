@@ -27,12 +27,11 @@ section at target speed, no policy measurement taken on that server means anythi
 """
 import argparse
 import math
-import os
 import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-from steering import config as C  # noqa: E402
+from steering import config as C
 
 
 def main():

@@ -18,13 +18,12 @@ import argparse
 import datetime
 import glob
 import json
-import os
 import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-from steering import config as C                                            # noqa: E402
-from steering.ledger import wilson, LEDGER                     # noqa: E402
+from steering import config as C
+from steering.ledger import wilson, LEDGER
 
 
 def main():

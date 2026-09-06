@@ -13,14 +13,13 @@ Import guard, for the ledger to call before it writes a scored cell:
     from steering.blind_order import require_certificate_committed
     require_certificate_committed()
 """
-import json
 import os
 import subprocess
 import sys
 
 from steering import REPO_ROOT as REPO
 
-from steering.study import town06_design as D  # noqa: E402
+from steering.study import town06_design as D
 
 CERT = os.path.join(REPO, D.CERT_ARTIFACT)
 LEDGER = os.path.join(REPO, D.LEDGER_SUBDIR)

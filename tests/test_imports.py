@@ -13,6 +13,7 @@ fails this test by timing out, which is the second thing worth knowing.
 Two files are excluded and they are excluded because they run on import by design:
 audit_repo.py IS its own check, and check_gpu_usable.py probes the card.
 """
+import importlib.util
 import os
 import subprocess
 import sys
@@ -47,5 +48,15 @@ def test_module_imports(mod, study_map):
     except subprocess.TimeoutExpired:
         pytest.fail(f"{mod} did not finish importing in 120 s under STUDY_MAP="
                     f"{study_map}: its body is running at import time.")
+    if p.returncode != 0:
+        # Two dependencies cannot be installed by a resolver: the CARLA client wheel
+        # ships with the simulator, and auto_LiRPA comes from upstream git. Off the lab
+        # machine their absence is an environment fact, not a defect in this module --
+        # but the skip is narrow on purpose. Only those two names qualify, and only
+        # when they are genuinely absent here, so a real ImportError still fails.
+        for dep in ("carla", "auto_LiRPA"):
+            if (f"No module named '{dep}'" in p.stderr
+                    and importlib.util.find_spec(dep) is None):
+                pytest.skip(f"{mod} needs {dep}, which is not installed here")
     assert p.returncode == 0, (f"{mod} fails to import under STUDY_MAP={study_map}\n"
                                f"{p.stderr[-1200:]}")

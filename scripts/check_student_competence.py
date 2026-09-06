@@ -54,7 +54,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 
-from steering import config as C  # noqa: E402
+from steering import config as C
 
 
 def checkpoint_digest(ck):
@@ -203,7 +203,7 @@ def main():
                          "traceback" if "Traceback" in out else None)
                 if fault:
                     harness_faults.append(fault)
-                print(f"      !! no per-section output"
+                print("      !! no per-section output"
                       + (f" -- {fault}" if fault else "") + "; last lines of that run:")
                 for ln in out.strip().splitlines()[-5:]:
                     print(f"         {ln}")

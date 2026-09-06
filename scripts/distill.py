@@ -16,7 +16,7 @@ from concurrent.futures import ProcessPoolExecutor
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from steering.gpu import require_cuda  # noqa: E402
+from steering.gpu import require_cuda
 
 import numpy as np
 import cv2
@@ -222,7 +222,7 @@ def distill_student(in_w, in_h, out_name, teacher_name="steering_dagger_r02",
         os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
         try:
             torch.use_deterministic_algorithms(True)
-        except Exception as _exc:                       # noqa: BLE001
+        except Exception as _exc:
             print(f"  DISTILL_DETERMINISTIC: {type(_exc).__name__}: {_exc}", flush=True)
         print("  DISTILL_DETERMINISTIC=1 (pinned kernels; slower)", flush=True)
     # Seed the augmentation RNG too: dataset._shift draws from the global `random`,
