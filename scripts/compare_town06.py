@@ -19,12 +19,9 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO))
-sys.path.insert(0, str(REPO / "pipeline"))
-sys.path.insert(0, str(REPO / "scripts"))
 
-from check_order_town06 import require_certificate_committed, first_commit_epoch  # noqa: E402
-from study import town06_design as D  # noqa: E402
+from steering.blind_order import require_certificate_committed, first_commit_epoch  # noqa: E402
+from steering.study import town06_design as D  # noqa: E402
 
 CERT = REPO / D.CERT_ARTIFACT
 LEDGER = REPO / D.LEDGER_SUBDIR
@@ -47,7 +44,7 @@ SCOPE_ARTIFACTS = {
 # checkpoint names; once the students moved to 168x28 nothing matched, every cell
 # reported its certificate as MISSING, and the summary announced "agreement 0/6" with
 # six CONTRADICTS -- a broken join wearing the costume of a catastrophic result.
-import config as C  # noqa: E402
+from steering import config as C  # noqa: E402
 STU = {}
 for _nm, _ck, _, _ in C.TOWN06_STUDENTS:
     STU[_ck] = _nm

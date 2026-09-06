@@ -17,17 +17,16 @@ same student commanded while DRIVING, matched on position. No simulator needed; 
 artifacts already exist.
 
     STUDY_MAP=Town04 TOWN04_REDO=1 python3 scripts/capture_driven_gate.py \
-        --captures results/town04_v2/calibration --drives pipeline/results
+        --captures results/town04_v2/calibration --drives results/oracle
 """
 import argparse, glob, json, os, sys
 from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO)); sys.path.insert(0, str(REPO / "pipeline"))
 
-from gpu import require_cuda  # noqa: E402
+from steering.gpu import require_cuda  # noqa: E402
 import numpy as np, torch, csv                                  # noqa: E402
-import config as C                                              # noqa: E402
-from student import StudentNet                                  # noqa: E402
+from steering import config as C                                              # noqa: E402
+from steering.student import StudentNet                                  # noqa: E402
 
 THRESHOLD = 0.05          # the paper's stated gate
 
@@ -45,7 +44,7 @@ def nominal(path, cond):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--captures", required=True)
-    ap.add_argument("--drives", default="pipeline/results")
+    ap.add_argument("--drives", default="results/oracle")
     ap.add_argument("--cond", default="clear")
     ap.add_argument("--students", default=None,
                     help="override the student list: name:ck:c1,c2,c3:fc[;...]")

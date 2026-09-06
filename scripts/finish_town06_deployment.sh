@@ -45,7 +45,7 @@ carla_start() {
     say "FATAL: CARLA did not become ready, or violates the determinism rules"; return 1; }
 
 # ---------------------------------------------------------------- preconditions
-python3 scripts/check_protocol_lock.py >/dev/null || { say "FATAL: PROTOCOL lock"; exit 1; }
+python3 -m steering.protocol_lock >/dev/null || { say "FATAL: PROTOCOL lock"; exit 1; }
 python3 -m carla_determinism --lock-only >/dev/null || {
     say "FATAL: carla-determinism rules lock mismatch"; exit 1; }
 
@@ -53,7 +53,7 @@ python3 -m carla_determinism --lock-only >/dev/null || {
 # certifies perfectly and drives off the road, so competence is a precondition for the
 # certificate meaning anything -- and it must be the CURRENT students' record.
 python3 - <<'PY' || exit 1
-import json, sys
+import json, os, sys
 from pathlib import Path
 p = Path("results/town06/competence_clear.json")
 if not p.exists():
@@ -65,8 +65,8 @@ if not d.get("all_competent"):
 # The record must be about THESE weights. Without this the record is keyed to nothing,
 # and one left over from a superseded generation of students would gate the
 # certification of entirely different checkpoints.
-sys.path.insert(0, "pipeline"); sys.path.insert(0, "scripts")
-import config as C
+sys.path.insert(0, os.path.join(os.getcwd(), "scripts"))  # entry points are not a package
+import steering.config as C
 from check_student_competence import checkpoint_digest
 have = d.get("checkpoint_digests")
 if not have:
@@ -99,9 +99,8 @@ PY
 NEED_CAPS=$(python3 - <<'PY'
 import sys, os, glob
 import numpy as np
-sys.path.insert(0, "pipeline"); sys.path.insert(0, ".")
-import config as C
-from study import town06_design as D
+import steering.config as C
+from steering.study import town06_design as D
 need = [f"lap_{d}_{c}.npz" for d in D.SECTIONS for c in D.CONDITIONS]
 missing = [n for n in need if not os.path.exists(os.path.join("results/town06/captures", n))]
 wrong = []
@@ -123,14 +122,14 @@ if [ "$NEED_CAPS" = "OK" ]; then
 else
     carla_up 6 || carla_start || exit 1
     say "capture needed: $NEED_CAPS"
-    say "capturing $(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(len(C.SECTIONS)*4)") captures (sections x 4 conditions) at the students' resolution"
+    say "capturing $(STUDY_MAP=Town06 python3 -c "import steering.config as C;print(len(C.SECTIONS)*4)") captures (sections x 4 conditions) at the students' resolution"
     bash scripts/capture_town06_laps.sh >>"$LOG_DIR/capture.log" 2>&1 \
         || { say "FATAL: capture failed, see capture.log"; exit 1; }
 fi
 python3 - <<'PY' || exit 1
 import sys, numpy as np
 from pathlib import Path
-sys.path.insert(0, "pipeline"); import config as C
+import steering.config as C
 bad = []
 for p in sorted(Path("results/town06/captures").glob("*.npz")):
     a = np.load(p)
@@ -227,7 +226,7 @@ fi
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 git push -q origin "$BRANCH" && say "pushed $BRANCH" || say "WARNING: push of $BRANCH failed"
 
-python3 scripts/check_order_town06.py >/dev/null || {
+python3 -m steering.blind_order >/dev/null || {
     say "FATAL: R1 still not satisfied after commit. Refusing to drive."; exit 1; }
 say "R1 satisfied. The prediction is on the record; driving may begin."
 

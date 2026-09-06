@@ -25,13 +25,13 @@ export PYTHONUNBUFFERED=1
 
 LOG_DIR=$REPO/results/town06_logs
 mkdir -p "$LOG_DIR"
-CK_DIR=$REPO/pipeline/checkpoints
-DATA=$REPO/pipeline/data
+CK_DIR=$REPO/checkpoints
+DATA=$REPO/data
 
 say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/pipeline.log"; }
 
 # PROTOCOL gate: refuse to build anything if the frozen constants have moved.
-python3 scripts/check_protocol_lock.py >/dev/null || {
+python3 -m steering.protocol_lock >/dev/null || {
     say "FATAL: PROTOCOL lock mismatch -- refusing to run"; exit 1; }
 say "PROTOCOL lock OK; STUDY_MAP=$STUDY_MAP CARLA_PORT=$CARLA_PORT"
 
@@ -128,8 +128,7 @@ run() {   # run <logname> <cmd...>  -- one retry after a CARLA restart
 # reporting success. A dataset is only reusable if it was built on the current route.
 ROUTE_FP=$(python3 - <<'PY'
 import hashlib, os, sys
-sys.path.insert(0, "pipeline")
-import config as C
+import steering.config as C
 h = hashlib.sha256()
 d = os.path.join(C.DATASET_DIR, C.ROUTES_SUBDIR)
 names = sorted(f for f in os.listdir(d) if f.endswith(".npy"))
@@ -272,13 +271,13 @@ collect_to() {   # collect_to <name> <dataset> <weathers-csv> <target-laps>
     fi
     short=$(( target - have ))
     say "$name: $have/$target laps per condition on disk; collecting $short more"
-    run "$name" python3 collect_data.py --dataset "$ds" --weathers "$weathers" \
+    run "$name" python3 scripts/collect_data.py --dataset "$ds" --weathers "$weathers" \
         --laps "$short" --direction all || return 1
     fp_stamp "$DATA/$ds"
     return 0
 }
 
-cd "$REPO/pipeline"
+cd "$REPO"
 
 # ---------------------------------------------------------------- clear policy
 fp_guard "$DATA/clear_t06lap" clear_t06lap || exit 1
@@ -287,7 +286,7 @@ if [ ! -f "$DATA/clear_t06lap/manifest.csv" ]; then
 else collect_to collect_clear_t06lap clear_t06lap clear "$CLEAR_LAPS" || exit 1; fi
 
 if [ ! -f "$CK_DIR/teacher_clear_t06lap_bc.pth" ]; then
-    run train_clear_bc_t06lap python3 train.py --dataset clear_t06lap --epochs 120 \
+    run train_clear_bc_t06lap python3 scripts/train.py --dataset clear_t06lap --epochs 120 \
         --out teacher_clear_t06lap_bc || exit 1
 else say "SKIP  train_clear_bc_t06lap"; fi
 
@@ -317,7 +316,7 @@ if [ ! -f "$DATA/mixed_t06lap/manifest.csv" ]; then
 else collect_to collect_mixed_t06lap mixed_t06lap clear,fog,night,low_sun "$MIXED_LAPS" || exit 1; fi
 
 if [ ! -f "$CK_DIR/teacher_mixed_t06lap_bc.pth" ]; then
-    run train_mixed_bc_t06lap python3 train.py --dataset mixed_t06lap --epochs 120 \
+    run train_mixed_bc_t06lap python3 scripts/train.py --dataset mixed_t06lap --epochs 120 \
         --out teacher_mixed_t06lap_bc || exit 1
 else say "SKIP  train_mixed_bc_t06lap"; fi
 
@@ -352,7 +351,7 @@ say "teachers: clear=$TC mixed=$TM"
 # w1/w3 there plateaued ON the budget here, so each student is sized to its own task
 # (4ac6002), which is the rule this lab settled rather than identical architecture.
 mapfile -t ROWS < <(STUDY_MAP=Town06 python3 -c "
-import sys; sys.path.insert(0,'$REPO/pipeline'); import config as C
+import steering.config as C
 for nm, ck, ch, fc in C.TOWN06_STUDENTS:
     print(nm, ck, ','.join(str(c) for c in ch), fc,
           C.relu_count(ch, fc, C.TOWN06_INPUT_H, C.TOWN06_INPUT_W),
@@ -373,7 +372,7 @@ for ROW in "${ROWS[@]}"; do
     esac
     if [ ! -f "$CK_DIR/$CK.pth" ]; then
         say "distil $NM -> $CK (${IN_W}x${IN_H}, $RELU ReLU) from $TEACH"
-        run "distill_$NM" python3 distill.py --in-w "$IN_W" --in-h "$IN_H" \
+        run "distill_$NM" python3 scripts/distill.py --in-w "$IN_W" --in-h "$IN_H" \
             --out "$CK" --teacher "$TEACH" --base "$DSET" \
             --dagger-dirs "$DDIR" --channels "$CH" --fc "$FC"|| exit 1
     else say "SKIP  distil $NM ($CK exists)"; fi

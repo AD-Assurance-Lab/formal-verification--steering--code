@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "steering-verification"
+version = "1.3.0"
+description = "Formal verification of end-to-end steering under physically parameterized weather, characterized in CARLA"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "AD Assurance Lab, Western Michigan University" }]
+keywords = ["formal-verification", "autonomous-driving", "CARLA", "neural-network-verification"]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+]
+
+# torch, torchvision, auto_LiRPA and the CARLA client wheel are NOT listed here.
+# None of the four installs correctly from a plain resolver: torch needs the CUDA
+# index matching the card, auto_LiRPA must come from upstream git with --no-deps,
+# and CARLA ships its own wheel per interpreter version. scripts/bootstrap_env.sh
+# installs all of them in the right order and then proves the result works.
+dependencies = [
+    "numpy==1.26.4",
+    "opencv-python==4.13.0.92",
+    "scipy==1.15.3",
+    "matplotlib>=3.7",
+    "carla-determinism @ git+https://github.com/AD-Assurance-Lab/carla-determinism--simulation--package@v1.0.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4", "ruff>=0.6"]
+
+[project.urls]
+Homepage = "https://github.com/AD-Assurance-Lab/formal-verification--steering--code"
+Dataset = "https://huggingface.co/datasets/ad-assurance-lab/steering-verification-captures"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 95
+src = ["src", "scripts", "tests"]

@@ -26,15 +26,15 @@ LAPS=${LAPS:-3}
 # 24 laps and report "LEDGER COMPLETE" having driven nothing. The path is read from the
 # design module rather than spelled here, because two copies of it is how that happens.
 export TOWN06_PASS=${TOWN06_PASS:-1}
-LEDGER_DIR=$REPO/$(python3 -c "import sys;sys.path.insert(0,'$REPO');from study import town06_design as D;print(D.LEDGER_SUBDIR)")
-NSEC=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(len(C.SECTIONS))")
+LEDGER_DIR=$REPO/$(python3 -c "from steering.study import town06_design as D;print(D.LEDGER_SUBDIR)")
+NSEC=$(STUDY_MAP=Town06 python3 -c "import steering.config as C;print(len(C.SECTIONS))")
 
 LOG_DIR=$REPO/results/town06_logs
 mkdir -p "$LOG_DIR"
 say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/ledger.log"; }
 
-python3 scripts/check_protocol_lock.py >/dev/null || { say "FATAL: PROTOCOL lock"; exit 1; }
-python3 scripts/check_order_town06.py  >/dev/null || {
+python3 -m steering.protocol_lock >/dev/null || { say "FATAL: PROTOCOL lock"; exit 1; }
+python3 -m steering.blind_order  >/dev/null || {
     say "FATAL: PROTOCOL R1 -- certificate is missing, uncommitted or dirty."
     say "Certify and COMMIT before driving. Refusing to run."; exit 1; }
 say "R1 satisfied: certificate(s) committed. Driving pass $TOWN06_PASS may begin."
@@ -91,7 +91,7 @@ if [ -n "${TOWN06_LEDGER_STUDENTS:-}" ] && [ -z "${TOWN06_LEDGER_TAG:-}" ]; then
 fi
 
 mapfile -t STUDENT_ROWS < <(STUDY_MAP=Town06 python3 -c "
-import os, sys; sys.path.insert(0,'pipeline'); import config as C
+import os; import steering.config as C
 ov = os.environ.get('TOWN06_LEDGER_STUDENTS', '').strip()
 if ov:
     rows = [(f.split(':')[1], f.split(':')[2], f.split(':')[3])
@@ -110,7 +110,7 @@ for ROW in "${STUDENT_ROWS[@]}"; do
   if [ -n "${TOWN06_LEDGER_STUDENTS:-}" ]; then
       STU=$BASE
   else
-      STU=$(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(C.final_student('$BASE'))")
+      STU=$(STUDY_MAP=Town06 python3 -c "import steering.config as C;print(C.final_student('$BASE'))")
   fi
   say "student $BASE -> $STU"
   # TOWN06_LEDGER_CONDS restricts which conditions are driven. A deployment pass must
@@ -138,7 +138,7 @@ for ROW in "${STUDENT_ROWS[@]}"; do
     # process boundary is the only version that is certainly correct.
     RUN_OK=1
     for REP in $(seq 0 $((LAPS-1))); do
-      for SEC in $(STUDY_MAP=Town06 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(' '.join(C.SECTIONS))"); do
+      for SEC in $(STUDY_MAP=Town06 python3 -c "import steering.config as C;print(' '.join(C.SECTIONS))"); do
         RUNF="$LEDGER_DIR/runs/${COND}__${STU}__${SEC}__rep0${REP}.json"
         [ -f "$RUNF" ] && { say "SKIP  $COND/$STU $SEC rep$REP (run exists)"; continue; }
         carla_restart || { RUN_OK=0; break; }

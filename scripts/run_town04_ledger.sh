@@ -63,7 +63,7 @@ carla_restart() {   # $1 = cell tag, so the restart is auditable per cell
 carla_up 12 || carla_restart boot || exit 1
 
 mapfile -t STUDENT_ROWS < <(STUDY_MAP=Town04 TOWN04_REDO=1 python3 -c "
-import sys; sys.path.insert(0,'pipeline'); import config as C
+import steering.config as C
 for nm, ck, ch, fc in C.STUDENTS:
     print(ck, ','.join(str(c) for c in ch), fc)")
 
@@ -71,7 +71,7 @@ for ROW in "${STUDENT_ROWS[@]}"; do
   read -r BASE CH FC <<<"$ROW"
   # Drive the FINAL student -- Town04's procedure includes student DAgger, so the
   # checkpoint that IS the student is the newest round, not the distilled intermediate.
-  STU=$(STUDY_MAP=Town04 TOWN04_REDO=1 python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(C.final_student('$BASE'))")
+  STU=$(STUDY_MAP=Town04 TOWN04_REDO=1 python3 -c "import steering.config as C;print(C.final_student('$BASE'))")
   say "student $BASE -> $STU"
   for COND in clear fog night shadows; do
     CELL="$REPO/results/town04_v2/ledger/${COND}__${BASE}__closed_loop.json"

@@ -61,14 +61,12 @@ import sys
 import numpy as np
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(_HERE, "..", "pipeline"))
-sys.path.insert(0, _HERE)
 
 import carla  # noqa: E402
-import config as C  # noqa: E402
-from carla_lock import carla_lock  # noqa: E402
-from survey_map_routes import trace, curvature  # noqa: E402
-from build_study_route import controlled_waypoints, dstats, REF, LANE_W, LANE_W_TOL  # noqa: E402
+from steering import config as C  # noqa: E402
+from steering.carla_lock import carla_lock  # noqa: E402
+from steering.mapsurvey import trace, curvature  # noqa: E402
+from steering.route_design import controlled_waypoints, dstats, REF, LANE_W, LANE_W_TOL  # noqa: E402
 
 MAP = "Town06"
 NONE_MARK = carla.LaneMarkingType.NONE

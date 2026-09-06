@@ -25,7 +25,7 @@ LOGD=$REPO/results/town04_v2/logs/capture
 mkdir -p "$OUTDIR" "$LOGD"
 POSES=${POSES:-1600}          # matches the published captures' pose count
 
-python3 scripts/check_protocol_lock.py >/dev/null || { echo "PROTOCOL lock mismatch"; exit 1; }
+python3 -m steering.protocol_lock >/dev/null || { echo "PROTOCOL lock mismatch"; exit 1; }
 
 for d in eastbound westbound; do
   for c in clear fog night shadows; do

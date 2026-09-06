@@ -31,11 +31,11 @@ LOG=$REPO/results/town06_logs/pass3_sweep.log
 mkdir -p "$(dirname "$LOG")"
 say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG"; }
 
-python3 scripts/check_protocol_lock.py >/dev/null || { say "FATAL: PROTOCOL lock"; exit 1; }
+python3 -m steering.protocol_lock >/dev/null || { say "FATAL: PROTOCOL lock"; exit 1; }
 
 # The criterion, read from config so it cannot drift from the pre-registered document.
-MARGIN=$(python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(C.TOWN06_PASS3_GATE_MARGIN)")
-BUDGET=$(python3 -c "import sys;sys.path.insert(0,'pipeline');import config as C;print(f'{C.CTE_BUDGET_FT:.4f}')")
+MARGIN=$(python3 -c "import steering.config as C;print(C.TOWN06_PASS3_GATE_MARGIN)")
+BUDGET=$(python3 -c "import steering.config as C;print(f'{C.CTE_BUDGET_FT:.4f}')")
 GATE=$(python3 -c "print(f'{$BUDGET * $MARGIN:.4f}')")
 SEEDS="${SEEDS:-0 1 2 3 4 5 6 7}"
 
@@ -50,7 +50,7 @@ say "  pools: $DSET + $DDIRS"
 say "=================================================================="
 
 mapfile -t ROWS < <(python3 -c "
-import sys; sys.path.insert(0,'pipeline'); import config as C
+import steering.config as C
 for nm, sw, pin, ch, fc in C.TOWN06_PASS3_WIDTHS:
     print(nm, sw, pin, ','.join(str(c) for c in ch), fc)")
 
@@ -59,9 +59,9 @@ for ROW in "${ROWS[@]}"; do
     read -r NM SWEEP PIN CH FC <<<"$ROW"
     say ""
     say "---- $NM  (sweep base $SWEEP -> pin $PIN, channels $CH fc $FC) ----"
-    if [ -f "$REPO/pipeline/checkpoints/${PIN}.selected" ]; then
-        say "  already pinned: $(cat "$REPO/pipeline/checkpoints/${PIN}.selected") -- skipping"
-        RESULTS+=("$NM PASS $(cat "$REPO/pipeline/checkpoints/${PIN}.selected")")
+    if [ -f "$REPO/checkpoints/${PIN}.selected" ]; then
+        say "  already pinned: $(cat "$REPO/checkpoints/${PIN}.selected") -- skipping"
+        RESULTS+=("$NM PASS $(cat "$REPO/checkpoints/${PIN}.selected")")
         continue
     fi
     # PROMOTE=0: never overwrite the base .pth. S_mixed_t06lap_168x56_w4.pth is the model
@@ -84,9 +84,9 @@ for ROW in "${ROWS[@]}"; do
         say "  STOPPING. Fix the harness and re-run; do not interpret a partial sweep."
         exit 2
     fi
-    if [ $RC -eq 0 ] && [ -f "$REPO/pipeline/checkpoints/${PIN}.selected" ]; then
-        say "  $NM PASSES: $(cat "$REPO/pipeline/checkpoints/${PIN}.selected")"
-        RESULTS+=("$NM PASS $(cat "$REPO/pipeline/checkpoints/${PIN}.selected")")
+    if [ $RC -eq 0 ] && [ -f "$REPO/checkpoints/${PIN}.selected" ]; then
+        say "  $NM PASSES: $(cat "$REPO/checkpoints/${PIN}.selected")"
+        RESULTS+=("$NM PASS $(cat "$REPO/checkpoints/${PIN}.selected")")
     else
         say "  $NM: NO SEED held every lap under $GATE ft"
         RESULTS+=("$NM NONE -")

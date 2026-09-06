@@ -30,8 +30,7 @@ REPO = Path(__file__).resolve().parent.parent
 # rest of the repo.
 os.environ.setdefault("CARLA_PORT", "3000")
 
-sys.path.insert(0, str(REPO / "pipeline"))
-import config as C                                              # noqa: E402
+from steering import config as C                                              # noqa: E402
 
 
 def server_listening(port):
@@ -90,7 +89,7 @@ def main():
                 print(f"  restart FAILED before {nm}/{sec} -- refusing to measure",
                       flush=True)
                 return 2
-            cmd = [sys.executable, str(REPO / "pipeline" / "evaluate.py"),
+            cmd = [sys.executable, str(REPO / "scripts" / "evaluate.py"),
                    "--model", ck, "--student",
                    "--channels", ",".join(str(c) for c in ch), "--fc", str(fc),
                    "--in-w", str(in_w), "--in-h", str(in_h),

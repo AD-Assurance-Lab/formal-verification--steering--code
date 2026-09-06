@@ -18,17 +18,16 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO)); sys.path.insert(0, str(REPO / "pipeline"))
 import carla                                                   # noqa: E402
 import numpy as np                                             # noqa: E402
 import torch                                                   # noqa: E402
 import carla_determinism as cd                                 # noqa: E402
-import carla_env as env                                        # noqa: E402
-import config as C                                             # noqa: E402
-from gpu import require_cuda                                   # noqa: E402
-from evaluate import load_model                                # noqa: E402
-from imaging import preprocess_for_model                       # noqa: E402
-from route import load_route, signed_cte_route, pure_pursuit_route   # noqa: E402
+from steering import carla_env as env                                        # noqa: E402
+from steering import config as C                                             # noqa: E402
+from steering.gpu import require_cuda                                   # noqa: E402
+from steering.model import load_model                          # noqa: E402
+from steering.imaging import preprocess_for_model                       # noqa: E402
+from steering.route import load_route, signed_cte_route, pure_pursuit_route   # noqa: E402
 
 
 def main():

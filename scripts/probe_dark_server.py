@@ -54,7 +54,7 @@ def measure(study_map):
     """Spawn-frame brightness, via the same instrument the gate uses."""
     code = (
         "import sys,os,json;"
-        "sys.path.insert(0,'scripts');sys.path.insert(0,'pipeline');"
+        ""
         "import check_render_photometry as m;"
         "v,s,l=m.measure('clear');"
         "print(json.dumps({'mean':v,'std':s,'labels':l}))"

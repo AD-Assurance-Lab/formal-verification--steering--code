@@ -25,8 +25,7 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO / "pipeline"))
-import config as C  # noqa: E402
+from steering import config as C  # noqa: E402
 
 OUT = REPO / "results" / "town06" / "gate_candidates.json"
 STRAIGHT_M = {"s00": 166, "s01": 558, "s02": 404, "s03": 620, "s04": 264, "s05": 232}
@@ -87,7 +86,7 @@ def main():
                  "--channels", ch, "--fc", str(fc),
                  "--in-w", str(C.TOWN06_INPUT_W), "--in-h", str(C.TOWN06_INPUT_H),
                  "--direction", "all", "--weather", "clear", "--max-steps", "2000"],
-                cwd=str(REPO / "pipeline"), capture_output=True, text=True,
+                cwd=str(REPO), capture_output=True, text=True,
                 env=dict(os.environ, STUDY_MAP="Town06", PYTHONUNBUFFERED="1"))
             r = parse(p.stdout + p.stderr)
             if r:

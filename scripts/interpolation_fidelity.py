@@ -41,13 +41,11 @@ import numpy as np
 import torch
 
 REPO = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO))
-sys.path.insert(0, str(REPO / "pipeline"))
 
-from gpu import require_cuda  # noqa: E402
+from steering.gpu import require_cuda  # noqa: E402
 
-import config as C  # noqa: E402
-from student import StudentNet  # noqa: E402
+from steering import config as C  # noqa: E402
+from steering.student import StudentNet  # noqa: E402
 
 DIAG = REPO / "results" / "diagnostic"
 
@@ -86,7 +84,7 @@ def check_coverage(path, sec):
     expect = getattr(C, "SECTION_LEN_M", {}).get(sec)
     if expect is None:
         try:
-            from route import load_route
+            from steering.route import load_route
             rt = np.asarray(load_route(sec), dtype=float)
             expect = float(np.sum(np.hypot(np.diff(rt[:, 0]), np.diff(rt[:, 1]))))
         except Exception:

@@ -10,8 +10,7 @@ checkpoint mismatches, protocol locks, and whether the shipped models are presen
 import hashlib, json, os, subprocess, sys, glob
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(REPO)
-sys.path.insert(0, "pipeline")
-import config as C  # noqa: E402
+from steering import config as C  # noqa: E402
 ok, bad = [], []
 def chk(c, m): (ok if c else bad).append(m)
 
@@ -23,19 +22,19 @@ def dig(p):
     return h.hexdigest()[:16]
 
 # --- locks -------------------------------------------------------------------
-chk(subprocess.run([sys.executable, "scripts/check_protocol_lock.py"],
+chk(subprocess.run([sys.executable, "-m", "steering.protocol_lock"],
                    capture_output=True).returncode == 0, "PROTOCOL.lock verifies")
 chk(subprocess.run([sys.executable, "-m", "carla_determinism", "--lock-only"],
                    capture_output=True).returncode == 0, "carla-determinism RULES.lock verifies")
 
 # --- every shipped model is present and tracked ------------------------------
-tracked = set(subprocess.run(["git", "ls-files", "pipeline/checkpoints"],
+tracked = set(subprocess.run(["git", "ls-files", "checkpoints"],
                              capture_output=True, text=True).stdout.split())
 SHIPPED = ["S_clear_84x28", "S_mixed_84x28_w3", "S_clear_84x28_v2",
            "S_mixed_84x28_w3_v2_dagger_r00", "S_clear_t06lap_168x56_w2_s0",
            "S_mixed_t06lap_168x56_w4_s3"]
 for ck in SHIPPED:
-    p = f"pipeline/checkpoints/{ck}.pth"
+    p = f"checkpoints/{ck}.pth"
     chk(os.path.exists(p), f"shipped policy present: {ck}")
     chk(p in tracked, f"shipped policy tracked in git: {ck}")
 
@@ -50,11 +49,11 @@ for f in ("scripts/certify_sustained_bound.py", "scripts/closed_loop_ledger.py")
         f"{os.path.basename(f)}: resolves the policy via final_student (T04-R5)")
 
 # --- per-round CARLA restarts where a loop drives repeatedly -----------------
-for f in ("pipeline/dagger.py", "pipeline/dagger_student.py"):
+for f in ("scripts/dagger.py", "scripts/dagger_student.py"):
     chk("R-SIM-1" in open(f).read(), f"{os.path.basename(f)}: restarts CARLA per round")
 
 # --- the gate is a rate, and has a min-rounds floor --------------------------
-chk("--gate-reps" in open("pipeline/dagger.py").read(), "teacher gate can be a RATE (T06-F24)")
+chk("--gate-reps" in open("scripts/dagger.py").read(), "teacher gate can be a RATE (T06-F24)")
 # Check the file that actually invokes dagger.py. Town06 moved to one round per
 # process, so the flags moved into run_dagger_rounds.sh with it, and asserting them
 # against the orchestrator was checking a file that no longer runs the command.
@@ -70,13 +69,13 @@ for p in glob.glob("results/*/competence_clear.json"):
     digs = d.get("checkpoint_digests") or {}
     chk(bool(digs), f"{p}: records checkpoint digests")
     for ck, want in digs.items():
-        chk(dig(f"pipeline/checkpoints/{ck}.pth") == want, f"{p}: {ck} digest matches disk")
+        chk(dig(f"checkpoints/{ck}.pth") == want, f"{p}: {ck} digest matches disk")
 
 # --- certificates name checkpoints that exist --------------------------------
 for p in glob.glob("results/**/certificate_town06.json", recursive=True):
     meta = json.load(open(p)).get("_meta", {})
     for _, ck in (meta.get("checkpoints") or {}).items():
-        chk(os.path.exists(f"pipeline/checkpoints/{ck}.pth"), f"{p}: {ck} present")
+        chk(os.path.exists(f"checkpoints/{ck}.pth"), f"{p}: {ck} present")
 
 # --- ledger cells carry a full set of LAPS (PROTOCOL A-4) --------------------
 # This asserted ">= 10 repetitions", which A-4 superseded: the lap is the repetition and
@@ -108,7 +107,7 @@ for p in glob.glob("results/**/ledger/*closed_loop.json", recursive=True):
         f"{LAPS_REQUIRED})")
 
 # --- no scratch re-committed -------------------------------------------------
-scratch = [f for f in subprocess.run(["git", "ls-files", "pipeline/results"],
+scratch = [f for f in subprocess.run(["git", "ls-files", "results/oracle"],
            capture_output=True, text=True).stdout.split()
            if not any(k in f for k in ("teacher_clear_bc", "oracle_", "reference_routes",
                                        "_bc_training"))]
@@ -135,7 +134,7 @@ for cap in glob.glob("results/**/lap_*.npz", recursive=True) + glob.glob("result
         # this study claims, so their separation is not coverage. Same definition the
         # capture rig and the certifier use, and it needs only the poses -- no route file,
         # no bridge table, no map -- so it stays a recomputation from primary data.
-        from route import scored_span_m as _ssm
+        from steering.route import scored_span_m as _ssm
         span = _ssm(x, y)
     claimed = float(z["route_span_m"]) if "route_span_m" in z.files else None
     if span is not None and claimed is not None:
@@ -166,7 +165,7 @@ for cap in glob.glob("results/**/lap_*.npz", recursive=True) + glob.glob("result
     elif stem in ("eastbound", "westbound"):
         try:
             import numpy as _n2
-            from route import load_route as _lr
+            from steering.route import load_route as _lr
             rt = _n2.asarray(_lr(stem), dtype=float)
             want = float(_n2.linalg.norm(_n2.diff(rt, axis=0), axis=1).sum())
         except Exception:
@@ -199,7 +198,7 @@ for guard in ("MIN_POSES_PER_CELL", "MIN_ROUTE_COVERAGE", "check_coverage"):
 # they drifted the moment a driver was added: require_deterministic() was called only in
 # evaluate.py and only under `if STUDY_MAP == "Town06"`, and the fidelity driver restarted
 # nothing at all. Both now sit in the path every measurement takes.
-_env = open("pipeline/carla_env.py").read()
+_env = open("src/steering/carla_env.py").read()
 chk("require_deterministic" in _env.split("def enable_sync_mode")[1][:2000],
     "enable_sync_mode asserts the determinism rules, for every map")
 chk("require_clean_world" in _env.split("def spawn_vehicle")[1][:400],
@@ -209,8 +208,8 @@ chk("signal.signal" in open("scripts/capture_offset_yaw.py").read(),
 
 # Nobody may hand-roll sync mode: it provisions substepping, and a partial copy runs
 # partial physics per tick while looking fine.
-_rogue = [f for f in glob.glob("pipeline/*.py") + glob.glob("scripts/*.py")
-          if f not in ("pipeline/carla_env.py", "scripts/audit_repo.py")
+_rogue = [f for f in glob.glob("src/steering/*.py") + glob.glob("scripts/*.py")
+          if f not in ("src/steering/carla_env.py", "scripts/audit_repo.py")
           and "synchronous_mode =" in open(f).read()]
 chk(not _rogue, f"sync mode only via env.enable_sync_mode (rogue: {_rogue})")
 
@@ -291,14 +290,14 @@ chk(not _dep, f"every ledger cell came from independent runs "
 # evaluate and the ledger bridged; dagger.py did not, so the teacher was asked to drive
 # an intersection a lane-follower cannot drive and failed at 62 ft, every attempt, at the
 # same step. Enumerating the loops that "measure" missed the loop that builds.
-for _f in ("pipeline/evaluate.py", "scripts/closed_loop_ledger.py", "pipeline/dagger.py",
-           "pipeline/dagger_student.py"):
+for _f in ("scripts/evaluate.py", "scripts/closed_loop_ledger.py", "scripts/dagger.py",
+           "scripts/dagger_student.py"):
     if not os.path.exists(_f):
         continue
     _t = open(_f).read()
     chk("BRIDGE_SPANS" in _t and "in_bridge" in _t,
         f"{os.path.basename(_f)} hands bridges to pure pursuit")
-chk("not r.get(\"bridged\")" in open("pipeline/evaluate.py").read(),
+chk("not r.get(\"bridged\")" in open("scripts/evaluate.py").read(),
     "evaluate excludes bridged steps from the score")
 chk("not in_bridge" in open("scripts/closed_loop_ledger.py").read(),
     "closed_loop_ledger excludes bridged steps from the score")
@@ -360,7 +359,7 @@ chk('[ ! -s "$log" ]' in _pl,
 # `pkill; sleep 10` lets the old server keep :3000, so the relaunch cannot bind and every
 # client times out against a listener that never serves. DAgger died after every round on
 # exactly this, with two CARLA processes alive and one wedged on the socket.
-for _f in ("scripts/carla_restart.sh", "pipeline/dagger.py", "pipeline/dagger_student.py"):
+for _f in ("scripts/carla_restart.sh", "scripts/dagger.py", "scripts/dagger_student.py"):
     _t = open(_f).read()
     chk("connect_ex" in _t or "ss -ltn" in _t,
         f"{os.path.basename(_f)} waits for the port to free before relaunching")
@@ -379,12 +378,12 @@ for _f in ("scripts/carla_restart.sh", "pipeline/dagger.py", "pipeline/dagger_st
 # sm_50..sm_90 build), so certify_town06.py selected CUDA and died. The same predicate
 # guards nothing in the training and measurement scripts either, where a silent CPU run
 # is slow rather than wrong-looking, and therefore even easier to miss.
-for _f in ("pipeline/evaluate.py", "pipeline/dagger.py", "pipeline/dagger_student.py",
+for _f in ("scripts/evaluate.py", "scripts/dagger.py", "scripts/dagger_student.py",
            "scripts/closed_loop_ledger.py",
            "scripts/certify_town06.py", "scripts/certify_sustained_bound.py",
            "scripts/capture_driven_gate.py", "scripts/falsify_witness.py",
            "scripts/interpolation_fidelity.py", "scripts/q8c_varying_witness.py",
-           "pipeline/train.py", "pipeline/distill.py"):
+           "scripts/train.py", "scripts/distill.py"):
     _t = open(_f).read()
     chk('torch.cuda.is_available() else "cpu"' not in _t,
         f"{os.path.basename(_f)} does not fall back to the CPU silently")
@@ -554,7 +553,7 @@ chk('grep -q -- "-> $CK"' in _rd,
 #     resuming at round 1 with --rounds 1 broke before training;
 #   * dagger.py's internal ONE-REP gate passed a checkpoint the strict 12-lap gate had
 #     already scored 2/12, and stopped the stage on it.
-_dg = open("pipeline/dagger.py").read()
+_dg = open("scripts/dagger.py").read()
 chk("for r_local in range(args.rounds):" in _dg,
     "dagger.py: --rounds is a per-process budget, not an absolute index")
 chk("--external-gate" in _dg and "not args.external_gate" in _dg,
@@ -626,7 +625,7 @@ chk("kill_clients" in _rs and "/proc/$pid/comm" in _rs,
 # --- a driving loop the user watches must follow the car ---------------------
 # gate_teacher_lap.py drove the entire teacher gate with a stationary spectator, so the
 # window showed empty road while the run was going fine. Zach watches these.
-for _f in ("pipeline/evaluate.py", "pipeline/dagger.py", "pipeline/dagger_student.py",
+for _f in ("scripts/evaluate.py", "scripts/dagger.py", "scripts/dagger_student.py",
            "scripts/closed_loop_ledger.py", "scripts/gate_teacher_lap.py"):
     chk("update_spectator" in open(_f).read(),
         f"{os.path.basename(_f)}: keeps the view on the vehicle")
@@ -666,7 +665,7 @@ chk("alpha-CROWN over the one-parameter family" not in _t,
 # can run the blind protocol without writing into a directory R4 protects. Because it
 # MOVES paths other guards compare against, the guards must compare against the
 # canonical path, which the tag does not move.
-_dsg = open("study/town06_design.py").read()
+_dsg = open("src/steering/study/town06_design.py").read()
 chk("CANONICAL_CERT_ARTIFACT" in _dsg,
     "town06_design exposes a canonical certificate path the scope cannot move")
 chk("dest == CANONICAL" in _t,
@@ -704,7 +703,7 @@ chk("assert_condition" in _cll,
 # Anchor on the CALL site, not `def drive_once(`, which is defined far above main.
 chk(_cll.index("assert_condition") < _cll.index("= drive_once("),
     "closed_loop_ledger checks the condition BEFORE it drives, not after")
-for _p in ("pipeline/evaluate.py", "scripts/closed_loop_ledger.py"):
+for _p in ("scripts/evaluate.py", "scripts/closed_loop_ledger.py"):
     chk("for _ in range(6):" in open(_p).read(),
         f"{_p} settles the same number of ticks before driving "
         f"(a mismatch here selects a different basin)")

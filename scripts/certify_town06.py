@@ -34,17 +34,14 @@ import numpy as np
 import torch
 
 REPO = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO))
-sys.path.insert(0, str(REPO / "pipeline"))
-sys.path.insert(0, str(REPO / "scripts"))
 
-from check_protocol_lock import require_locked  # noqa: E402
+from steering.protocol_lock import require_locked  # noqa: E402
 
-import config as C  # noqa: E402
-import certify_cell as cc  # noqa: E402
-from gpu import require_cuda  # noqa: E402
-from student import StudentNet  # noqa: E402
-from study import town06_design as D  # noqa: E402
+from steering import config as C  # noqa: E402
+from steering import certify as cc  # noqa: E402
+from steering.gpu import require_cuda  # noqa: E402
+from steering.student import StudentNet  # noqa: E402
+from steering.study import town06_design as D  # noqa: E402
 
 # One definition, in config.
 #
@@ -65,16 +62,8 @@ if _OVERRIDE:
          tuple(int(x) for x in f.split(":")[2].split(",")), int(f.split(":")[3]))
         for f in _OVERRIDE.split(";") if f.strip())
 
-# The capture set. Q7 certifies an 84x28 student, whose frames are a DIFFERENT
-# PROJECTION and live in their own directory -- certifying it against the committed
-# 168x56 captures would silently bound a different network on the wrong frames.
-#
-# Overridable, and the override is chained to the output path below: a non-canonical
-# capture set may not write the canonical certificate, because that file's whole meaning
-# is "the shipped students, on the committed frames".
-CAPTURES = Path(os.environ.get("TOWN06_CAPTURES_DIR",
-                               REPO / "results" / "town06" / "captures"))
-CANONICAL_CAPTURES = REPO / "results" / "town06" / "captures"
+from steering.captures import (CAPTURES, CANONICAL_CAPTURES,  # noqa: E402
+                               baseline_for, nominal, scope_mask)
 
 # One bound per (student, condition), pooling poses across all sections. The statistic
 # is the deviation SUSTAINED along the route, so it is a mean over every scored pose --
@@ -130,7 +119,7 @@ def check_coverage(path, sec):
     # span as covered road. route.scored_span_m is the one definition, computed from the
     # POSES ALONE so this remains a recomputation from primary data rather than a reading
     # of anything the artifact or the config asserts (standing rule 7).
-    from route import scored_span_m  # noqa: E402
+    from steering.route import scored_span_m  # noqa: E402
     span = scored_span_m(x, y)
     claimed = float(z["route_span_m"]) if "route_span_m" in z.files else None
     if claimed is not None and abs(claimed - span) > 25.0:
@@ -153,79 +142,6 @@ def check_coverage(path, sec):
                  f"{want:.0f} m SCORED section -- road the study does not claim. On the "
                  f"lap this is what a capture that included the bridged intersections "
                  f"would look like.")
-
-
-def scope_mask(path, scope):
-    """Which captured poses lie on road the `scope` scores.
-
-    `full` keeps every captured pose, which is what the committed certificate used: the
-    capture rig already skips the ODD bridges, so its poses ARE the full scored road.
-    `capped` additionally drops poses on road over SMAX_CAP -- the constant
-    build_town06_sections.py enforced and build_town06_lap_from_track.py does not.
-
-    The pose's position on the route is recomputed by projecting it onto the route's own
-    vertices, never read from an index the capture stored, so this stays a measurement of
-    where the frames actually are (standing rule 7).
-    """
-    import scored_scope as ss  # noqa: E402
-    from route import load_route  # noqa: E402
-
-    z = np.load(path, allow_pickle=True)
-    if "pose_x" not in z.files:
-        raise RuntimeError(f"{path.name}: no pose track; cannot scope it")
-    px = np.asarray(z["pose_x"], float)
-    py = np.asarray(z["pose_y"], float)
-    if scope == "full":
-        return np.ones(len(px), dtype=bool)
-    rt = np.asarray(load_route("lap"), float)[:, :2]
-    seg = np.linalg.norm(np.diff(rt, axis=0), axis=1)
-    arc = np.concatenate([[0.0], np.cumsum(seg)])
-    # nearest route vertex per pose -> its arc length
-    d2 = ((px[:, None] - rt[None, :, 0]) ** 2 + (py[:, None] - rt[None, :, 1]) ** 2)
-    here = arc[np.argmin(d2, axis=1)]
-    spans = ss.excluded_spans("lap", ss.SMAX_CAP)
-    keep = np.ones(len(px), dtype=bool)
-    for a, b in spans:
-        keep &= ~((here >= a) & (here <= b))
-    return keep
-
-
-def nominal(path, cond, mask=None):
-    z = np.load(path, allow_pickle=True)
-    conds = [str(c) for c in z["conds"]]
-    if cond not in conds:
-        return None
-    # frames is (conds, POSES, offsets, yaws, 3, H, W). Indexing fr[oi, yi] took the
-    # offset index off the POSE axis and the yaw index off the OFFSET axis, returning a
-    # single pose instead of the whole section -- so a certificate meant to pool ~270
-    # poses per cell was computed from 6, one per section, and reported "6 poses" as if
-    # that were normal. The pose axis is the one being kept, so it must be sliced.
-    fr = z["frames"][conds.index(cond)]
-    oi = int(np.argmin(np.abs(z["offsets"])))
-    yi = int(np.argmin(np.abs(z["yaws"])))
-    out = fr[:, oi, yi]
-    # Check the POSE COUNT, not just the rank: the buggy fr[oi, yi] also returned a
-    # 4-D array, (1,3,H,W), so a rank check would have passed it.
-    if out.ndim != 4 or out.shape[0] != fr.shape[0]:
-        raise RuntimeError(f"{path.name}: expected ({fr.shape[0]},3,H,W), got {out.shape}")
-    # The scope filter is applied AFTER the shape check, so a mask can never disguise an
-    # indexing fault as a short capture.
-    if mask is not None:
-        if len(mask) != out.shape[0]:
-            raise RuntimeError(f"{path.name}: mask covers {len(mask)} poses, "
-                               f"capture has {out.shape[0]}")
-        out = out[mask]
-    return out
-
-
-def baseline_for(cond_path, fallback, mask=None):
-    """Paired clear baseline if the condition capture recorded its own, else foreign.
-
-    F43: a clear baseline from a different session shifts the bound materially. Which
-    one was used is printed and recorded, never chosen silently.
-    """
-    own = nominal(cond_path, "clear", mask)
-    return (own, "paired") if own is not None else (fallback, "foreign")
 
 
 def git_head():

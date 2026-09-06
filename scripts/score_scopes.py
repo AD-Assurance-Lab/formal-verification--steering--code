@@ -2,7 +2,7 @@
 """Score the SAME driven laps under both scored scopes. No CARLA, no models.
 
 The Town06 result was scored on the full lap, which includes 78 m of road whose steering
-demand exceeds `SMAX_CAP` -- the constant `build_study_route.py` declares as "steering
+demand exceeds `SMAX_CAP` -- the constant `steering/route_design.py` declares as "steering
 demand regime that actually trained on Town04" and `build_town06_sections.py` enforced.
 All three of the mixed student's peak-|CTE| locations are on that road.
 
@@ -29,13 +29,10 @@ from pathlib import Path
 import numpy as np
 
 REPO = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO))
-sys.path.insert(0, str(REPO / "pipeline"))
-sys.path.insert(0, str(REPO / "scripts"))
 
-import config as C  # noqa: E402
-import scored_scope as ss  # noqa: E402
-from study import town06_design as D  # noqa: E402
+from steering import config as C  # noqa: E402
+from steering import scored_scope as ss  # noqa: E402
+from steering.study import town06_design as D  # noqa: E402
 
 LEDGER = REPO / D.LEDGER_SUBDIR
 TRACES = LEDGER / "runs" / "traces"
@@ -43,7 +40,7 @@ TRACES = LEDGER / "runs" / "traces"
 
 def _route_arc():
     """TRUE cumulative arc length per route vertex, from the vertices themselves."""
-    from route import load_route  # noqa: E402
+    from steering.route import load_route  # noqa: E402
     rt = np.asarray(load_route("lap"), float)[:, :2]
     seg = np.linalg.norm(np.diff(rt, axis=0), axis=1)
     return np.concatenate([[0.0], np.cumsum(seg)])

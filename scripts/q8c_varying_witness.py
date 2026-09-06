@@ -37,15 +37,12 @@ import numpy as np
 import torch
 
 REPO = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO))
-sys.path.insert(0, str(REPO / "pipeline"))
-sys.path.insert(0, str(REPO / "scripts"))
 
-import config as C  # noqa: E402
-from gpu import require_cuda  # noqa: E402
-from student import StudentNet  # noqa: E402
-import certify_town06 as ct  # noqa: E402
-from study import town06_design as D  # noqa: E402
+from steering import config as C  # noqa: E402
+from steering.gpu import require_cuda  # noqa: E402
+from steering.student import StudentNet  # noqa: E402
+from steering import captures as ct  # noqa: E402
+from steering.study import town06_design as D  # noqa: E402
 
 
 def main():

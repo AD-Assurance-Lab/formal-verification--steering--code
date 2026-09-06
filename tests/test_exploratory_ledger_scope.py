@@ -30,7 +30,6 @@ import sys
 import pytest
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO))
 
 PROTECTED_LEDGERS = ("results/town06/ledger", "results/town06/ledger_pass2")
 CANONICAL_CERT = "results/town06/certificate_town06.json"
@@ -44,7 +43,7 @@ def design(**env):
         for k in saved:
             os.environ.pop(k, None)
         os.environ.update({k: v for k, v in env.items() if v is not None})
-        from study import town06_design as D
+        from steering.study import town06_design as D
         return importlib.reload(D)
     finally:
         for k, v in saved.items():

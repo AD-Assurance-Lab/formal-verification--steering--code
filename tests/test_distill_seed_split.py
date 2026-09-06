@@ -30,7 +30,7 @@ import torch
 from torch.utils.data import DataLoader
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
-SRC = (REPO / "pipeline" / "distill.py").read_text()
+SRC = (REPO / "scripts" / "distill.py").read_text()
 
 
 def test_generator_none_is_the_dataloader_default():
@@ -71,8 +71,7 @@ def test_an_explicit_generator_actually_changes_the_order():
 
 def test_reseeding_before_construction_changes_the_weights():
     """The other half of the split: INIT_SEED must control the initialisation."""
-    sys.path.insert(0, str(REPO / "pipeline"))
-    from student import StudentNet
+    from steering.student import StudentNet
 
     def weights(seed):
         torch.manual_seed(seed)

@@ -23,10 +23,8 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO)); sys.path.insert(0, str(REPO / "pipeline"))
-sys.path.insert(0, str(REPO / "scripts"))
-import config as C                                            # noqa: E402
-from closed_loop_ledger import wilson, LEDGER                 # noqa: E402
+from steering import config as C                                            # noqa: E402
+from steering.ledger import wilson, LEDGER                     # noqa: E402
 
 
 def main():
