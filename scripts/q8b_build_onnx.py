@@ -43,7 +43,39 @@ def build(meta):
     net_s.load_state_dict(torch.load(ckpt, map_location="cpu", weights_only=True))
     net_s.eval()
     prob = np.load(REPO / meta["problem"])
-    head = LinearDisturbance(prob["W"], prob["bias"], (1, 3, h, w))
+    # DROP THE CLAMP, but only after PROVING it cannot fire.
+    #
+    # Clamp01 is expressed with a subtraction, and alpha-beta-CROWN's branch-and-bound
+    # raises NotImplementedError(BoundSub) when it tries to branch through it -- so the
+    # complete verifier cannot run on the graph as exported, even though plain bound
+    # propagation can.
+    #
+    # It does not need to. The image is x0 + s*(x1 - x0) for s in [0,1]: a convex
+    # combination of two REAL CAPTURES, both already in [0,1]. So the clamp is inactive
+    # over the whole certified interval and removing it changes nothing.
+    #
+    # "Provably" is not rhetorical here: the map is affine in one variable, so its exact
+    # elementwise range over t in [-1,1] is b -/+ |W|, computed below. If that range
+    # leaves [0,1] anywhere, the clamp COULD fire and this refuses -- dropping an active
+    # clamp would verify a different function and the verdict would be about a network
+    # the study does not use.
+    _W = prob["W"].reshape(-1).astype(np.float64)
+    _b = prob["bias"].reshape(-1).astype(np.float64)
+    _lo, _hi = (_b - np.abs(_W)).min(), (_b + np.abs(_W)).max()
+    clamp_inactive = bool(_lo >= 0.0 and _hi <= 1.0)
+    meta["preclamp_range"] = [float(_lo), float(_hi)]
+    meta["clamp_dropped"] = clamp_inactive
+    if not clamp_inactive:
+        sys.exit(f"REFUSING to drop the clamp: pre-clamp range [{_lo:.6f}, {_hi:.6f}] "
+                 f"leaves [0,1], so the clamp can fire and removing it would verify a "
+                 f"different function.")
+    # (1, 3, h, w), the shape the study itself uses -- Bounder only ever feeds one
+    # centre. A batch-preserving (-1, 3, h, w) was tried and is WORSE: torch exports the
+    # -1 as a dynamic Shape/Split subgraph, and auto_LiRPA cannot bound a Reshape whose
+    # shape is computed, failing with an AssertionError inside matmul rather than a
+    # wrong answer. The static graph is kept and the verifier is told not to batch
+    # (attack: pgd_order: skip), which is the only stage that needed one.
+    head = LinearDisturbance(prob["W"], prob["bias"], (1, 3, h, w), clamp=False)
     return torch.nn.Sequential(head, net_s).eval()
 
 
