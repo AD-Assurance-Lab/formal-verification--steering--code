@@ -4,7 +4,7 @@ Single source of truth for the E2E steering pipeline.
 Design rule: measured PRIMITIVES are declared explicitly; every SAFETY number
 (CTE budget, steering corridor) is DERIVED from them below, so the two can never
 silently disagree. All primitives marked [MEASURED] were verified in CARLA
-(Town04, Tesla Model 3) on 2026-07-22 via scripts/probe_geometry.
+(Town04, Tesla Model 3) via scripts/probe_geometry.
 """
 import math
 import os
@@ -89,7 +89,7 @@ ROAD_ROI_ROWS = (240, 450)
 # because training data is collected through this camera it must be settled BEFORE
 # collection, not after.
 EXPOSURE_MODE = "manual"
-# [MEASURED 2026-08-10] scripts/calibrate_exposure.py, 20 poses. Puts the clear road
+# MEASURED over 20 poses. Puts the clear road
 # ROI at mu=0.290, sigma=0.0854, inside the real-camera target below. Note that
 # shutter=200/f5.6 gives an identical result -- exposure depends only on the
 # combination iso/(fstop^2 * shutter), and both settings sit at the same value. That
@@ -107,7 +107,7 @@ TARGET_ROAD_MU = (0.28, 0.34)
 TARGET_ROAD_SIGMA_RATIO = 1.3    # measured sigma within this factor of a real road's
 
 # ── Condition-dependent exposure ─────────────────────────────────────────────
-# [DECIDED 2026-08-11 by Zach] Exposure is a DECLARED FUNCTION OF CONDITION, not a
+# DECIDED: exposure is a DECLARED FUNCTION OF CONDITION, not a
 # single global constant.
 #
 # Why it is forced: no single exposure serves both ends of the illuminance axis.
@@ -167,7 +167,7 @@ def _shutter_override(condition, exp):
     makes a stray export visible in a log line rather than inferable from one.
 
     This is a SWEEP knob, never a setting: the committed value lives in
-    CONDITION_EXPOSURE, PROTOCOL section 3 freezes that table by name, and
+    CONDITION_EXPOSURE, the protocol freezes that table by name, and
     closed_loop_ledger.py refuses a canonical cell while this is set.
     """
     v = os.environ.get("EXPOSURE_SHUTTER_OVERRIDE")
@@ -209,8 +209,7 @@ LOOKAHEAD_M = 5.0
 LANE_WIDTH_M = 3.500
 
 # Where the measured route ends. NOT a round number for tidiness: the western traffic-light
-# intersection past this point is a real ODD boundary, not a route artifact (D-07 withdrawn,
-# D-09 resolved), the lane centreline is undefined through it, and every closed-loop and
+# intersection past this point is a real ODD boundary, not a route artifact: the lane centreline is undefined through it, and every closed-loop and
 # verification number in the study excludes it. Was duplicated across seven scripts.
 #
 # 2,861 m STOPPED BEFORE THE FINAL TURN. Measured on the route and confirmed by parking the
@@ -222,7 +221,7 @@ LANE_WIDTH_M = 3.500
 # 2,988 m is 6 m past the turn's exit (long enough to confirm the car straightens) and 8 m
 # short of the junction, with dashed markings continuing ~34 m ahead of that point.
 #
-# The value is not in PROTOCOL section 3's frozen constants.
+# The value is not in the protocol's frozen constants.
 LAP_END_M = 2988.0
 
 # ── The two verifiable students ──────────────────────────────────────────────
@@ -236,7 +235,7 @@ LAP_END_M = 2988.0
 #
 # The `_v2` in these checkpoint names is provenance, not a variant to choose between.
 # An earlier highway run was collected before the determinism harness existed, and rule
-# D-11 makes that data unusable; this study is the rebuild, and it is the only one here.
+# data collected under a violating harness is not reusable makes that data unusable; this study is the rebuild, and it is the only one here.
 # The committed artifacts record these names, so they stay as they are.
 STUDENTS = (("S_clear", "S_clear_84x28_v2", (8, 16, 16), 32),
             ("S_mixed", "S_mixed_84x28_w3_v2", (24, 48, 48), 96))
@@ -261,12 +260,12 @@ if STUDY_MAP != "Town04":
     _meta_path = os.path.join(_rd, "route_meta.json")
     if not os.path.exists(_meta_path):
         raise RuntimeError(
-            f"STUDY_MAP={STUDY_MAP} but {_meta_path} is missing. The route is a PROTOCOL\n"
+            f"STUDY_MAP={STUDY_MAP} but {_meta_path} is missing. The route is a protocol\n"
             f"artifact and must be committed before anything runs on this road.")
     with open(_meta_path) as _f:
         ROUTE_META = _json.load(_f)
 
-    # ── ONE LAP, with PPC bridges (Town06, from 2026-08-31) ──────────────────
+    # ── ONE LAP, with PPC bridges (Town06,) ──────────────────
     # If lap_meta.json exists it supersedes the section layout. The six sections were
     # disjoint pieces of road 70-500 m apart; the lap is a single continuous drive whose
     # intersections are bridged by pure pursuit because the policy is a lane-follower and
@@ -429,7 +428,7 @@ def steps_for(section, margin=1.0):
 #
 # So the clear student keeps Town04's size, and only the MIXED student is widened -- the
 # lever Town04 itself established (4b2ad73: w1 failed all four conditions, w2 failed
-# night 10/10, w3 passed everything) and the one Zach identified as justified, since the
+# night 10/10, w3 passed everything), and it is justified because the
 # mixed student needs capacity for the disturbances rather than for the route.
 #
 # Input size is SHARED by both students, deliberately: the verification captures are
@@ -440,24 +439,24 @@ def steps_for(section, margin=1.0):
 # resolution -- at 84 px the whole 0.668 m CTE budget spans 1.79 px of image shift at
 # 20 m lookahead, and a 0.1 m error spans 0.27 px, so on a 620 m straight the only cue
 # is sub-pixel. scripts/sweep_student_arch.py measures this closed-loop.
-# MEASURED (T06-F11): 168x28. The control error is LATERAL, so horizontal resolution
+# MEASURED: 168x28. The control error is LATERAL, so horizontal resolution
 # carries it and vertical buys nothing. At matched cost, 112x38 w2 (21,504 ReLU) holds
 # 4/6 sections at 12.97 ft while 168x28 w2 (21,408) holds 6/6 at 0.97 ft -- inside the
-# 2.19 ft budget with 2.3x margin, on all 3 reps, with NO student-DAgger. Town04's F11
-# rejected resolution having tested only 112x38, which spends half the budget on the
-# axis that does not help.
+# 2.19 ft budget with 2.3x margin, on all 3 reps, with NO student-DAgger. The highway
+# study rejected resolution having tested only 112x38, which spends half the budget on
+# the axis that does not help.
 # INPUT SIZE. 168x56 is TOWN04's 84x28 DOUBLED IN BOTH DIMENSIONS.
 #
 # The student crop is rows 240:450 of a 640-wide frame -- 640x210, a native aspect
 # of 3.05:1. Town04's 84x28 is 3.0:1 and therefore geometrically faithful. Town06
-# was 168x28, which is 6.0:1: T06-F11 doubled the WIDTH to keep lane lines alive on
+# was 168x28, which is 6.0:1: the width was doubled to keep lane lines alive on
 # this route's long straights and never doubled the height, so the Town06 student
 # saw an image squashed 2x vertically while the published Town04 student did not.
 # That is a difference between the two studies that nothing intended, and it
 # compresses exactly the vertical structure the policy needs: the convergence of the
 # lane lines, and at night the SHAPE of the headlight throw.
 #
-# 168x56 keeps T06-F11's doubled width, restores the aspect, and is simply Town04 at
+# 168x56 keeps that doubled width, restores the aspect, and is simply Town04 at
 # 2x resolution -- which is the closest this study can be to its reference while
 # still answering the reason the width was raised.
 TOWN06_INPUT_W, TOWN06_INPUT_H = (int(os.environ.get("T06_IN_W", "168")),
@@ -475,13 +474,13 @@ TOWN06_STUDENTS = (
     # is 3.0x the clear one's width, because it represents four conditions and the clear
     # one represents a single point. The comment below claimed to follow that precedent
     # and did not: Town06's CLEAR student was itself widened w1 -> w2 for the straights
-    # (T06-F11), the mixed student stayed at w3, and the ratio silently halved to 1.5x.
+    #, the mixed student stayed at w3, and the ratio silently halved to 1.5x.
     #
     #     Town04    clear  5,152 ReLU  ->  mixed 15,456   3.0x
     #     Town06    clear 21,408 ReLU  ->  mixed 32,112   1.5x   (w3, was here)
     #     Town06    clear 21,408 ReLU  ->  mixed 42,816   2.0x   (w4, now)
     #
-    # w4 is also the width T06-F18 measured as the best of five at this input size --
+    # w4 is also the width measured best of five at this input size --
     # 33/48 cells against w3's 15/48, on the six-section route -- and it is the step the
     # architecture sweep would have taken first anyway.
     # THE MIXED STUDENT IS WIDER THAN THE CLEAR ONE, as in published Town04
@@ -489,8 +488,8 @@ TOWN06_STUDENTS = (
     # two to match: they fit different functions, and only the mixed one has to represent
     # four conditions.
     #
-    # The previous entry pinned both at w2 on the authority of T06-F14, which A-2
-    # discarded along with its data. Measured on the REBUILD (T06-F29), w2 mixed drove
+    # The previous entry pinned both at w2 on evidence that was later discarded along
+    # with the data behind it. Measured on the REBUILD, w2 mixed drove
     # 22/24 exploratory cells and failed fog/s00 at 8.52 ft and shadows/s02 at 2.99 ft --
     # while the teacher it was distilled from holds those same two cells 3/3 at 0.37-0.40
     # and 0.41-0.49 ft. The teacher is competent and the student cannot reproduce it, so
@@ -516,9 +515,8 @@ TOWN06_STUDENTS = (
 # docs/TOWN06_PASS3_PREREGISTRATION.md, committed before any draw.
 #
 # The comment above records w6 as "tried and did NOT fix fog either -- 11.64 ft against
-# w4's 11.15". T06-F55 withdraws that: both numbers are ONE distillation from ONE seed,
-# and 389f192 -- committed six hours after the w6 checkpoint was written -- measured a
-# re-draw of one UNCHANGED configuration swinging 1.16 -> 8.68 ft. A 7.5 ft swing cannot
+# w4's 11.15". That is withdrawn: both numbers are ONE distillation from ONE seed, and
+# a re-draw of one UNCHANGED configuration was later measured swinging 1.16 -> 8.68 ft. A 7.5 ft swing cannot
 # resolve a 0.49 ft difference. w4 ships its fourth draw; w6 was never given a second.
 #
 # So the widths are swept against each other under one criterion, fixed in advance.
@@ -529,7 +527,7 @@ TOWN06_STUDENTS = (
 # PIN NAMES ARE SEPARATE ON PURPOSE. The sweep pins under "<base>p3", so re-sweeping w4
 # cannot overwrite S_mixed_t06lap_168x56_w4.selected -- the pin passes 1 and 2 resolve
 # through. Overwriting it would silently change which model those committed results refer
-# to, which is the failure PROTOCOL R4 exists to prevent.
+# to, which is the failure the protocol exists to prevent.
 TOWN06_PASS3_WIDTHS = (
     # (name, SWEEP base -- where _s<seed> checkpoints live, PIN base, channels, fc)
     ("S_mixed_t06_w4", "S_mixed_t06lap_168x56_w4",
@@ -574,9 +572,9 @@ def relu_count(channels, fc, in_h=28, in_w=84):
 #
 # BOTH maps run it, and this flag must agree with the DRIVER that runs it or the study
 # breaks in a way no result reveals. It said `STUDY_MAP == "Town04"` while
-# run_town06_pipeline.sh ran the stage for Town06 -- restored by T06-F25, because
-# T06-F14 removed it on evidence that A-2 then discarded outright. The two halves of
-# that restoration were never joined:
+# run_town06_pipeline.sh ran the stage for Town06. The stage had been removed on
+# evidence that was later discarded outright, then restored; the two halves of that
+# restoration were never joined:
 #
 #   * final_student() RAISES for Town06 the moment a <base>_dagger_rNN checkpoint
 #     exists, which the stage produces. The competence gate, the ledger and the
@@ -592,7 +590,7 @@ def relu_count(channels, fc, in_h=28, in_w=84):
 # dagger_student_w3 round directories). Town06 is the deployment test of that same
 # pipeline, so it runs the same procedure; whether student DAgger HELPS at 168x28 is
 # then a measurement the competence gate and the three-lap ledger make on the corrected
-# harness, which is exactly what T06-F25 asked for and what nobody has.
+# harness, which is exactly the measurement wanted and the one nobody has.
 STUDENT_DAGGER = True
 
 
@@ -615,7 +613,7 @@ def final_student(base):
     intermediate -- the gate, the certifier and the ledger would each have used a model
     nobody intended to ship.
 
-    T06-F14 removed student DAgger: at 168x28 it is harmful, not merely unnecessary
+    Student DAgger was removed: at 168x28 it is harmful, not merely unnecessary
     (mixed 6/6 -> 3/6 on a 3-rep clear gate). So the distilled checkpoint IS the policy
     and the old preference is exactly backwards -- it now selects the artefact of a
     procedure that is no longer run. That is not hypothetical: it happened. A gate run
@@ -663,7 +661,7 @@ def final_student(base):
     if stale:
         raise RuntimeError(
             f"{len(stale)} student-DAgger checkpoint(s) for '{base}' are still in "
-            f"{CHECKPOINT_DIR}. Student DAgger was removed by T06-F14 and these are "
+            f"{CHECKPOINT_DIR}. Student DAgger was removed and these are "
             f"stale artefacts of it; leaving them there is how the wrong model gets "
             f"certified. Move them to checkpoints/_superseded_student_dagger/ "
             f"(they are kept, not deleted) and re-run.")
@@ -706,7 +704,7 @@ STEER_CORRIDOR_NORM = STEER_CORRIDOR_RAD / MAX_STEER_RAD  # 0.041 (network outpu
 #
 #   0.041 / 0.012 = 3.42  ->  T = 1.0 s * sqrt(3.42) = 1.85 s
 #
-# ── BE PRECISE ABOUT WHAT THIS IS (F45) ──────────────────────────────────────
+# ── BE PRECISE ABOUT WHAT THIS IS ───────────────────────────────────────────
 # T_CLOSED_LOOP_S is CALIBRATED, not derived. It is back-solved so the tolerance
 # reproduces the measured stability cliff, and that cliff was measured on the same
 # closed-loop runs the certificate is later validated against. The study must NOT
@@ -730,7 +728,7 @@ STEER_CORRIDOR_NORM = STEER_CORRIDOR_RAD / MAX_STEER_RAD  # 0.041 (network outpu
 # at every T -- the 3.0x separation is a ratio and is invariant -- so what T buys is
 # the PLACEMENT of the threshold inside that gap, and T was chosen by looking at
 # where the gap is.
-T_CLOSED_LOOP_S = 1.85       # [CALIBRATED on closed-loop data -- see F45 above]
+T_CLOSED_LOOP_S = 1.85       # CALIBRATED on closed-loop data -- see above
 T_CLOSED_LOOP_ADMISSIBLE_S = (1.231, 2.128)   # verdicts unchanged inside this window
 CLOSED_LOOP_TOLERANCE_RAD = (
     (2.0 * WHEELBASE_M * CTE_BUDGET_M) / (TARGET_SPEED_MS ** 2 * T_CLOSED_LOOP_S ** 2)

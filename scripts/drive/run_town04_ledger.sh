@@ -8,9 +8,9 @@
 #
 # Its restart discipline was therefore unprovable after the fact: results/highway/logs/
 # ledger/ holds one restart.log, overwritten, so nothing records whether the server was
-# restarted between cells. R-SIM-1 is enforced here, per cell, and logged per cell.
+# restarted between cells. restart before every measurement run is enforced here, per cell, and logged per cell.
 #
-# NOT under PROTOCOL R1, and deliberately so. Town04 is the discovery test:
+# NOT under the protocol's ordering rule, and deliberately so. Town04 is the discovery test:
 # T_CLOSED_LOOP_S was back-solved from its own stability cliff, so its agreement measures
 # SENSITIVITY, not prediction, and PROTOCOL.md section 1 says so. Imposing a
 # certificate-before-drive ordering here would dress a discovery test up as a prediction
@@ -25,7 +25,7 @@ export STUDY_MAP=Town04
 export CARLA_PORT=${CARLA_PORT:-3000}
 export PYTHONUNBUFFERED=1
 
-# THREE LAPS (PROTOCOL A-4). A lap is eastbound + westbound; three laps is a
+# THREE LAPS. A lap is eastbound + westbound; three laps is a
 # REPRODUCIBILITY CHECK, not a sample for estimating a rate -- rep-to-rep verdict
 # disagreement measured 0 of 48 section-pairs on the corrected harness. If the three
 # disagree, that is a bug to find, never a reason to run more.

@@ -10,7 +10,7 @@ run continues on the CPU, produces numbers, and nothing says so. Caught on Town0
 policy drive printed "CUDA unknown error ... setting the available devices to be zero"
 and then drove the whole lap anyway.
 
-It became likely rather than rare when R-SIM-1 moved to a restart before EVERY run: that
+It became likely rather than rare when restart before every measurement run moved to a restart before EVERY run: that
 turned one startup race per cell into one per run.
 
     device = require_cuda()          # waits, then insists

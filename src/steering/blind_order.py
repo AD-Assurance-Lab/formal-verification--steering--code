@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify PROTOCOL R1: every Town06 certificate was committed BEFORE its drive.
+"""Verify the protocol's ordering rule: every Town06 certificate was committed BEFORE its drive.
 
 This is the whole difference between the deployment test and the discovery test, so
 it is checked mechanically against git rather than asserted in prose. The check uses
@@ -45,7 +45,7 @@ def require_certificate_committed():
     Called by the ledger. This is the guard that makes R1 hold by construction rather
     than by remembering to run a checker afterwards.
 
-    Pass 2 (A-5) scores both scopes, so it predicts with two certificates and both must
+    Pass 2 scores both scopes, so it predicts with two certificates and both must
     precede the drive. Checking only the first would let the capped-scope bound be
     written after the laps it is compared against -- which is the exact failure R1
     exists to prevent, reintroduced by a second artifact.
@@ -59,18 +59,18 @@ def _require_one(rel):
     CERT = os.path.join(REPO, rel)
     if not os.path.exists(CERT):
         raise SystemExit(
-            f"PROTOCOL R1: {rel} does not exist.\n"
+            f"the protocol's ordering rule: {rel} does not exist.\n"
             "The certificate must be computed AND committed before any scored Town06\n"
             "closed-loop run. Run the certifier, commit its output, then drive.")
     if first_commit_epoch(rel) is None:
         raise SystemExit(
-            f"PROTOCOL R1: {rel} exists but is NOT COMMITTED.\n"
+            f"the protocol's ordering rule: {rel} exists but is NOT COMMITTED.\n"
             "An uncommitted certificate is not a prediction -- it can still be edited.\n"
             "    git add %s && git commit -m 'Town06 certificate (pre-drive)'" % rel)
     dirty = _git("status", "--porcelain", "--", rel)
     if dirty:
         raise SystemExit(
-            f"PROTOCOL R1: {rel} has uncommitted modifications.\n"
+            f"the protocol's ordering rule: {rel} has uncommitted modifications.\n"
             "Commit or restore it before driving; a certificate that moves after the\n"
             "drive is not the certificate that predicted it.")
     return True

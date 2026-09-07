@@ -1,4 +1,4 @@
-"""Q6's seed split must be OPT-IN, and the un-opted path must be bit-identical.
+"""The seed split must be OPT-IN, and the un-opted path must be bit-identical.
 
 WHY THIS EXISTS. `DISTILL_SEED` seeds torch, numpy and python once, after which the
 student's INITIALISATION and the DataLoader's minibatch ORDER both draw from the same
@@ -6,7 +6,7 @@ global torch stream. That makes "the seed" two variables wearing one name, and i
 the dispersion this study keeps paying for -- fog p99 CV 42.6%, r ~ 0 between two
 objectives at the same seed -- cannot be attributed to either of them.
 
-Q6 separates them with `DISTILL_INIT_SEED` and `DISTILL_DATA_SEED`. The hazard is that
+They are separated with `DISTILL_INIT_SEED` and `DISTILL_DATA_SEED`. The hazard is that
 separating them at all could change the default path: passing a `generator=` to a
 DataLoader normally changes which RNG the shuffling draws from. Every checkpoint in this
 repo, and every published number, was distilled on the un-opted path -- so if that path

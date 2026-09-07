@@ -27,16 +27,17 @@ from steering.imaging import raw_to_bgr, preprocess_for_model  # noqa: F401
 
 # Determinism rules and their enforcement live in the `carla-determinism` package, so
 # every study in the lab shares one copy rather than each vendoring its own that drifts.
-# See its RULES.md (D-1..D-11); the two that bite here are D-2 (acknowledged commands)
-# and D-3 (-notexturestreaming, applied by scripts/simulator/carla_restart.sh).
+# See its RULES.md. The two that bite here: a vehicle command must be acknowledged
+# rather than fired and forgotten, and the server must be launched with texture
+# streaming off (-notexturestreaming, applied by scripts/simulator/carla_restart.sh).
 import carla_determinism as cd
 
 
 def connect():
     client = carla.Client(HOST, PORT)
     client.set_timeout(CLIENT_TIMEOUT_S)
-    # Register the client for acknowledged vehicle commands (D-2). One client per port
-    # is already a hard invariant here (carla_lock, R-SIM-3), so this cannot be
+    # Register the client for acknowledged vehicle commands. One client per port
+    # is already a hard invariant here (carla_lock, one client per port), so this cannot be
     # ambiguous.
     cd.bind_client(client)
     return client
@@ -89,7 +90,7 @@ def load_study_map(client, fresh=True):
     # "terminate called", core dumped. That is what killed three ledger attempts, and it
     # read as a client-lifetime problem for two of them.
     #
-    # Now that R-SIM-1 is enforced per RUN, a freshly restarted server is the normal case
+    # Now that restart before every measurement run is enforced per RUN, a freshly restarted server is the normal case
     # rather than the exception, so this path is the common one.
     try:
         import carla_determinism as _cd
@@ -136,7 +137,7 @@ def enable_sync_mode(world):
     # asserting it, relying on carla_launch.sh having preflighted the server whenever it
     # happened to be launched.
     #
-    # That is the same drift that put R-SIM-1 in some drivers and not others: a rule each
+    # That is the same drift that put restart before every measurement run in some drivers and not others: a rule each
     # caller must remember is a rule the next new file will miss. Sync mode is the one
     # thing every measurement does, so the assertion belongs here.
     from steering import config as _C
@@ -157,7 +158,7 @@ def enable_sync_mode(world):
 # returns the PREVIOUS condition's values. The old code cleared fog, read back the stale
 # (still-foggy) parameters, set the sun angle on that object and pushed it -- which
 # reinstated fog. Night therefore ran at fog_density 70, verified live:
-# sun_altitude_angle -25 with fog_density 70. Caught by Zach watching the render.
+# sun_altitude_angle -25 with fog_density 70. Caught by watching the render.
 #
 # Same shape as trap 2, where CARLA's sensor queue runs a frame behind: a read issued
 # straight after a write returns the old value, and nothing errors.
@@ -238,7 +239,7 @@ CONDITION_DELTAS = {
 #
 # An earlier version of this comment read "clear 0.1371 fog 0.3319 night 0.0897 low sun
 # 0.0401" and concluded low sun renders DARKER THAN NIGHT. Both halves were artefacts:
-# those frames came from the contaminated collection of T06-F42, and they were measured on
+# those frames came from a contaminated collection, and they were measured on
 # the TEACHER's view, whose crop keeps ~60 rows of a sky that renders black on this lap.
 # Left recorded rather than quietly deleted -- three inconsistent brightness tables
 # accumulated in this repo precisely because each was replaced without saying so.
@@ -448,7 +449,7 @@ def make_transform(spawn):
 def require_clean_world(world):
     """REFUSE to measure in a world that already contains someone's actors.
 
-    R-SIM-1 says restart before every measurement run. It lived only in prose and in a
+    restart before every measurement run says restart before every measurement run. It lived only in prose and in a
     line each driver script had to remember to copy, so it drifted the moment a new
     driver was written: the two lap drivers restart, the interpolation-fidelity driver
     did not, and 78 captures were about to be taken on one ageing server.
@@ -473,7 +474,7 @@ def require_clean_world(world):
             "    that was killed, since SIGTERM skips cleanup. Measuring here means\n"
             "    rendering a road with someone else's vehicle parked on it, which no\n"
             "    array shape or verdict can reveal.\n"
-            "    Restart the server first (R-SIM-1): bash scripts/simulator/carla_restart.sh")
+            "    Restart the server first: bash scripts/simulator/carla_restart.sh")
 
 
 def spawn_vehicle(world, spawn):
@@ -725,9 +726,7 @@ def grab_frame(img_queue, expected_frame, timeout=5.0):
 # ── Spectator / images / cleanup ─────────────────────────────────────────────
 
 def update_spectator(world, vehicle):
-    """Chase camera, placed one tick ahead to cancel a MEASURED one-tick lag.
-
-    Measured 2026-08-11 against a live run, after guessing wrong about this twice. Sampling
+    """Chase camera, placed one tick ahead to cancel a MEASURED one-tick lag. against a live run, after guessing wrong about this twice. Sampling
     the spectator-to-vehicle offset at 50 Hz while the car drove:
 
         mean  -7.81 m   against a nominal placement of -6.00 m

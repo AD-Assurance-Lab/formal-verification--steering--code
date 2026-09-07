@@ -4,21 +4,21 @@
     STUDY_MAP=Town06 python3 scripts/simulator/check_render_photometry.py            # check
     STUDY_MAP=Town06 python3 scripts/simulator/check_render_photometry.py --write    # set reference
 
-WHY. The determinism preflight (D-1..D-11) verifies HOW the server was launched, and
+WHY. The determinism preflight verifies HOW the server was launched, and
 verify_condition() reads the weather struct back. Both passed, every run, while the
 server rendered the identical scene 15% darker for half a day.
 
-Measured, 2026-09-02: `data/dagger_clear_t06lap` holds two renderings of the
+Measured: `data/dagger_clear_t06lap` holds two renderings of the
 same road under the same declared condition. Rounds 00-05 average 0.2508-0.2537 on the
 network's input; rounds 06-14 average 0.2140-0.2141. At matched poses 0.5 m apart the
 frames are geometrically identical and uniformly 0.84x -- a photometric gain, not
 content. The BC sets that seed both teachers are on the dark side (0.2136 / 0.2147); a
-collection run today reproduces the bright side (0.2526, within 0.3% of a driven lap).
+a later collection run reproduces the bright side (0.2526, within 0.3% of a driven lap).
 
 So every Town06 lap teacher was trained on frames systematically darker than the frames
 it is scored on, and DAgger aggregated both renderings into one set. That is a
-train/test shift in the images themselves -- the same class of defect as A-2's texture
-streaming, and the reason A-2 forced recollection rather than re-evaluation.
+train/test shift in the images themselves -- the same class of defect as the texture
+streaming one, and the reason it forced recollection rather than re-evaluation.
 
 Nothing in a result reveals it. The condition still classifies as itself, the weather
 struct still reads back correct, the determinism preflight is still green, and the
@@ -30,7 +30,7 @@ physics, isolates it completely and costs about two seconds -- so it can run on 
 fresh server, which is the only cadence that would have caught this.
 
 TOLERANCE. Headless and windowed servers driving the same lap agree to 4e-5 relative
-(measured 2026-09-02), so the render's own floor is far below anything structural. The
+(), so the render's own floor is far below anything structural. The
 default 1% gate is ~250x the noise floor and ~15x smaller than the drift it exists to
 catch: it cannot fire on render noise and cannot miss another 0.84x.
 """
@@ -95,7 +95,7 @@ def measure(condition="clear"):
             bgr = env.raw_to_bgr(image)
             a = np.asarray(preprocess_for_model(bgr), dtype=np.float32)
             means.append(float(a.mean()))
-            # FREE EARLY WARNING for R-SIM-4. evaluate.py asserts identify() on the
+            # FREE EARLY WARNING for verify the rendered condition from a frame. evaluate.py asserts identify() on the
             # STUDENT's view of a frame at this same spawn pose and RAISES on a mismatch,
             # aborting the run. On this lap clear sits near condition_signature's
             # fog/clear boundary -- the student's crop is road only, so where the spawn
@@ -130,7 +130,7 @@ def main():
         print(f"  *** WARNING: the spawn frame classifies as "
               f"{'/'.join(sorted(set(labels)))}, not '{want_label}'. evaluate.py asserts "
               f"this and RAISES, so every run of '{want_label}' would abort at the spawn "
-              f"(R-SIM-4). The rendering may be fine -- the discriminator's threshold is "
+              f". The rendering may be fine -- the discriminator's threshold is "
               f"what is close here. Check before starting a campaign.")
     ref = json.load(open(REF_PATH)) if os.path.exists(REF_PATH) else {}
     key = f"{C.STUDY_MAP}/{args.condition}"
@@ -162,7 +162,7 @@ def main():
         print(f"FATAL: THE SERVER IS RENDERING AT A DIFFERENT BRIGHTNESS.\n"
               f"  measured {mean:.6f}, reference {want:.6f}, {100 * rel:.2f}% off.\n"
               f"  Frames captured now are not comparable to the study's existing data\n"
-              f"  (A-2/D-11). Do not collect, train, gate or score against this server.\n"
+              f"  Data collected under a violating harness is not reusable. Do not collect, train, gate or score against this server.\n"
               f"  reference server: {ref[key].get('server_cmdline')}\n"
               f"  this server     : {cd.server_cmdline(C.PORT)}")
         return 1

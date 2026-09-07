@@ -76,7 +76,7 @@ def load_route(name):
     index seam, where nearest_index wraps and pure pursuit's lookahead crosses a
     discontinuity" are the same observation. Rolling the origin moves the seam to a
     straight while leaving the path, the spawn and the lap-termination test unchanged, so
-    whichever the failures follow is the cause. See D-09.
+    whichever the failures follow is the cause.
     """
     route = np.load(os.path.join(ROUTES_DIR, f"{name}.npy"))
     roll = int(os.environ.get("ROUTE_ROLL", "0"))
@@ -87,7 +87,7 @@ def load_route(name):
 # Town04's lap closes on itself (start and end 7.9 m apart) so index arithmetic
 # modulo len(route) is correct there, and every route helper below was written
 # that way. The Town06 lap does NOT close: its start and end are 173.8 m apart,
-# because Zach cut the route before a double intersection that sits outside the
+# because the route was cut before a double intersection that sits outside the
 # ODD. On an open route the wrap is not a wrap, it is a teleport to a point two
 # city blocks away -- pure pursuit aims at it and CTE is measured against a
 # segment that spans the gap. Both happen in the last few steps of every lap,
@@ -118,7 +118,7 @@ def arc_lengths(route):
         scored-distance cap tripped at 1,006 m of a 2,289 m lap -- 44% -- and every run
         stopped there with the vehicle still on the road. The clear student was declared
         COMPETENT on that.
-      * certify_sustained_bound.py: harmless today only because Town04's routes are (N, 2).
+      * certify_sustained_bound.py: harmless only because the highway routes are (N, 2).
 
     Take x and y. Nothing else is a position.
     """

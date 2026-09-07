@@ -2,7 +2,7 @@
 # Scored closed-loop ledger for the Town06 deployment test.
 #
 # THIS SCRIPT DRIVES. It must not be run until the certificate exists AND is committed
-# (PROTOCOL R1). closed_loop_ledger.py enforces that itself and will refuse, so the
+#. closed_loop_ledger.py enforces that itself and will refuse, so the
 # check below is a clearer early failure, not the guard.
 #
 # Eight cells (2 students x 4 conditions), six of them scored -- the same six as Town04.
@@ -17,11 +17,11 @@ export STUDY_MAP=Town06
 export CARLA_PORT=${CARLA_PORT:-3000}
 export PYTHONUNBUFFERED=1
 
-# THREE LAPS (PROTOCOL A-4). A Town06 lap is every scored section driven once; three
+# THREE LAPS. A Town06 lap is every scored section driven once; three
 # laps is a reproducibility check, not a rate estimate. This drove TWO.
 LAPS=${LAPS:-3}
 
-# PROTOCOL A-5 pass 2 writes its own ledger directory. This script SKIPS any cell or run
+# Pass 2 writes its own ledger directory. This script SKIPS any cell or run
 # whose file already exists -- so pointing pass 2 at pass 1's directory would skip all
 # 24 laps and report "LEDGER COMPLETE" having driven nothing. The path is read from the
 # design module rather than spelled here, because two copies of it is how that happens.
@@ -33,9 +33,9 @@ LOG_DIR=$REPO/results/arterial_logs
 mkdir -p "$LOG_DIR"
 say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/ledger.log"; }
 
-python3 -m steering.protocol_lock >/dev/null || { say "FATAL: PROTOCOL lock"; exit 1; }
+python3 -m steering.protocol_lock >/dev/null || { say "FATAL: the protocol lock"; exit 1; }
 python3 -m steering.blind_order  >/dev/null || {
-    say "FATAL: PROTOCOL R1 -- certificate is missing, uncommitted or dirty."
+    say "FATAL: the protocol's ordering rule -- certificate is missing, uncommitted or dirty."
     say "Certify and COMMIT before driving. Refusing to run."; exit 1; }
 say "R1 satisfied: certificate(s) committed. Driving pass $TOWN06_PASS may begin."
 say "ledger -> $LEDGER_DIR"
@@ -54,7 +54,7 @@ carla_restart() {
     # each, so a boot that occasionally misses its 300 s window is a certainty over a
     # stage rather than a risk -- and this stage's output is the published number.
     #
-    # Measured 2026-09-03: seven of eight cells were complete and twenty-three laps
+    #: seven of eight cells were complete and twenty-three laps
     # driven when one server failed to come up, and the whole ledger failed on the last
     # rep of the last cell. Every other driver had grown its own retry; the ledger, the
     # one whose result gets published, had none.
@@ -75,7 +75,8 @@ carla_up 12 || carla_restart || exit 1
 # per cell costs ~40 s and removes accumulated state as an explanation for any result.
 # One definition, in config: name | channels | fc
 # TOWN06_LEDGER_STUDENTS drives checkpoints that are not the study's shipped pair --
-# Q3 needs a blind certificate-then-drive on a TUNED student, which is not a deployment
+# An exploratory run needs a blind certificate-then-drive on a TUNED student, which is
+# not a deployment
 # test and must not be one. Format, matching TOWN06_STUDENTS_OVERRIDE:
 #
 #     name:checkpoint:c1,c2[,c3...]:fc
@@ -127,7 +128,7 @@ for ROW in "${STUDENT_ROWS[@]}"; do
     say "START $COND/$STU"
     # ONE PROCESS AND ONE SERVER PER RUN.
     #
-    # R-SIM-1 says restart before every measurement RUN. This restarted before every CELL
+    # restart before every measurement run says restart before every measurement RUN. This restarted before every CELL
     # and drove twelve runs on one server with one vehicle, so the twelve repetitions were
     # two chains of six inheriting each other's physics state -- and a Wilson interval over
     # dependent trials is not the interval it claims to be.

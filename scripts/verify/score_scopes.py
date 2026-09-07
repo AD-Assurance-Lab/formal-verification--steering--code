@@ -97,7 +97,7 @@ def score_run(here, cte, br, scope):
 
 
 def aggregate(laps):
-    """PROTOCOL A-4: three laps is a REPRODUCIBILITY CHECK, not a rate.
+    """the protocol's lap rule: three laps is a REPRODUCIBILITY CHECK, not a rate.
 
     All pass -> PASS. All fail -> FAIL. Mixed -> VOID, and it stays void until the cause
     is found and written down. Never a majority vote: that turns an identified defect

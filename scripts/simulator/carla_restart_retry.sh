@@ -8,7 +8,7 @@
 # restarts before every measurement, so a stage is dozens of restarts and a boot that
 # occasionally misses its window is a certainty rather than a risk.
 #
-# Measured on 2026-09-02/03, all four the same shape:
+#/03, all four the same shape:
 #
 #   * a boot exceeded 300 s while a distillation held the GPU, and NINE completed
 #     student-DAgger rounds were abandoned;
@@ -22,7 +22,7 @@
 #
 # The retry is bounded and loud. Three consecutive failures is not a slow boot, and the
 # caller still stops: a measurement taken against a server that cannot be verified is one
-# nobody can defend (D-11). This lowers no bar -- carla_restart.sh still runs the full
+# nobody can defend. This lowers no bar -- carla_restart.sh still runs the full
 # determinism preflight and the photometry gate on every attempt.
 set -uo pipefail
 cd "$(dirname "$0")/.."

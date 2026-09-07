@@ -147,7 +147,7 @@ kill_clients KILL                          # only after they were asked politely
 # reach CARLA after the round restart", and two CARLA processes were found alive with one
 # wedged on the port.
 #
-# SIGTERM first (R-SIM-2: a client killed with -9 leaves the world in sync mode), then
+# SIGTERM first (never kill a client outright: a client killed with -9 leaves the world in sync mode), then
 # escalate, then wait for the socket rather than assuming it is gone.
 pkill -f "[C]arlaUE4-Linux-Shipping.*rpc-port=$PORT" 2>/dev/null
 pkill -f "[C]arlaUE4.sh.*rpc-port=$PORT" 2>/dev/null

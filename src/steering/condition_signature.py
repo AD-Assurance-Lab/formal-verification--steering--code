@@ -12,7 +12,7 @@ separable by simple image statistics, measured over the training set:
     night       0.2002   0.1380   0.0000    13.8%
     low_sun     0.1842   0.0559   0.0157     2.8%
 
-    Re-measured on the Town06 lap, 2026-09-02 (T06-F42), same view, one pure-pursuit lap
+    Re-measured on the Town06 lap, same view, one pure-pursuit lap
     per condition with a clean server each -- every discriminator still has margin:
 
     clear       0.3064   0.0616   0.0641     0.9%

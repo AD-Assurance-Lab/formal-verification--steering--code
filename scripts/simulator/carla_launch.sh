@@ -4,7 +4,7 @@
 # Why this file exists: the determinism flags are LAUNCH-time properties, invisible over
 # RPC, and this repo had EIGHT separate places that started the server. Seven of them
 # lacked -notexturestreaming, which is the dominant render entropy source (168x,
-# carla-determinism D-3). A server started by any of those answers perfectly normally and
+# carla-determinism the texture-streaming flag). A server started by any of those answers perfectly normally and
 # quietly makes every measurement taken against it noisier -- including, in
 # finish_town06_deployment.sh, the SCORED LEDGER itself.
 #
@@ -21,11 +21,11 @@ cd "$(dirname "$0")/.."
 REPO=$PWD
 PORT=${CARLA_PORT:-3000}
 CARLA_ROOT=${CARLA_ROOT:-$HOME/carla}
-QUALITY=${CARLA_QUALITY:-Epic}          # D-5: High measured catastrophically worse
+QUALITY=${CARLA_QUALITY:-Epic}          # the launch flags: High measured catastrophically worse
 LOG=${CARLA_LOG:-$REPO/results/arterial_logs/carla.log}
 mkdir -p "$(dirname "$LOG")"
 
-# D-3, defaulted per map so Town04 relaunches exactly as the published study did.
+# the texture-streaming flag, defaulted per map so Town04 relaunches exactly as the published study did.
 if [ -n "${CARLA_EXTRA_ARGS:-}" ]; then
     EXTRA=$CARLA_EXTRA_ARGS
 else
@@ -37,7 +37,7 @@ else
 fi
 
 # The display to run windowed on. Standing rule 6 says launch WINDOWED so runs can be
-# watched -- but every doc in this repo said DISPLAY=:0, and the 2026-09-03 desktop has
+# watched -- but every document here said DISPLAY=:0, and this machine has
 # no :0 at all (its X socket is :1). Hardcoding :0 there does not fail loudly: the
 # windowed launch dies, the script falls back to HEADLESS, and nobody is watching
 # anything. So: honour an explicit DISPLAY, otherwise pick a socket that actually exists.
@@ -58,7 +58,7 @@ fi
 # launched dies unnoticed. Asking for headless on a box already running windowed
 # therefore returned "launching CARLA headless ... ready after 0s" while every subsequent
 # run used the windowed server, and left two CarlaUE4 processes behind. Nothing in a
-# result reveals which server you were on, which is the whole reason R-SIM-1 exists.
+# result reveals which server you were on, which is the whole reason restart before every measurement run exists.
 if ss -ltn 2>/dev/null | grep -q ":$PORT "; then
     _pid=$(ss -ltnp 2>/dev/null | grep ":$PORT " | grep -oE 'pid=[0-9]+' | head -1 | cut -d= -f2)
     _cmd=$(tr '\0' ' ' < "/proc/${_pid}/cmdline" 2>/dev/null)
@@ -100,13 +100,13 @@ if ! CARLA_PORT=$PORT timeout 300 python3 "$REPO/scripts/simulator/wait_carla_re
     # Standing rule 6 wants a visible window so runs can be WATCHED, and that is the
     # default. But a windowed launch depends on the X session the launcher happens to sit
     # in, and it fails silently when that session cannot reach the display: measured
-    # 2026-09-02, CarlaUE4 exits rc=1 with an EMPTY log while `xdpyinfo` on the same
+    # Measured: CarlaUE4 exits rc=1 with an EMPTY log while `xdpyinfo` on the same
     # DISPLAY succeeds. Headless starts fine in the same shell.
     #
     # Refusing outright would stop an unattended campaign for a cosmetic reason. Falling
     # back silently would hide a deviation from a standing rule. So: fall back, say so on
     # every launch, and let the photometry gate below prove the render did not move --
-    # headless and windowed agree to 4e-5 on a full driven lap (T06-F42), which is what
+    # headless and windowed agree to 4e-5 on a full driven lap, which is what
     # makes the fallback safe rather than merely convenient.
     if [ "${CARLA_WINDOWED:-0}" = "1" ]; then
         echo "  WINDOWED LAUNCH FAILED on DISPLAY=${DISPLAY:-<none>}; falling back to HEADLESS."
@@ -151,9 +151,9 @@ if [ "${CARLA_SKIP_PHOTOMETRY:-0}" = "1" ]; then
 elif [ -f "$PHOTO_REF" ] && grep -q "\"${STUDY_MAP:-Town04}/clear\"" "$PHOTO_REF" 2>/dev/null; then
     # A DARK SERVER IS RELAUNCHED, NOT ACCEPTED AND NOT FATAL.
     #
-    # T06-F46 measured what this defect is: a server comes up either correct or ~14% dark,
+    # Measured: a server comes up either correct or about 14% dark,
     # the state is decided at LAUNCH, it is constant for that server's whole life (five
-    # measurements, spread 4e-6), and -- corrected 2026-09-02 -- it happens HEADLESS as
+    # measurements, spread 4e-6), and it happens HEADLESS as
     # well as windowed. It is not a property of the flags, the map, the weather or the
     # camera, and the trigger is still unidentified.
     #

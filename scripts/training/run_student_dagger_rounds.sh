@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Drive STUDENT DAgger one round per process, restarting CARLA between rounds.
 #
-# The teacher path got this treatment on 2026-09-01 (scripts/training/run_dagger_rounds.sh) and
+# The teacher path got this treatment (scripts/training/run_dagger_rounds.sh) and
 # the student path did not, so it kept the two defects that driver exists to remove:
 #
 #   1. dagger_student.py restarts CARLA in-process between rounds and dies doing it:
 #      "terminate called after throwing carla::client::TimeoutException", core dumped,
-#      AFTER the round is already trained. Measured 2026-09-02, round 0 of the clear
+#      AFTER the round is already trained., round 0 of the clear
 #      student. The work survives; the process does not.
 #
 #   2. The pipeline's guard for the stage was `ls <student>_dagger_r*.pth` -- true after
@@ -66,7 +66,7 @@ fi
 # carla_restart.sh gives the server 300 s to become ready and fails if it does not. That
 # is right for the restart; it is wrong as a stage-level verdict. The drivers treated one
 # failure as terminal -- "restart failed; stopping" -- and threw away the whole round or
-# the whole twelve-lap gate. Measured 2026-09-02: a boot exceeded 300 s while a
+# the whole twelve-lap gate.: a boot exceeded 300 s while a
 # distillation was using the GPU, and nine completed student-DAgger rounds were abandoned
 # because the tenth restart was slow.
 #

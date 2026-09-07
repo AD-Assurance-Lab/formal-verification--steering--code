@@ -313,7 +313,7 @@ def apply_night(bgr, ambient=0.10, noise=0.004, geom=CARLA_GEOM,
 # standards calibrate, ACDC validates.
 # All referenced to the SAME clean daylight baseline (the fog condition's reference set,
 # road-ROI mean 0.412), not to each condition's own reference. Night's own reference set
-# is contaminated with dusk and twilight frames (V2_FINDINGS F11), so using it would make
+# is contaminated with dusk and twilight frames, so using it would make
 # modelled night 1.13x BRIGHTER than clear, which is plainly wrong.
 _ACDC_ADVERSE_LEVEL = {"fog": 0.291, "rain": 0.232, "night": 0.274, "snow": 0.346}
 _ACDC_CLEAR_BASELINE = 0.412

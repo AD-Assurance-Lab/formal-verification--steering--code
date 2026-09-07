@@ -12,7 +12,7 @@ procedure at the bottom, never silently and never to accommodate a result.
 The Town04 study established a certification criterion. It did so with the closed-loop
 outcomes **already known**: `T_CLOSED_LOOP_S = 1.85` was back-solved from the measured
 stability cliff, and at its a-priori value of 1.0 s the same criterion issues *unsound
-certificates* on two cells that leave the road on every run (F45). That study is
+certificates* on two cells that leave the road on every run. That study is
 therefore a **discovery test**. Its 12/12 measures whether a criterion of this shape
 exists and is sensitive; it does not measure prediction, and the paper says so.
 
@@ -96,8 +96,8 @@ Recorded now, before any result, so they are not discovered later and argued abo
 5. **Street lighting matches.** Both routes are 100 % within 30 m of a street light
    (Town06 median 14–15 m, Town04 12–13 m), so the night condition is lit in both.
 6. **Night sits closer to low sun than it does on Town04, and the axis stays ordered.**
-   Measured on the lap before any lap result existed (T06-F42,
-   `scripts/measure_lap_condition.py`, one pure-pursuit lap per condition with a clean
+   Measured on the lap before any lap result existed: one pure-pursuit lap per
+   condition with a clean
    server each, on the student's view):
 
    | | clear | fog | night | low sun |
@@ -106,7 +106,7 @@ Recorded now, before any result, so they are not discovered later and argued abo
    | σ | 0.0616 | 0.0610 | 0.1393 | 0.0389 |
    | p01 | 0.0641 | 0.1855 | 0.0002 | 0.0111 |
 
-   Low sun is 5.0 % from A-2's six-section re-derivation (0.1204), inside the 9 % T06-F20
+   Low sun is 5.0 % from the six-section re-derivation (0.1204), inside the 9 % that was
    accepted, so **the 5° angle holds on the lap**. The night − low sun gap is **0.0580**
    against 0.0921 on the six sections and 0.0958 on Town04: narrower, but the axis is
    ordered and every condition classifies as itself 100 % of the time, with margin on
@@ -201,7 +201,7 @@ causes** — it is not a finding until then.
 | `S_clear` | PASS / CERTIFIED | PASS / CERTIFIED | FAIL / NOT CERTIFIED | FAIL / NOT CERTIFIED |
 | `S_mixed` | PASS / CERTIFIED | PASS / CERTIFIED | PASS / CERTIFIED | PASS / CERTIFIED |
 
-`fog / S_clear` is PASS following Town04 disposition D-14 (the clear-only student is
+`fog / S_clear` is PASS following the highway study (the clear-only student is
 genuinely fog-robust on open road). The `clear` verify cells are **vacuous** by
 construction (zero-width box) and are excluded from every agreement count, as in Town04.
 
@@ -231,9 +231,9 @@ Town06 result calls it and refuses to run on a mismatch.
 
 ### Amendments
 
-#### A-1. Explore phase 2: the blind ordering rule R1 is SUSPENDED
+#### Amendment 1. Explore phase 2: the blind ordering rule is SUSPENDED
 
-**Date:** 2026-08-27. **Requested by:** Zach, after the first Town06 deployment test.
+Raised after the first arterial deployment test.
 
 **What changed.** R1 -- certificate committed before the corresponding closed-loop run --
 is suspended for the work that follows this amendment. Closed-loop simulation may be run
@@ -251,7 +251,7 @@ to known outcomes; while the object under study is the TRAINING PIPELINE rather 
 criterion, it costs iteration speed and protects nothing.
 
 **What it invalidates.** Nothing already recorded. The Town06 deployment test
-(certificate e0a461f, result T06-F16) was completed under R1 in full and stands as a
+(certificate e0a461f) was completed under the ordering rule in full and stands as a
 blind result. This amendment applies only to work done after it.
 
 **What it does NOT relax.** Standing rule 3 still holds: every closed-loop number is a
@@ -265,16 +265,16 @@ NO result produced while this amendment is in force may be presented as a blind
 prediction, in the paper or anywhere else. Results from this phase are exploratory by
 construction and must be labelled as such.
 
-#### A-2. The harness was wrong; all Town06 driven data is recollected from step 0
+#### Amendment 2. The harness was wrong; all arterial driven data is recollected from step 0
 
-**Date:** 2026-08-28. **Requested by:** Zach, after T06-F22.
+Raised after the harness defect was measured.
 
 **What changed.** Every Town06 artifact that was produced by DRIVING is discarded and
 recollected: base datasets, DAgger datasets, both teachers, both students, the oracle
 validation and the lap captures. Nothing that was driven under the old harness is reused.
 
 **Why.** Two defects in the simulator harness, measured open loop with the feedback cut
-(T06-F22, and the `carla-determinism` package's RULES.md D-1..D-11):
+(see the `carla-determinism` package's RULES.md):
 
 1. `vehicle.apply_control()` is fire-and-forget and races `world.tick()`. Synchronous
    mode synchronises the tick, not the command queue feeding it. Three repetitions of
@@ -298,30 +298,30 @@ and a Town06 result stays comparable to the published Town04 study. What changed
 instrument, not the measurement being made.
 
 **What it invalidates.** Every Town06 closed-loop number and every Town06 checkpoint
-produced before this date, including T06-F14's student-DAgger comparison and the
+produced before this point, including the student-DAgger comparison and the
 competence-gate results that motivated the capacity question in `TOWN06_STATUS.md`. That
 capacity question is **re-opened, not answered**: it was asked of students trained on data
 this amendment discards, so it must be re-asked of the rebuilt ones rather than carried
 over.
 
 **What it does NOT relax.** Standing rule 3 still holds and is now measured rather than
-assumed: bit-exact closed-loop replay is unreachable (D-7), so every closed-loop number
-remains a rate over at least 10 repetitions. A-1's suspension of R1 is unchanged and its
+assumed: bit-exact closed-loop replay is unreachable, so every closed-loop number
+remains a rate over at least 10 repetitions. Amendment 1's suspension is unchanged and its
 re-entry condition is unchanged.
 
 **Re-derivation required before the rebuild is trusted.** The low-sun angle for Town06
-(5 degrees, T06-F20) was chosen from rendered brightness measured on lap captures taken
+(5 degrees) was chosen from rendered brightness measured on lap captures taken
 under the old harness. It must be re-measured under the corrected one before the mixed
 policy is collected; if it moves, the condition definition moves with it and this
 amendment gains a clause.
 
-**Re-derivation RESULT, 2026-08-28: 5 degrees HOLDS; no clause needed.** Measured under
+**Re-derivation RESULT: 5 degrees HOLDS; no clause needed.** Measured under
 the corrected harness at all six section spawns (`scripts/verify_conditions_render.py
 --sections all`), on the network's own input:
 
 | | Town06, corrected harness | Town04 published | verdict |
 |---|---|---|---|
-| low sun, mean brightness | 0.1204 | 0.1117 | 7.8% away; T06-F20 accepted 9% |
+| low sun, mean brightness | 0.1204 | 0.1117 | 7.8% away; 9% was accepted |
 | night − low sun gap | 0.0921 | 0.0958 | axis stays ordered |
 | low sun, per-section CV | 2.65% | — | was 3.29% under the old harness |
 
@@ -334,9 +334,8 @@ crossing would have aborted every run of the affected condition part-way through
 unattended rebuild rather than at its start.
 
 
-#### A-3. The capture gate is a precondition of certification
+#### Amendment 3. The capture gate is a precondition of certification
 
-**Date:** 2026-08-30. **Requested by:** Zach.
 
 **What changed.** Section 4a names one precondition the certificate assumes but does not
 verify -- clear-weather competence -- and enforces it in code. There is a second, and the
@@ -363,7 +362,7 @@ it, because every one of them is computed downstream of the frames.
 **What it invalidates.** Section 9.5 says an amendment made after the corresponding result
 exists invalidates that result. Applied honestly:
 
-  * The certificate **superseded** on 2026-08-30 (`results/arterial/_superseded_20260830_1731/`)
+  * The superseded certificate (`results/arterial/_superseded_20260830_1731/`)
     was computed with no gate artifact and does **not** satisfy this amendment. It is
     already withdrawn and replaced; this records why it could not simply be reinstated.
   * The **current** Town06 certificate does satisfy it. The rebuild ran
@@ -384,9 +383,8 @@ unchanged. R1, R2 and R3 are untouched. The gate is deterministic given fixed ar
 and has nothing to tune, so it cannot launder a verdict.
 
 
-#### A-4. The LAP is the repetition, and three laps is the standard
+#### Amendment 4. The LAP is the repetition, and three laps is the standard
 
-**Date:** 2026-08-31. **Requested by:** Zach.
 
 **What changed.** Section 3 treated SECTIONS as repetitions -- "6 sections x 2 reps = 12
 runs per cell, over the >= 10 floor". A section is a distinct stretch of road, so twelve
@@ -413,7 +411,7 @@ purpose is to catch a bug, not to measure a probability.
 **Conditional on the harness, and the condition is not optional.** Three laps is
 defensible only while every one of these holds: a clean server restart before every run; a
 fresh vehicle and camera per run; one process per run; the determinism preflight green on
-each fresh server (D-1..D-6); one client per port; and the capture gate (A-3) passed
+each fresh server; one client per port; and the capture gate passed
 before certification. If one of them is not being enforced, the answer is to enforce it --
 **not to compensate with more laps.** A larger sample taken through a harness known to be
 wrong measures the harness, and it has the shape of a result, which is worse than having
@@ -436,7 +434,7 @@ it stays void until the cause is found and written down (standing rule 2).
 
 **Corrected the same day it was written.** The first version of this amendment said
 additional laps could serve as "a diagnostic for an identified instability" and that
-relaxing the harness "returns the count to ten". Zach rejected both: there is no fallback
+relaxing the harness "returns the count to ten". Both were rejected: there is no fallback
 to ten. Recorded rather than silently edited, because an amendment that quietly changes
 what it required is the failure this procedure exists to prevent.
 
@@ -446,9 +444,8 @@ unchanged and already carry a fresh server and vehicle each. Cells written befor
 process-per-run change do not satisfy this amendment and are superseded.
 
 
-#### A-5. The scored span is reported under BOTH scopes, because the lap exceeds SMAX_CAP
+#### Amendment 5. The scored span is reported under BOTH scopes, because the lap exceeds SMAX_CAP
 
-**Date:** 2026-09-03. **Requested by:** Zach.
 
 **What changed.** `build_study_route.py` declares, before any Town06 model existed:
 
@@ -488,15 +485,15 @@ which also writes a PNG per step and is therefore never on for a scored run. A c
 not be re-scored against a different span at all. It now always writes a trace, and the
 per-run artifacts and traces are tracked -- `runs/` in `.gitignore` had excluded all 24 of
 them, so the committed result carried eight aggregated cells and none of the evidence
-behind them, which is the margin A-4 requires reported and the step count R-SIM-6 requires
+behind them, which is the margin the protocol requires reported and the step count it requires
 checked.
 
 **What it invalidates.** Section 9.5: an amendment made after the corresponding result
 exists invalidates that result. Applied honestly:
 
   * The **first Town06 pass** (certificate `73415e5`, ledger `results/arterial/ledger`,
-    agreement 4/5, T06-F50) is **not withdrawn and not re-scored**. It is a correctly
-    executed blind deployment test of the scope it declared, and PROTOCOL R4 requires the
+    agreement 4/5) is **not withdrawn and not re-scored**. It is a correctly
+    executed blind deployment test of the scope it declared, and the protocol requires the
     original to stand in the record. What it lacks is a second scope to compare against and
     the traces to compute one.
   * It is **superseded as the reported result** by pass 2, which drives the same models

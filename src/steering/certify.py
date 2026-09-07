@@ -49,7 +49,7 @@ from auto_LiRPA import BoundedModule, BoundedTensor, PerturbationLpNorm
 LEDGER = REPO / "results" / "ledger"
 SHADOW_MASK = REPO / "results" / "calibration" / "shadow_mask.npy"
 # Prefer the frozen-physics sweep: the earlier one captured 0.29 m above ride height,
-# which biases depth-per-row and therefore the (MOR, k) fit. See D-04.
+# which biases depth-per-row and therefore the (MOR, k) fit.
 FOG_CAL = REPO / "results" / "calibration" / "fog_density_sweep_frozen.json"
 FOG_CAL_OLD = REPO / "results" / "calibration" / "fog_density_sweep.json"
 FOG_CAL_FALLBACK = REPO / "results" / "calibration" / "operating_point_fog.json"
@@ -538,7 +538,7 @@ def main():
     ap.add_argument("--night-ambient", default=None, metavar="LO,HI",
                     help="override the declared night ambient range. The pre-registered "
                          "axis is 0.02-0.50, which does NOT contain CARLA's measured 0.553 "
-                         "(F16), so verdicts over it say nothing about the condition closed "
+                         "so verdicts over it say nothing about the condition closed "
                          "loop actually drives.")
     ap.add_argument("--fog-k", default=None,
                     help="override the measured k interval, e.g. '0.6,1.25'")

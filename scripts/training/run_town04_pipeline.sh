@@ -10,7 +10,7 @@
 #   teachers           BC -> teacher DAgger, clear on clear only, mixed on all four
 #   students           clear (8,16,16)/fc32 = 5,152 ReLU; mixed (24,48,48)/fc96 = 15,456
 #                      -- the paper's own numbers; the mixed student TRIPLES the width
-#   student DAgger     part of Town04's procedure (unlike Town06, where T06-F14 removed it)
+#   student DAgger     part of the highway procedure (the arterial removed it)
 #
 # Everything is written under _v2 names and results/highway, because the
 # published artifacts are tracked in git under exactly the unsuffixed names and comparing
@@ -79,7 +79,7 @@ else say "SKIP  train_clear_bc"; fi
 if ! ls "$CK_DIR"/teacher_clear_v2_dagger_r*.pth >/dev/null 2>&1; then
   # --min-rounds: keep collecting after the teacher meets budget. Without it the gate
   # stops at the first passing round and selects a teacher that DRIVES but does not
-  # DISTIL -- measured in T04-R3/R4, where the first-passing teacher drove eastbound at
+  # DISTIL -- measured: the first-passing teacher drove eastbound at
   # 0.48 ft and its student departed the same curve at 30 ft, and six more rounds fixed
   # the student at the published architecture with nothing else changed.
   run dagger_clear python3 scripts/training/dagger.py --base conditions_v2 --init teacher_clear_v2_bc \
@@ -123,7 +123,7 @@ else say "SKIP  distill_mixed"; fi
 
 # ------------------------------------------------------------------ student DAgger
 # Town04's procedure INCLUDES this (README "Reproduce"; the archived dagger_student_clear
-# and dagger_student_w3 round directories). Town06 removed it (T06-F14) and did not need
+# and dagger_student_w3 round directories). Town06 removed it and did not need
 # it; Town04 is being reproduced as published, so it runs.
 if ! ls "$CK_DIR"/S_clear_84x28_v2_dagger_r*.pth >/dev/null 2>&1; then
   run dagger_student_clear python3 scripts/training/dagger_student.py --student S_clear_84x28_v2 \

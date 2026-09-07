@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Report a ledger at LAP granularity (PROTOCOL A-4), with margins.
+"""Report a ledger at LAP granularity, with margins.
 
 A lap is one traversal of all the unique scored road -- Town04's is eastbound +
 westbound, Town06's is the loop -- and a lap FAILS if any scored span departs. The
@@ -41,7 +41,7 @@ def main():
         print(f"no per-run artifacts in {led/'runs'}", file=sys.stderr)
         return 2
 
-    print(f"\n{C.STUDY_MAP} LEDGER -- LAPS (PROTOCOL A-4)")
+    print(f"\n{C.STUDY_MAP} LEDGER -- BY LAP")
     print("  a lap is one traversal of all the scored road, and fails if any part of it "
           "departs")
     print(f"  budget {budget_ft:.2f} ft;  standard is {STANDARD_LAPS} laps\n")
@@ -70,7 +70,7 @@ def main():
         first_same = (len(first) == 1) and (("FAIL" if not first.pop() else "PASS") == verdict)
         flag = ""
         if not agree:
-            flag = "  <-- LAPS DISAGREE: cell is VOID, find the bug (A-4)"
+            flag = "  <-- LAPS DISAGREE: cell is VOID, find the bug"
         elif 0 <= margin < 0.10:
             flag = "  <-- NO MARGIN: a finding in itself"
         print(f"  {cond:9s} {stu:26s} {fails:6d} of {n:2d} {verdict:8s} "

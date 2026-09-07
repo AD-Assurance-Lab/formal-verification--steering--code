@@ -120,7 +120,7 @@ class ContrastPerturbation(nn.Module):
 
     This is the correct disturbance model for an **auto-exposed** camera, which is what
     an AV actually runs. Auto-exposure holds the recorded mean roughly constant (measured
-    in V2_FINDINGS F16: road brightness across bright daylight and headlight-lit night
+    measured: road brightness across bright daylight and headlight-lit night
     varies by only 1.77x, less than within-set scene variation), so the weather's effect
     that survives to the network is a change in *contrast about the mean*, not an
     absolute brightness shift. Absolute airlight cannot be recovered from auto-exposed
@@ -157,7 +157,8 @@ class ContrastPerturbation(nn.Module):
 class FogVeilPerturbation(nn.Module):
     """Depth-dependent Koschmieder veiling: x' = clamp(A + t_row * (x0 - A)).
 
-    This is the term F19 showed we cannot do without. Unlike a global contrast map,
+    This is the term the measurements showed we cannot do without. Unlike a global
+    contrast map,
     which is invertible and therefore preserves all information, veiling **destroys**
     it: as t -> 0 in the far field, distant content is replaced by the airlight A and
     lane markings at range cease to exist. That is the dominant real hazard of fog, and

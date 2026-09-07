@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """BOUND the sustained steering bias over the whole declared disturbance interval.
 
-F34 established the criterion by MEASURING the persistent bias at the rendered condition.
+The criterion was established by MEASURING the persistent bias at the rendered condition.
 This bounds it instead, over every intensity in the declared range, which is the claim
 scenario-based testing cannot make:
 
@@ -32,7 +32,7 @@ VERDICTS -- and read this, because one of the two names is doing more work than 
                closed-loop failure without proving it. Turning one into a genuine
                falsification means exhibiting a witness s* whose sampled lap-mean deviation
                exceeds tolerance, which this repo can do cheaply and does not yet do.
-               Two independent reviewers raised this; see F45.
+               Two independent reviewers raised this.
 
 Interpolating the stored 84x28 projections is exact rather than approximate: `_project` is
 linear and a convex combination of two valid images needs no clamp (measured agreement
@@ -106,7 +106,7 @@ def baseline_for(cond_path, fallback):
     exposure, a weather field the previous run left set -- inside (x_cond - x_clear),
     where the certificate bounds it as if it were weather.
 
-    Measured, on the one capture that carries both (F43): the two eastbound `clear`
+    Measured, on the one capture that carries both: the two eastbound `clear`
     captures differ by a uniform +0.049 per pixel at identical poses, which is 83% of
     the fog disturbance itself and inverts its sign (fog reads +0.015 against the
     foreign baseline, -0.034 against its own, versus -0.035 westbound). Certifying

@@ -22,11 +22,11 @@ import numpy as np
 import cv2
 import torch
 
-# E2 knob. A float; 0.0 reproduces the plain-MSE objective exactly. Read once at import
-# so a run's objective cannot change halfway through, and recorded by the E2 driver.
+# Tail-sensitive loss knob. A float; 0.0 reproduces the plain-MSE objective exactly.
+# Read once at import so a run's objective cannot change halfway through.
 TAIL_ALPHA = float(os.environ.get("DISTILL_TAIL_ALPHA", "0") or 0)
 
-# E6 knob. Curvature-WEIGHTED loss: each frame's gradient contribution is scaled by how
+# Curvature-weighted loss knob: each frame's gradient contribution is scaled by how
 # far its target is from straight, leaving the input distribution untouched. This is the
 # arm the balancing refutation in config.TOWN06_STUDENTS does NOT cover -- that refutation
 # is about DOWNSAMPLING straight frames, and its argument ("on a route that genuinely IS
@@ -34,7 +34,7 @@ TAIL_ALPHA = float(os.environ.get("DISTILL_TAIL_ALPHA", "0") or 0)
 # not meet") is sound and simply does not apply to reweighting. 0.0 = plain MSE.
 CURV_BETA = float(os.environ.get("DISTILL_CURV_BETA", "0") or 0)
 
-# Q6 knobs. DISTILL_SEED seeds torch, numpy and python once, after which the student's
+# Seeding knobs. DISTILL_SEED seeds torch, numpy and python once, after which the student's
 # INITIALISATION and the DataLoader's minibatch ORDER both draw from the same global torch
 # stream -- so "the seed" is two variables wearing one name, and the dispersion this study
 # keeps paying for (fog p99 CV 42.6%, r ~ 0 between objectives at the same seed) cannot be
@@ -188,13 +188,13 @@ def distill_student(in_w, in_h, out_name, teacher_name="steering_dagger_r02",
                     device=None, quiet=False, balance=False, augment=0.0):
     device = device or require_cuda()
     # DISTILL_SEED exposes what was a hardcoded 0. Seed is not a tuning knob here -- it
-    # is the variable T06-F14 measured as flipping a student from 4/6 to 6/6 on a clear
+    # is the variable measured as flipping a student from 4/6 to 6/6 on a clear
     # gate with the architecture and data held fixed. Leaving it hardcoded makes that
     # variance invisible: one draw is taken, and whether it was a good one is unknowable
     # without re-drawing. Default 0.
     #
     # NOT "so every existing result reproduces exactly", which this comment used to claim.
-    # MEASURED 2026-09-04: three draws of seed 0 on identical data and objective gave fog
+    # MEASURED: three draws of seed 0 on identical data and objective gave fog
     # p99 |err| of 0.1027, 0.1427 and 0.1036. The seed alone does not pin the draw --
     # see DISTILL_DETERMINISTIC below, which does.
     _seed = int(os.environ.get("DISTILL_SEED", "0"))
@@ -258,7 +258,7 @@ def distill_student(in_w, in_h, out_name, teacher_name="steering_dagger_r02",
             print(f"balance: {n0} -> {len(tr_idx)} training frames "
                   f"(near-straight downsampled)")
 
-    # Q6b: shrink the TRAINING pool to ask whether the dispersion is a sample-size effect
+    # Shrink the TRAINING pool to ask whether the dispersion is a sample-size effect
     # or intrinsic to the objective. Validation is untouched, so the metric keeps meaning
     # the same thing across fractions -- subsampling val too would move the yardstick with
     # the knob, which is the mistake the augment comment below is guarding against.
@@ -290,7 +290,7 @@ def distill_student(in_w, in_h, out_name, teacher_name="steering_dagger_r02",
     if SPLIT_SEEDS:
         torch.manual_seed(int(INIT_SEED) if INIT_SEED is not None else _seed)
         if not quiet:
-            print(f"  Q6: init seed {INIT_SEED if INIT_SEED is not None else _seed}, "
+            print(f"  init seed {INIT_SEED if INIT_SEED is not None else _seed}, "
                   f"data seed {DATA_SEED if DATA_SEED is not None else _seed}", flush=True)
     student = StudentNet(in_h, in_w, channels=channels, fc=fc).to(device)
     if init_from:  # warm-start (fine-tune) from a prior student; stabilizes multi-condition re-distill
@@ -305,7 +305,7 @@ def distill_student(in_w, in_h, out_name, teacher_name="steering_dagger_r02",
     opt = torch.optim.Adam(student.parameters(), lr=lr, weight_decay=1e-5)
     sched = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, factor=0.5, patience=8)
 
-    # Fixed |steer| scale for the E6 weighting, over the TRAINING targets only.
+    # Fixed |steer| scale for the curvature weighting, over the TRAINING targets only.
     _y_abs_mean = 1.0
     if CURV_BETA:
         _ys = torch.cat([yy.abs().flatten() for _, yy in tl])
@@ -321,7 +321,7 @@ def distill_student(in_w, in_h, out_name, teacher_name="steering_dagger_r02",
         for x, y in tl:
             x, y = x.to(device), y.to(device)
             opt.zero_grad()
-            # E6: CURVATURE-WEIGHTED LOSS, off by default. Scale is fixed from the whole
+            # CURVATURE-WEIGHTED LOSS, off by default. Scale is fixed from the whole
             # training set (_y_abs_mean) rather than per batch, so a batch that happens to
             # be all-straight does not silently rescale the objective.
             if CURV_BETA:
@@ -329,15 +329,15 @@ def distill_student(in_w, in_h, out_name, teacher_name="steering_dagger_r02",
                 loss = (w * (student(x) - y).pow(2)).mean()
                 loss.backward(); opt.step()
                 continue
-            # E2: TAIL-SENSITIVE LOSS, off by default.
+            # TAIL-SENSITIVE LOSS, off by default.
             #
-            # T06-F48 measured that fog's MEAN distillation error is BETTER than night's
+            # Measured: fog's MEAN distillation error is BETTER than night's
             # (RMSE 0.0272 against 0.0333) while fog's p99 error is 0.121 -- ten times the
             # steering tolerance. Average-case fine, tail catastrophic. Plain MSE fits the
             # bulk and is blind to exactly that tail.
             #
             # DISTILL_TAIL_ALPHA=0 (the default) leaves the objective bit-identical to
-            # every student already distilled in this repo, so passes 1-3 and E1 are
+            # every student already distilled in this repo, so the shipped students are
             # unaffected and no checkpoint needs re-deriving to compare against.
             if TAIL_ALPHA:
                 err = (student(x) - y).abs()

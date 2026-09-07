@@ -4,10 +4,10 @@
 # Order matters and is fixed by PROTOCOL.md:
 #   expert -> BC data -> teacher -> DAgger teacher -> distil student -> DAgger student
 # for BOTH the clear-only and mixed policies. Certification happens AFTER this, and
-# the certificate is committed BEFORE any scored closed-loop run (PROTOCOL R1).
+# the certificate is committed BEFORE any scored closed-loop run.
 #
 # This script deliberately does NOT run any scored ledger cell. Training telemetry is
-# not a scored result (PROTOCOL section 5), but the boundary is only safe if the two
+# not a scored result (the protocol), but the boundary is only safe if the two
 # never live in the same script.
 #
 # Each stage is skipped if its output already exists, so the pipeline is resumable
@@ -30,13 +30,13 @@ DATA=$REPO/data
 
 say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/pipeline.log"; }
 
-# PROTOCOL gate: refuse to build anything if the frozen constants have moved.
+# the protocol gate: refuse to build anything if the frozen constants have moved.
 python3 -m steering.protocol_lock >/dev/null || {
-    say "FATAL: PROTOCOL lock mismatch -- refusing to run"; exit 1; }
-say "PROTOCOL lock OK; STUDY_MAP=$STUDY_MAP CARLA_PORT=$CARLA_PORT"
+    say "FATAL: the protocol lock mismatch -- refusing to run"; exit 1; }
+say "the protocol lock OK; STUDY_MAP=$STUDY_MAP CARLA_PORT=$CARLA_PORT"
 
-# DETERMINISM gate, alongside the PROTOCOL gate and for the same reason: a campaign
-# built on a non-compliant simulator is not slightly worse, it is unusable (D-11), and
+# DETERMINISM gate, alongside the the protocol gate and for the same reason: a campaign
+# built on a non-compliant simulator is not slightly worse, it is unusable, and
 # nothing in the resulting data reveals which server produced it.
 python3 -m carla_determinism --lock-only >/dev/null || {
     say "FATAL: carla-determinism rules lock mismatch -- refusing to run"; exit 1; }
@@ -60,14 +60,14 @@ carla_up() {
 # losing the campaign to it.
 carla_restart() {
     # DELEGATE. This used to be a second launcher written out inline, and it drifted:
-    # it once lacked -notexturestreaming (D-3), which would have relaunched a
+    # it once lacked -notexturestreaming, which would have relaunched a
     # non-compliant server part-way through an unattended multi-hour campaign and made
     # every stage after the first restart quietly noisier than the ones before it.
     #
     # Adding the flag back fixed that instance and left the class of defect in place. A
     # copy of the launch sequence cannot inherit anything added to the real one, and
     # something WAS added: scripts/simulator/carla_launch.sh now checks render photometry on every
-    # fresh server (T06-F42, where a 15% render drift went unnoticed for half a day and
+    # fresh server (where a 15% render drift went unnoticed for half a day and
     # both teachers trained on it). This copy would have skipped that check for every
     # restart the unattended driver makes -- which is most of them.
     say "restarting CARLA on port $CARLA_PORT"
@@ -81,7 +81,7 @@ carla_restart() {
 carla_up 12 || carla_restart || exit 1
 
 # Now that a server exists, check HOW it was launched. carla_up only proves something is
-# listening; D-3 and D-5 are launch flags and invisible over RPC, so a server someone
+# listening; the texture-streaming flag and the launch flags are launch flags and invisible over RPC, so a server someone
 # started by hand answers perfectly and quietly poisons the whole campaign.
 python3 -m carla_determinism --port "$CARLA_PORT" >>"$LOG_DIR/pipeline.log" 2>&1 || {
     say "FATAL: the server on $CARLA_PORT violates the determinism rules."
@@ -98,7 +98,7 @@ run() {   # run <logname> <cmd...>  -- one retry after a CARLA restart
     for attempt in 1 2; do
         say "START $name (attempt $attempt)"
         # Truncate so the gate reads THIS attempt, not a previous one -- but keep the
-        # previous attempt first. Truncating outright destroyed the evidence twice today:
+        # previous attempt first. Truncating outright destroyed the evidence twice:
         # a stage failed, the retry cleared the log, and the only record of why was gone
         # before it could be read. Diagnosis is not a luxury when a stage fails silently.
         if [ -s "$LOG_DIR/$name.log" ]; then
@@ -192,7 +192,7 @@ teacher_gate() {   # teacher_gate <logname>
     # the previous round's.
     #
     # So the loose gate's failure message was being read before the strict gate's pass.
-    # Measured 2026-09-02: teacher_clear_t06lap_dagger_r03 passed 3/3 laps at 44-56% of
+    #: teacher_clear_t06lap_dagger_r03 passed 3/3 laps at 44-56% of
     # budget, the driver logged "clear teacher PASSED", and this function then declared
     # FATAL and refused to distil from it. Commit e2ad7e4 fixed exactly this precedence
     # for the PASS marker and left the FAIL marker pointing the other way.
@@ -228,13 +228,12 @@ teacher_gate() {   # teacher_gate <logname>
 # HOW MANY LAPS EACH POLICY'S BASE SET SHOULD HAVE, per condition.
 #
 # THREE. Not a tuning knob: three laps per condition per model is the study's declared
-# sample, the same unit PROTOCOL A-4 makes the repetition everywhere else.
+# sample, the same unit the protocol's lap rule makes the repetition everywhere else.
 #
 # Recorded because it was briefly raised to 8 on the theory that the students' full-lap
-# failures (T06-F44) were a data-volume problem -- T06-F28's "the capacity crisis was the
-# data" read as "collect more". It is not what F28 measured: F28 changed the HARNESS the
-# data came from, not the number of laps. Zach: "we only need 3 laps per condition, per
-# model." The levers for a student that cannot drive are its width and its DAgger rounds,
+# failures were a data-volume problem -- "the capacity crisis was the data" read as
+# "collect more". That is not what was measured: the HARNESS the data came from changed,
+# not the number of laps. Three laps per condition per model is the declared sample. The levers for a student that cannot drive are its width and its DAgger rounds,
 # both of which are below.
 #
 # Declared here rather than buried in a flag so a reader can see what sample each policy
@@ -379,7 +378,7 @@ for ROW in "${ROWS[@]}"; do
 done
 
 # ---------------------------------------------------------- student DAgger
-# RESTORED. T06-F25: this stage was removed on T06-F14, and A-2 discarded T06-F14's data
+# this stage was removed on evidence whose data was later discarded
 # outright. The same finding also made both students the same width, which has since been
 # corrected back to Town04's shape (mixed 32,112 ReLU against clear's 21,408) -- this is
 # the second half of that correction, and it was left undone.
@@ -387,7 +386,7 @@ done
 # Town04 is the reference this deployment test is calibrated against and it runs student
 # DAgger for both students. Running it here restores the procedural match. If it does turn
 # out to hurt at 168x28, the competence gate below and the three-lap ledger will show it
-# ON THE CORRECTED HARNESS, which is the measurement T06-F25 asks for and the one nobody
+# ON THE CORRECTED HARNESS, which is the measurement wanted and the one nobody
 # has. Removing a stage on discarded evidence and keeping it removed is not neutral.
 for ROW in "${ROWS[@]}"; do
     read -r NM CK CH FC RELU IN_W IN_H <<<"$ROW"
@@ -401,7 +400,7 @@ for ROW in "${ROWS[@]}"; do
     # same teardown TimeoutException the teacher stage moved to a process boundary to
     # escape. With the old guard (`ls <ck>_dagger_r*.pth`) that crash left 1 of 3 rounds
     # done and the stage was SKIPPED as complete on every later run, which is verbatim
-    # the defect the teacher stage fixed. Measured here on 2026-09-02, round 0 of the
+    # the defect the teacher stage fixed. Measured here, round 0 of the
     # clear student.
     SLOG="$LOG_DIR/dagger_student_${CK}.log"
     if ! grep -q "\*\*\* STUDENT DAGGER COMPLETE" "$SLOG" 2>/dev/null; then
@@ -416,7 +415,7 @@ for ROW in "${ROWS[@]}"; do
 done
 
 # ---------------------------------------------------------- why it was removed
-# T06-F14 removed this stage. It ran student DAgger until the students drove, which was
+# This stage was removed. It ran student DAgger until the students drove, which was
 # the right call at 84x28 -- the distilled student held 1 of 6 sections at 16.50 ft, so
 # DAgger was rescuing an incompetent policy. At 168x28 distillation alone is already
 # competent and DAgger only takes capability away. Measured, 3 reps, clear weather,
@@ -440,5 +439,5 @@ run competence python3 "$REPO/scripts/training/check_student_competence.py" --re
 say "PIPELINE COMPLETE -- students built and competent in clear weather."
 say "NEXT: bash scripts/drive/finish_town06_deployment.sh"
 say "  It captures at the students' resolution, stops CARLA, certifies blind, COMMITS"
-say "  the certificate, and only then drives the scored ledger. That order is PROTOCOL"
+say "  the certificate, and only then drives the scored ledger. That order is the protocol"
 say "  R1 and check_order_town06.py enforces it independently."

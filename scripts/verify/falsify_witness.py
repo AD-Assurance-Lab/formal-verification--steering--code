@@ -9,7 +9,7 @@ emits when the bound does not fit inside the corridor:
                NOT CERTIFIED -- the bound does not decide ... Turning one into a genuine
                falsification means exhibiting a witness s* whose sampled lap-mean
                deviation exceeds tolerance, which this repo can do cheaply and does not
-               yet do. Two independent reviewers raised this; see F45.
+               yet do. Two independent reviewers raised this.
 
 This is that. It costs about a minute on one GPU and it is the difference between "we
 could not prove this policy safe" and "here is the intensity at which it is unsafe".
@@ -26,7 +26,7 @@ member of the declared family, exhibited, whose sustained bias exceeds the corri
 WHAT IT IS NOT. It cannot certify. Dense sampling is a lower bound on the true worst
 case, so finding nothing means "no witness found", never "safe" -- the certificate is
 what makes the positive claim. It also carries no truth table and never reads a ledger,
-so PROTOCOL R2 is untouched: it cannot print an agreement column because it has nothing
+so the protocol R2 is untouched: it cannot print an agreement column because it has nothing
 to compare against.
 
 THE TWO READINGS OF THE FAMILY, and this is why the tool matters. The certifier bounds,

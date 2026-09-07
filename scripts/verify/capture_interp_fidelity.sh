@@ -37,7 +37,7 @@ mkdir -p "$DIAG" results/arterial_logs
 cap () {   # cap <out.npz> <conds> <direction> <env assignments...>
     local out="$1" conds="$2" dir="$3"; shift 3
     if [ -f "$DIAG/$out" ]; then echo "  $out exists, skipping"; return 0; fi
-    # R-SIM-1: RESTART BEFORE EVERY MEASUREMENT, not when something looks wrong.
+    # restart before every measurement run: RESTART BEFORE EVERY MEASUREMENT, not when something looks wrong.
     #
     # This driver did not restart at all, which is how 78 captures were about to be taken
     # on one ageing server (it leaks ~10.5 GiB over 11 h) -- and worse, a killed run leaves

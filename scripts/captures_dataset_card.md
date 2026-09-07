@@ -24,7 +24,12 @@ a simulator**.
 | `captures/highway/` | 2,988 m both directions, Town04 | clear, fog, night, low sun | 1,492 each | 84×28 |
 
 Each `.npz` holds one condition along one route with the pose track it was captured at.
-641 MB in total.
+
+`teachers/` holds the four networks the shipped students were distilled from. They are
+needed only to re-distil a student without re-running data aggregation, so they live here
+rather than in every clone of the code: `python3 scripts/fetch_captures.py --teachers`.
+
+645 MB in total.
 
 ## Using it
 

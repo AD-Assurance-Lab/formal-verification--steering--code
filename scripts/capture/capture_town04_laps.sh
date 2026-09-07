@@ -25,7 +25,7 @@ LOGD=$REPO/results/highway/logs/capture
 mkdir -p "$OUTDIR" "$LOGD"
 POSES=${POSES:-1600}          # matches the published captures' pose count
 
-python3 -m steering.protocol_lock >/dev/null || { echo "PROTOCOL lock mismatch"; exit 1; }
+python3 -m steering.protocol_lock >/dev/null || { echo "the protocol lock mismatch"; exit 1; }
 
 for d in eastbound westbound; do
   for c in clear fog night shadows; do

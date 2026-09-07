@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Capture steering response over a (lateral offset x heading error) grid.
 
-WHY YAW HAD TO BE ADDED (F23). Every earlier capture placed the vehicle at lateral offsets
+WHY YAW HAD TO BE ADDED. Every earlier capture placed the vehicle at lateral offsets
 with its heading ALIGNED to the path, so the policy's response to heading error was never
 observed. Closing the loop on offset feedback alone makes it an undamped oscillator, and
 forward Euler then puts the discrete spectral radius above one:
@@ -112,7 +112,7 @@ def main():
     #   1. The reason already given below and never applied to Town04 -- the route is the
     #      same geometry the closed-loop runs follow, so capture poses and driving agree
     #      by construction rather than by coincidence.
-    #   2. `live_pairs` is a captured DATASET. Under D-11 the Town04 redo may not reuse
+    #   2. `live_pairs` is a captured DATASET. Under data collected under a violating harness is not reusable the Town04 redo may not reuse
     #      data collected on the violating harness, and it was archived; making the
     #      verification captures depend on it would have reintroduced exactly the coupling
     #      the redo exists to remove. The routes are geometry, are tracked in git, and are

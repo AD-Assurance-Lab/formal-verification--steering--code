@@ -65,7 +65,7 @@ def main():
         # end are 171 m apart), so there is no wrap to absorb it.
         n_route = len(route)
         for step in range(C.steps_for(C.SECTIONS[0]) + 20):
-            # Zach watches these run, so the view has to follow the car -- every other
+            # These runs are watched, so the view has to follow the car -- every other
             # driving loop does this and this one did not, which is why the spectator
             # sat still through the whole teacher gate.
             env.update_spectator(world, vehicle)

@@ -1,6 +1,6 @@
 """A driving loop must stop at the end of an OPEN route, and stop BEFORE recording.
 
-T06-F43: every collected lap ended with a garbage expert label. The lap-end test in
+Every collected lap once ended with a garbage expert label. The lap-end test in
 every driving loop is "leave the start, then return to it", which cannot fire when the
 start and the end are 174 m apart -- so the loop ran to its step budget, drove past the
 last vertex, and recorded a label produced by a lookahead clamped onto that vertex.

@@ -39,7 +39,7 @@ WHAT THIS IS NOT
 Not a scored ledger cell. It is a single evaluation pass per section in CLEAR weather,
 which is the s=0 anchor of the disturbance family, not one of the disturbance
 conditions. It reveals nothing about fog, night or low sun, so it does not weaken the
-blind protocol (PROTOCOL R3, section 5). It is the same kind of precondition check as
+blind protocol (the protocol R3, section 5). It is the same kind of precondition check as
 the teacher gate.
 
     STUDY_MAP=Town06 python3 scripts/training/check_student_competence.py
@@ -83,14 +83,14 @@ OUT = REPO / "results" / "arterial" / "competence_clear.json"
 # and drifted apart.
 # MAP-AWARE. This hardcoded C.TOWN06_STUDENTS, so running the gate on Town04 would have
 # checked Town06's checkpoints at Town06's resolution -- the same class of defect as the
-# certifier's duplicated registry (T04-R5). One registry, read from config.
+# certifier's duplicated registry. One registry, read from config.
 _REG = C.TOWN06_STUDENTS if C.STUDY_MAP == "Town06" else C.STUDENTS
 STUDENTS = tuple((nm, ck, ",".join(str(c) for c in ch), fc)
                  for nm, ck, ch, fc in _REG)
 
 
 def restart_carla():
-    """R-SIM-1: a fresh server before every measurement run.
+    """restart before every measurement run: a fresh server before every measurement run.
 
     This gate drives 36 times (2 students x 3 reps x 6 sections) and used to do it all
     against ONE long-lived CARLA. Measured cost of that: mixed/s00 scored 42.54 ft inside
@@ -104,7 +104,7 @@ def restart_carla():
     # launches CARLA with setsid; that child inherits the capture pipe and never closes
     # it, so subprocess.run waits on EOF forever no matter what the script itself does.
     # Measured: the same script takes 57 s standalone and hangs indefinitely under
-    # capture_output=True. This cost a 12h52m hang overnight and six timed-out restarts
+    # capture_output=True. This cost a 12h52m hang and six timed-out restarts
     # the next morning, whose drives then ran on an un-restarted server and produced
     # numbers that looked like student failures.
     # Redirect to a log file instead, so no pipe is held open.
@@ -179,7 +179,7 @@ def main():
             report[name] = dict(error="checkpoint missing")
             all_ok = False
             continue
-        # Repetitions, per PROTOCOL A-4. A section must hold on EVERY one.
+        # Repetitions, per the protocol's lap rule. A section must hold on EVERY one.
         per_rep, harness_faults = [], []
         for _ in range(args.reps):
             out = run_eval(ckpt, channels, fc)
@@ -194,7 +194,7 @@ def main():
                 # models. Show what actually happened.
                 #
                 # NAME THE HARNESS FAULT WHEN IT IS ONE. evaluate.py asserts the rendered
-                # condition from a frame at the spawn pose (R-SIM-4) and RAISES on a
+                # condition from a frame at the spawn pose and RAISES on a
                 # mismatch. Clear frames on this lap sit near condition_signature's
                 # fog/clear boundary, so that assert can fire on a run that is doing
                 # exactly what was asked -- and "no per-section result" reads as an
@@ -212,7 +212,8 @@ def main():
         #
         # per_rep silently dropped crashed reps, and everything below aggregates over
         # whatever survived -- so two aborted runs left the gate passing a student on ONE
-        # lap while recording reps=1, which nothing downstream reads. A-4 is explicit that
+        # lap while recording reps=1, which nothing downstream reads. The protocol is explicit
+    # that
         # three laps is conditional on the harness holding; when it does not hold the
         # answer is to fix it, not to score the remainder.
         if len(per_rep) != args.reps:

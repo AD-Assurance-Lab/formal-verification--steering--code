@@ -1,6 +1,6 @@
 """One CARLA client at a time, per port.
 
-WHY THIS EXISTS. On 2026-08-11 23:16 a closed-loop ledger cell was running on port 3000
+WHY THIS EXISTS. A closed-loop ledger cell was once running on port 3000
 while I opened a second client on the same port to run a photometric comparison. Both were
 in synchronous mode, so their `world.tick()` calls interleaved, and the second client also
 set the weather and teleported a vehicle into the running scene. The cell's rep 2 departed
@@ -36,7 +36,7 @@ LOCK_DIR = Path(os.environ.get("CARLA_LOCK_DIR",
 # CARLA binds rpc-port, rpc-port+1 AND rpc-port+2. A server on 3000 owns 3000-3002, so a
 # second server started on 3001 or 3002 silently conflicts and never becomes ready, while a
 # client "connecting to 3001" reaches the FIRST server's streaming port. Space concurrent
-# servers by at least 3. Measured the hard way on 2026-08-12.
+# servers by at least 3. Measured the hard way.
 PORT_SPAN = 3
 
 

@@ -46,10 +46,16 @@ claim vacuous.
 on a laptop:
 
 ```bash
+git clone --depth 1 https://github.com/AD-Assurance-Lab/formal-verification--steering--code
+cd formal-verification--steering--code
 pip install -e .
 python3 scripts/fetch_captures.py            # 641 MB, every file digest-checked
 STUDY_MAP=Town06 python3 scripts/verify/certify_town06.py --out /tmp/cert.json
 ```
+
+`--depth 1` gets the 13 MB you need. A full clone also pulls the study's history, which
+is 128 MB and is where the research record lives — worth having if you want to read how
+the work happened, and not otherwise.
 
 Re-driving the closed loop needs CARLA 0.9.16 and a GPU; rebuilding the networks takes
 days. All three levels, and exactly what reproduces to what precision, are in
@@ -65,7 +71,7 @@ days. All three levels, and exactly what reproduces to what precision, are in
 | `scripts/drive/` | the closed-loop ledger: drive the cells, aggregate, report |
 | `scripts/simulator/` | launch, restart and health-check CARLA |
 | `scripts/training/` | build the networks: collect, train, DAgger, distil, gate |
-| `checkpoints/` | the eight shipped networks, 8.8 MB, so nothing has to be retrained |
+| `checkpoints/` | the four shipped policies, so nothing has to be retrained |
 | `results/highway`, `results/arterial` | every artifact behind a reported number, including each individual lap |
 | `routes/` | the two pre-registered routes, one per road |
 | `PROTOCOL.md` | the frozen study protocol, hash-locked against `PROTOCOL.lock` |

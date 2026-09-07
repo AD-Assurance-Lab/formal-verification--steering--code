@@ -167,7 +167,7 @@ def connect_with_retries(attempts=4, pause=20):
 
     A freshly launched CARLA answers a readiness probe well before it will survive a
     reload_world(), and a client that has just been aborted can leave the previous world
-    in synchronous mode with nothing ticking (R-SIM-2), which makes the next reload hang
+    in synchronous mode with nothing ticking, which makes the next reload hang
     until the 120 s client timeout. Both were measured here, and both cost a whole run
     apiece. Retry rather than lose the round; fail loudly rather than continue on a
     server whose state is unknown.
@@ -212,7 +212,7 @@ def main():
     # not leave.
     ap.add_argument("--warm-start", action="store_true",
                     help="re-distil each round from the previous student instead of from "
-                         "scratch (measured harmful on Town06; see T06-F50)")
+                         "scratch (measured harmful on the arterial)")
     ap.add_argument("--lr", type=float, default=5e-4,
                     help="LR for warm-start re-distill (gentle fine-tune from prior student)")
     ap.add_argument("--max-steps", type=int, default=2000)
@@ -297,7 +297,7 @@ def main():
         # many rounds wherever it resumes from.
         for r_local in range(args.rounds):
             r = r_local + _offset
-            # R-SIM-1: RESTART CARLA BEFORE EVERY ROUND.
+            # restart before every measurement run: RESTART CARLA BEFORE EVERY ROUND.
             #
             # This loop drives 2 x len(weathers) times per round and retrains in between,
             # holding ONE server for the whole run. A server degrades silently under that
@@ -367,7 +367,7 @@ def main():
                 original = env.enable_sync_mode(world)
                 vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
                 camera, img_queue = env.spawn_camera(world, vehicle)
-                print(f"  [R-SIM-1] CARLA restarted before round {r}", flush=True)
+                print(f"  [restart before every measurement run] CARLA restarted before round {r}", flush=True)
             round_dir = os.path.join(dagger_student_dir, f"round{r:02d}")
             print(f"\n{'#'*64}\n# student DAgger round {r} — policy '{current}'\n{'#'*64}", flush=True)
             rows, passed = [], True

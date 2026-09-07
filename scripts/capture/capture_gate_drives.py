@@ -49,7 +49,7 @@ def main():
     # and fell straight through into the body -- which RESTARTS CARLA AND DRIVES LAPS.
     # audit_repo.py probes every entry point with `--help` to prove it imports cleanly,
     # so running the audit while a server happened to be up made the audit itself
-    # restart the simulator and start driving, violating R-SIM-3 (one client per port)
+    # restart the simulator and start driving, violating one client per port (one client per port)
     # from inside the tool whose job is to check the repo is sound.
     #
     # It passed for months because the audit was run with no server listening: the
@@ -76,7 +76,7 @@ def main():
             print(f"  {nm}: MISSING checkpoint {ck}.pth -- cannot drive", flush=True)
             rc_all = 1
             continue
-        # R-SIM-1: ONE RESTART PER DRIVE, not one per script.
+        # restart before every measurement run: ONE RESTART PER DRIVE, not one per script.
         #
         # This restarted once and then drove every section on that server -- 12 drives on
         # an ageing simulator, which is the exposure the rule exists to remove. A degraded
