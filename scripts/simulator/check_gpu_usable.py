@@ -3,7 +3,7 @@
 
 nvidia-smi can report a perfectly healthy card while CUDA context creation fails:
 nvidia_uvm wedges after many rapid GPU-heavy process restarts, which is exactly what
-R-SIM-1 does now that it restarts before EVERY run. Measured 2026-09-01 after a few
+restart before every measurement run does now that it restarts before EVERY run. after a few
 hundred restarts -- card healthy, torch.cuda.is_available() False.
 
 Catching it at launch turns "discover it 40 minutes into a training run" into "refuse to

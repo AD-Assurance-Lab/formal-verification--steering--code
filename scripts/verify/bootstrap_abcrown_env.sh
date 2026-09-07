@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Build .venv-abcrown -- the SEPARATE environment that runs alpha-beta-CROWN for Q8b.
+# Build .venv-abcrown -- the SEPARATE environment that runs alpha-beta-CROWN.
 #
-# WHY A SECOND ENVIRONMENT. docs/Q8_PREREGISTRATION.md amendment A-1 records the
+# WHY A SECOND ENVIRONMENT. A written amendment records the
 # measurement: alpha-beta-CROWN pins torch==2.11.0, requires numpy>=2.0.0 and
 # requires-python ~=3.11.0. The study is Python 3.12.3, torch 2.13.0+cu130, numpy 1.26.4.
 # The torch pin and the numpy floor cannot both be satisfied.
@@ -80,5 +80,5 @@ sys.exit(0 if ok else 1)
 PY
 
 echo
-echo "done. Q8b runs the verifier as:"
+echo "done. The verifier runs as:"
 echo "  .venv-abcrown/bin/python -m complete_verifier.abcrown --onnx_path X --vnnlib_path Y"

@@ -40,7 +40,7 @@ CONDITIONS = [
 ]
 
 # Declared scope decisions, recorded so they are not omissions a reviewer has to notice.
-# Rain was withdrawn from the study 2026-08-25: CARLA's rain rendering is temporally
+# Rain was withdrawn from the study: the simulator's rain rendering is temporally
 # stochastic (drops and streaks vary frame to frame), so a deterministic two-endpoint
 # family cannot represent it; it needs a stochastic element in the disturbance family
 # and is future work. The withdrawn rain artifacts are recoverable from git history.
@@ -74,7 +74,7 @@ def cells():
 
 
 # ── How a verification sweep becomes ONE ledger verdict ──────────────────────
-# WRITTEN BEFORE ANY VERIFICATION RESULT EXISTS (2026-08-11, 22:4x), for the same reason
+# WRITTEN BEFORE ANY VERIFICATION RESULT EXISTED, for the same reason
 # the rest of this module is: an aggregation rule chosen after seeing the numbers is not a
 # prediction, it is a curve fit.
 #
@@ -82,7 +82,7 @@ def cells():
 # axis box that branch-and-bound resolved as CERTIFIED, FALSIFIED, or left UNKNOWN. Those
 # have to collapse to one of the three ledger verdicts, and the collapse is where a result
 # could quietly be talked into agreeing with closed loop.
-VERIFY_FRAMES = 60            # AMENDED 2026-08-12, was 12 -- see below
+VERIFY_FRAMES = 60            # AMENDED, was 12 -- see below
 VERIFY_CELL_BUDGET = 96       # bound computations per frame, per condition
 VERIFY_CERTIFIED_MIN = 0.50   # retained for the superseded rule; unused by verify_verdict
 VERIFY_FALSIFY_FRAC = 0.05    # fraction of frames carrying a violation to call FALSIFIED
@@ -91,7 +91,7 @@ VERIFY_FALSIFY_FRAC = 0.05    # fraction of frames carrying a violation to call 
 def verify_verdict(certified_fracs, falsified_fracs):
     """Collapse a per-frame verification sweep into one ledger verdict.
 
-    AMENDED 2026-08-12. The original rule took the MEDIAN over 12 frames. It produced three
+    AMENDED. The original rule took the MEDIAN over 12 frames. It produced three
     UNSOUND certificates -- cells CERTIFIED whose closed loop then failed, twice with the
     vehicle leaving the road on every run. The amendment is made deliberately, with the
     reason recorded, and it is NOT a loosening: it makes CERTIFIED strictly harder to earn.
@@ -146,13 +146,13 @@ MIN_CLOSED_LOOP_REPS = 10
 
 
 # ── The lap-scope amendment and the FINAL campaign ───────────────────────────
-# AMENDED 2026-08-13 (F28, D-09, D-14). The closed-loop protocol was changed by
+# AMENDED. The closed-loop protocol was changed by
 # deliberate direction ("it must be the full lap but no intersection"): the lap is
 # scored over the open road, 0-2861 m, ending BEFORE the western intersection, whose
 # junction has no lane markings and is a real ODD boundary reported separately
-# (D-07/D-09). The original full-lap cells stay in results/ledger under the canonical
+# The original full-lap cells stay in results/ledger under the canonical
 # names as the record of the superseded protocol; the campaign the paper reports lives
-# in the cells below. docs/DISPOSITIONS.md D-14 carries the evidence that every era-1
+# in the cells below. The written disposition carries the evidence that every era-1
 # fog "failure" originated inside the junction (max-CTE at steps 1695-1706 with 1.2%
 # of frames over budget), which is why fog flips to PASS on the open road.
 FINAL_CLOSED_LOOP = {
@@ -166,9 +166,9 @@ FINAL_CLOSED_LOOP = {
     ("shadows", "S_mixed"): "shadows___trunc_Smixed",
 }
 
-# ── The sustained-bias certificate (F34-F37, F43): the paper's instrument ─────
-# D-12: the per-frame-median `verify` cells above belong to a RETIRED instrument; the
-# instrument the paper reports had no ledger column at all, which is how the F43
+# ── The sustained-bias certificate: the paper's instrument ───────────────────
+# The per-frame-median `verify` cells above belong to a RETIRED instrument; the
+# instrument the paper reports had no ledger column at all, which is how the
 # baseline defect went unseen. This artifact is that column.
 #
 #   sustained_bound.json      12 canonical cells. IN-SAMPLE: computed after the
@@ -180,9 +180,9 @@ SUSTAINED_CONDITIONS = ("fog", "night", "shadows")
 # Dispositions for certificate cells whose verdict contradicts the pre-registered
 # expectation. The certificate artifact is an aggregate measured file, so its
 # dispositions are recorded here rather than by editing the artifact:
-#   fog/S_clear CERTIFIED vs expected FALSIFIED -- D-14: S_clear is genuinely
-#     fog-robust on the open road (0/60 departures, F27); the expectation predated
-#     the junction diagnosis.
+#   fog/S_clear certified where the expectation was that it would not be. The
+#     clear-only student is genuinely fog-robust on the open road, 0 departures in
+#     60 runs; the expectation predated the junction diagnosis.
 CERT_DISPOSITIONS = {
-    ("fog", "S_clear"): "D-14",
+    ("fog", "S_clear"): "fog-robust on the open road",
 }

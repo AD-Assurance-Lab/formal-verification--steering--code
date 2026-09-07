@@ -3,7 +3,7 @@
 
     python3 scripts/simulator/probe_dark_server.py --maps Town06 Town04 --launches 4
 
-T06-F46 established the defect: a server comes up either correct or about 14% darker,
+The defect: a server comes up either correct or about 14% darker,
 the state is decided at LAUNCH, and it is constant for that server's whole life (five
 measurements against one bad server spread 4e-6). It happens headless and windowed. The
 trigger is unidentified.

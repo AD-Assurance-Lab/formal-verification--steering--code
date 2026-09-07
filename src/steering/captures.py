@@ -91,7 +91,7 @@ def nominal(path, cond, mask=None):
 def baseline_for(cond_path, fallback, mask=None):
     """Paired clear baseline if the condition capture recorded its own, else foreign.
 
-    F43: a clear baseline from a different session shifts the bound materially. Which
+    A clear baseline from a different session shifts the bound materially. Which
     one was used is printed and recorded, never chosen silently.
     """
     own = nominal(cond_path, "clear", mask)

@@ -6,7 +6,7 @@ its own process. That probe is only safe if the script PARSES arguments.
 `capture_gate_drives.py` had no argparse at all. `--help` fell straight through into the
 body, which restarts CARLA and drives a lap per student per section -- so running the
 audit while a server happened to be up made the audit itself restart the simulator and
-begin driving, violating R-SIM-3 (one client per port) from inside the tool whose job is
+begin driving, violating one client per port (one client per port) from inside the tool whose job is
 to check the repo is sound. It passed for months because the audit was normally run with
 no server listening: the port guard returned 2 immediately and the check went green.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build a ledger CELL from the per-run artifacts written by one-process-per-run drives.
 
-Each run is now its own process with its own CARLA server (R-SIM-1 at the granularity the
+Each run is now its own process with its own CARLA server (restart before every measurement run at the granularity the
 rule states) and its own vehicle, so no run can inherit a socket, a thread or a physics
 state from the one before. That independence is exactly what the Wilson interval assumes
 and what the previous ledger did not have: it restarted per CELL and reused one vehicle
@@ -47,7 +47,7 @@ def main():
         return 2
 
     # Each run keeps its OWN provenance. Every lap is driven against a fresh server
-    # (R-SIM-1), so they differ in start time and in the weather the server actually
+    #, so they differ in start time and in the weather the server actually
     # rendered, and a single cell-level record would silently describe them all by the
     # first one. The cell-level copy stays because existing readers expect it.
     runs, prov, ck, student = [], None, None, None
@@ -62,9 +62,10 @@ def main():
         student = student or d.get("student")
     runs.sort(key=lambda r: (r.get("rep", 0), str(r.get("direction"))))
 
-    # THE LAP IS THE UNIT (PROTOCOL A-4).
+    # THE LAP IS THE UNIT.
     #
-    # This counted RUNS and put a Wilson interval over them, which is the framing A-4
+    # This counted RUNS and put a Wilson interval over them, which is the framing the
+    # protocol
     # replaced: runs are different pieces of road, so a rate over them pools unlike units
     # and reads misleadingly -- two cells once reported "2/12 = 17%" when the same span
     # failed in both passes, which is every attempt failing.

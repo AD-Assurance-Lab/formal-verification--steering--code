@@ -49,7 +49,7 @@ from steering.student import StudentNet, student_preprocess
 # published cells are tracked in git under exactly these filenames, so an unscoped redo
 # would overwrite the record it exists to be compared against.
 #
-# A-5 pass 2: the Town06 path is READ FROM THE DESIGN MODULE, which is what TOWN06_PASS
+# Pass 2: the arterial path is READ FROM THE DESIGN MODULE, which is what TOWN06_PASS
 # scopes. Spelled literally here it ignored the pass entirely, so run_town06_ledger.sh
 # would have checked ledger_pass2/ for existing cells, found none, driven all 24 laps --
 # and this would have written every one of them into pass 1's directory, overwriting the
@@ -104,17 +104,17 @@ def run_provenance(condition):
         target_speed_ms=C.TARGET_SPEED_MS,
         lap_end_m=C.LAP_END_M,
         git_sha=sha, git_dirty=dirty, git_dirty_files=dirty_files,
-        # THE HARNESS THIS RAN UNDER, recorded so D-11 is checkable afterwards.
+        # THE HARNESS THIS RAN UNDER, recorded so data collected under a violating harness is not reusable is checkable afterwards.
         #
-        # D-11 says data collected under a violating harness is not reusable. That is
+        # data collected under a violating harness is not reusable says data collected under a violating harness is not reusable. That is
         # only enforceable if the data says which harness it ran under. The Town04 redo
         # cells record fixed_delta_seconds and substepping but not whether deterministic
         # control was on, what flags the server carried, or whether the lock was intact
         # -- so "was this collected correctly?" had to be answered from the config as it
-        # stands today rather than from the artifact, which is the wrong direction.
+        # stands now rather than from the artifact, which is the wrong direction.
         #
         # server_cmdline is read from the RUNNING process, not from what we meant to
-        # launch: -notexturestreaming is D-3 and the 168x term, and a flag we intended
+        # launch: -notexturestreaming is the texture-streaming flag and the 168x term, and a flag we intended
         # but did not pass looks identical in a log to one we did.
         determinism=_determinism_provenance(),
     )
@@ -134,7 +134,7 @@ def _determinism_provenance():
         argv = _cd.server_cmdline(C.PORT) or []
         out["server_cmdline"] = argv
         # None, never False, when the server could not be inspected. Recording
-        # notexturestreaming=false because the lookup returned nothing describes a D-3
+        # notexturestreaming=false because the lookup returned nothing describes a the texture-streaming flag
         # violation that did not happen -- and it would be read later as evidence that
         # one did. "Unknown" and "absent" are different facts and the artifact must not
         # collapse them.
@@ -153,7 +153,7 @@ def _determinism_provenance():
 
 
 def restart_and_respawn(condition):
-    """R-SIM-1 AT RUN GRANULARITY, plus a genuinely fresh vehicle.
+    """restart before every measurement run AT RUN GRANULARITY, plus a genuinely fresh vehicle.
 
     The ledger restarted the server once per CELL and spawned the vehicle once for all
     twelve runs in it, so runs 2..12 ran on a progressively older server AND inherited the
@@ -214,7 +214,7 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps,
 
     `log_dir` saves EVERY frame the policy actually saw, with its pose, its steering output
     and its CTE. That exists to fix the two defects that made the first verification sweep
-    unsound (F17, F18):
+    unsound:
 
       SAMPLING. Verifying 12 or even 60 frames sampled from a dataset is a guess at a
         ~1700-frame lap. Measured, 34% of frames breach the corridor and an even sample
@@ -241,7 +241,7 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps,
     # Track WHERE the worst excursion happens, not just how big it is. Three westbound
     # failures across two conditions all sat at 2.2-2.6 ft against a 2.19 ft budget, and
     # with only a scalar max there is no way to tell a recurring bad corner from bad luck
-    # -- which is exactly the question D-01 turns on.
+    # -- which is exactly the question this turns on.
     ctes, poses, left, stalled, offroad, departed = [], [], False, 0, 0, False
     n_bridged = 0
     onset = [None]
@@ -307,8 +307,8 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps,
         # Without this a run keeps only its max |CTE| and where that max was, so a cell
         # can never be re-scored against a different scored span -- the 24 committed
         # Town06 laps cannot be, and answering "how much of this verdict is the road we
-        # chose to score?" needed all of them driven again. It also makes A-4's margin
-        # and R-SIM-6's step count auditable after the fact instead of on trust. Rows are
+        # chose to score?" needed all of them driven again. It also makes the margin
+        # and a run that ends in a handful of steps is a bug's step count auditable after the fact instead of on trust. Rows are
         # ~80 bytes; a lap is ~1,180 of them.
         trace_rows.append(dict(
             step=step_i, here_m=("" if here_m is None else round(here_m, 3)),
@@ -404,7 +404,7 @@ def main():
     ap.add_argument("--log-frames", default=None, metavar="DIR",
                     help="save every frame the policy saw, with pose/steer/CTE, under DIR. "
                          "Enables trajectory verification: verify the frames the car "
-                         "actually met instead of a sample of the dataset (F17/F18).")
+                         "actually met instead of a sample of the dataset.")
     # ONE RUN PER PROCESS.
     #
     # The in-process restart could not be made safe. Killing the server under a live
@@ -414,7 +414,7 @@ def main():
     #
     # A process boundary settles it absolutely: the OS reclaims the client, so the next
     # run cannot inherit a socket, a thread, a vehicle or a physics state. The shell
-    # driver restarts CARLA between invocations, which is R-SIM-1 at the granularity the
+    # driver restarts CARLA between invocations, which is restart before every measurement run at the granularity the
     # rule actually states. Slower, and the only version that is certainly correct.
     ap.add_argument("--only-section", default=None,
                     help="drive ONE section and write a per-run artifact instead of a "
@@ -435,7 +435,7 @@ def main():
               "the variables.")
         return 2
 
-    # PROTOCOL R1. On the deployment test the certificate must already be committed
+    # the protocol's ordering rule. On the deployment test the certificate must already be committed
     # before a scored cell is driven -- that ordering is the entire difference between
     # this experiment and the Town04 discovery test, so it is enforced here rather than
     # left to whoever remembers to run the checker afterwards.
@@ -475,7 +475,7 @@ def main():
         vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
         camera, cam_queue = env.set_condition(world, vehicle, args.condition)
 
-        # R-SIM-4, ON THE SCORED DRIVER. set_condition already reads the weather STRUCT
+        # verify the rendered condition from a frame, ON THE SCORED DRIVER. set_condition already reads the weather STRUCT
         # back, but the struct is what was asked for, not what the camera sees --
         # exposure, headlights and the sensor all sit between them. That gap is the
         # Town04 fog-into-night failure, where fog leaked into the night cells and no
@@ -505,7 +505,7 @@ def main():
                   f"Rendered signature looks like '{_got}'.")
         else:
             assert_condition(_sig, args.condition)
-            print(f"  R-SIM-4: rendered frame confirms '{args.condition}'")
+            print(f"  verify the rendered condition from a frame: rendered frame confirms '{args.condition}'")
 
         print(f"{args.student} under '{args.condition}' "
               f"(exposure shutter={C.exposure_for(args.condition)['shutter']:.0f})")
@@ -546,7 +546,7 @@ def main():
                 # The first run uses the server and vehicle established above, so it is
                 # already fresh; every run after it gets its own.
                 if n_run:
-                    print(f"  [R-SIM-1] restart + respawn before rep {rep} {d}",
+                    print(f"  [restart before every measurement run] restart + respawn before rep {rep} {d}",
                           flush=True)
                     # Release EVERY reference before the server is killed, in this scope.
                     env.cleanup([camera, vehicle], world, original)

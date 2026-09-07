@@ -2,12 +2,12 @@
 """Compare the Town06 certificate against the closed-loop ledger. Run LAST.
 
 This is the only tool in the deployment test allowed to see both sides. It refuses to
-run unless PROTOCOL R1 holds, because an agreement number computed from a certificate
+run unless the protocol's ordering rule holds, because an agreement number computed from a certificate
 that was written after the drive is not a prediction and must not be printed as one.
 
 It also refuses to report a bare agreement fraction when every scored cell shares a
 verdict. That case measures sensitivity and not specificity -- the withdrawn rain
-condition scored 4/4 that way -- and PROTOCOL section 4.2 requires it be said out loud
+condition scored 4/4 that way -- and the protocol.2 requires it be said out loud
 rather than rounded up into a clean score.
 
     STUDY_MAP=Town06 python3 scripts/verify/compare_town06.py
@@ -26,7 +26,7 @@ from steering.study import town06_design as D
 CERT = REPO / D.CERT_ARTIFACT
 LEDGER = REPO / D.LEDGER_SUBDIR
 
-# A-5: a pass-2 comparison runs once per SCOPE, against that scope's own certificate and
+# A pass-2 comparison runs once per SCOPE, against that scope's own certificate and
 # that scope's own re-scoring of the same drives. The scope ledgers are DERIVED from the
 # committed traces by score_scopes.py, so R1 is still checked against the drives
 # themselves (D.LEDGER_SUBDIR, which TOWN06_PASS scopes) and never against a derived
@@ -52,7 +52,7 @@ for _nm, _ck, _, _ in C.TOWN06_STUDENTS:
 
 # The exploratory scope drives a student that is not the shipped pair, so the join above
 # would not contain it -- and this tool exits FATAL on a missing key rather than calling
-# it a disagreement, which is right and would also have stopped Q3 dead.
+# it a disagreement, which is right and would also have stopped the exploratory run dead.
 #
 # Uses the SAME override string that certify_town06.py and run_town06_ledger.sh take, so
 # the certificate key and the ledger filename are guaranteed to join: the name before the
@@ -84,7 +84,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--scope", default=None, choices=sorted(SCOPE_ARTIFACTS),
-                    help="compare one A-5 scope's ledger against that scope's "
+                    help="compare one scope's ledger against that scope's "
                          "certificate. Omit for the pass-1 comparison, unchanged.")
     args = ap.parse_args()
 
@@ -124,12 +124,12 @@ def main():
 
         # READ THE CELL'S OWN VERDICT. This recomputed one by majority vote, which turns a
         # VOID cell into a PASS: fog/S_mixed_t06 failed 1 of 3 laps, the ledger correctly
-        # marked it VOID under PROTOCOL A-4 -- "if the three laps disagree, that is a BUG
+        # marked it VOID under the protocol's lap rule -- "if the three laps disagree, that is a BUG
         # until proven otherwise ... a cell whose laps disagree is void, not uncertain" --
         # and this printed "PASS 1/3" and counted it toward the agreement rate.
         #
         # A majority vote over three laps is exactly the "estimate a rate from a small
-        # sample" reading A-4 exists to forbid. The aggregator already applied the rule;
+        # sample" reading the protocol exists to forbid. The aggregator already applied the rule;
         # the comparison's job is to report it, not to re-derive it more loosely.
         drive = d.get("verdict")
         if drive not in ("PASS", "FAIL", "VOID"):
@@ -170,7 +170,7 @@ def main():
                                       and cert_v == exp_cert)))
 
     if violations:
-        print("PROTOCOL R1 VIOLATED -- these cells were committed at or before the")
+        print("the protocol's ordering rule VIOLATED -- these cells were committed at or before the")
         print("certificate, so they are not predictions:")
         for v in violations:
             print(f"    {v}")
@@ -209,7 +209,7 @@ def main():
           + (f"; {len(voided)} VOID cell(s) excluded" if voided else "") + ")")
     for r in voided:
         print(f"    VOID: {r['cond']}/{r['stu']} -- {r['fails']} of {r['n']} laps failed, "
-              f"so the laps disagree. Under A-4 that is a BUG until the cause is found "
+              f"so the laps disagree. That is a BUG until the cause is found "
               f"and written down, not a rate. It is excluded from the agreement, and the "
               f"study is not complete while it stands.")
 

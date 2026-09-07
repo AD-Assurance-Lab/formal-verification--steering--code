@@ -1,7 +1,7 @@
 """A pass must never be able to write into another pass's ledger.
 
-PROTOCOL R4 requires pass 1 -- the blind Town06 deployment test -- to stand in the record.
-A-5 adds pass 2, which drives the same cells again.
+the protocol requires pass 1 -- the blind Town06 deployment test -- to stand in the record.
+Pass 2 drives the same cells again.
 
 The near-miss this pins: `run_town06_ledger.sh` decides whether to SKIP a cell by looking
 at `D.LEDGER_SUBDIR`, while `closed_loop_ledger.py` decided where to WRITE from a path
@@ -86,7 +86,7 @@ def test_an_unknown_pass_refuses():
 
 
 def test_pass_2_predicts_with_both_certificates():
-    """A-5: pass 2 scores both scopes, so R1 must cover both bounds."""
+    """Pass 2 scores both scopes, so the ordering check must cover both bounds."""
     code = (f"import sys;sys.path.insert(0, {REPO!r});"
             "from steering.study import town06_design as D;print('|'.join(D.CERT_ARTIFACTS))")
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,

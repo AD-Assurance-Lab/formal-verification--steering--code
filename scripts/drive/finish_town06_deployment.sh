@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Everything after the students are competent: capture -> certify -> COMMIT -> drive.
 #
-# The ordering here IS the experiment. PROTOCOL R1 requires the certificate to be
+# The ordering here IS the experiment. the protocol's ordering rule requires the certificate to be
 # committed before any scored drive, because that is what makes a verdict a prediction
 # rather than a description. check_order_town06.py enforces it independently; this
 # script is the clearer early failure, not the guard.
 #
-# CARLA IS STOPPED BEFORE CERTIFYING (T06-F12). It holds ~10.25 GiB of the 12 GiB card
+# CARLA IS STOPPED BEFORE CERTIFYING. It holds ~10.25 GiB of the 12 GiB card
 # after a long run, which OOMs alpha-CROWN outright on a batched graph and leaves the
 # unbatched path launch-bound -- 1.43 s/pose on GPU against 2.55 on CPU, a 12 GiB GPU
 # buying 1.8x. Certification needs no simulator, so the simulator goes down first and
@@ -45,7 +45,7 @@ carla_start() {
     say "FATAL: CARLA did not become ready, or violates the determinism rules"; return 1; }
 
 # ---------------------------------------------------------------- preconditions
-python3 -m steering.protocol_lock >/dev/null || { say "FATAL: PROTOCOL lock"; exit 1; }
+python3 -m steering.protocol_lock >/dev/null || { say "FATAL: protocol lock mismatch"; exit 1; }
 python3 -m carla_determinism --lock-only >/dev/null || {
     say "FATAL: carla-determinism rules lock mismatch"; exit 1; }
 
@@ -145,8 +145,8 @@ PY
 
 CERT=results/arterial/certificate_town06.json
 
-# ------------------------------------------------ 1b. THE CAPTURE GATE (PROTOCOL A-3)
-# A-3 makes this a PRECONDITION of certification, and audit_repo.py fails when a
+# ------------------------------------------------ 1b. THE CAPTURE GATE
+# This is a PRECONDITION of certification, and the run fails when a
 # certificate exists with no capture_gate.json beside it -- but nothing in this driver
 # ran it. The Town06 lap would have reached a committed certificate and then failed the
 # audit, with R1 making the certificate un-regenerable: recomputing it would place its
@@ -156,7 +156,7 @@ CERT=results/arterial/certificate_town06.json
 # the system. It needs per-pose DRIVEN steering, which the ledger does not keep, so the
 # committed driver produces the traces first. Both are clear-weather training telemetry
 # and not scored cells, so they sit on the correct side of the leakage boundary
-# (PROTOCOL section 5) and may run before the certificate exists.
+# (the protocol) and may run before the certificate exists.
 if [ -f results/arterial/captures/capture_gate.json ]; then
     say "SKIP capture gate (capture_gate.json present)"
 else
@@ -175,7 +175,7 @@ else
     tail -20 "$LOG_DIR/capture_gate.log" | tee -a "$LOG"
     if [ "$GATE_RC" -ne 0 ]; then
         say "FATAL: the capture gate FAILED (exit $GATE_RC). The frames the certificate"
-        say "       would be computed on do not reproduce the driving system (A-3)."
+        say "       would be computed on do not reproduce the driving system."
         exit 1
     fi
 fi
@@ -187,7 +187,7 @@ fi
 # minutes recomputing an artifact that was already committed and pushed. Worse in
 # principle than the waste: the certificate is the pre-registered prediction under R1, and
 # rewriting the file it lives in -- even with identical contents -- is the kind of churn
-# that makes "was this the committed version?" a question anyone has to ask. PROTOCOL R4
+# that makes "was this the committed version?" a question anyone has to ask. the protocol
 # is explicit that a recomputation after the drives is a NEW cell with a new name.
 if [ -f "$CERT" ] && git -C "$REPO" diff --quiet HEAD -- "$CERT" 2>/dev/null \
    && git -C "$REPO" ls-files --error-unmatch "$CERT" >/dev/null 2>&1; then
@@ -210,7 +210,8 @@ else
     git commit -q -F - <<MSG
 Town06 certificate: the prediction, committed before any scored drive
 
-PROTOCOL R1. This is what makes the verdicts a prediction rather than a description:
+The certificate is committed first. That is what makes the verdicts a prediction rather
+than a description:
 no closed-loop cell has been driven, and no truth table was read to produce it.
 
 Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
@@ -232,13 +233,13 @@ say "R1 satisfied. The prediction is on the record; driving may begin."
 
 # ---------------------------------------------------------------- 4. drive, 5. compare
 carla_start || exit 1
-say "running the scored ledger: 8 cells (2 students x 4 conditions), 3 laps each (A-4)"
+say "running the scored ledger: 8 cells (2 students x 4 conditions), 3 laps each"
 # A FAILED LEDGER IS NOT A WARNING.
 #
 # This logged "WARNING: ledger exited nonzero" and carried on to the comparison, which
 # then printed a table with no rows, after which the driver announced "DEPLOYMENT TEST
-# COMPLETE" and exited 0. Measured 2026-09-02: the ledger died on its FIRST cell with a
-# ModuleNotFoundError, zero cells were scored, and the overnight chain reported success.
+# COMPLETE" and exited 0.: the ledger died on its FIRST cell with a
+# ModuleNotFoundError, zero cells were scored, and the unattended chain reported success.
 #
 # A study that cannot drive its cells has not completed; it has failed, and the run must
 # stop where a person can see it.

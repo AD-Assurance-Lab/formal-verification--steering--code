@@ -182,7 +182,7 @@ def main():
         return 2
 
     # The chord's endpoints come from the ENDPOINT capture, so both are same-session
-    # (F43/F44: a cross-session baseline inverted the sign of a fog measurement).
+    # (a cross-session baseline once inverted the sign of a fog measurement).
     # Concatenated across sections: the projection is per pose, so pooling is just more
     # road, and each section keeps its own same-session endpoints.
     clear = np.concatenate([frames(per_sec[s][end], "clear") for s in sections])

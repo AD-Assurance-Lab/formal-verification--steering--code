@@ -276,7 +276,7 @@ def main():
         for _ in range(6):
             f_ = world.tick()
         _img = env.grab_frame(img_queue, f_)
-        # R-SIM-4: confirm from a RENDERED FRAME that the requested condition is what is
+        # verify the rendered condition from a frame: confirm from a RENDERED FRAME that the requested condition is what is
         # actually drawn. This is the Town04 fog-into-night failure and it stays ON for
         # every normal run.
         #
@@ -296,7 +296,7 @@ def main():
                   f"Rendered signature: looks like '{_got}' "
                   f"(mean={_st['mean']:.4f} sigma={_st['sigma']:.4f} p01={_st['p01']:.4f})")
             # The signature was printed and NOT checked, and that cost a whole sweep
-            # (T06-F35): sun altitude was swept with --weather night, so the DECLARED
+            #: sun altitude was swept with --weather night, so the DECLARED
             # EXPOSURE was night's shutter 200 against daylight's 800, and daylight
             # scenes were rendered through a night camera. Every run completed, every
             # CTE was plausible, every step count was normal, and the signature line
@@ -314,7 +314,7 @@ def main():
                       f"(clear/fog/low-sun shutter "
                       f"{C.exposure_for('clear')['shutter']:.0f}, night "
                       f"{C.exposure_for('night')['shutter']:.0f}), so the wrong one "
-                      f"silently rescales every frame. See T06-F35.")
+                      f"silently rescales every frame.")
         else:
             assert_condition(_sig_frame, args.weather)
         for d in dirs:
@@ -326,7 +326,7 @@ def main():
     print("\n" + "=" * 60)
     for d, s in results.items():
         # steps= belongs on the SUMMARY line too, not only the progress line: callers
-        # parse this one, and R-SIM-6 says a run that ends far short of steps_for is void
+        # parse this one, and a run that ends in a handful of steps is a bug says a run that ends far short of steps_for is void
         # rather than a pass. Without the step count they cannot tell.
         print(f"{d:10s}: {'PASS' if s.get('passed') else 'FAIL'} "
               f"steps={s.get('n', 0)} "

@@ -12,13 +12,15 @@ certified verdict in the paper. It is the one most readers want, and it runs on 
 | code, protocol, routes | git | 1.2 MB | the study |
 | every artifact behind a reported number | git | 2.4 MB | each lap is a row inside its cell file |
 | the README animation | git | 6.2 MB | |
-| **every shipped policy and its teacher** | **git** | **8.8 MB** | see below |
+| **the four shipped policies** | **git** | **4.7 MB** | see below |
+| their four teachers | Hugging Face | 3.9 MB | `--teachers`; only re-distillation needs them |
 | the captures the certifier reads | [Hugging Face](https://huggingface.co/datasets/AD-Assurance-Lab/steering-verification-captures) | 641 MB | `scripts/fetch_captures.py` |
 | training frames | **not shipped** | 59 GB | regenerable; see Level 3 |
 
-A clone checks out 19 MB, of which 6.2 MB is the README animation.
+A `git clone --depth 1` checks out 13 MB, of which 6.2 MB is the README animation.
+A full clone also pulls 128 MB of history, which is where the research record lives.
 
-**All eight networks are in git.** They total 8.8 MB, so there is no reason to make you rebuild
+**All four policies are in git.** They total 4.7 MB, so there is no reason to make you rebuild
 them — and because the renderer is not bit-reproducible (a scene where nothing moves still
 renders about 30 differing pixels per frame across repetitions), a rebuild would not give
 byte-identical weights even with identical code and seeds. Shipping the weights is what
@@ -30,10 +32,10 @@ makes the numbers checkable.
 | `S_mixed_84x28_w3_v2_dagger_r00` | highway | mixed policy | 15,456 |
 | `S_clear_t06lap_168x56_w2_s0` | arterial | clear-only policy | 50,944 |
 | `S_mixed_t06lap_168x56_w4_s3` | arterial | mixed policy | 101,888 |
-| four `teacher_*` checkpoints | both | so a policy can be re-distilled without re-running DAgger | — |
+| four `teacher_*` checkpoints | both | on Hugging Face; fetch with `--teachers` to re-distil a policy | — |
 
 The `_v2` on the highway names is provenance, not a choice. An earlier highway run was
-collected before the determinism harness existed, and rule D-11 makes that data unusable;
+collected before the determinism harness existed, which makes that data unusable;
 this study is the rebuild, and it is the only highway study here. The committed artifacts
 record these names, so they are left alone.
 

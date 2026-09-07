@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build the verification environment from nothing, and PROVE it works before returning.
 #
-# Why this exists (all three were live defects on the 2026-09-03 desktop migration):
+# Why this exists (all three were live defects on a machine migration):
 #
 #  1. torch must match the GPU's compute capability. `torch 2.5.1+cu121` builds for
 #     sm_50..sm_90; an RTX 5090 is sm_120. `torch.cuda.is_available()` returns TRUE and

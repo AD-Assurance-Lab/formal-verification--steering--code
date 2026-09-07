@@ -14,7 +14,7 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 from steering.condition_signature import assert_condition, identify
 
 
-# The four conditions as they MEASURE on the Town06 lap (T06-F42), on the student's
+# The four conditions as they MEASURE on the Town06 lap, on the student's
 # view. identify() reads mean, sigma and p01, so a synthetic frame has to reproduce all
 # three -- a plain Gaussian at clear's mean and sigma has p01 = 0.17 and classifies as
 # FOG, which is a fact about the generator and not about clear.

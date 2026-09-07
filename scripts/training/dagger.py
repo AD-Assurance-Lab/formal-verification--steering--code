@@ -276,7 +276,7 @@ def main():
     # WHEN AN EXTERNAL GATE DECIDES, THIS ONE MUST NOT STOP THE RUN.
     # dagger.py evaluates before it trains and exits early if its own gate passes.
     # That gate is ONE rep; run_dagger_rounds.sh decides on three laps per condition
-    # with a clean server before each. On 2026-09-01 the internal gate passed
+    # with a clean server before each. Measured: the internal gate passed
     # teacher_mixed_t06lap_dagger_r05 (0.27/0.92/1.95/0.25 ft) and stopped, on a
     # checkpoint the strict gate had already scored 2 of 12 laps. The round trained
     # nothing and the stage halted on a policy the decision-maker had rejected.
@@ -286,7 +286,7 @@ def main():
                     help="evaluation passes per cell per round. 1 reproduces the old "
                          "single-run gate. >1 makes the gate a RATE, which standing rule 3 "
                          "requires of every other closed-loop number here and which "
-                         "T06-F24 showed this gate needs: at ~80%% per-cell competence a "
+                         "this gate needs: at ~80%% per-cell competence a "
                          "conjunction of single runs selects a lucky round, not a better "
                          "teacher. The worst repetition decides the cell.")
     ap.add_argument("--min-rounds", type=int, default=0,
@@ -405,7 +405,7 @@ def main():
         # start trains r00..r15 exactly as before.
         for r_local in range(args.rounds):
             r = r_local + round_offset
-            # R-SIM-1 in the TEACHER loop too. This drives len(weathers) x len(sections)
+            # restart before every measurement run in the TEACHER loop too. This drives len(weathers) x len(sections)
             # times per round with retraining in between, holding one server for the whole
             # run -- the exposure that silently voided a six-round student-DAgger run (the
             # same checkpoint read 3.8% over budget on a fresh server and 96.9% inside the
@@ -427,7 +427,7 @@ def main():
                 (client, world, original, vehicle,
                  camera, img_queue) = restart_carla_and_reconnect(
                      None, None, None, None)
-                print(f"  [R-SIM-1] CARLA restarted before round {r}", flush=True)
+                print(f"  [restart before every measurement run] CARLA restarted before round {r}", flush=True)
             round_dir = os.path.join(dagger_dir, f"round{r:02d}")
             print(f"\n{'#'*64}\n# DAgger round {r} — evaluating policy '{current}'\n{'#'*64}")
             # beta decays over rounds: heavy expert assistance early (when the policy
@@ -450,7 +450,7 @@ def main():
                         rows += drows
                         # THE GATE AS A RATE (--gate-reps > 1). Standing rule 3 applies to
                         # every closed-loop number in this study except, until now, this
-                        # one: the teacher gate was a conjunction of SINGLE runs. T06-F24
+                        # one: the teacher gate was a conjunction of SINGLE runs. Measurement
                         # measured what that does -- both teachers sat at ~77-82% per-cell
                         # competence and the gate simply waited for a round where every
                         # cell won its coin flip at once, so the round count is a waiting

@@ -47,7 +47,7 @@ CERTIFICATES = {
                      "results/highway/ledger/*closed_loop.json"),
     "town06":       ("results/arterial/certificate_town06.json",
                      "results/arterial/ledger/*closed_loop.json"),
-    # A-5 pass 2 drives against BOTH scopes' certificates. Each is checked against the
+    # Pass 2 drives against BOTH scopes' certificates. Each is checked against the
     # same drives, so a bound written after the laps it is compared against is caught
     # whichever scope it belongs to.
     "town06_pass2": ("results/arterial/certificate_town06.json",
@@ -158,7 +158,7 @@ def check(study, cert_rel, ledger_glob):
         except (ValueError, TypeError):
             pass
     #
-    # What actually matters is the CONTENT: if the file as it stands today is
+    # What actually matters is the CONTENT: if the file as it stands is
     # byte-identical to the version committed before the runs, the bounds the drives
     # were compared against are the pre-registered ones, whatever happened in between.
     # A touch that restores the file is not laundering, and a check that cannot tell

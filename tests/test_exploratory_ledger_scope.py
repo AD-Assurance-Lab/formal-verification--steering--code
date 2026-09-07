@@ -1,10 +1,11 @@
 """TOWN06_LEDGER_TAG must give an exploratory blind run its own scope, and must never
 be able to reach the protected ones.
 
-WHY THIS EXISTS. Q3 wants the blind protocol -- certify, commit, then drive, checkable
+WHY THIS EXISTS. An exploratory run wants the blind protocol -- certify, commit, then
+drive, checkable
 against git -- on a student that is NOT the shipped one. Before the tag there was
 nowhere to put it. `TOWN06_PASS` accepts only 1 and 2, and both name directories
-PROTOCOL R4 requires to stand, so an exploratory blind run had two options:
+the protocol requires to stand, so an exploratory blind run had two options:
 
   * write its scored cells into results/arterial/ledger (pass 1's blind record), or
   * skip the order check, which is the entire reason to run the experiment.
@@ -118,7 +119,7 @@ def teardown_module(_):
 def test_an_unknown_student_gets_no_defaulted_expectation():
     """study.expected() is keyed on the student for every branch but the vacuous one, so
     a name it has never heard of used to fall through to the LAST line -- the clear-only
-    student's row -- and be scored against it. Q3 drove an exploratory tuned student and
+    student's row -- and be scored against it. An exploratory run drove a tuned student and
     got three CONTRADICTS that meant only "this table has no row for me".
 
     Standing rule 2 makes that expensive: a contradiction is a BUG until a written
@@ -130,7 +131,7 @@ def test_an_unknown_student_gets_no_defaulted_expectation():
     # the shipped students still resolve exactly as before
     assert D.expected("S_clear_t06", "night") == ("FAIL", "NOT_CERTIFIED")
     assert D.expected("S_mixed_t06", "fog") == ("PASS", "CERTIFIED")
-    assert D.expected("S_clear_t06", "fog") == ("PASS", "CERTIFIED")      # D-14
+    assert D.expected("S_clear_t06", "fog") == ("PASS", "CERTIFIED")
 
 
 def test_an_exploratory_student_reports_no_expectation_rather_than_inventing_one():

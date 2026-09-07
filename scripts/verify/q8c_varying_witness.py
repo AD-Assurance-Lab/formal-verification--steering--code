@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Q8c: exhibit a SPATIALLY VARYING witness for a NOT_CERTIFIED cell.
+"""Exhibit a SPATIALLY VARYING witness for a NOT_CERTIFIED cell.
 
 THE GAP THIS CLOSES. `falsify_witness.py` searches a single global intensity s and, for
 the two Town06 cells that carry no witness, finds nothing -- fog peaks at 0.845x tolerance
@@ -63,7 +63,7 @@ def main():
                                    map_location=dev, weights_only=True))
     net.eval()
 
-    print(f"Q8c -- spatially varying witness search, {a.student}")
+    print(f"spatially varying witness search, {a.student}")
     print(f"  tolerance {tol:.6f}, {a.grid}-point grid per pose, stride {a.stride}\n")
     out = {"student": a.student, "grid": a.grid, "tolerance": tol, "cells": {}}
 

@@ -139,7 +139,7 @@ def main():
 
 # --- open-route index arithmetic (G-9) -------------------------------------
 # Every route helper was written for Town04's lap, which closes on itself, so
-# index arithmetic ran modulo len(route). The Town06 lap is open: Zach cut it
+# index arithmetic ran modulo len(route). The arterial lap is open: it was cut
 # before a double intersection outside the ODD, leaving start and end 173.8 m
 # apart. There the wrap is a teleport across the gap, and it lands in the last
 # few steps of the lap -- inside the scored region.

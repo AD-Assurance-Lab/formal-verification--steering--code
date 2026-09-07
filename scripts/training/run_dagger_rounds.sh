@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Drive DAgger ONE ROUND PER PROCESS, restarting CARLA between rounds.
 #
-# dagger.py restarts CARLA in-process between rounds (R-SIM-1) and dies doing it:
+# dagger.py restarts CARLA in-process between rounds and dies doing it:
 # "terminate called after throwing carla::client::TimeoutException", core dumped, after
 # the round is already trained. Releasing the caller's references did not fix it, and
 # neither did skipping the world reload -- the same fight the ledger lost before it moved
@@ -64,7 +64,7 @@ fi
 # carla_restart.sh gives the server 300 s to become ready and fails if it does not. That
 # is right for the restart; it is wrong as a stage-level verdict. The drivers treated one
 # failure as terminal -- "restart failed; stopping" -- and threw away the whole round or
-# the whole twelve-lap gate. Measured 2026-09-02: a boot exceeded 300 s while a
+# the whole twelve-lap gate.: a boot exceeded 300 s while a
 # distillation was using the GPU, and nine completed student-DAgger rounds were abandoned
 # because the tenth restart was slow.
 #
@@ -113,7 +113,7 @@ for r in $(seq 1 "$MAX"); do
 
     # A CHECKPOINT ON DISK IS NOT A ROUND THAT RAN.
     #
-    # `ls -t | head -1` takes the newest file, not this round's output. On 2026-09-01
+    # `ls -t | head -1` takes the newest file, not this round's output. Measured:
     # four consecutive attempts were killed (rc=143) having trained nothing, and the
     # driver gated teacher_mixed_t06lap_dagger_r00 -- a checkpoint from before the stage
     # started -- three times over, logging "0/12 laps passed with r00" each time as
@@ -146,7 +146,7 @@ for r in $(seq 1 "$MAX"); do
     # A RESTART BEFORE EVERY LAP, not before every group of laps.
     #
     # This restarted once per lap INDEX and then drove all four conditions on that one
-    # server -- 3 restarts for 12 laps. A lap is the repetition (A-4), and the clean
+    # server -- 3 restarts for 12 laps. A lap is the repetition, and the clean
     # server is per repetition: three laps is defensible only while "a clean server
     # restart before every run" holds, and four laps sharing a server is the ageing-server
     # coupling the per-run restart exists to break.

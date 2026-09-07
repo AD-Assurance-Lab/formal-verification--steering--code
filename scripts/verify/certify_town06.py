@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Certify the Town06 students. BLIND: this tool has no truth table.
 
-PROTOCOL R2. `certify_sustained_bound.py` carries a hardcoded TRUTH dict and prints an
+`certify_sustained_bound.py` carries a hardcoded TRUTH dict and prints an
 agreement column, which is right for the Town04 discovery test, where the outcomes were
 already known and the point was to score a criterion against them. It is exactly wrong
 here. A held-out cell must not be scored by the tool that predicts it, so this script
@@ -21,7 +21,7 @@ certificate, and is recorded in the artifact's own `_meta.method`.
 
     STUDY_MAP=Town06 python3 scripts/verify/certify_town06.py
 
-Then COMMIT the output before any scored closed-loop run (PROTOCOL R1).
+Then COMMIT the output before any scored closed-loop run.
 """
 import argparse
 import json
@@ -46,7 +46,8 @@ from steering.study import town06_design as D
 # One definition, in config.
 #
 # TOWN06_STUDENTS_OVERRIDE certifies checkpoints that are not the study's two shipped
-# students -- E4 needs the bound width of a 3-conv and a 5-conv net at matched ReLU count,
+# students -- a depth comparison needs the bound width of a 3-conv and a 5-conv net at
+# matched ReLU count,
 # on the SAME committed captures and through the SAME bound math, because re-implementing
 # that math elsewhere is how two certifiers drift apart. Format:
 #
@@ -160,13 +161,13 @@ def main():
     ap.add_argument("--allow-missing", action="store_true")
     ap.add_argument("--in-w", type=int, default=None, dest="in_w")
     ap.add_argument("--in-h", type=int, default=None, dest="in_h")
-    # Q8a. The bound METHOD, exposed rather than edited in place for a run (standing
+    # The bound METHOD, exposed rather than edited in place for a run (standing
     # rule 8: a number in a paper comes from a committed driver, not a hand edit).
     #
     # Default "CROWN" reproduces every committed certificate exactly. "CROWN-Optimized"
     # is alpha-CROWN: measured on this network at 6% tighter for 78x the cost, which is
     # why plain CROWN is the default everywhere -- but 6% on a MARGINAL cell is worth
-    # buying, and Q8a buys it on two cells rather than a sweep.
+    # buying, and it was bought on two cells rather than a sweep.
     ap.add_argument("--method", default="CROWN",
                     choices=("CROWN", "CROWN-Optimized"),
                     help="bound method (frozen default: CROWN; CROWN-Optimized is "
@@ -182,7 +183,7 @@ def main():
     ap.add_argument("--force", action="store_true",
                     help="overwrite an existing certificate. Refused by default: "
                          "results/arterial/certificate_town06.json is the pass-1 artifact "
-                         "PROTOCOL R4 requires to stand, and this script's default "
+                         "the protocol requires to stand, and this script's default "
                          "output path IS that file.")
     ap.add_argument("--out", default=None,
                     help="artifact path (default: the scope's own file)")
@@ -217,7 +218,7 @@ def main():
     if C.STUDY_MAP != "Town06":
         sys.exit("run with STUDY_MAP=Town06")
     if (args.stride, args.nsplit) != (8, 16):
-        sys.exit(f"PROTOCOL section 3 freezes stride=8 and nsplit=16; "
+        sys.exit(f"the protocol freezes stride=8 and nsplit=16; "
                  f"got {args.stride}/{args.nsplit}. Changing either is an amendment.")
 
     # Resolve the destination and refuse BEFORE certifying, not after: the check used to
@@ -234,26 +235,26 @@ def main():
         sys.exit("REFUSING: TOWN06_STUDENTS_OVERRIDE is set, so this run is not about the "
                  "shipped students.\n  Pass --out to write it somewhere else; the "
                  "canonical certificate must describe config.TOWN06_STUDENTS.")
-    # The canonical certificate is a PLAIN-CROWN artifact and PROTOCOL R4 requires it to
+    # The canonical certificate is a PLAIN-CROWN artifact and the protocol requires it to
     # stand. A tighter method is a separate result reported alongside it, never a
     # replacement for it -- so the canonical path is refused for any non-default method
     # BEFORE the run, not at the write site hours later.
     if args.method != "CROWN" and dest == CANONICAL:
         sys.exit(f"REFUSING: --method {args.method} may not write the canonical "
                  f"certificate.\n"
-                 f"  {_rel(CANONICAL)} is a plain-CROWN artifact and PROTOCOL R4 requires "
+                 f"  {_rel(CANONICAL)} is a plain-CROWN artifact and the protocol requires "
                  f"it to stand.\n"
                  f"  Pass --out PATH; every non-CROWN result is a separate artifact.")
     if dest.exists() and not args.force:
         sys.exit(f"REFUSING to overwrite {_rel(dest)}\n"
-                 f"  It already exists, and PROTOCOL R4 requires the committed "
+                 f"  It already exists, and the protocol requires the committed "
                  f"certificates to stand.\n"
                  f"  Write elsewhere with --out PATH, or pass --force if you really "
                  f"mean to replace it.")
 
     # NOT the is_available()-then-quietly-use-the-CPU idiom. That predicate lies in
     # both directions: it is False while CARLA initialises on the same device, and on the
-    # 2026-09-03 desktop it was TRUE on a card the installed torch had no kernels for
+    # On one machine it was TRUE on a card the installed torch had no kernels for
     # (RTX 5090 is sm_120; torch 2.5.1+cu121 builds sm_50..sm_90), so the certifier
     # selected CUDA and died mid-run. require_cuda allocates and operates on a real
     # tensor, which catches both. tries=1: nothing here races CARLA, so do not sit in a
@@ -396,7 +397,7 @@ def main():
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(json.dumps(out, indent=2))
     print(f"\n  wrote {_rel(dest)}")
-    print("  COMMIT THIS FILE before running any scored closed-loop cell (PROTOCOL R1).")
+    print("  COMMIT THIS FILE before running any scored closed-loop cell.")
     return 0
 
 

@@ -33,7 +33,7 @@ import urllib.request
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATASET = "AD-Assurance-Lab/steering-verification-captures"
-BASE = f"https://huggingface.co/datasets/{DATASET}/resolve/main/captures"
+BASE = f"https://huggingface.co/datasets/{DATASET}/resolve/main"
 
 # (path in the dataset, path in this repository, sha256)
 FILES = [
@@ -77,6 +77,24 @@ FILES = [
      "3f45779f32b0ba92b7d8d0b9cc6da59b7dc7f584ca8a508ddfa32d290cb9623f"),
 ]
 
+# The four teachers, needed only to re-distil a student without re-running DAgger.
+# They are 3.9 MB and nothing else uses them, so they are fetched on request rather
+# than carried in every clone: `--teachers`.
+TEACHERS = [
+    ("teachers/teacher_clear_t06lap_dagger_r04.pth",
+     "checkpoints/teacher_clear_t06lap_dagger_r04.pth",
+     "852242eb647151a93e555b378cc313e6798e756b26a01737b81a74ad832b43f9"),
+    ("teachers/teacher_clear_v3_dagger_r05.pth",
+     "checkpoints/teacher_clear_v3_dagger_r05.pth",
+     "e5f4d02ebab7ff2d40281770dee17810cecdda26f20f4200acf496b2b23f7044"),
+    ("teachers/teacher_mixed_t06lap_dagger_r03.pth",
+     "checkpoints/teacher_mixed_t06lap_dagger_r03.pth",
+     "824273152ba79fb24618b1537060e8dae1b48b1def7e0ffcc3939f87486e8ddc"),
+    ("teachers/teacher_mixed_v2_dagger_r03.pth",
+     "checkpoints/teacher_mixed_v2_dagger_r03.pth",
+     "04ef2ee0ff3629253370a1e4a626e1bd763ab413054a13fd8403696f46c42c94"),
+]
+
 
 def digest(path):
     h = hashlib.sha256()
@@ -118,7 +136,7 @@ def stage(out):
     here would leave every reader's `fetch_captures.py` rejecting the real dataset.
     """
     missing, wrong, n = [], [], 0
-    for name, rel, want in FILES:
+    for name, rel, want in FILES + TEACHERS:
         src = os.path.join(REPO, rel)
         if not os.path.exists(src):
             missing.append(rel)
@@ -126,7 +144,8 @@ def stage(out):
         if digest(src) != want:
             wrong.append(rel)
             continue
-        dest = os.path.join(out, "captures", name)
+        dest = os.path.join(out, name if name.startswith("teachers/")
+                            else os.path.join("captures", name))
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         shutil.copyfile(src, dest)
         n += 1
@@ -144,6 +163,8 @@ def stage(out):
     with open(os.path.join(out, "SHA256SUMS"), "w") as f:
         for name, _, want in FILES:
             f.write(f"{want}  captures/{name}\n")
+        for name, _, want in TEACHERS:
+            f.write(f"{want}  {name}\n")
 
     # The dataset's front page ships from here too, so what is published describes what
     # is published. A card maintained only on the hub drifts from the files under it.
@@ -167,6 +188,9 @@ def main():
                     help="verify what is already on disk and download nothing")
     ap.add_argument("--force", action="store_true",
                     help="download every file again, even if it is present and correct")
+    ap.add_argument("--teachers", action="store_true",
+                    help="also fetch the four teacher networks, needed only to "
+                         "re-distil a student without re-running DAgger")
     ap.add_argument("--stage", metavar="DIR",
                     help="build the tree to upload to the dataset, from the captures on "
                          "this machine, checking each against the table below")
@@ -175,8 +199,9 @@ def main():
     if args.stage:
         return stage(args.stage)
 
+    wanted = FILES + TEACHERS if args.teachers else FILES
     bad, got, have = [], 0, 0
-    for name, rel, want in FILES:
+    for name, rel, want in wanted:
         dest = os.path.join(REPO, rel)
         if os.path.exists(dest) and not args.force:
             if digest(dest) == want:
@@ -193,7 +218,8 @@ def main():
 
         print(f"  {rel}")
         try:
-            tmp = download(f"{BASE}/{name}", dest)
+            sub = "" if name.startswith("teachers/") else "captures/"
+            tmp = download(f"{BASE}/{sub}{name}", dest)
         except urllib.error.HTTPError as e:
             bad.append(f"{rel}: {e.code} {e.reason} from {BASE}/{name}")
             continue
@@ -208,9 +234,9 @@ def main():
         got += 1
 
     if args.check:
-        print(f"\n{have} of {len(FILES)} captures present and correct")
+        print(f"\n{have} of {len(wanted)} files present and correct")
     else:
-        print(f"\n{got} downloaded, {have} already present, {len(FILES)} needed")
+        print(f"\n{got} downloaded, {have} already present, {len(wanted)} needed")
 
     if bad:
         print("\nPROBLEMS:", file=sys.stderr)

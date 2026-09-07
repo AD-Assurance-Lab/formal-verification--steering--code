@@ -40,7 +40,7 @@ CONDITIONS = ("clear", "fog", "night", "low_sun")
 # pipeline does.
 #
 # It used to read `sections` out of routes_town06/route_meta.json, which describes the
-# SIX-SECTION route the lap superseded on 2026-08-31. That artifact still exists, so the
+# SIX-SECTION route the lap superseded. That artifact still exists, so the
 # stale read succeeded and returned ('s00'..'s05') -- and certify_town06.py builds its
 # capture filenames from this tuple, so it would have demanded lap_s00_fog.npz and the
 # other 23 six-section captures, none of which any driver writes any more. The
@@ -70,7 +70,7 @@ def expected(student, condition):
     """The pre-registered expectation for one Town06 cell.
 
     Same spine as Town04: the clear-only student fails what it never saw, except fog,
-    where Town04 disposition D-14 established it is genuinely robust on open road.
+    where the highway study established it is genuinely robust on open road.
     A result contradicting this is a BUG until a written disposition rules out the
     candidate causes (standing rule 2). It is not a finding before that.
     """
@@ -81,7 +81,7 @@ def expected(student, condition):
     # AN UNKNOWN STUDENT HAS NO PRE-REGISTERED EXPECTATION, and must not silently
     # inherit one. Every branch below except the first is keyed on the student, so a
     # name this table has never heard of fell through to the LAST line -- the clear-only
-    # student's row -- and was scored against it. Q3 drove an exploratory tuned student
+    # student's row -- and was scored against it. An exploratory run drove a tuned student
     # and got three CONTRADICTS that meant only "this table has no row for me": the same
     # broken-join-wearing-the-costume-of-a-result that compare_town06.py's own docstring
     # records, in the one place it was not guarded.
@@ -103,16 +103,16 @@ def expected(student, condition):
     if student == "S_mixed_t06":
         return ("PASS", "CERTIFIED")
     if condition == "fog":
-        return ("PASS", "CERTIFIED")          # D-14
+        return ("PASS", "CERTIFIED")          # fog-robust on the open road
     return ("FAIL", "NOT_CERTIFIED")          # night, low sun
 
 
 def cells():
     """Every cell: (condition, student). LAPS are the repetitions within a cell.
 
-    PROTOCOL A-4 replaced the arithmetic this docstring used to carry. It said the six
+    the protocol's lap rule replaced the arithmetic this docstring used to carry. It said the six
     sections were repetitions -- "2 reps each for 12 total, comfortably over the
-    MIN_CLOSED_LOOP_REPS floor" -- and A-4 is the finding that this pooled unlike units:
+    MIN_CLOSED_LOOP_REPS floor" -- and the correction is that this pooled unlike units:
     a section is a distinct stretch of road, so twelve runs were six different roads
     sampled twice, and two cells reported 2/12 = 17% when the SAME section had failed in
     both passes, a 100% failure diluted by five roads that were never in question.
@@ -130,7 +130,7 @@ def scored_cells():
     return [c for c in cells() if c[0] not in VACUOUS_CELLS]
 
 
-# Repetitions per cell. PROTOCOL A-4: the LAP is the repetition and THREE laps is the
+# Repetitions per cell. the protocol's lap rule: the LAP is the repetition and THREE laps is the
 # standard -- a reproducibility check, not a sample for estimating a rate. Measured on the
 # corrected harness, rep-to-rep verdict disagreement was 0 of 48 section-pairs.
 LAPS_PER_CELL = 3
@@ -140,7 +140,7 @@ REPS_PER_SECTION = LAPS_PER_CELL      # name kept so existing call sites keep wo
 # ── The risk that this experiment is uninformative, declared in advance ─────
 # Town06's lap is 2,289 m with 2,119 m scored, against Town04's 5,722 m over two
 # directions, and the window is 74-79% straight (R > 500 m) against Town04's 51-56%
-# (PROTOCOL section 4.1). An easier route is easier to hold, so it is possible every
+# (the protocol.1). An easier route is easier to hold, so it is possible every
 # cell passes and every cell certifies.
 #
 # If that happens the experiment has measured SENSITIVITY ONLY and not specificity,
@@ -160,12 +160,13 @@ DEGENERATE_IF_ALL_AGREE = (
 )
 
 # Minimum repetitions per closed-loop verdict. The floor of 10 was measured on the BROKEN
-# harness, where single runs were wrong about 1 in 8 times; PROTOCOL A-4 replaced it with
+# harness, where single runs were wrong about 1 in 8 times; the protocol's lap rule replaced it with
 # three laps under a FULLY ENFORCED harness -- a clean server before every run, a fresh
 # vehicle per run, one process per run, the determinism preflight green on each fresh
 # server, one client per port, and the capture gate passed before certification.
 #
-# A-4 is explicit that this is conditional and that there is no fallback to ten: where the
+# The protocol is explicit that this is conditional and that there is no fallback to
+# ten: where the
 # harness is not enforced the answer is to enforce it, never to compensate with more laps.
 # And if the three laps disagree, that is a BUG -- the cell is void, not uncertain.
 MIN_CLOSED_LOOP_REPS = LAPS_PER_CELL
@@ -173,8 +174,8 @@ MIN_CLOSED_LOOP_REPS = LAPS_PER_CELL
 RESULTS_SUBDIR = os.path.join("results", "arterial")
 CERT_ARTIFACT = os.path.join(RESULTS_SUBDIR, "certificate_town06.json")
 
-# PROTOCOL A-5 pass 2. A pass writes its OWN ledger directory, so pass 1 -- the blind
-# deployment test whose original PROTOCOL R4 requires to stand in the record -- cannot be
+# A pass writes its OWN ledger directory, so pass 1 -- the blind
+# deployment test whose original the protocol requires to stand in the record -- cannot be
 # overwritten or skipped into. run_town06_ledger.sh skips any cell whose file exists, so
 # without this a pass-2 run would silently do nothing and report success.
 TOWN06_PASS = int(os.environ.get("TOWN06_PASS", "1"))
@@ -198,12 +199,12 @@ CANONICAL_CERT_ARTIFACT = os.path.join(RESULTS_SUBDIR, "certificate_town06.json"
 CANONICAL_LEDGER_SUBDIRS = (os.path.join(RESULTS_SUBDIR, "ledger"),
                             os.path.join(RESULTS_SUBDIR, "ledger_pass2"))
 
-# EXPLORATORY BLIND SCOPE (Q3). An experiment that wants the blind protocol -- certify,
+# EXPLORATORY BLIND SCOPE. An experiment that wants the blind protocol -- certify,
 # commit, then drive, checkable against git -- but is NOT the deployment test needs
 # somewhere to put its certificate and its scored cells.
 #
 # Without this there was nowhere. TOWN06_PASS accepts only 1 and 2, both of which name
-# directories PROTOCOL R4 requires to stand, so an exploratory blind run had exactly two
+# directories the protocol requires to stand, so an exploratory blind run had exactly two
 # options: write its cells into a protected ledger, or skip the blind check that is the
 # entire point of running it. The first corrupts the record and the second makes the
 # experiment worthless.

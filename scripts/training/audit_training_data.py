@@ -2,7 +2,7 @@
 """Did any training lap come off a DEGRADED server? Measure, do not assume.
 
 `collect_data.py` takes no CARLA restarts, so each base dataset was collected in one
-server session -- the R-SIM-1 exposure. Whether that matters for TRAINING (as opposed to
+server session -- the restart before every measurement run exposure. Whether that matters for TRAINING (as opposed to
 measurement) is an empirical question, and this answers it instead of arguing it.
 
 A degraded server has a specific, recorded signature, and it is not "looks odd":
@@ -58,7 +58,7 @@ STEER_LABEL_CEILING = 0.25
 # check fire on every DAgger round ever collected, which is a warning nobody reads.
 #
 # The defect's signature is the CONJUNCTION: a large correction commanded when there is
-# nothing to correct. T06-F43's 13 frames were at |CTE| of 0.001 m -- the car perfectly on
+# nothing to correct. The 13 frames found were at |CTE| of 0.001 m -- the car perfectly on
 # the line and the lookahead clamped onto a vertex that had run out of route.
 STEER_LABEL_CTE_FLOOR_M = 0.20
 
@@ -146,7 +146,7 @@ def main():
         for ds, key, kind, val in bad[:20]:
             print(f"    {ds} {key} {kind}={val:.2f}")
         print("\n  These datasets should be recollected before anything trained on them\n"
-              "  is trusted (D-11).")
+              "  is trusted.")
         return 1
     print("  No lap shows the degraded-server signature: reported speed and actual\n"
           "  displacement agree everywhere, and every lap covered its section.\n"

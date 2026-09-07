@@ -61,7 +61,7 @@ def main():
     # the same device, and was True on a card the installed torch had no kernels for
     # (sm_120 vs an sm_90 build). Both end in a silent CPU run that still prints numbers.
     dev = require_cuda()
-    # A capture set is gated for the STUDENT and INPUT SIZE it was captured at. Q7's
+    # A capture set is gated for the STUDENT and INPUT SIZE it was captured at. A
     # 84x28 set cannot be gated against the study's 168x56 students -- the frames are a
     # different projection, so the comparison would be meaningless rather than merely
     # wrong. Both are therefore overridable together, and neither default moves.
