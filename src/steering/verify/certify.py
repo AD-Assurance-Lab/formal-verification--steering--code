@@ -38,9 +38,9 @@ from steering import REPO_ROOT as _REPO_ROOT
 REPO = Path(_REPO_ROOT)
 
 from steering import config as C
-from steering import disturbance_models as dm
-from steering import verifiable_disturbance as vd
-from steering.student import StudentNet
+from steering.disturbance import disturbance_models as dm
+from steering.disturbance import verifiable_disturbance as vd
+from steering.networks.student import StudentNet
 from steering.study import design
 
 from auto_LiRPA import BoundedModule, BoundedTensor, PerturbationLpNorm

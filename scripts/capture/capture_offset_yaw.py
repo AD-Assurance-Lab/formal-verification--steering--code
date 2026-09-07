@@ -38,10 +38,10 @@ import carla
 REPO = Path(__file__).resolve().parent.parent
 
 from steering import config as C
-from steering import carla_env as env
-from steering import verifiable_disturbance as vd
-from steering.imaging import raw_to_bgr
-from steering.carla_lock import carla_lock
+from steering.simulator import carla_env as env
+from steering.disturbance import verifiable_disturbance as vd
+from steering.simulator.imaging import raw_to_bgr
+from steering.simulator.carla_lock import carla_lock
 
 # OY_OFFSETS / OY_YAWS let the nominal-only capture (offset 0, yaw 0) run cheaply: the
 # for-all-disturbance coverage claim is per-frame and needs no state grid, so it costs
@@ -122,7 +122,7 @@ def main():
     # difference of the redo, not a defect: it is the same road, sampled from the
     # definition of the road rather than from one drive along it.
     if True:
-        from steering.route import load_route, arc_lengths, route_length_m
+        from steering.drive.route import load_route, arc_lengths, route_length_m
         rt = np.asarray(load_route(args.direction), dtype=float)
         dx = np.diff(rt[:, 0], append=rt[0, 0])
         dy = np.diff(rt[:, 1], append=rt[0, 1])
@@ -425,7 +425,7 @@ def main():
     # so the number recorded here is the number the certifier and the audit recompute.
     # This used to subtract each bridge chord with its own arithmetic; the certifier and
     # the audit each summed consecutive poses naively, and the three disagreed by 178 m.
-    from steering.route import scored_span_m
+    from steering.drive.route import scored_span_m
     _cov = scored_span_m([float(r["x"]) for r in poses], [float(r["y"]) for r in poses])
     print(f"  scored-road coverage: {args.length_m:.0f} m requested, {_cov:.0f} m "
           f"actually spanned by {len(poses)} captured poses"

@@ -11,7 +11,7 @@ import pytest
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-from steering.condition_signature import assert_condition, identify
+from steering.simulator.condition_signature import assert_condition, identify
 
 
 # The four conditions as they MEASURE on the Town06 lap, on the student's

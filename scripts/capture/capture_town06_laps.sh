@@ -16,7 +16,7 @@ export STUDY_MAP=Town06
 export CARLA_PORT=${CARLA_PORT:-3000}
 export PYTHONUNBUFFERED=1
 
-python3 -m steering.protocol_lock >/dev/null || { echo "the protocol lock mismatch"; exit 1; }
+python3 -m steering.verify.protocol_lock >/dev/null || { echo "protocol lock mismatch"; exit 1; }
 
 # OY_CAPTURE_DIR retargets the capture set. A capture set is what a certificate is
 # computed against, so a stray value here would silently certify a different set of frames

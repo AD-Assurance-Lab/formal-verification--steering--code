@@ -38,8 +38,8 @@ REPO = Path(__file__).resolve().parent.parent
 
 from steering import config as C
 from steering.gpu import require_cuda
-from steering.student import StudentNet
-from steering import captures as ct
+from steering.networks.student import StudentNet
+from steering.verify import captures as ct
 from steering.study import town06_design as D
 
 

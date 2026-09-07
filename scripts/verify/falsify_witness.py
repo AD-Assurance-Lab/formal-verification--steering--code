@@ -53,9 +53,9 @@ REPO = Path(__file__).resolve().parent.parent
 from steering.gpu import require_cuda
 
 from steering import config as C
-from steering.student import StudentNet
+from steering.networks.student import StudentNet
 from steering.study import town06_design as D
-from steering.captures import nominal, scope_mask, CAPTURES
+from steering.verify.captures import nominal, scope_mask, CAPTURES
 
 CONDS = ("fog", "night", "low_sun")
 

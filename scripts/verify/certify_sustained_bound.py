@@ -54,9 +54,9 @@ REPO = Path(__file__).resolve().parent.parent
 
 from steering.gpu import require_cuda
 from steering import config as C
-from steering.route import load_route
-from steering import certify as cc
-from steering.student import StudentNet
+from steering.drive.route import load_route
+from steering.verify import certify as cc
+from steering.networks.student import StudentNet
 
 # FROM CONFIG, not hardcoded. This tuple once duplicated config.STUDENTS with different
 # checkpoint names, and the certifier silently certified one pair of students while the

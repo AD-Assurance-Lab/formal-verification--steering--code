@@ -40,9 +40,9 @@ import torch
 import torch.nn as nn
 import cv2
 
-from steering.student import student_preprocess, STUDENT_CROP_TOP, STUDENT_CROP_BOT
-from steering.perturbations import Clamp01
-from steering import disturbance_models as dm
+from steering.networks.student import student_preprocess, STUDENT_CROP_TOP, STUDENT_CROP_BOT
+from steering.disturbance.perturbations import Clamp01
+from steering.disturbance import disturbance_models as dm
 
 
 # ---------------------------------------------------------------- linear parameterization

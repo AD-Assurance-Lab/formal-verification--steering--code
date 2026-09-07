@@ -69,7 +69,7 @@ def load_model(name, device, student=False, channels=(8, 16, 16), fc=32, h=28, w
     duplicating the closed-loop driving code.
     """
     if student:
-        from steering.student import StudentNet
+        from steering.networks.student import StudentNet
         model = StudentNet(h, w, channels=tuple(channels), fc=fc).to(device)
     else:
         model = CarlaSteeringNet().to(device)

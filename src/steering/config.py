@@ -1,10 +1,30 @@
-"""
-Single source of truth for the E2E steering pipeline.
+"""Every number the study runs on, in one place.
 
-Design rule: measured PRIMITIVES are declared explicitly; every SAFETY number
-(CTE budget, steering corridor) is DERIVED from them below, so the two can never
-silently disagree. All primitives marked [MEASURED] were verified in CARLA
-(Town04, Tesla Model 3) via scripts/probe_geometry.
+Measured PRIMITIVES are declared; every SAFETY number is DERIVED from them below,
+so the two can never silently disagree. Primitives marked [MEASURED] were verified
+in the simulator with the study's own vehicle.
+
+THE NUMBERS YOU ARE PROBABLY LOOKING FOR. The rest of this file is why each one is
+what it is, next to the value it explains. `python3 -m steering.config` prints the
+derived safety criteria for the road named in STUDY_MAP.
+
+    what                        name                    value
+    -----------------------------------------------------------------------------
+    which road                  STUDY_MAP               Town04 (highway) or Town06
+    lane departure budget       CTE_BUDGET_M            metres off the centreline
+    steering corridor           CLOSED_LOOP_TOLERANCE   the certificate's tolerance
+    how long a drift must last  T_CLOSED_LOOP_S         1.85 s, calibrated
+    driving speed               TARGET_SPEED_MPH        20
+    simulator step              FIXED_DT                seconds per tick
+    network input               INPUT_W, INPUT_H        the student's crop
+    the shipped policies        STUDENTS                per road
+    where things live           REPO_ROOT, RESULTS_DIR, CHECKPOINT_DIR
+
+Two of those are the whole safety criterion and are worth stating plainly. A run
+FAILS if the vehicle leaves the lane by more than CTE_BUDGET_M. The certificate
+bounds the steering bias a disturbance can cause, and CERTIFIES a cell when that
+bound stays inside CLOSED_LOOP_TOLERANCE for the whole disturbance family. The
+tolerance is derived from the budget, not chosen beside it.
 """
 import math
 import os
@@ -551,7 +571,7 @@ def relu_count(channels, fc, in_h=28, in_w=84):
     # zip channels against a literal (5, 5, 3): passing five channels silently counted
     # only three layers and under-reported the model, which is exactly the kind of number
     # that then gets printed next to a certified rate.
-    from steering.student import CONV_SPEC                          # local: avoid an import cycle
+    from steering.networks.student import CONV_SPEC                          # local: avoid an import cycle
     channels = tuple(channels)
     if len(channels) not in CONV_SPEC:
         raise ValueError(f"relu_count: no conv stack defined for {len(channels)} layers; "

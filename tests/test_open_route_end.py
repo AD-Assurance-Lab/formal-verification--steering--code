@@ -14,7 +14,7 @@ import pytest
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-from steering.route import lap_finished, route_is_closed
+from steering.drive.route import lap_finished, route_is_closed
 
 # Pure pursuit commands at most ~0.09 on these routes at 20 mph.
 STEER_CEILING = 0.25

@@ -21,10 +21,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from steering import config as C
-from steering import carla_env as env
-from steering.expert import nearest_waypoint
-from steering.metrics import summarize_cte
-from steering.route import load_route, signed_cte_route, pure_pursuit_route
+from steering.simulator import carla_env as env
+from steering.drive.expert import nearest_waypoint
+from steering.drive.metrics import summarize_cte
+from steering.drive.route import load_route, signed_cte_route, pure_pursuit_route
 
 # Sections, not a hardcoded pair: Town06 has six, Town04 has its two directions.
 SPAWNS = C.SPAWNS
@@ -162,10 +162,10 @@ def main():
 
 if __name__ == "__main__":
     # One CARLA client per port. Two synchronous clients on one world interleave ticks
-    # and silently corrupt each other -- see steering/carla_lock.py for the run this
+    # and silently corrupt each other -- see steering/simulator/carla_lock.py for the run this
     # cost. Every entry point that ticks the world takes the lock, in both directions:
     # it refuses to start over someone else's run, and its own run is visible to them.
-    from steering.carla_lock import carla_lock, CarlaBusy
+    from steering.simulator.carla_lock import carla_lock, CarlaBusy
     try:
         with carla_lock(owner=" ".join(sys.argv[:3])):
             main()

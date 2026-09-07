@@ -65,7 +65,12 @@ days. All three levels, and exactly what reproduces to what precision, are in
 
 | | |
 |---|---|
-| `src/steering/` | the library: simulator interface, routes, networks, disturbance families, certification |
+| `src/steering/config.py` | every number the study runs on, with the ones you want listed at the top |
+| `src/steering/verify/` | certification: bounds, captures, scope, the protocol locks |
+| `src/steering/drive/` | routes, the expert driver, cross-track error, the ledger |
+| `src/steering/simulator/` | the CARLA interface, the port lock, condition checks |
+| `src/steering/networks/` | the teacher and student networks, and the dataset |
+| `src/steering/disturbance/` | the physically parameterized weather families |
 | `scripts/verify/` | recompute the certificates — no simulator needed |
 | `scripts/capture/` | render the frames the certifier reads |
 | `scripts/drive/` | the closed-loop ledger: drive the cells, aggregate, report |

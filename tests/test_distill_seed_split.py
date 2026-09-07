@@ -71,7 +71,7 @@ def test_an_explicit_generator_actually_changes_the_order():
 
 def test_reseeding_before_construction_changes_the_weights():
     """The other half of the split: INIT_SEED must control the initialisation."""
-    from steering.student import StudentNet
+    from steering.networks.student import StudentNet
 
     def weights(seed):
         torch.manual_seed(seed)

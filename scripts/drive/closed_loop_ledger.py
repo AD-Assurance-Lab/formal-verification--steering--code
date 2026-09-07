@@ -36,12 +36,12 @@ REPO = Path(__file__).resolve().parent.parent
 from steering.gpu import require_cuda
 
 import carla
-from steering import carla_env as env
+from steering.simulator import carla_env as env
 from steering import config as C
 
-from steering.route import (load_route, signed_cte_route, pure_pursuit_route,
+from steering.drive.route import (load_route, signed_cte_route, pure_pursuit_route,
                    lap_finished)
-from steering.student import StudentNet, student_preprocess
+from steering.networks.student import StudentNet, student_preprocess
 
 # Map-scoped, and now REDO-scoped. Town04 keeps results/ledger; the Town06 deployment
 # test writes to results/arterial/ledger; the Town04 REDO writes to results/highway/ledger.
@@ -55,7 +55,7 @@ from steering.student import StudentNet, student_preprocess
 # and this would have written every one of them into pass 1's directory, overwriting the
 # blind result R4 requires to stand. The guard and the writer must read the same
 # definition or the guard protects nothing.
-from steering.ledger import LEDGER, wilson
+from steering.drive.ledger import LEDGER, wilson
 # Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).
 SPAWNS = C.SPAWNS
 
@@ -440,7 +440,7 @@ def main():
     # this experiment and the Town04 discovery test, so it is enforced here rather than
     # left to whoever remembers to run the checker afterwards.
     if C.STUDY_MAP != "Town04":
-        from steering.blind_order import require_certificate_committed
+        from steering.verify.blind_order import require_certificate_committed
         require_certificate_committed()
 
     prov = run_provenance(args.condition)
@@ -491,7 +491,7 @@ def main():
         # therefore settled differently, and the closed loop amplified a millimetre of
         # difference into a different discrete basin. That is why the same checkpoint
         # scored 1.42 ft through this driver and 0.97-1.34 ft through evaluate.py.
-        from steering.condition_signature import assert_condition, identify
+        from steering.simulator.condition_signature import assert_condition, identify
         for _ in range(6):
             _f = world.tick()
         _sig = student_preprocess(env.raw_to_bgr(env.grab_frame(cam_queue, _f)), 168, 28)
@@ -621,8 +621,8 @@ def main():
 
 if __name__ == "__main__":
     # One CARLA client per port. Two synchronous clients on one world interleave ticks
-    # and silently corrupt each other -- see steering/carla_lock.py for the run this cost.
-    from steering.carla_lock import carla_lock, CarlaBusy
+    # and silently corrupt each other -- see steering/simulator/carla_lock.py for the run this cost.
+    from steering.simulator.carla_lock import carla_lock, CarlaBusy
     try:
         with carla_lock(owner=" ".join(sys.argv[:3])):
             sys.exit(main())

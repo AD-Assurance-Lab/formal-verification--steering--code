@@ -27,10 +27,10 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 @pytest.fixture(scope="module")
 def mod():
     os.environ["STUDY_MAP"] = "Town06"
-    for m in ("steering.config", "steering.route", "steering.scored_scope"):
+    for m in ("steering.config", "steering.drive.route", "steering.verify.scored_scope"):
         sys.modules.pop(m, None)
     C = importlib.import_module("steering.config")
-    S = importlib.import_module("steering.scored_scope")
+    S = importlib.import_module("steering.verify.scored_scope")
     return C, S
 
 
@@ -67,7 +67,7 @@ def test_capped_is_a_strict_subset_of_full(mod):
 def test_the_route_really_does_exceed_the_cap(mod):
     """If this ever fails, the premise of the whole scope exercise is gone."""
     _, S = mod
-    from steering.route import load_route
+    from steering.drive.route import load_route
     _, d = S.demand_profile(load_route("lap"))
     assert d.max() > S.SMAX_CAP
 
@@ -79,7 +79,7 @@ def test_spans_are_undilated(mod):
     is how a study selects the road that flatters it.
     """
     _, S = mod
-    from steering.route import load_route
+    from steering.drive.route import load_route
     arc, d = S.demand_profile(load_route("lap"))
     for a, b in S.excluded_spans("lap", S.SMAX_CAP):
         m = (arc >= a) & (arc <= b)

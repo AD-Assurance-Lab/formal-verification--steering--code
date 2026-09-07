@@ -152,14 +152,14 @@ def _routes():
 
 
 def test_route_closure_is_detected():
-    from steering import route
+    from steering.drive import route
     lap, eastbound = _routes()
     assert route.route_is_closed(eastbound), "Town04's lap closes (7.9 m) and must keep wrapping"
     assert not route.route_is_closed(lap), "the Town06 lap is open (173.8 m) and must not wrap"
 
 
 def test_open_route_never_wraps_to_the_start():
-    from steering import route
+    from steering.drive import route
     lap, eastbound = _routes()
     n = len(lap)
     for k in range(1, 8):
@@ -173,7 +173,7 @@ def test_pure_pursuit_does_not_saturate_at_an_open_route_end():
     """Clamping the lookahead to the last vertex makes the target the vehicle's
     own position, ld -> 0, and the steer saturate. It must extrapolate instead."""
     import math
-    from steering import route
+    from steering.drive import route
     lap, _ = _routes()
     n = len(lap)
 

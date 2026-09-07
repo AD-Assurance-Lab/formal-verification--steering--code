@@ -6,11 +6,11 @@ it is checked mechanically against git rather than asserted in prose. The check 
 COMMIT timestamps, not file mtimes: mtimes are trivially altered by a rebuild and
 prove nothing, whereas a commit is the record.
 
-    python3 -m steering.blind_order           # exit 1 if any cell is out of order
+    python3 -m steering.verify.blind_order           # exit 1 if any cell is out of order
 
 Import guard, for the ledger to call before it writes a scored cell:
 
-    from steering.blind_order import require_certificate_committed
+    from steering.verify.blind_order import require_certificate_committed
     require_certificate_committed()
 """
 import os

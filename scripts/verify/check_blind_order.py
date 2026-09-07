@@ -39,7 +39,7 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # it. It was invisible because audit_repo.py surfaces only the first line of this
 # tool's output, which is the highway warning.
 #
-# The Town06-specific checker (-m steering.blind_order) was correct throughout and
+# The Town06-specific checker (-m steering.verify.blind_order) was correct throughout and
 # is what the ledger calls before it writes a cell, so the protocol itself held. What
 # failed is the generic check that standing rule 1 names.
 CERTIFICATES = {

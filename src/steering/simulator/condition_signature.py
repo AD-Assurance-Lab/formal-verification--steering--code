@@ -29,7 +29,7 @@ Clear and low sun are then separated by mean, 0.304 against 0.184.
 Note that brightness alone would NOT work: low sun is DARKER than night.
 
     python3 scripts/condition_signature.py                 # validate on the captures
-    from steering.condition_signature import identify, assert_condition
+    from steering.simulator.condition_signature import identify, assert_condition
 """
 import sys
 from pathlib import Path

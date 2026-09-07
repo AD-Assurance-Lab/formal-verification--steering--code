@@ -61,10 +61,10 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 
 from steering import config as C
-from steering.model import CarlaSteeringNet
-from steering.student import StudentNet, student_preprocess
-from steering.imaging import preprocess_for_model
-from steering.dataset import load_manifests, block_split, balance_straight, filter_conditions
+from steering.networks.model import CarlaSteeringNet
+from steering.networks.student import StudentNet, student_preprocess
+from steering.simulator.imaging import preprocess_for_model
+from steering.networks.dataset import load_manifests, block_split, balance_straight, filter_conditions
 
 
 def aggregated_manifests(base="clear", dagger_dirs=("dagger", "dagger_student")):

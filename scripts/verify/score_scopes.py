@@ -30,7 +30,7 @@ import numpy as np
 REPO = Path(__file__).resolve().parent.parent
 
 from steering import config as C
-from steering import scored_scope as ss
+from steering.verify import scored_scope as ss
 from steering.study import town06_design as D
 
 LEDGER = REPO / D.LEDGER_SUBDIR
@@ -39,7 +39,7 @@ TRACES = LEDGER / "runs" / "traces"
 
 def _route_arc():
     """TRUE cumulative arc length per route vertex, from the vertices themselves."""
-    from steering.route import load_route
+    from steering.drive.route import load_route
     rt = np.asarray(load_route("lap"), float)[:, :2]
     seg = np.linalg.norm(np.diff(rt, axis=0), axis=1)
     return np.concatenate([[0.0], np.cumsum(seg)])

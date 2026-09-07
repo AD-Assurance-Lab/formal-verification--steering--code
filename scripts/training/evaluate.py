@@ -27,13 +27,13 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from steering import config as C
-from steering.model import load_model
-from steering import carla_env as env
-from steering.imaging import preprocess_for_model
-from steering.student import student_preprocess
-from steering.metrics import summarize_cte
-from steering.route import load_route, signed_cte_route, pure_pursuit_route
-from steering.route import lap_finished, arc_lengths
+from steering.networks.model import load_model
+from steering.simulator import carla_env as env
+from steering.simulator.imaging import preprocess_for_model
+from steering.networks.student import student_preprocess
+from steering.drive.metrics import summarize_cte
+from steering.drive.route import load_route, signed_cte_route, pure_pursuit_route
+from steering.drive.route import lap_finished, arc_lengths
 
 # Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).
 SPAWNS = C.SPAWNS
@@ -272,7 +272,7 @@ def main():
         # being drawn. set_condition already reads the weather struct back, but the
         # struct is what we asked for, not what the camera sees -- exposure, headlights
         # and the sensor all sit between them. One frame, and it costs a few ticks.
-        from steering.condition_signature import assert_condition, identify
+        from steering.simulator.condition_signature import assert_condition, identify
         for _ in range(6):
             f_ = world.tick()
         _img = env.grab_frame(img_queue, f_)
@@ -336,10 +336,10 @@ def main():
 
 if __name__ == "__main__":
     # One CARLA client per port. Two synchronous clients on one world interleave ticks
-    # and silently corrupt each other -- see steering/carla_lock.py for the run this
+    # and silently corrupt each other -- see steering/simulator/carla_lock.py for the run this
     # cost. Every entry point that ticks the world takes the lock, in both directions:
     # it refuses to start over someone else's run, and its own run is visible to them.
-    from steering.carla_lock import carla_lock, CarlaBusy
+    from steering.simulator.carla_lock import carla_lock, CarlaBusy
     try:
         with carla_lock(owner=" ".join(sys.argv[:3])):
             main()

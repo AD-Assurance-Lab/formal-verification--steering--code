@@ -24,10 +24,10 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 @pytest.fixture(scope="module")
 def lap():
     os.environ["STUDY_MAP"] = "Town06"
-    for m in ("steering.config", "steering.route"):
+    for m in ("steering.config", "steering.drive.route"):
         sys.modules.pop(m, None)
     C = importlib.import_module("steering.config")
-    load_route = importlib.import_module("steering.route").load_route
+    load_route = importlib.import_module("steering.drive.route").load_route
     rt = np.asarray(load_route(C.SECTIONS[0]), dtype=float)
     return C, rt
 
@@ -107,13 +107,13 @@ def test_poses_span_the_whole_scored_road(lap):
 def test_town04_is_unaffected():
     """Town04 has no bridges and a 2-column route; none of this may change it."""
     os.environ["STUDY_MAP"] = "Town04"
-    for m in ("steering.config", "steering.route"):
+    for m in ("steering.config", "steering.drive.route"):
         sys.modules.pop(m, None)
     C = importlib.import_module("steering.config")
-    load_route = importlib.import_module("steering.route").load_route
+    load_route = importlib.import_module("steering.drive.route").load_route
     for sec in C.SECTIONS:
         assert C.bridge_spans_for(sec) == []
         assert C.scored_len_m(sec) == C.SECTION_LEN_M[sec]
         assert np.asarray(load_route(sec)).shape[1] == 2
-    for m in ("steering.config", "steering.route"):
+    for m in ("steering.config", "steering.drive.route"):
         sys.modules.pop(m, None)

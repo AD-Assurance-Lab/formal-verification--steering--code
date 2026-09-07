@@ -37,8 +37,8 @@ def scope_mask(path, scope):
     vertices, never read from an index the capture stored, so this stays a measurement of
     where the frames actually are (standing rule 7).
     """
-    from steering import scored_scope as ss
-    from steering.route import load_route
+    from steering.verify import scored_scope as ss
+    from steering.drive.route import load_route
 
     z = np.load(path, allow_pickle=True)
     if "pose_x" not in z.files:

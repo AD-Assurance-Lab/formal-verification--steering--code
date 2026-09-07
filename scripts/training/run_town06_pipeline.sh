@@ -31,11 +31,11 @@ DATA=$REPO/data
 say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/pipeline.log"; }
 
 # the protocol gate: refuse to build anything if the frozen constants have moved.
-python3 -m steering.protocol_lock >/dev/null || {
-    say "FATAL: the protocol lock mismatch -- refusing to run"; exit 1; }
-say "the protocol lock OK; STUDY_MAP=$STUDY_MAP CARLA_PORT=$CARLA_PORT"
+python3 -m steering.verify.protocol_lock >/dev/null || {
+    say "FATAL: protocol lock mismatch -- refusing to run"; exit 1; }
+say "protocol lock OK; STUDY_MAP=$STUDY_MAP CARLA_PORT=$CARLA_PORT"
 
-# DETERMINISM gate, alongside the the protocol gate and for the same reason: a campaign
+# DETERMINISM gate, alongside the protocol gate and for the same reason: a campaign
 # built on a non-compliant simulator is not slightly worse, it is unusable, and
 # nothing in the resulting data reveals which server produced it.
 python3 -m carla_determinism --lock-only >/dev/null || {

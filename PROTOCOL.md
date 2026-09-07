@@ -33,7 +33,7 @@ impossible to do by accident and obvious if done on purpose.
 ## 2. The ordering rule
 
 **R1.** For every cell, the certificate verdict is committed to git **before** the
-closed-loop run for that cell begins. `scripts/check_order_town06.py` verifies this
+closed-loop run for that cell begins. `scripts/verify/check_blind_order.py` verifies this
 against commit timestamps and fails the study if violated.
 
 **R2.** The tool that computes held-out verdicts has no truth table and cannot print an
@@ -142,7 +142,7 @@ The published study half-encodes this already, in that the clear cell is driven 
 its certificate is recorded as vacuous (`Δ_p ≡ 0` by construction), but the assumption
 is never named. Here it is a gate:
 `scripts/training/check_student_competence.py` drives each student over every section in clear
-weather and records the result, and `certify_town06.py` REFUSES to run without that
+weather and records the result, and `scripts/verify/certify_town06.py` REFUSES to run without that
 record, or with a student that failed it.
 
 The check is clear weather only. Clear is the `s = 0` anchor of the disturbance family,
@@ -180,12 +180,12 @@ and the mixed cells are the weaker.
 ## 6. Route selection
 
 Selected on **map geometry alone**, before any Town06 model existed, by
-`scripts/build_town06_routes.py`. Inputs permitted: curvature profile, scored length,
+the route builder. Inputs permitted: curvature profile, scored length,
 lane-width constancy, junction character, lane count, street-light proximity. Inputs
 forbidden: anything a policy does on the route.
 
 Chosen: Town06 outer highway loop, 2861 m window, both carriageways of the same physical
-road. Cached under `routes/arterial/` with `route_meta.json` recording the
+road. Cached under `routes/arterial/`, with a route metadata file recording the
 full selection record.
 
 ---
@@ -214,7 +214,7 @@ informative because they were reported.
 
 ## 8. Locking
 
-The frozen section is hash-locked. `scripts/check_protocol_lock.py` recomputes the
+The frozen section is hash-locked. `python3 -m steering.verify.protocol_lock` recomputes the
 SHA-256 of §3 and compares it to `PROTOCOL.lock`. Every entry point that writes a
 Town06 result calls it and refuses to run on a mismatch.
 
@@ -329,7 +329,7 @@ All four conditions also still classify as themselves under
 `condition_signature.identify()`, with margin on every discriminator: night's sigma
 0.1422 against a 0.100 threshold and 0.065 for the rest; fog's p01 0.1614 against 0.120
 and at most 0.044 for the rest; clear's mean 0.2983 against 0.250 with low sun at 0.1204.
-That check matters because `evaluate.py` RAISES on a condition mismatch, so a threshold
+That check matters because the evaluator RAISES on a condition mismatch, so a threshold
 crossing would have aborted every run of the affected condition part-way through the
 unattended rebuild rather than at its start.
 
@@ -348,7 +348,7 @@ paper states it as though it were already enforced:
 **It was not enforced anywhere.** No script computed it, on either map, and neither
 rebuild ran it. The number quoted in the paper (0.0137 over 1,600 poses) comes from the
 published era. It is now `scripts/capture/capture_driven_gate.py`, it must pass before a
-certificate is computed, and `scripts/audit_repo.py` fails when a certificate exists with
+certificate is computed, and the run fails when a certificate exists with
 no gate artifact beside it.
 
 **Why it is a precondition and not a diagnostic.** The bound is computed offline on
@@ -362,8 +362,8 @@ it, because every one of them is computed downstream of the frames.
 **What it invalidates.** Section 9.5 says an amendment made after the corresponding result
 exists invalidates that result. Applied honestly:
 
-  * The superseded certificate (`results/arterial/_superseded_20260830_1731/`)
-    was computed with no gate artifact and does **not** satisfy this amendment. It is
+  * The superseded certificate, which is not shipped and is in this repository's
+    history, was computed with no gate artifact and does **not** satisfy this amendment. It is
     already withdrawn and replaced; this records why it could not simply be reinstated.
   * The **current** Town06 certificate does satisfy it. The rebuild ran
     captures -> gate -> certificate -> commit -> drives, so the gate preceded
@@ -447,16 +447,17 @@ process-per-run change do not satisfy this amendment and are superseded.
 #### Amendment 5. The scored span is reported under BOTH scopes, because the lap exceeds SMAX_CAP
 
 
-**What changed.** `build_study_route.py` declares, before any Town06 model existed:
+**What changed.** The route-selection criterion declared, before any model on this
+road existed:
 
     REF      = dict(s50=0.0023, s90=0.0168, s99=0.0467, smax=0.0467)   # Town04's lap
     SMAX_CAP = 0.060        # steering demand regime that actually trained on Town04
 
-with demand `arctan(WHEELBASE * kappa) / MAX_STEER`. `build_town06_sections.py` ENFORCED
-that cap: every stored section came in at smax <= 0.0596. `build_town06_lap_from_track.py`,
+with demand `arctan(WHEELBASE * kappa) / MAX_STEER`. The section builder ENFORCED that
+cap: every stored section came in at smax <= 0.0596. The lap builder that superseded it,
 which superseded the sections, never mentions it. **The lap's smax is 0.0670.**
 
-Measured by `scripts/scored_scope.py` from the route's own vertices:
+Measured by `scripts/verify/score_scopes.py` from the route's own vertices:
 
     over SMAX_CAP 0.060      2 spans,  78 m    arc 1224.1-1264.5, 2249.2-2287.0
     over Town04 smax 0.0467  3 spans, 130 m    arc   14.7-  64.3 added
@@ -477,13 +478,13 @@ at the LAST step of the lap, and passed by 1.4 mm of a 668 mm budget.
 mixed student look better, and a scope narrowed after seeing which cells were marginal is
 indistinguishable from tuning no matter how good the reason. **Both scopes are scored, from
 one set of drives, and both are reported.** `scripts/verify/score_scopes.py` refuses to pick, and
-`scripts/scored_scope.py` prints "Neither scope is the answer."
+`scripts/verify/score_scopes.py` prints "Neither scope is the answer."
 
-**What makes that possible, and it was missing.** `closed_loop_ledger.py` kept only a max
+**What makes that possible, and it was missing.** The ledger kept only a max
 |CTE| and its location per run; the per-step trace was written only under `--log-frames`,
 which also writes a PNG per step and is therefore never on for a scored run. A cell could
 not be re-scored against a different span at all. It now always writes a trace, and the
-per-run artifacts and traces are tracked -- `runs/` in `.gitignore` had excluded all 24 of
+per-run records and traces are kept inside each cell file -- `.gitignore` had excluded all 24 of
 them, so the committed result carried eight aggregated cells and none of the evidence
 behind them, which is the margin the protocol requires reported and the step count it requires
 checked.
@@ -509,6 +510,7 @@ certificate is new, and it is committed before any pass-2 drive (R1).
 **The blindness cost, stated plainly.** Pass 1's outcomes are known. R1 still holds
 literally -- every pass-2 certificate is committed before every pass-2 drive -- but pass 2
 is a scope-corrected re-measurement made with prior knowledge, not a blind test, and it
-must never be reported as one. `docs/TOWN06_PASS2_PREREGISTRATION.md` records what we
+must never be reported as one. A written pre-registration, in this repository's
+history, records what we
 expect before driving, so the re-run has falsifiable content rather than confirming a hope.
 That document is committed before the drives and is not edited afterwards.
