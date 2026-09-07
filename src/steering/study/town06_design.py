@@ -125,11 +125,6 @@ def cells():
             yield (cond, student)
 
 
-def scored_cells():
-    """Cells that count toward the agreement statistic (clear is vacuous)."""
-    return [c for c in cells() if c[0] not in VACUOUS_CELLS]
-
-
 # Repetitions per cell. the protocol's lap rule: the LAP is the repetition and THREE laps is the
 # standard -- a reproducibility check, not a sample for estimating a rate. Measured on the
 # corrected harness, rep-to-rep verdict disagreement was 0 of 48 section-pairs.

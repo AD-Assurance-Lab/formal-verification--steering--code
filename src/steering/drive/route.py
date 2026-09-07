@@ -29,44 +29,6 @@ ROUTES_DIR = os.path.join(_REPO_ROOT, "routes", ROUTES_SUBDIR)
 STEP_M = 2.0  # route vertex spacing
 
 
-def build_route(world_map, spawn, step=STEP_M, max_pts=4000):
-    """Trace the intended lane centerline from a spawn using a straightest-at-
-    junction policy until the loop closes. Returns an (N, 2) array of (x, y).
-
-    The simulator client is imported here rather than at module scope. This is the
-    only function in the module that needs it, and it needs a live world map anyway
-    -- so importing it at the top would make every geometry helper below, and the
-    whole no-simulator certification path, depend on a wheel that ships with CARLA."""
-    import carla
-
-    start = world_map.get_waypoint(
-        carla.Location(x=spawn["x"], y=spawn["y"], z=spawn["z"]),
-        project_to_road=True, lane_type=carla.LaneType.Driving)
-    pts = [(start.transform.location.x, start.transform.location.y)]
-    wp, total = start, 0.0
-    for _ in range(max_pts):
-        nxts = wp.next(step)
-        if not nxts:
-            break
-        if len(nxts) == 1:
-            wp = nxts[0]
-        else:  # at a junction, keep the straightest continuation
-            f = wp.transform.get_forward_vector()
-            wp = max(nxts, key=lambda c: f.x * c.transform.get_forward_vector().x
-                                        + f.y * c.transform.get_forward_vector().y)
-        total += step
-        p = (wp.transform.location.x, wp.transform.location.y)
-        pts.append(p)
-        if total > 150 and math.hypot(p[0] - pts[0][0], p[1] - pts[0][1]) < 8.0:
-            break
-    return np.asarray(pts, dtype=np.float64)
-
-
-def save_route(name, route):
-    os.makedirs(ROUTES_DIR, exist_ok=True)
-    np.save(os.path.join(ROUTES_DIR, f"{name}.npy"), route)
-
-
 def load_route(name):
     """Load a route. `ROUTE_ROLL` rotates the index origin without touching geometry.
 

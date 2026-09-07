@@ -17,13 +17,6 @@ from torch.utils.data import Dataset
 from steering.simulator.imaging import preprocess_for_model
 
 
-def load_manifest(manifest_path):
-    base = os.path.dirname(manifest_path)
-    with open(manifest_path) as f:
-        rows = list(csv.DictReader(f))
-    return base, rows
-
-
 def load_manifests(manifest_paths):
     """Combine multiple manifests (base BC + DAgger rounds) into one row list with
     ABSOLUTE image paths, so DAgger can aggregate datasets living in different dirs.
