@@ -123,9 +123,6 @@ EXPOSURE_GAMMA = 2.2
 # Auto-exposure disqualifies ACDC for absolute RADIANCE recovery, but the network
 # consumes 8-bit camera output and ACDC *is* real 8-bit camera output, so it is a
 # valid reference for this particular quantity.
-TARGET_ROAD_MU = (0.28, 0.34)
-TARGET_ROAD_SIGMA_RATIO = 1.3    # measured sigma within this factor of a real road's
-
 # ── Condition-dependent exposure ─────────────────────────────────────────────
 # DECIDED: exposure is a DECLARED FUNCTION OF CONDITION, not a
 # single global constant.
@@ -203,11 +200,6 @@ def _shutter_override(condition, exp):
         exp["shutter"] = float(shutter)
     return exp
 
-
-def exposure_ratio(condition):
-    """Exposure gain relative to daylight -- the known factor the disturbance model's
-    gain must carry when the condition changes the camera setting."""
-    return _DAYLIGHT_EXPOSURE["shutter"] / exposure_for(condition)["shutter"]
 
 # ── Speed (fixed longitudinal, to remove velocity as a variable) ─────────────
 TARGET_SPEED_MPH = 20.0
@@ -548,14 +540,6 @@ TOWN06_STUDENTS = (
 # cannot overwrite S_mixed_t06lap_168x56_w4.selected -- the pin passes 1 and 2 resolve
 # through. Overwriting it would silently change which model those committed results refer
 # to, which is the failure the protocol exists to prevent.
-TOWN06_PASS3_WIDTHS = (
-    # (name, SWEEP base -- where _s<seed> checkpoints live, PIN base, channels, fc)
-    ("S_mixed_t06_w4", "S_mixed_t06lap_168x56_w4",
-     "S_mixed_t06lap_168x56_w4p3", (32, 64, 64), 128),
-    ("S_mixed_t06_w6", "S_mixed_t06lap_168x56_w6",
-     "S_mixed_t06lap_168x56_w6p3", (48, 96, 96), 192),
-)
-
 # Every GATE lap must stay under this fraction of the CTE budget. The screen stays at the
 # full budget. Fixed before the first draw and not to be moved afterwards: the shipped
 # w4_s3 holds only 6/12 laps under it (fog 1.78/1.28/1.18, low sun 1.10/1.21/1.26 against
@@ -762,7 +746,6 @@ CLOSED_LOOP_TOLERANCE = CLOSED_LOOP_TOLERANCE_RAD / MAX_STEER_RAD
 # STEERING_REPO_ROOT to point an installed copy at a checkout somewhere else; without
 # it an installed package would write its datasets into site-packages.
 from steering import REPO_ROOT
-_BASE = REPO_ROOT
 DATASET_DIR = os.path.join(REPO_ROOT, "data")
 CHECKPOINT_DIR = os.path.join(REPO_ROOT, "checkpoints")
 RESULTS_DIR = os.path.join(REPO_ROOT, "results")

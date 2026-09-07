@@ -10,7 +10,6 @@ import os
 import queue
 
 import carla
-import numpy as np
 
 from steering import config as C
 from steering.config import (
@@ -488,18 +487,6 @@ def spawn_vehicle(world, spawn):
     return vehicle
 
 
-def set_tire_friction(vehicle, friction):
-    """Set all wheels' tire friction (snow/ice ~0.5-1.5 vs dry ~3+). Models the
-    traction loss of winter driving -- a vehicle-dynamics hazard that a perception
-    -> steering verifier cannot capture."""
-    pc = vehicle.get_physics_control()
-    wheels = pc.wheels
-    for w in wheels:
-        w.tire_friction = friction
-    pc.wheels = wheels
-    vehicle.apply_physics_control(pc)
-
-
 def _apply_exposure(bp, shutter=None, iso=None, fstop=None, gamma=None, mode=None):
     """Pin the camera's exposure.
 
@@ -563,35 +550,6 @@ def spawn_camera_at(world, transform, exposure=None, condition=None):
     img_queue = queue.Queue()
     camera.listen(img_queue.put)
     return camera, img_queue
-
-
-def spawn_depth_camera(world, vehicle):
-    """Depth camera at the IDENTICAL transform as the RGB camera (D4).
-
-    Ground-truth depth is what makes the fog transmission t(d) measurable per pixel
-    instead of assumed from flat-road geometry, and every identifiability failure in the
-    previous generation traced back to not having it.
-
-    Trap 2 applies to BOTH sensors: CARLA's sensor queue runs a frame behind, so each
-    must be matched on the frame id `world.tick()` returns, not simply popped per tick.
-    """
-    bp = world.get_blueprint_library().find("sensor.camera.depth")
-    bp.set_attribute("image_size_x", str(CAM_WIDTH))
-    bp.set_attribute("image_size_y", str(CAM_HEIGHT))
-    bp.set_attribute("fov", str(CAM_FOV))
-    tf = carla.Transform(carla.Location(x=CAM_X, y=CAM_Y, z=CAM_Z))
-    camera = world.spawn_actor(bp, tf, attach_to=vehicle)
-    q = queue.Queue()
-    camera.listen(q.put)
-    return camera, q
-
-
-def decode_depth_metres(raw_bgra):
-    """CARLA depth encoding -> metres. (R + G*256 + B*256^2) / (256^3 - 1) * 1000."""
-    b = raw_bgra[:, :, 0].astype(np.float64)
-    g = raw_bgra[:, :, 1].astype(np.float64)
-    r = raw_bgra[:, :, 2].astype(np.float64)
-    return ((r + g * 256.0 + b * 256.0 * 256.0) / (256.0 ** 3 - 1)) * 1000.0
 
 
 # ── Speed control (physics-honest) ───────────────────────────────────────────
