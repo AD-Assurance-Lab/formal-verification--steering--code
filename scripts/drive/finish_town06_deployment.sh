@@ -45,7 +45,7 @@ carla_start() {
     say "FATAL: CARLA did not become ready, or violates the determinism rules"; return 1; }
 
 # ---------------------------------------------------------------- preconditions
-python3 -m steering.protocol_lock >/dev/null || { say "FATAL: protocol lock mismatch"; exit 1; }
+python3 -m steering.verify.protocol_lock >/dev/null || { say "FATAL: protocol lock mismatch"; exit 1; }
 python3 -m carla_determinism --lock-only >/dev/null || {
     say "FATAL: carla-determinism rules lock mismatch"; exit 1; }
 
@@ -227,7 +227,7 @@ fi
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 git push -q origin "$BRANCH" && say "pushed $BRANCH" || say "WARNING: push of $BRANCH failed"
 
-python3 -m steering.blind_order >/dev/null || {
+python3 -m steering.verify.blind_order >/dev/null || {
     say "FATAL: R1 still not satisfied after commit. Refusing to drive."; exit 1; }
 say "R1 satisfied. The prediction is on the record; driving may begin."
 

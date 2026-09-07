@@ -6,12 +6,12 @@ results existed. This makes silent drift detectable: any edit to the frozen sect
 changes the hash, and every entry point that writes a Town06 result refuses to run
 until the lock is deliberately regenerated through the amendment procedure.
 
-    python3 -m steering.protocol_lock            # verify, exit 1 on mismatch
-    python3 -m steering.protocol_lock --write    # (re)generate the lock
+    python3 -m steering.verify.protocol_lock            # verify, exit 1 on mismatch
+    python3 -m steering.verify.protocol_lock --write    # (re)generate the lock
 
 Import guard for use inside pipeline scripts:
 
-    from steering.protocol_lock import require_locked
+    from steering.verify.protocol_lock import require_locked
     require_locked()
 """
 import argparse

@@ -24,7 +24,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 from steering import config as C
-from steering.ledger import wilson, LEDGER
+from steering.drive.ledger import wilson, LEDGER
 
 
 def main():

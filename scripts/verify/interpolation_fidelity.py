@@ -45,7 +45,7 @@ REPO = Path(__file__).resolve().parent.parent
 from steering.gpu import require_cuda
 
 from steering import config as C
-from steering.student import StudentNet
+from steering.networks.student import StudentNet
 
 DIAG = REPO / "results" / "fidelity"
 
@@ -84,7 +84,7 @@ def check_coverage(path, sec):
     expect = getattr(C, "SECTION_LEN_M", {}).get(sec)
     if expect is None:
         try:
-            from steering.route import load_route
+            from steering.drive.route import load_route
             rt = np.asarray(load_route(sec), dtype=float)
             expect = float(np.sum(np.hypot(np.diff(rt[:, 0]), np.diff(rt[:, 1]))))
         except Exception:

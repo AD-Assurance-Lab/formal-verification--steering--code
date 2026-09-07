@@ -14,7 +14,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from steering.imaging import preprocess_for_model
+from steering.simulator.imaging import preprocess_for_model
 
 
 def load_manifest(manifest_path):

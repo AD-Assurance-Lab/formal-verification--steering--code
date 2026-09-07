@@ -26,8 +26,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from steering import config as C
-from steering.model import CarlaSteeringNet
-from steering.dataset import (load_manifests, block_split, balance_straight, filter_conditions,
+from steering.networks.model import CarlaSteeringNet
+from steering.networks.dataset import (load_manifests, block_split, balance_straight, filter_conditions,
                      SteeringDataset)
 
 

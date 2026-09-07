@@ -21,7 +21,7 @@ import pytest
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-from steering.route import arc_lengths, route_length_m
+from steering.drive.route import arc_lengths, route_length_m
 
 
 def test_a_third_column_cannot_change_the_length():
@@ -41,12 +41,12 @@ def test_arc_is_monotonic_and_starts_at_zero():
 
 def test_the_lap_measures_its_declared_length():
     os.environ["STUDY_MAP"] = "Town06"
-    for m in ("steering.config", "steering.route"):
+    for m in ("steering.config", "steering.drive.route"):
         sys.modules.pop(m, None)
     C = importlib.import_module("steering.config")
-    from steering.route import load_route, route_length_m as rlm
+    from steering.drive.route import load_route, route_length_m as rlm
     assert rlm(load_route(C.SECTIONS[0])) == pytest.approx(C.LAP_TOTAL_M, abs=1.0)
-    for m in ("steering.config", "steering.route"):
+    for m in ("steering.config", "steering.drive.route"):
         sys.modules.pop(m, None)
 
 

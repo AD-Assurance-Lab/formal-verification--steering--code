@@ -14,7 +14,7 @@ after-write and queue-desync traps: silent, and only visible if you go looking.
 
 Usage -- wrap anything that touches CARLA:
 
-    from steering.carla_lock import carla_lock
+    from steering.simulator.carla_lock import carla_lock
     with carla_lock():
         ...
 

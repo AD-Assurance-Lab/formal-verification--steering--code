@@ -32,7 +32,7 @@ import numpy as np
 import torch
 import csv
 from steering import config as C
-from steering.student import StudentNet
+from steering.networks.student import StudentNet
 
 THRESHOLD = 0.05          # the paper's stated gate
 

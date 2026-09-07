@@ -20,7 +20,7 @@ from steering.config import (
 )
 # Re-export the shared image helpers so existing callers (env.raw_to_bgr,
 # env.preprocess_for_model) keep working while the definition lives in imaging.
-from steering.imaging import raw_to_bgr, preprocess_for_model  # noqa: F401
+from steering.simulator.imaging import raw_to_bgr, preprocess_for_model  # noqa: F401
 
 
 # ── Connection / world ───────────────────────────────────────────────────────

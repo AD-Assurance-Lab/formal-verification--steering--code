@@ -46,11 +46,11 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 import carla
 import carla_determinism as cd
-from steering import carla_env as env
+from steering.simulator import carla_env as env
 from steering import config as C
-from steering.imaging import preprocess_for_model
-from steering.student import student_preprocess
-from steering.condition_signature import identify
+from steering.simulator.imaging import preprocess_for_model
+from steering.networks.student import student_preprocess
+from steering.simulator.condition_signature import identify
 
 REF_PATH = os.path.join(REPO, "results", "photometry_reference.json")
 

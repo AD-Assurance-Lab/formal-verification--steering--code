@@ -44,7 +44,7 @@ from steering import REPO_ROOT as _REPO_ROOT
 REPO = Path(_REPO_ROOT)
 
 from steering import config as C
-from steering.route import load_route
+from steering.drive.route import load_route
 
 # The two declared thresholds, from the route-selection criterion. SMAX_CAP is the one the
 # section builder ENFORCED, so it defines the capped scope; REF_SMAX is Town04's own

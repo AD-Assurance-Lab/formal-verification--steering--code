@@ -20,7 +20,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 
-from steering.blind_order import require_certificate_committed, first_commit_epoch
+from steering.verify.blind_order import require_certificate_committed, first_commit_epoch
 from steering.study import town06_design as D
 
 CERT = REPO / D.CERT_ARTIFACT

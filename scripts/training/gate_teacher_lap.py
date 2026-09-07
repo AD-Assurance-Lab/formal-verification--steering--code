@@ -22,12 +22,12 @@ import carla
 import numpy as np
 import torch
 import carla_determinism as cd
-from steering import carla_env as env
+from steering.simulator import carla_env as env
 from steering import config as C
 from steering.gpu import require_cuda
-from steering.model import load_model
-from steering.imaging import preprocess_for_model
-from steering.route import load_route, signed_cte_route, pure_pursuit_route
+from steering.networks.model import load_model
+from steering.simulator.imaging import preprocess_for_model
+from steering.drive.route import load_route, signed_cte_route, pure_pursuit_route
 
 
 def main():
