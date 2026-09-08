@@ -118,6 +118,21 @@ def baseline_for(cond_path, fallback):
     foreign baseline, -0.034 against its own, versus -0.035 westbound). Certifying
     eastbound fog against its own clear moves S_clear from -0.82x to -0.45x.
 
+
+    WHAT THIS MEASUREMENT NO LONGER SAYS. The +0.049 above was measured before the
+    photometry gate existed, on captures this study does not ship. Every server that
+    renders a capture is now checked against a recorded absolute brightness on launch,
+    and the reference records what that variation actually is: a standard deviation of
+    1.2e-04 in mean clear brightness across fresh servers, which is 0.05% of the mean
+    and about 400x smaller than the figure above. Against the arterial fog disturbance
+    (0.063 mean absolute shift per pixel) it is 0.2%.
+
+    So the shipped certificates do use a foreign clear baseline -- each capture holds
+    one condition, and the server is restarted between them precisely so a previous
+    condition cannot leak into the next -- but the drift that choice admits is bounded
+    and small. It was not, in the generation the +0.049 came from, and that is why the
+    preference for a paired baseline stays in the code.
+
     So: if the condition capture recorded its own `clear`, that is the baseline.
     Which one was used is printed, never chosen silently.
     """

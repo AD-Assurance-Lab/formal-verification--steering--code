@@ -91,8 +91,12 @@ def nominal(path, cond, mask=None):
 def baseline_for(cond_path, fallback, mask=None):
     """Paired clear baseline if the condition capture recorded its own, else foreign.
 
-    A clear baseline from a different session shifts the bound materially. Which
-    one was used is printed and recorded, never chosen silently.
+    A clear baseline from a different session can shift the bound, and did by +0.049
+    per pixel in a generation captured before the photometry gate existed. Under the
+    gate that variation is measured at 1.2e-04 across fresh servers -- 0.2% of the
+    arterial fog disturbance -- so every shipped cell uses a foreign baseline and the
+    drift it admits is small. Which one was used is printed and recorded, never chosen
+    silently.
     """
     own = nominal(cond_path, "clear", mask)
     return (own, "paired") if own is not None else (fallback, "foreign")
