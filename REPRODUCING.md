@@ -234,3 +234,17 @@ provenance of the server it was driven on. The step-by-step trajectories are one
 That is a deliberate change from one file per lap, which was 171 files saying largely the
 same thing. `scripts/drive/aggregate_ledger_runs.py` writes this shape from the per-run
 artifacts the driver emits, so re-driving a cell reproduces it.
+
+A `run` in `traces.csv` is `<condition>__<student>__<direction>__rep<NN>`, built from the
+cell's `student` field rather than its `checkpoint`, which differ wherever a policy is
+resolved to a later checkpoint.
+
+**The highway traces and the highway cell files were driven by different versions of the
+driver, and every run differs between them.** The cell files are the study's reported
+numbers and stand as collected. The traces were driven afterwards, once the driver had
+gained a check that reads the rendered weather back from a frame; that check ticks the
+world six more times before driving, which settles the vehicle differently and sends the
+closed loop into another basin. Every verdict survived the re-drive and no cell's laps
+disagreed, so nothing about the result changed — but a trace's peak error is not the
+number the cell file beside it reports, and the two should not be quoted against each
+other. On the arterial the two agree exactly, because one driver produced both.
