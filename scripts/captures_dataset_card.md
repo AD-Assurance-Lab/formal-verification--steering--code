@@ -21,7 +21,7 @@ a simulator**.
 | | route | conditions | poses | frames |
 |---|---|---|---|---|
 | `captures/arterial/` | one 2,289 m lap, Town06 | clear, fog, night, low sun | 1,060 | 168×56 |
-| `captures/highway/` | 2,988 m both directions, Town04 | clear, fog, night, shadows | 1,492 each | 84×28 |
+| `captures/highway/` | 2,988 m both directions, Town04 | clear, fog, night, low sun | 1,492 each | 84×28 |
 
 Each `.npz` holds one condition along one route with the pose track it was captured at.
 

@@ -239,6 +239,12 @@ A `run` in `traces.csv` is `<condition>__<student>__<direction>__rep<NN>`, built
 cell's `student` field rather than its `checkpoint`, which differ wherever a policy is
 resolved to a later checkpoint.
 
+The low sun condition is stored as `shadows` in the highway's files -- filenames, cell
+keys and the `run` column -- and as `low_sun` on the arterial. It is one condition under
+two names, and low sun is the one the paper uses. The highway's spelling is frozen
+because it is the key inside a certificate that was committed before the laps it
+predicts, and editing that file would break the evidence that it came first.
+
 `results/arterial/hardware_recheck.json` is the one void cell's disposition, and the
 campaigns that produced it. The committed ledger fails the mixed student's fog cell on
 one lap of three in each pass while the other laps sit near half the budget, and laps
