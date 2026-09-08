@@ -1,7 +1,7 @@
 {
-  "certificate": "results/town04_v2/calibration/sustained_bound.json",
+  "certificate": "results/highway/calibration/sustained_bound.json",
   "derived_by": "scripts/attest_certificate_scope.py",
-  "note": "Derived from the committed captures, not recorded by the certifier. This certificate predates lap_end_m in _meta and is the pre-registered artifact, so it is not regenerated.",
+  "note": "Derived from the committed captures, not recorded by the certifier. This certificate predates lap_end_m in _meta and is the pre-registered artifact, so it is not regenerated. The road was called town04_v2 when this was written and the certificate path above has been updated to match the rename; the deriving script is in the history, before the repository was pruned to the published artifact.",
   "lap_end_m": 2988.0,
   "capture_span_m": {
     "lap_eastbound_clear.npz": 2988.0,

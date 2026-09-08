@@ -50,7 +50,7 @@ FILES = [
     ("highway/capture_gate.json", "results/highway/calibration/capture_gate.json",
      "85f0a7ceae809837615b57dc4c242f895c97247b39e3ad0d9158bdbcef24232c"),
     ("highway/scope.json", "results/highway/calibration/scope.json",
-     "22cf8d35d04eaa43b12ae4251bf18e5a1b67b91c23e00a34a3adcf1376f90cd1"),
+     "65555f2c9e80a6e7b755ec1308798ff1671c96dbeff2158ad2225794d2464a4f"),
     ("highway/lap_eastbound_clear.npz",
      "results/highway/calibration/lap_eastbound_clear.npz",
      "9e3a19fd60e03ff58530779134716e23506c55956591b12ff5a5bf0c4a9fcb96"),
