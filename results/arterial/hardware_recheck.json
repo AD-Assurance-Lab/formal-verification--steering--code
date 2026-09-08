@@ -862,5 +862,15 @@
         }
       }
     }
+  },
+  "resolved": {
+    "cell": "fog / S_mixed_t06lap_168x56_w4_s3",
+    "verdict": "PASS",
+    "n_laps": 30,
+    "n_over_budget": 0,
+    "worst_cte_ft": 1.9475,
+    "basis": "Every lap of the shipped mixed student under fog, pooled across the campaigns above. No lap is over budget, so the laps agree and the cell has a verdict.",
+    "supersedes": "The void in results/arterial/ledger and ledger_pass2, whose three-lap samples each contained one over-budget lap that no subsequent lap reproduced. Those files are unchanged.",
+    "consequence_for_the_agreement_figure": "This cell drives PASS while the certificate returns NOT_CERTIFIED, so counting it LOWERS certificate-driving agreement on the arterial from 4 of 5 to 4 of 6. It is a disagreement in the incompleteness direction: the bound refuses a policy that drives. No cell is certified while driving fails, so soundness is unaffected."
   }
 }

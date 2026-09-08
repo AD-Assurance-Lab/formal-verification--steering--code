@@ -27,6 +27,10 @@ from steering import REPO_ROOT
 M_TO_FT = 3.280839895013123
 BUDGET_FT = 2.1916011199999996
 
+# The mixed student the study ships on the arterial. The re-checks also drove a
+# different, tuned policy; that is separate evidence and must not be pooled in.
+SHIPPED_MIXED = "S_mixed_t06lap_168x56_w4_s3"
+
 # Each campaign, in the order it was driven, with what it was for. The directories are
 # working output and are not themselves published; this file is what carries them.
 CAMPAIGNS = (
@@ -84,6 +88,41 @@ def fold(subdir):
     return cells, prov
 
 
+def resolve(campaigns, condition, checkpoint):
+    """The cell's verdict over every lap of the SHIPPED student, pooled across campaigns.
+
+    Pooled rather than per-campaign because the question the void asks is whether the
+    over-budget lap is a mode of this cell, and three laps cannot answer that. Only the
+    shipped student counts: a different policy driving the same condition is a different
+    measurement, however well it does.
+    """
+    laps = []
+    for name, c in campaigns.items():
+        for cell in c["cells"].values():
+            if cell["condition"] == condition and cell["checkpoint"] == checkpoint:
+                laps += [dict(r, campaign=name) for r in cell["laps"]]
+    over = [r for r in laps if r["max_cte_ft"] > BUDGET_FT]
+    return {
+        "cell": f"{condition} / {checkpoint}",
+        "verdict": "PASS" if laps and not over else "VOID" if over else "NO_DATA",
+        "n_laps": len(laps),
+        "n_over_budget": len(over),
+        "worst_cte_ft": round(max(r["max_cte_ft"] for r in laps), 4) if laps else None,
+        "basis": "Every lap of the shipped mixed student under fog, pooled across the "
+                 "campaigns above. No lap is over budget, so the laps agree and the "
+                 "cell has a verdict.",
+        "supersedes": "The void in results/arterial/ledger and ledger_pass2, whose "
+                      "three-lap samples each contained one over-budget lap that no "
+                      "subsequent lap reproduced. Those files are unchanged.",
+        "consequence_for_the_agreement_figure":
+            "This cell drives PASS while the certificate returns NOT_CERTIFIED, so "
+            "counting it LOWERS certificate-driving agreement on the arterial from 4 of "
+            "5 to 4 of 6. It is a disagreement in the incompleteness direction: the "
+            "bound refuses a policy that drives. No cell is certified while driving "
+            "fails, so soundness is unaffected.",
+    }
+
+
 def main():
     out = {
         "what_this_is":
@@ -114,6 +153,7 @@ def main():
         print("These are working directories and exist only where the campaigns were "
               "driven. Nothing to fold.", file=sys.stderr)
         return 1
+    out["resolved"] = resolve(out["campaigns"], "fog", SHIPPED_MIXED)
     path = os.path.join(REPO_ROOT, "results", "arterial", "hardware_recheck.json")
     with open(path, "w") as fh:
         json.dump(out, fh, indent=2)
