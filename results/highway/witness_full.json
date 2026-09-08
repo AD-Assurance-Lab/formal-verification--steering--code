@@ -30,7 +30,10 @@
     "witness": false,
     "certificate": "FALSIFIED",
     "poses": 179,
-    "scope": "full"
+    "scope": "full",
+    "pp_worst": 0.01816135158179609,
+    "pp_worst_x_tol": 1.5120216939719957,
+    "pp_witness": true
   },
   "westbound/S_mixed/fog": {
     "s_star": 0.9998,
@@ -96,7 +99,10 @@
     "witness": false,
     "certificate": "FALSIFIED",
     "poses": 178,
-    "scope": "full"
+    "scope": "full",
+    "pp_worst": 0.018473248078561065,
+    "pp_worst_x_tol": 1.5379886087832926,
+    "pp_witness": true
   },
   "eastbound/S_mixed/fog": {
     "s_star": 0.99971,
