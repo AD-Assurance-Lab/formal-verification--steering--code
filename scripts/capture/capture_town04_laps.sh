@@ -9,7 +9,7 @@
 # is per-frame, so the offset x yaw grid costs a great deal and buys nothing here.
 # --length-m is deliberately NOT passed, so the whole route is covered.
 set -uo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 REPO=$PWD
 # THIS IS THE REDO'S DRIVER: it writes to results/highway/, so it must run under the
 # REDO's config. It set only STUDY_MAP, so it captured with the PUBLISHED constants while

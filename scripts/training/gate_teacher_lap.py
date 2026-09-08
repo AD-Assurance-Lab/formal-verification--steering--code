@@ -17,7 +17,13 @@ import json
 import sys
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parent.parent
+# The root comes from the package, never from counting directories up from this
+# file. Counting is what broke every entry point here when scripts/ was grouped
+# into folders: each one silently resolved to <repo>/scripts and looked for the
+# study's artifacts there.
+from steering import REPO_ROOT
+
+REPO = Path(REPO_ROOT)
 import carla
 import numpy as np
 import torch

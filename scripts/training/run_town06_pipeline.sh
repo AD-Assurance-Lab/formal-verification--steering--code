@@ -17,7 +17,7 @@
 #   STAGES=teacher_clear bash scripts/...          # run one stage
 set -uo pipefail
 
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 REPO=$PWD
 export STUDY_MAP=Town06
 export CARLA_PORT=${CARLA_PORT:-3000}

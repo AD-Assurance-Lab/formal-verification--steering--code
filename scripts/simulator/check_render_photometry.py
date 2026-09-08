@@ -42,7 +42,11 @@ import sys
 
 import numpy as np
 
-REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# The root comes from the package, never from counting directories up from this
+# file. Counting is what broke every entry point here when scripts/ was grouped
+# into folders: each one silently resolved to <repo>/scripts and looked for the
+# study's artifacts there.
+from steering import REPO_ROOT as REPO
 
 import carla
 import carla_determinism as cd

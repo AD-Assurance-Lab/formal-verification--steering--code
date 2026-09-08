@@ -24,7 +24,7 @@
 #     .venv/bin/python -c "import torch,numpy;print(torch.__version__,numpy.__version__)"
 #     # must still print 2.13.0+cu130 1.26.4
 set -euo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 REPO=$PWD
 
 # PINNED COMMITS. Not a branch, not HEAD: a complete verifier's verdicts are only

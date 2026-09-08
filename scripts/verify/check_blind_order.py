@@ -27,7 +27,11 @@ import os
 import subprocess
 import sys
 
-REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# The root comes from the package, never from counting directories up from this
+# file. Counting is what broke every entry point here when scripts/ was grouped
+# into folders: each one silently resolved to <repo>/scripts and looked for the
+# study's artifacts there.
+from steering import REPO_ROOT as REPO
 
 # (certificate, ledger glob) per study.
 #
@@ -67,7 +71,14 @@ def _git(*args):
 
 def _add_commit(path):
     """(hash, unix_time) of the commit that FIRST added `path`, or None."""
-    out = _git("log", "--diff-filter=A", "--format=%H %ct", "--", str(path))
+    # --follow traces the artifact through the rename this repository did when it
+    # was finalised; without it every path's first add is that one rename commit
+    # and the ordering reads as unverifiable. -M100% is not optional beside it:
+    # plain --follow matches on similarity, and a pass-2 ledger cell is about 80%
+    # identical to its pass-1 sibling, so it hops to the wrong file and reports
+    # an add twelve hours too early. Requiring an exact match keeps it honest.
+    out = _git("log", "--follow", "-M100%", "--diff-filter=A",
+               "--format=%H %ct", "--", str(path))
     if not out or not out.split():
         return None
     h, t = out.splitlines()[-1].split()

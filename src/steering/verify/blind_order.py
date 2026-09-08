@@ -32,7 +32,14 @@ def _git(*args):
 
 def first_commit_epoch(relpath):
     """Unix time of the commit that FIRST added `relpath`, or None if untracked."""
-    out = _git("log", "--diff-filter=A", "--format=%ct", "--", relpath)
+    # --follow traces the artifact through the rename this repository did when it
+    # was finalised; without it every path's first add is that one rename commit
+    # and the ordering reads as unverifiable. -M100% is not optional beside it:
+    # plain --follow matches on similarity, and a pass-2 ledger cell is about 80%
+    # identical to its pass-1 sibling, so it hops to the wrong file and reports
+    # an add twelve hours too early. Requiring an exact match keeps it honest.
+    out = _git("log", "--follow", "-M100%", "--diff-filter=A",
+               "--format=%ct", "--", relpath)
     if not out:
         return None
     return int(out.splitlines()[-1])
