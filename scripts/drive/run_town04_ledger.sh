@@ -62,6 +62,12 @@ carla_restart() {   # $1 = cell tag, so the restart is auditable per cell
     say "FATAL: CARLA did not return"; return 1; }
 carla_up 12 || carla_restart boot || exit 1
 
+# Where the cells land. HIGHWAY_LEDGER_SUBDIR scopes a re-drive away from the committed
+# ledger so the two can be compared before either is believed.
+LEDGER_DIR=$(STUDY_MAP=Town04 python3 -c "import steering.config as C;print(C.LEDGER_DIR)")
+say "ledger directory: ${LEDGER_DIR#$REPO/}"
+mkdir -p "$LEDGER_DIR/runs"
+
 mapfile -t STUDENT_ROWS < <(STUDY_MAP=Town04 python3 -c "
 import steering.config as C
 for nm, ck, ch, fc in C.STUDENTS:
@@ -74,7 +80,7 @@ for ROW in "${STUDENT_ROWS[@]}"; do
   STU=$(STUDY_MAP=Town04 python3 -c "import steering.config as C;print(C.final_student('$BASE'))")
   say "student $BASE -> $STU"
   for COND in clear fog night shadows; do
-    CELL="$REPO/results/highway/ledger/${COND}__${BASE}__closed_loop.json"
+    CELL="$LEDGER_DIR/${COND}__${BASE}__closed_loop.json"
     if [ -f "$CELL" ]; then say "SKIP  $COND/$BASE (cell exists)"; continue; fi
     say "START $COND/$BASE"
     # ONE PROCESS AND ONE SERVER PER RUN -- see run_town06_ledger.sh for why. Two
@@ -83,7 +89,7 @@ for ROW in "${STUDENT_ROWS[@]}"; do
     RUN_OK=1
     for REP in $(seq 0 $((LAPS-1))); do
       for SEC in eastbound westbound; do
-        RUNF="$REPO/results/highway/ledger/runs/${COND}__${BASE}__${SEC}__rep0${REP}.json"
+        RUNF="$LEDGER_DIR/runs/${COND}__${BASE}__${SEC}__rep0${REP}.json"
         [ -f "$RUNF" ] && { say "SKIP  $COND/$BASE $SEC rep$REP (run exists)"; continue; }
         carla_restart "${COND}_${BASE}_${SEC}_${REP}" || { RUN_OK=0; break; }
         # The lock is NOT deleted here. It reclaims itself when its holder is dead

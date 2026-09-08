@@ -750,7 +750,13 @@ DATASET_DIR = os.path.join(REPO_ROOT, "data")
 CHECKPOINT_DIR = os.path.join(REPO_ROOT, "checkpoints")
 RESULTS_DIR = os.path.join(REPO_ROOT, "results")
 
-LEDGER_DIR = os.path.join(REPO_ROOT, "results", "highway", "ledger")
+# A RE-DRIVE WRITES SOMEWHERE ELSE. The arterial scopes its passes with TOWN06_PASS
+# so a second pass cannot land on the first one's cells; the highway had no equivalent,
+# so re-driving it would silently replace the committed ledger with the new run and the
+# comparison that makes a re-drive a result would be gone before it could be made.
+# Default is unchanged, so nothing moves unless it is asked to.
+LEDGER_DIR = os.path.join(REPO_ROOT, "results", "highway",
+                          os.environ.get("HIGHWAY_LEDGER_SUBDIR", "ledger"))
 
 
 def summary():

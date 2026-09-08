@@ -45,7 +45,7 @@ import carla
 from steering.simulator import carla_env as env
 from steering import config as C
 
-from steering.drive.route import (load_route, signed_cte_route, pure_pursuit_route,
+from steering.drive.route import (STEP_M as ROUTE_STEP_M, load_route, signed_cte_route, pure_pursuit_route,
                    lap_finished)
 from steering.networks.student import StudentNet, student_preprocess
 
@@ -283,9 +283,19 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps,
         # does not cover.
         in_bridge = False
         here_m = None
-        if getattr(C, "LAP_BASED", False) and hint is not None:
-            here_m = hint * float(C.LAP_META.get("step_m", 2.0))
-            in_bridge = any(a <= here_m <= b for a, b in C.BRIDGE_SPANS)
+        if hint is not None:
+            # WHERE ON THE ROUTE THIS STEP IS, on either road. This was computed only
+            # when the map was lap-based, so every highway trace carried an empty
+            # here_m column -- the one field that says where on the road a departure
+            # happened. Both routes are laid out at a fixed vertex spacing, so the
+            # position is the hint index times that spacing.
+            step_m = (float(C.LAP_META.get("step_m", 2.0))
+                      if getattr(C, "LAP_BASED", False) else float(ROUTE_STEP_M))
+            here_m = hint * step_m
+            # Bridges are an arterial feature: the highway has no intersection to
+            # bridge, so this stays empty there rather than being skipped.
+            in_bridge = any(a <= here_m <= b
+                            for a, b in (getattr(C, "BRIDGE_SPANS", None) or ()))
         if in_bridge:
             steer, _, _ = pure_pursuit_route(route, tf, hint)
             n_bridged += 1
