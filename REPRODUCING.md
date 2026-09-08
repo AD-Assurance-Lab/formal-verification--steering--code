@@ -239,6 +239,16 @@ A `run` in `traces.csv` is `<condition>__<student>__<direction>__rep<NN>`, built
 cell's `student` field rather than its `checkpoint`, which differ wherever a policy is
 resolved to a later checkpoint.
 
+`results/arterial/hardware_recheck.json` is the one void cell's disposition, and the
+campaigns that produced it. The committed ledger fails the mixed student's fog cell on
+one lap of three in each pass while the other laps sit near half the budget, and laps
+that disagree void a cell rather than passing or failing it. Four later campaigns, 84
+laps in all, say what the disagreement was: the cell drives with no lap over budget on
+the current card, 24 out of 24 on the cell alone and 3 of 3 in two separate re-drives of
+every cell, and the lap that voided it was measured on the graphics card the lab has
+since replaced. `scripts/drive/summarize_rechecks.py` rebuilds the file. The committed
+passes are untouched and remain the reported numbers.
+
 **The highway traces and the highway cell files were driven by different versions of the
 driver, and every run differs between them.** The cell files are the study's reported
 numbers and stand as collected. The traces were driven afterwards, once the driver had
