@@ -16,7 +16,7 @@
 # published artifacts are tracked in git under exactly the unsuffixed names and comparing
 # old against new IS the result.
 set -uo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 REPO=$PWD
 export STUDY_MAP=Town04
 export CARLA_PORT=${CARLA_PORT:-3000}

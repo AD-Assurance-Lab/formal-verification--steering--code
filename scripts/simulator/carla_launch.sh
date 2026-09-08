@@ -17,7 +17,7 @@
 # Does NOT stop anything first -- that is carla_restart.sh's job, and it matters that the
 # two are separate: mid-pipeline restarts must not pkill the client that is driving.
 set -uo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 REPO=$PWD
 PORT=${CARLA_PORT:-3000}
 CARLA_ROOT=${CARLA_ROOT:-$HOME/carla}

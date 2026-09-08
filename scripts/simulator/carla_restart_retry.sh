@@ -25,7 +25,7 @@
 # nobody can defend. This lowers no bar -- carla_restart.sh still runs the full
 # determinism preflight and the photometry gate on every attempt.
 set -uo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 LOGF=${1:?logfile required}
 LABEL=${2:-restart}
 ATTEMPTS=${CARLA_RESTART_ATTEMPTS:-3}

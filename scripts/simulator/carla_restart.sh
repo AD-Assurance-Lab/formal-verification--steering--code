@@ -11,7 +11,7 @@
 #
 #   bash scripts/simulator/carla_restart.sh
 set -uo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 REPO=$PWD
 PORT=${CARLA_PORT:-3000}
 

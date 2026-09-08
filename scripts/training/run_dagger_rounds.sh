@@ -15,7 +15,7 @@
 #   bash scripts/training/run_dagger_rounds.sh clear  12
 #   bash scripts/training/run_dagger_rounds.sh mixed  12
 set -uo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 REPO=$PWD
 WHICH=${1:?clear or mixed}
 MAX=${2:-12}

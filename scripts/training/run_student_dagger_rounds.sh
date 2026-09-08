@@ -23,7 +23,7 @@
 #
 #   bash scripts/training/run_student_dagger_rounds.sh S_clear_t06lap_168x28_w2 3 clear "16,32,32" 64 168 28
 set -uo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 REPO=$PWD
 CK=${1:?student checkpoint base}
 ROUNDS=${2:-3}

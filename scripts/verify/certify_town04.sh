@@ -13,7 +13,7 @@
 #
 # No CARLA. Everything here reads artifacts that already exist.
 set -euo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 export STUDY_MAP=Town04
 
 CAL=results/highway/calibration

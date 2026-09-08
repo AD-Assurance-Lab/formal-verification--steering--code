@@ -19,7 +19,7 @@
 #   bash scripts/verify/capture_interp_fidelity.sh s00            # one section
 #   bash scripts/verify/capture_interp_fidelity.sh s00 s01 s02    # several
 set -uo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 export CARLA_PORT=${CARLA_PORT:-3000}
 # NOMINAL POSE ONLY. Both consumers of these files index argmin(|offsets|) and
 # argmin(|yaws|), so the 9x5 grid is 45x the frames for data nothing reads: 18,000 per
