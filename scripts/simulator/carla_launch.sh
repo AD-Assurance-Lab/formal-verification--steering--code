@@ -72,6 +72,7 @@ if ss -ltn 2>/dev/null | grep -q ":$PORT "; then
         exit 1
     fi
     echo "  reusing the $_mode server already on $PORT (pid $_pid)"
+    exit 0
 fi
 
 if [ "${CARLA_WINDOWED:-0}" = "1" ]; then

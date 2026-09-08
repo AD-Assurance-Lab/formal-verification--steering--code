@@ -1,7 +1,7 @@
 """`--help` must never drive, restart CARLA, or touch a result.
 
-audit_repo.py probes every CARLA entry point with `--help` to prove it imports cleanly as
-its own process. That probe is only safe if the script PARSES arguments.
+Every CARLA entry point is probed with `--help` to prove it imports cleanly as its own
+process. That probe is only safe if the script PARSES arguments.
 
 `capture_gate_drives.py` had no argparse at all. `--help` fell straight through into the
 body, which restarts CARLA and drives a lap per student per section -- so running the
@@ -26,7 +26,7 @@ from conftest import skip_if_missing_dependency
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# The entry points audit_repo.py probes with --help, plus the other committed drivers
+# Every entry point that takes arguments, plus the other committed drivers
 # that take arguments. Any script here that reaches its body on --help is the defect.
 ENTRYPOINTS = [
     "scripts/drive/closed_loop_ledger.py",
@@ -82,7 +82,7 @@ def test_help_is_fast_and_side_effect_free(entry):
 
 @pytest.mark.parametrize("entry", ENTRYPOINTS)
 def test_entrypoint_imports_cleanly(entry):
-    """The check audit_repo.py is actually making, kept here so it runs in CI too."""
+    """It must import cleanly as its own process, not only parse arguments."""
     path = os.path.join(REPO, entry)
     if not os.path.exists(path):
         pytest.skip(f"{entry} not present")

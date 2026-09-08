@@ -11,7 +11,7 @@ drive, touches no result and starts no server -- and a module that stops being t
 fails this test by timing out, which is the second thing worth knowing.
 
 Two files are excluded and they are excluded because they run on import by design:
-audit_repo.py IS its own check, and check_gpu_usable.py probes the card.
+check_gpu_usable.py probes the card, so importing it touches the GPU.
 """
 import os
 import subprocess
@@ -22,7 +22,7 @@ import pytest
 from conftest import skip_if_missing_dependency
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RUN_ON_IMPORT = {"scripts/audit_repo.py", "scripts/simulator/check_gpu_usable.py"}
+RUN_ON_IMPORT = {"scripts/simulator/check_gpu_usable.py"}
 
 
 def _modules():

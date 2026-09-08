@@ -143,7 +143,11 @@ for ROW in "${STUDENT_ROWS[@]}"; do
         RUNF="$LEDGER_DIR/runs/${COND}__${STU}__${SEC}__rep0${REP}.json"
         [ -f "$RUNF" ] && { say "SKIP  $COND/$STU $SEC rep$REP (run exists)"; continue; }
         carla_restart || { RUN_OK=0; break; }
-        rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null
+        # The lock is NOT deleted here. It reclaims itself when its holder is dead
+        # (steering/simulator/carla_lock.py), so removing it buys nothing except the
+        # ability to start a second client over a LIVE one -- which is the collision the
+        # lock exists to prevent, and which once turned a clean cell into a 20.69 ft
+        # departure that read as a model failure.
         if ! python3 scripts/drive/closed_loop_ledger.py --student "$STU" --condition "$COND" \
              --channels "$CH" --fc "$FC" --w "$IN_W" --h "$IN_H" \
              --only-section "$SEC" --only-rep "$REP" \

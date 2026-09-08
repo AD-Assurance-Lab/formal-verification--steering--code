@@ -367,11 +367,16 @@ exists invalidates that result. Applied honestly:
     already withdrawn and replaced; this records why it could not simply be reinstated.
   * The **current** Town06 certificate does satisfy it. The rebuild ran
     captures -> gate -> certificate -> commit -> drives, so the gate preceded
-    certification rather than following it: worst mean |capture - driven| **0.0261**
-    against the 0.05 threshold, 12/12 cells
+    certification rather than following it: worst mean |capture - driven| **0.0148**
+    against the 0.05 threshold, 2/2 cells
     (`results/arterial/captures/capture_gate.json`).
-  * Town04 (discovery test) likewise: worst **0.0065**, gated by
+  * Town04 (discovery test) likewise: worst **0.0066**, 4/4 cells, gated by
     `scripts/verify/certify_town04.sh` before its certifier runs.
+
+    These three figures previously read 0.0261 over 12/12 cells and 0.0065. Those
+    belonged to the superseded six-section generation and were never updated when the
+    lap rebuild replaced it. They are now read from the gate artifacts themselves, and
+    `tests/test_reported_numbers.py` fails if the document and the files disagree.
 
 So no current result is invalidated. That is a fact about the rebuild, not a convenience
 -- had the amendment been adopted a day earlier it would have withdrawn the then-current
@@ -384,6 +389,14 @@ and has nothing to tune, so it cannot launder a verdict.
 
 
 #### Amendment 4. The LAP is the repetition, and three laps is the standard
+
+**This amendment supersedes two rows of the frozen constants in section 3, and section 3
+is deliberately not edited.** "Min reps: 10 per cell, Wilson intervals" and "Verification
+poses: 200 per direction" describe the study as it was registered; what it ran is three
+laps per cell and 133 poses. Rewriting section 3 to match the outcome would defeat the
+only purpose a frozen section has, and would change the digest `PROTOCOL.lock` attests.
+So the rows stand as registered, this amendment records what replaced them, and the lock
+still certifies the original registration rather than a tidied one.
 
 
 **What changed.** Section 3 treated SECTIONS as repetitions -- "6 sections x 2 reps = 12
@@ -420,9 +433,12 @@ no number at all.
 **Margin is reported with every verdict.** A cell that passes with every span far below
 budget and a cell that passes at 1% of budget are different results, and a pass/fail bit
 does not distinguish them. **A cell with no margin is a finding in its own right** --
-`clear/S_clear_t06` came within 1.0% of the budget in the condition that is supposed to be
-its competence precondition -- and adding laps would only characterise a coin flip more
-precisely rather than change that conclusion.
+a cell that passes with 1% of budget left is a finding -- and adding laps would only
+characterise a coin flip more precisely rather than change that conclusion.
+
+This paragraph named `clear/S_clear_t06` as such a cell. It is not one: on the shipped
+lap it passes with 41% of budget in hand on pass 1 and 38% on pass 2. That figure also
+came from the six-section generation. The rule stands; the example was stale.
 
 **If the three laps disagree, that is a BUG until proven otherwise, and more laps are
 never the response.** Under an enforced harness the laps agree -- measured, 0 of 48

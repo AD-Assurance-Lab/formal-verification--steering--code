@@ -91,7 +91,11 @@ fi
 # killing the holder is a worse version of the same collision.
 LOCKF="/tmp/carla-locks/carla-$PORT.lock"
 if [ "${CARLA_RESTART_FORCE:-}" != "1" ] && [ -f "$LOCKF" ]; then
-    LOCKPID=$(head -c 64 "$LOCKF" 2>/dev/null | tr -dc '0-9' | head -c 9)
+    # FIRST LINE ONLY. The lock is "{pid}\n{owner}\n" and the owner is the holder's
+    # command line, which contains digits -- every checkpoint name here has some.
+    # Stripping non-digits from the whole file glued them onto the pid, kill -0 failed
+    # on the result, and this guard concluded the holder was dead and killed it.
+    LOCKPID=$(head -1 "$LOCKF" 2>/dev/null | tr -dc '0-9')
     if [ -n "$LOCKPID" ] && kill -0 "$LOCKPID" 2>/dev/null; then
         echo "REFUSING to restart: CARLA :$PORT is held by live pid $LOCKPID"
         echo "  ($(cat "$LOCKF" 2>/dev/null))"
@@ -160,7 +164,11 @@ if ss -ltn 2>/dev/null | grep -q ":$PORT "; then
     echo "FATAL: port $PORT is still held after SIGTERM and SIGKILL. Something else owns it."
     exit 1
 fi
-rm -f "/tmp/carla-locks/carla-$PORT.lock" 2>/dev/null
+# The lock is NOT deleted here. It reclaims itself when its holder is dead
+# (steering/simulator/carla_lock.py), so removing it buys nothing except the
+# ability to start a second client over a LIVE one -- which is the collision the
+# lock exists to prevent, and which once turned a clean cell into a 20.69 ft
+# departure that read as a model failure.
 
 # CARLA_WINDOWED=1 launches with a visible window on DISPLAY so runs can be WATCHED.
 # The spectator chase camera (carla_env.update_spectator) follows the ego automatically;

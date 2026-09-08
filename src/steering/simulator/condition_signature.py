@@ -96,10 +96,19 @@ def main():
     print(f"{'file':28s} {'want':9s} {'got':9s} {'mean':>7s} {'sigma':>7s} "
           f"{'p01':>7s} {'dark':>6s}")
     for p in caps:
-        want = _canon(p.stem.rsplit("_", 1)[1])
         z = np.load(p, allow_pickle=True)
         conds = [_canon(str(c)) for c in z["conds"]]
-        if want not in conds:
+        # MATCH THE FILENAME AGAINST THE CONDITIONS THE FILE DECLARES, longest first.
+        # This split the stem on the last underscore, so `lap_lap_low_sun` asked for
+        # "sun", found no such condition, and silently `continue`d -- and then reported
+        # "3 correct, 0 misclassified out of 3". The one condition it skipped is low
+        # sun, which is the closest of the four to the others on this route and the one
+        # carrying the study's only certified cell.
+        want = next((c for c in sorted(conds, key=len, reverse=True)
+                     if p.stem.endswith(c)), None)
+        if want is None:
+            print(f"{p.name:28s} SKIPPED: no condition in {conds} matches the name")
+            bad += 1
             continue
         fr = z["frames"][conds.index(want)]
         frame = fr[fr.shape[0] // 2, 0, 0]          # a mid-section pose

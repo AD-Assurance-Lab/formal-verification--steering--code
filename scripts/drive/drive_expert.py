@@ -90,7 +90,12 @@ def drive_one(world, world_map, vehicle, img_queue, direction, max_steps):
 
 def save_and_report(direction, records):
     os.makedirs(C.RESULTS_DIR, exist_ok=True)
-    csv_path = os.path.join(C.RESULTS_DIR, f"oracle_{direction}.csv")
+    # Into results/oracle/, which is where the committed reference lives and what
+    # REPRODUCING tells a reader to diff against. This wrote one directory up, so
+    # the documented comparison never lined up.
+    out_dir = os.path.join(C.RESULTS_DIR, "oracle")
+    os.makedirs(out_dir, exist_ok=True)
+    csv_path = os.path.join(out_dir, f"oracle_{direction}.csv")
     with open(csv_path, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(records[0].keys()))
         w.writeheader()

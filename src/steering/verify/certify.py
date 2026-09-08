@@ -460,8 +460,14 @@ class Bounder:
             x_L=torch.tensor(lo, dtype=torch.float32, device=self.device).unsqueeze(0),
             x_U=torch.tensor(hi, dtype=torch.float32, device=self.device).unsqueeze(0))
         fresh = BoundedModule(fresh_net, torch.empty_like(centre), device=self.device)
+        # THE SAME METHOD THE CACHED MODULE USES. This was hardcoded to
+        # CROWN-Optimized while the shipped certifiers construct the Bounder with
+        # plain CROWN, so the "cached vs fresh" comparison was really "plain CROWN
+        # vs alpha-CROWN" -- two different bounds, legitimately different, reported
+        # as a soundness mismatch. The check is about whether the library reads the
+        # rebound weights, and that question is only asked by holding the method fixed.
         l2, u2 = fresh.compute_bounds(x=(BoundedTensor(centre, ptb),),
-                                      method="CROWN-Optimized")
+                                      method=self.method)
         l2, u2 = float(l2.min()), float(u2.max())
         err = max(abs(l1 - l2), abs(u1 - u2))
         width = max(abs(u2 - l2), 1e-9)

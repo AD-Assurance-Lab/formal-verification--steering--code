@@ -159,6 +159,24 @@ def git_head():
         return None
 
 
+def _verifier_version():
+    """The bound library's version, recorded beside torch and numpy.
+
+    The whole formal claim rests on it, it is installed from upstream git rather than
+    a release, and the certificate recorded everything about the environment except
+    the one package that computes the bound.
+    """
+    try:
+        from importlib.metadata import version
+        return version("auto_LiRPA")
+    except Exception:
+        try:
+            import auto_LiRPA
+            return getattr(auto_LiRPA, "__version__", "unknown")
+        except Exception:
+            return "unknown"
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -303,6 +321,7 @@ def main():
           f" {'x tol':>14s}  verdict")
 
     out, n = {}, 0
+    _equiv_checked = False
     for nm, ck_base, ch, fc in STUDENTS:
         # Certify the FINAL student -- the newest student-DAgger round -- not the
         # distilled intermediate. Bounding the wrong checkpoint would produce a
@@ -345,6 +364,29 @@ def main():
                         a, b = j / args.nsplit, (j + 1) / args.nsplit
                         mid, half = 0.5 * (a + b), 0.5 * (b - a)
                         W = (half * (x1 - x0)).reshape(-1, 1)
+
+                        # SOUNDNESS SELF-CHECK, once per student. Bounder rebinds the leading
+                        # layer's weights in place rather than rebuilding the bounded module
+                        # per sub-box -- 8.3 s down to 47 ms, and the reason certifying six
+                        # cells is minutes rather than hours. That shortcut assumes the
+                        # library reads the live weights, and check_equivalence is the test
+                        # that it does: same box, cached module against a freshly built one.
+                        #
+                        # It existed and was called from nowhere the shipped certifiers
+                        # reach, so every published bound rested on an unvalidated shortcut.
+                        # It costs one extra bound per run.
+                        if not _equiv_checked:
+                            _equiv_checked = True
+                            ok_, err_, cached_, fresh_, rtol_, moved_ = bd.check_equivalence(
+                                W, x0 + mid * (x1 - x0), np.array([-1.0]), np.array([1.0]),
+                                net, IN_H, IN_W)
+                            print(f"  [cache check] err {err_:.2e} vs rel_tol {rtol_:.2e}, "
+                                  f"staleness probe moved {moved_:.2e}  "
+                                  f"{'OK' if ok_ else 'MISMATCH'}", flush=True)
+                            if not ok_:
+                                sys.exit("ABORT: the cached bounded module disagrees with a "
+                                         "fresh one. Every bound in this run would be "
+                                         "unsound.")
                         l_, u_ = bd(W, x0 + mid * (x1 - x0),
                                     np.array([-1.0]), np.array([1.0]))
                         lo_i.append(l_)
@@ -399,6 +441,7 @@ def main():
         # ran plain CROWN; a bound is not interpretable without its method.
         method=args.method,
         torch=torch.__version__, numpy=np.__version__,
+        auto_lirpa=_verifier_version(),
         blind="no truth table; agreement is not computable by this tool")
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(json.dumps(out, indent=2))
