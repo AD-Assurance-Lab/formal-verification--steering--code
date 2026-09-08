@@ -53,7 +53,7 @@ python3 scripts/fetch_captures.py            # 641 MB, every file digest-checked
 STUDY_MAP=Town06 python3 scripts/verify/certify_town06.py --out /tmp/cert.json
 ```
 
-`--depth 1` gets the 13 MB you need. A full clone also pulls the study's history, which
+`--depth 1` gets the 16 MB you need. A full clone also pulls the study's history, which
 is 128 MB and is where the research record lives — worth having if you want to read how
 the work happened, and not otherwise.
 
@@ -76,7 +76,7 @@ days. All three levels, and exactly what reproduces to what precision, are in
 | `scripts/drive/` | the closed-loop ledger: drive the cells, aggregate, report |
 | `scripts/simulator/` | launch, restart and health-check CARLA |
 | `scripts/training/` | build the networks: collect, train, DAgger, distil, gate |
-| `checkpoints/` | the four shipped policies, so nothing has to be retrained |
+| `checkpoints/` | the four shipped policies, 4.8 MB, so nothing has to be retrained |
 | `results/highway`, `results/arterial` | every artifact behind a reported number, including each individual lap |
 | `routes/` | the two pre-registered routes, one per road |
 | `PROTOCOL.md` | the frozen study protocol, hash-locked against `PROTOCOL.lock` |
@@ -92,13 +92,13 @@ ordering is checkable against commit timestamps with `scripts/verify/check_blind
 
 This is the published artifact: the pipeline, the instruments, and the reported results.
 The full record — pre-registrations, findings, dispositions, retired instruments and the
-experiments that did not work — is in this repository's git history, before v1.3.0.
+experiments that did not work — is in this repository's git history, before this release.
 
 ## Citing
 
 ```bibtex
 @software{ad_assurance_lab_steering_verification,
-  author  = {{AD Assurance Lab, Western Michigan University}},
+  author  = {Ghalan, Menuka and Rodgers, Charles and Asher, Zachary D.},
   title   = {Formal verification of end-to-end steering under
              physically parameterized weather},
   year    = {2026},
@@ -106,5 +106,31 @@ experiments that did not work — is in this repository's git history, before v1
   url     = {https://github.com/AD-Assurance-Lab/formal-verification--steering--code}
 }
 ```
+
+## Built on
+
+The bounds come from [auto_LiRPA](https://github.com/Verified-Intelligence/auto_LiRPA),
+which implements CROWN and its variants. The certificates here are plain CROWN over an
+input-space branch-and-bound; the verifier does the bound propagation and this repository
+supplies the disturbance family, the scope and the criterion. `scripts/bootstrap_env.sh`
+pins the exact upstream commit, because the package is installed from git rather than a
+release.
+
+```bibtex
+@inproceedings{xu2020automatic,
+  title     = {Automatic perturbation analysis for scalable certified robustness
+               and beyond},
+  author    = {Xu, Kaidi and Shi, Zhouxing and Zhang, Huan and Wang, Yihan and
+               Chang, Kai-Wei and Huang, Minlie and Kailkhura, Bhavya and
+               Lin, Xue and Hsieh, Cho-Jui},
+  booktitle = {Advances in Neural Information Processing Systems},
+  year      = {2020}
+}
+```
+
+The simulator is [CARLA](https://carla.org) 0.9.16. The captured frames are renderings of
+CARLA's own assets and are redistributed under the terms CARLA publishes for them.
+
+## License
 
 Apache License 2.0. See [LICENSE](LICENSE).

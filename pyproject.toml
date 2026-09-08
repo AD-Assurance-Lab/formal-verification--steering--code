@@ -44,7 +44,7 @@ dev = ["pytest>=7.4", "ruff>=0.6"]
 
 [project.urls]
 Homepage = "https://github.com/AD-Assurance-Lab/formal-verification--steering--code"
-Dataset = "https://huggingface.co/datasets/ad-assurance-lab/steering-verification-captures"
+Dataset = "https://huggingface.co/datasets/AD-Assurance-Lab/steering-verification-captures"
 
 [tool.setuptools.packages.find]
 where = ["src"]

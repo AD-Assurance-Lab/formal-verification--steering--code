@@ -40,7 +40,7 @@ from steering import REPO_ROOT as REPO
 # always been `results/arterial/certificate_town06.json`. So every run of this checker
 # reported "8 closed-loop cell(s) recorded with NO certificate -- order unverifiable",
 # and standing rule 1 was never actually verified here for the study that most needed
-# it. It was invisible because audit_repo.py surfaces only the first line of this
+# it. It was invisible because the caller surfaced only the first line of this
 # tool's output, which is the highway warning.
 #
 # The Town06-specific checker (-m steering.verify.blind_order) was correct throughout and

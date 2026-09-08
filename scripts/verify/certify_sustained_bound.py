@@ -184,6 +184,24 @@ def check_coverage(path, direction):
 
 
 
+def _verifier_version():
+    """The bound library's version, recorded beside torch and numpy.
+
+    The whole formal claim rests on it, it is installed from upstream git rather than
+    a release, and the certificate recorded everything about the environment except
+    the one package that computes the bound.
+    """
+    try:
+        from importlib.metadata import version
+        return version("auto_LiRPA")
+    except Exception:
+        try:
+            import auto_LiRPA
+            return getattr(auto_LiRPA, "__version__", "unknown")
+        except Exception:
+            return "unknown"
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -233,6 +251,7 @@ def main():
     print(f"  {'dir':10s} {'model':9s} {'cond':9s} {'base':8s} {'bias bound':>22s}"
           f" {'x tol':>12s}  verdict     drive")
     out, n = {}, 0
+    _equiv_checked = False
     for direction in ("westbound", "eastbound"):
         base = cal / f"lap_{direction}_clear.npz"
         if not base.exists():
@@ -281,6 +300,25 @@ def main():
                         a, b = j / nsplit, (j + 1) / nsplit
                         mid, half = 0.5 * (a + b), 0.5 * (b - a)
                         W = (half * (x1 - x0)).reshape(-1, 1)
+                        # SOUNDNESS SELF-CHECK, once per run. The Bounder rebinds the
+                        # leading layer's weights in place rather than rebuilding the
+                        # bounded module per sub-box, which is what makes this minutes
+                        # rather than hours. check_equivalence is the test that the
+                        # library really reads the rebound weights: the same box, the
+                        # cached module against a freshly built one, same method.
+                        # It existed and nothing the shipped certifiers reach called it.
+                        if not _equiv_checked:
+                            _equiv_checked = True
+                            ok_, err_, _c, _f, rtol_, moved_ = bd.check_equivalence(
+                                W, x0 + mid * (x1 - x0), np.array([-1.0]),
+                                np.array([1.0]), net, 28, 84)
+                            print(f"  [cache check] err {err_:.2e} vs rel_tol "
+                                  f"{rtol_:.2e}, staleness probe moved {moved_:.2e}  "
+                                  f"{'OK' if ok_ else 'MISMATCH'}", flush=True)
+                            if not ok_:
+                                sys.exit("ABORT: the cached bounded module disagrees "
+                                         "with a fresh one. Every bound in this run "
+                                         "would be unsound.")
                         l_, u_ = bd(W, x0 + mid * (x1 - x0),
                                     np.array([-1.0]), np.array([1.0]))
                         lo_i.append(l_)
@@ -335,7 +373,8 @@ def main():
                         lap_end_m=float(C.LAP_END_M),
                         capture_span_m=_spans,
                         git_commit=git_head(), device=dev,
-                        torch=torch.__version__, numpy=np.__version__)
+                        torch=torch.__version__, numpy=np.__version__,
+                        auto_lirpa=_verifier_version())
     (cal / "sustained_bound.json").write_text(json.dumps(out, indent=2))
     return 0
 

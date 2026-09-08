@@ -43,7 +43,11 @@ python3 -m carla_determinism --port "$CARLA_PORT" >>"$LOG_DIR/pipeline.log" 2>&1
     say "FATAL: the server violates the determinism rules; relaunch via scripts/simulator/carla_launch.sh"
     exit 1; }
 say "determinism preflight OK on the live server"
-rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null
+# The lock is NOT deleted here. It reclaims itself when its holder is dead
+# (steering/simulator/carla_lock.py), so removing it buys nothing except the
+# ability to start a second client over a LIVE one -- which is the collision the
+# lock exists to prevent, and which once turned a clean cell into a 20.69 ft
+# departure that read as a model failure.
 
 run(){ local name=$1; shift
   for attempt in 1 2; do
@@ -51,7 +55,12 @@ run(){ local name=$1; shift
     if "$@" >>"$LOG_DIR/$name.log" 2>&1; then say "OK    $name"; return 0; fi
     say "FAIL  $name attempt $attempt (see $LOG_DIR/$name.log)"
     carla_up 3 || carla_restart || return 1
-    rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null; sleep 5
+    # The lock is NOT deleted here. It reclaims itself when its holder is dead
+    # (steering/simulator/carla_lock.py), so removing it buys nothing except the
+    # ability to start a second client over a LIVE one -- which is the collision the
+    # lock exists to prevent, and which once turned a clean cell into a 20.69 ft
+    # departure that read as a model failure.
+    sleep 5
   done
   say "FAIL  $name after 2 attempts -- stopping"; return 1; }
 

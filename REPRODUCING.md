@@ -9,18 +9,18 @@ certified verdict in the paper. It is the one most readers want, and it runs on 
 
 | | where | size | why |
 |---|---|---|---|
-| code, protocol, routes | git | 1.2 MB | the study |
-| every artifact behind a reported number | git | 2.4 MB | each lap is a row inside its cell file |
-| the README animation | git | 6.2 MB | |
-| **the four shipped policies** | **git** | **4.7 MB** | see below |
+| code, protocol, routes | git | 1.0 MB | the study |
+| every artifact behind a reported number | git | 3.4 MB | each lap is a row inside its cell file |
+| the README animation | git | 6.4 MB | |
+| **the four shipped policies** | **git** | **4.8 MB** | see below |
 | their four teachers | Hugging Face | 3.9 MB | `--teachers`; only re-distillation needs them |
 | the captures the certifier reads | [Hugging Face](https://huggingface.co/datasets/AD-Assurance-Lab/steering-verification-captures) | 641 MB | `scripts/fetch_captures.py` |
 | training frames | **not shipped** | 59 GB | regenerable; see Level 3 |
 
-A `git clone --depth 1` checks out 13 MB, of which 6.2 MB is the README animation.
+A `git clone --depth 1` checks out 16 MB, of which 6.4 MB is the README animation.
 A full clone also pulls 128 MB of history, which is where the research record lives.
 
-**All four policies are in git.** They total 4.7 MB, so there is no reason to make you rebuild
+**All four policies are in git.** They total 4.8 MB, so there is no reason to make you rebuild
 them — and because the renderer is not bit-reproducible (a scene where nothing moves still
 renders about 30 differing pixels per frame across repetitions), a rebuild would not give
 byte-identical weights even with identical code and seeds. Shipping the weights is what
@@ -91,11 +91,41 @@ choices when tiny floating-point differences reorder them, and it grows with net
 Both bounds remain sound; they are simply not the same bound. Neither numpy nor torch
 explains it: certifying under the exact recorded pair reproduces the drift unchanged.
 
-**What you should check** is that all six verdicts and all pose counts match, and that each
-bound agrees to about 1e-2 relative. Every verdict in the study has at least **309x**
-headroom between its bound and the value that would flip it, so a 4e-3 drift cannot change
-a conclusion — but a *verdict* change, or a bound that moves by more than a percent, means
-something real is different and should be investigated rather than accepted.
+**What you should check** is that every verdict and every pose count matches. Compare the
+bounds in units of the tolerance, which is what the certifiers print in their `x tol`
+column — not relative to the bound's own size, because several bounds are near zero and a
+relative comparison explodes on them for no reason.
+
+### How much room the verdicts actually have
+
+A verdict flips when a bound crosses the tolerance. Measured across the committed
+certificates, and re-measured against a fresh run on a second machine:
+
+| | tightest cell is this far from flipping | worst drift seen on re-run | margin |
+|---|---|---|---|
+| arterial | 0.240 x tol | 0.0009 x tol | **274x** |
+| highway | 0.360 x tol | 0.218 x tol | **1.6x** |
+
+Both reproduce: every verdict and every pose count matched on both roads. But the two
+roads are not equally comfortable, and the honest reading is that **the highway
+certificate reproduces its verdicts with very little room to spare.** Its bounds are an
+order of magnitude smaller in absolute terms than the arterial's, so the same
+branch-and-bound path divergence moves them much further in units that matter. A different
+GPU could plausibly flip a highway cell. If one does, that is the known sensitivity and
+not a new result — but it should be reported, not absorbed.
+
+This table is recomputed from the committed certificates by
+`tests/test_reported_numbers.py`, so it cannot go stale.
+
+An earlier version of this document claimed **309x** headroom and used it to justify
+accepting any bound that agreed to 4e-3. That number came from dividing the headroom by
+the best case of the drift range instead of the worst, measured on the arterial alone, and
+the document it came from had been pruned so nothing could check it. It was wrong in the
+direction that matters.
+
+Neither numpy nor torch explains the drift: certifying the highway under numpy 1.26.4 and
+under 2.4.6 gives answers that differ by 5e-7 x tol, four hundred times smaller than the
+drift against the committed run.
 
 ## Level 2 — re-drive the closed loop. Needs CARLA 0.9.16 and a GPU.
 

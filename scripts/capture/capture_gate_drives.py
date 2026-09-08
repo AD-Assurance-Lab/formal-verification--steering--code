@@ -53,7 +53,7 @@ def main():
     #
     # Without this the script had no argparse at all, so `--help` was silently ignored
     # and fell straight through into the body -- which RESTARTS CARLA AND DRIVES LAPS.
-    # audit_repo.py probes every entry point with `--help` to prove it imports cleanly,
+    # Every entry point is probed with `--help` to prove it imports cleanly,
     # so running the audit while a server happened to be up made the audit itself
     # restart the simulator and start driving, violating one client per port (one client per port)
     # from inside the tool whose job is to check the repo is sound.

@@ -314,7 +314,7 @@ def drive_once(world, vehicle, cam_queue, model, device, direction, max_steps,
         # can never be re-scored against a different scored span -- the 24 committed
         # Town06 laps cannot be, and answering "how much of this verdict is the road we
         # chose to score?" needed all of them driven again. It also makes the margin
-        # and a run that ends in a handful of steps is a bug's step count auditable after the fact instead of on trust. Rows are
+        # and makes a run's step count auditable after the fact instead of on trust. Rows are
         # ~80 bytes; a lap is ~1,180 of them.
         trace_rows.append(dict(
             step=step_i, here_m=("" if here_m is None else round(here_m, 3)),

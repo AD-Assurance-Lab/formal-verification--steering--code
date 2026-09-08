@@ -77,7 +77,11 @@ restart_carla_retrying() {   # restart_carla_retrying <logfile> <label>
     for i in 1 2 3; do
         if bash scripts/simulator/carla_restart.sh > "$logf" 2>&1; then
             [ "$i" -gt 1 ] && say "  restart succeeded on attempt $i ($label)"
-            rm -f "/tmp/carla-locks/carla-$CARLA_PORT.lock" 2>/dev/null
+            # The lock is NOT deleted here. It reclaims itself when its holder is dead
+            # (steering/simulator/carla_lock.py), so removing it buys nothing except the
+            # ability to start a second client over a LIVE one -- which is the collision the
+            # lock exists to prevent, and which once turned a clean cell into a 20.69 ft
+            # departure that read as a model failure.
             return 0
         fi
         say "  restart attempt $i/3 FAILED ($label); $(tail -1 "$logf" | tr -s ' ' | cut -c1-80)"
