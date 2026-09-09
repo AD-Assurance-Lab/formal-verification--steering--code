@@ -7,8 +7,8 @@
     0.0,
     0.5615060804490177
   ],
-  "worst_cte_m": 0.4270582015265096,
-  "margin_frac": 0.3606913150800754,
+  "worst_cte_m": 0.2576284330225458,
+  "margin_frac": 0.6143286930800212,
   "lap_spans": [
     "eastbound",
     "westbound"
@@ -17,17 +17,17 @@
     {
       "lap": 0,
       "passed": true,
-      "worst_cte_m": 0.4270582015265096
+      "worst_cte_m": 0.2460765128289138
     },
     {
       "lap": 1,
       "passed": true,
-      "worst_cte_m": 0.3684515104359338
+      "worst_cte_m": 0.2512772957906525
     },
     {
       "lap": 2,
       "passed": true,
-      "worst_cte_m": 0.3263940418409283
+      "worst_cte_m": 0.2576284330225458
     }
   ],
   "student": "S_mixed_84x28_w3_v2",
@@ -41,7 +41,7 @@
   },
   "cte_budget_m": 0.6679999999999999,
   "provenance": {
-    "run_started": "2026-08-31T19:56:47-04:00",
+    "run_started": "2026-09-08T16:33:42-04:00",
     "weather": {
       "cloudiness": 80.0,
       "dust_storm": 0.0,
@@ -66,27 +66,51 @@
     "map": "Town04",
     "target_speed_ms": 8.9408,
     "lap_end_m": 2988.0,
-    "git_sha": "c938a2f4019e6c4731e4d95e3e6761d6bdaaf180",
+    "git_sha": "a456aa2e61fb07581bec48d298de94c810cc90fd",
     "git_dirty": true,
+    "git_dirty_files": [
+      "results/highway/witness_full.json",
+      "scripts/drive/closed_loop_ledger.py",
+      "scripts/drive/run_town04_ledger.sh",
+      "scripts/verify/falsify_witness.py",
+      "src/steering/config.py"
+    ],
+    "determinism": {
+      "deterministic_control": true,
+      "package_version": "1.0.0",
+      "rules_digest": "bed0851fb1571d9e65be70c6872e9f00e54ac6fbd120c4e2991469a7d457fc4a",
+      "lock_problems": [],
+      "server_cmdline": [
+        "/home/za/carla/CarlaUE4/Binaries/Linux/CarlaUE4-Linux-Shipping",
+        "CarlaUE4",
+        "-carla-rpc-port=3000",
+        "-RenderOffScreen",
+        "-quality-level=Epic",
+        "-notexturestreaming",
+        ""
+      ],
+      "notexturestreaming": true,
+      "quality_level": "Epic"
+    },
     "independent_runs": true,
     "restart_granularity": "per_run_process",
-    "aggregated_at": "2026-08-31T20:44:25-04:00"
+    "aggregated_at": "2026-09-08T16:40:02-04:00"
   },
   "runs": [
     {
       "rep": 0,
       "direction": "eastbound",
-      "max_cte_m": 0.4270582015265096,
+      "max_cte_m": 0.17899369998400735,
       "frac_over_budget": 0.0,
       "departed": false,
       "passed": true,
       "max_cte_at": {
-        "step": 434,
-        "x": 403.9988708496094,
-        "y": -13.56879997253418
+        "step": 435,
+        "x": 403.90643310546875,
+        "y": -14.319284439086914
       },
       "provenance": {
-        "run_started": "2026-08-31T19:56:47-04:00",
+        "run_started": "2026-09-08T16:33:42-04:00",
         "weather": {
           "cloudiness": 80.0,
           "dust_storm": 0.0,
@@ -111,96 +135,32 @@
         "map": "Town04",
         "target_speed_ms": 8.9408,
         "lap_end_m": 2988.0,
-        "git_sha": "c938a2f4019e6c4731e4d95e3e6761d6bdaaf180",
+        "git_sha": "a456aa2e61fb07581bec48d298de94c810cc90fd",
         "git_dirty": true,
-        "independent_runs": true,
-        "restart_granularity": "per_run"
-      }
-    },
-    {
-      "rep": 1,
-      "direction": "eastbound",
-      "max_cte_m": 0.3684515104359338,
-      "frac_over_budget": 0.0,
-      "departed": false,
-      "passed": true,
-      "max_cte_at": {
-        "step": 434,
-        "x": 403.9421081542969,
-        "y": -13.583606719970703
-      },
-      "provenance": {
-        "run_started": "2026-08-31T20:00:11-04:00",
-        "weather": {
-          "cloudiness": 80.0,
-          "dust_storm": 0.0,
-          "fog_density": 0.0,
-          "fog_distance": 0.0,
-          "fog_falloff": 0.0,
-          "mie_scattering_scale": 0.0,
-          "precipitation": 0.0,
-          "precipitation_deposits": 0.0,
-          "scattering_intensity": 0.0,
-          "sun_altitude_angle": -25.0,
-          "sun_azimuth_angle": 0.0,
-          "wetness": 0.0,
-          "wind_intensity": 0.0
+        "git_dirty_files": [
+          "results/highway/witness_full.json",
+          "scripts/drive/closed_loop_ledger.py",
+          "scripts/drive/run_town04_ledger.sh",
+          "scripts/verify/falsify_witness.py",
+          "src/steering/config.py"
+        ],
+        "determinism": {
+          "deterministic_control": true,
+          "package_version": "1.0.0",
+          "rules_digest": "bed0851fb1571d9e65be70c6872e9f00e54ac6fbd120c4e2991469a7d457fc4a",
+          "lock_problems": [],
+          "server_cmdline": [
+            "/home/za/carla/CarlaUE4/Binaries/Linux/CarlaUE4-Linux-Shipping",
+            "CarlaUE4",
+            "-carla-rpc-port=3000",
+            "-RenderOffScreen",
+            "-quality-level=Epic",
+            "-notexturestreaming",
+            ""
+          ],
+          "notexturestreaming": true,
+          "quality_level": "Epic"
         },
-        "env_overrides": {},
-        "fixed_delta_seconds": 0.2,
-        "substepping": {
-          "max_substeps": 16,
-          "max_substep_delta_time": 0.0125
-        },
-        "map": "Town04",
-        "target_speed_ms": 8.9408,
-        "lap_end_m": 2988.0,
-        "git_sha": "c938a2f4019e6c4731e4d95e3e6761d6bdaaf180",
-        "git_dirty": true,
-        "independent_runs": true,
-        "restart_granularity": "per_run"
-      }
-    },
-    {
-      "rep": 2,
-      "direction": "eastbound",
-      "max_cte_m": 0.3263940418409283,
-      "frac_over_budget": 0.0,
-      "departed": false,
-      "passed": true,
-      "max_cte_at": {
-        "step": 434,
-        "x": 403.90185546875,
-        "y": -13.59647274017334
-      },
-      "provenance": {
-        "run_started": "2026-08-31T20:10:11-04:00",
-        "weather": {
-          "cloudiness": 80.0,
-          "dust_storm": 0.0,
-          "fog_density": 0.0,
-          "fog_distance": 0.0,
-          "fog_falloff": 0.0,
-          "mie_scattering_scale": 0.0,
-          "precipitation": 0.0,
-          "precipitation_deposits": 0.0,
-          "scattering_intensity": 0.0,
-          "sun_altitude_angle": -25.0,
-          "sun_azimuth_angle": 0.0,
-          "wetness": 0.0,
-          "wind_intensity": 0.0
-        },
-        "env_overrides": {},
-        "fixed_delta_seconds": 0.2,
-        "substepping": {
-          "max_substeps": 16,
-          "max_substep_delta_time": 0.0125
-        },
-        "map": "Town04",
-        "target_speed_ms": 8.9408,
-        "lap_end_m": 2988.0,
-        "git_sha": "c938a2f4019e6c4731e4d95e3e6761d6bdaaf180",
-        "git_dirty": true,
         "independent_runs": true,
         "restart_granularity": "per_run"
       }
@@ -208,17 +168,17 @@
     {
       "rep": 0,
       "direction": "westbound",
-      "max_cte_m": 0.24183746127822747,
+      "max_cte_m": 0.2460765128289138,
       "frac_over_budget": 0.0,
       "departed": false,
       "passed": true,
       "max_cte_at": {
         "step": 1166,
-        "x": 388.7654113769531,
-        "y": -170.93600463867188
+        "x": 388.7613220214844,
+        "y": -170.95034790039062
       },
       "provenance": {
-        "run_started": "2026-08-31T19:58:27-04:00",
+        "run_started": "2026-09-08T16:34:54-04:00",
         "weather": {
           "cloudiness": 80.0,
           "dust_storm": 0.0,
@@ -243,8 +203,100 @@
         "map": "Town04",
         "target_speed_ms": 8.9408,
         "lap_end_m": 2988.0,
-        "git_sha": "c938a2f4019e6c4731e4d95e3e6761d6bdaaf180",
+        "git_sha": "a456aa2e61fb07581bec48d298de94c810cc90fd",
         "git_dirty": true,
+        "git_dirty_files": [
+          "results/highway/witness_full.json",
+          "scripts/drive/closed_loop_ledger.py",
+          "scripts/drive/run_town04_ledger.sh",
+          "scripts/verify/falsify_witness.py",
+          "src/steering/config.py"
+        ],
+        "determinism": {
+          "deterministic_control": true,
+          "package_version": "1.0.0",
+          "rules_digest": "bed0851fb1571d9e65be70c6872e9f00e54ac6fbd120c4e2991469a7d457fc4a",
+          "lock_problems": [],
+          "server_cmdline": [
+            "/home/za/carla/CarlaUE4/Binaries/Linux/CarlaUE4-Linux-Shipping",
+            "CarlaUE4",
+            "-carla-rpc-port=3000",
+            "-RenderOffScreen",
+            "-quality-level=Epic",
+            "-notexturestreaming",
+            ""
+          ],
+          "notexturestreaming": true,
+          "quality_level": "Epic"
+        },
+        "independent_runs": true,
+        "restart_granularity": "per_run"
+      }
+    },
+    {
+      "rep": 1,
+      "direction": "eastbound",
+      "max_cte_m": 0.15382972428831793,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 433,
+        "x": 403.0439758300781,
+        "y": -10.862204551696777
+      },
+      "provenance": {
+        "run_started": "2026-09-08T16:36:07-04:00",
+        "weather": {
+          "cloudiness": 80.0,
+          "dust_storm": 0.0,
+          "fog_density": 0.0,
+          "fog_distance": 0.0,
+          "fog_falloff": 0.0,
+          "mie_scattering_scale": 0.0,
+          "precipitation": 0.0,
+          "precipitation_deposits": 0.0,
+          "scattering_intensity": 0.0,
+          "sun_altitude_angle": -25.0,
+          "sun_azimuth_angle": 0.0,
+          "wetness": 0.0,
+          "wind_intensity": 0.0
+        },
+        "env_overrides": {},
+        "fixed_delta_seconds": 0.2,
+        "substepping": {
+          "max_substeps": 16,
+          "max_substep_delta_time": 0.0125
+        },
+        "map": "Town04",
+        "target_speed_ms": 8.9408,
+        "lap_end_m": 2988.0,
+        "git_sha": "a456aa2e61fb07581bec48d298de94c810cc90fd",
+        "git_dirty": true,
+        "git_dirty_files": [
+          "results/highway/witness_full.json",
+          "scripts/drive/closed_loop_ledger.py",
+          "scripts/drive/run_town04_ledger.sh",
+          "scripts/verify/falsify_witness.py",
+          "src/steering/config.py"
+        ],
+        "determinism": {
+          "deterministic_control": true,
+          "package_version": "1.0.0",
+          "rules_digest": "bed0851fb1571d9e65be70c6872e9f00e54ac6fbd120c4e2991469a7d457fc4a",
+          "lock_problems": [],
+          "server_cmdline": [
+            "/home/za/carla/CarlaUE4/Binaries/Linux/CarlaUE4-Linux-Shipping",
+            "CarlaUE4",
+            "-carla-rpc-port=3000",
+            "-RenderOffScreen",
+            "-quality-level=Epic",
+            "-notexturestreaming",
+            ""
+          ],
+          "notexturestreaming": true,
+          "quality_level": "Epic"
+        },
         "independent_runs": true,
         "restart_granularity": "per_run"
       }
@@ -252,17 +304,17 @@
     {
       "rep": 1,
       "direction": "westbound",
-      "max_cte_m": 0.24521037341438945,
+      "max_cte_m": 0.2512772957906525,
       "frac_over_budget": 0.0,
       "departed": false,
       "passed": true,
       "max_cte_at": {
         "step": 1166,
-        "x": 388.76202392578125,
-        "y": -170.93463134765625
+        "x": 388.7561340332031,
+        "y": -170.95159912109375
       },
       "provenance": {
-        "run_started": "2026-08-31T20:01:52-04:00",
+        "run_started": "2026-09-08T16:37:19-04:00",
         "weather": {
           "cloudiness": 80.0,
           "dust_storm": 0.0,
@@ -287,8 +339,100 @@
         "map": "Town04",
         "target_speed_ms": 8.9408,
         "lap_end_m": 2988.0,
-        "git_sha": "c938a2f4019e6c4731e4d95e3e6761d6bdaaf180",
+        "git_sha": "a456aa2e61fb07581bec48d298de94c810cc90fd",
         "git_dirty": true,
+        "git_dirty_files": [
+          "results/highway/witness_full.json",
+          "scripts/drive/closed_loop_ledger.py",
+          "scripts/drive/run_town04_ledger.sh",
+          "scripts/verify/falsify_witness.py",
+          "src/steering/config.py"
+        ],
+        "determinism": {
+          "deterministic_control": true,
+          "package_version": "1.0.0",
+          "rules_digest": "bed0851fb1571d9e65be70c6872e9f00e54ac6fbd120c4e2991469a7d457fc4a",
+          "lock_problems": [],
+          "server_cmdline": [
+            "/home/za/carla/CarlaUE4/Binaries/Linux/CarlaUE4-Linux-Shipping",
+            "CarlaUE4",
+            "-carla-rpc-port=3000",
+            "-RenderOffScreen",
+            "-quality-level=Epic",
+            "-notexturestreaming",
+            ""
+          ],
+          "notexturestreaming": true,
+          "quality_level": "Epic"
+        },
+        "independent_runs": true,
+        "restart_granularity": "per_run"
+      }
+    },
+    {
+      "rep": 2,
+      "direction": "eastbound",
+      "max_cte_m": 0.19789402087963293,
+      "frac_over_budget": 0.0,
+      "departed": false,
+      "passed": true,
+      "max_cte_at": {
+        "step": 435,
+        "x": 403.92529296875,
+        "y": -14.31708812713623
+      },
+      "provenance": {
+        "run_started": "2026-09-08T16:38:32-04:00",
+        "weather": {
+          "cloudiness": 80.0,
+          "dust_storm": 0.0,
+          "fog_density": 0.0,
+          "fog_distance": 0.0,
+          "fog_falloff": 0.0,
+          "mie_scattering_scale": 0.0,
+          "precipitation": 0.0,
+          "precipitation_deposits": 0.0,
+          "scattering_intensity": 0.0,
+          "sun_altitude_angle": -25.0,
+          "sun_azimuth_angle": 0.0,
+          "wetness": 0.0,
+          "wind_intensity": 0.0
+        },
+        "env_overrides": {},
+        "fixed_delta_seconds": 0.2,
+        "substepping": {
+          "max_substeps": 16,
+          "max_substep_delta_time": 0.0125
+        },
+        "map": "Town04",
+        "target_speed_ms": 8.9408,
+        "lap_end_m": 2988.0,
+        "git_sha": "a456aa2e61fb07581bec48d298de94c810cc90fd",
+        "git_dirty": true,
+        "git_dirty_files": [
+          "results/highway/witness_full.json",
+          "scripts/drive/closed_loop_ledger.py",
+          "scripts/drive/run_town04_ledger.sh",
+          "scripts/verify/falsify_witness.py",
+          "src/steering/config.py"
+        ],
+        "determinism": {
+          "deterministic_control": true,
+          "package_version": "1.0.0",
+          "rules_digest": "bed0851fb1571d9e65be70c6872e9f00e54ac6fbd120c4e2991469a7d457fc4a",
+          "lock_problems": [],
+          "server_cmdline": [
+            "/home/za/carla/CarlaUE4/Binaries/Linux/CarlaUE4-Linux-Shipping",
+            "CarlaUE4",
+            "-carla-rpc-port=3000",
+            "-RenderOffScreen",
+            "-quality-level=Epic",
+            "-notexturestreaming",
+            ""
+          ],
+          "notexturestreaming": true,
+          "quality_level": "Epic"
+        },
         "independent_runs": true,
         "restart_granularity": "per_run"
       }
@@ -296,17 +440,17 @@
     {
       "rep": 2,
       "direction": "westbound",
-      "max_cte_m": 0.24062453384897045,
+      "max_cte_m": 0.2576284330225458,
       "frac_over_budget": 0.0,
       "departed": false,
       "passed": true,
       "max_cte_at": {
         "step": 1166,
-        "x": 388.7666015625,
-        "y": -170.93382263183594
+        "x": 388.7497863769531,
+        "y": -170.95196533203125
       },
       "provenance": {
-        "run_started": "2026-08-31T20:11:52-04:00",
+        "run_started": "2026-09-08T16:39:45-04:00",
         "weather": {
           "cloudiness": 80.0,
           "dust_storm": 0.0,
@@ -331,8 +475,32 @@
         "map": "Town04",
         "target_speed_ms": 8.9408,
         "lap_end_m": 2988.0,
-        "git_sha": "c938a2f4019e6c4731e4d95e3e6761d6bdaaf180",
+        "git_sha": "a456aa2e61fb07581bec48d298de94c810cc90fd",
         "git_dirty": true,
+        "git_dirty_files": [
+          "results/highway/witness_full.json",
+          "scripts/drive/closed_loop_ledger.py",
+          "scripts/drive/run_town04_ledger.sh",
+          "scripts/verify/falsify_witness.py",
+          "src/steering/config.py"
+        ],
+        "determinism": {
+          "deterministic_control": true,
+          "package_version": "1.0.0",
+          "rules_digest": "bed0851fb1571d9e65be70c6872e9f00e54ac6fbd120c4e2991469a7d457fc4a",
+          "lock_problems": [],
+          "server_cmdline": [
+            "/home/za/carla/CarlaUE4/Binaries/Linux/CarlaUE4-Linux-Shipping",
+            "CarlaUE4",
+            "-carla-rpc-port=3000",
+            "-RenderOffScreen",
+            "-quality-level=Epic",
+            "-notexturestreaming",
+            ""
+          ],
+          "notexturestreaming": true,
+          "quality_level": "Epic"
+        },
         "independent_runs": true,
         "restart_granularity": "per_run"
       }

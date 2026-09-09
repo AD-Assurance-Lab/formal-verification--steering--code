@@ -18,9 +18,10 @@ Companion code for *Proving End-to-End Steering in Poor Visibility*.
        alt="Night on the highway: the clear-only network leaves the lane, the mixed-conditions network holds it">
 </p>
 
-<p align="center"><sub>Night on the highway. The clear-only network departs on every one
-of six runs, each time at 34.0 m, reaching 27–41 ft of cross-track error. The
-mixed-conditions network never departs and stays within 1.40 ft.</sub></p>
+<p align="center"><sub>Night on the highway. The clear-only network leaves its lane on
+every one of six runs, first crossing the budget 40 to 42 m into the route and reaching
+28 to 37 ft of cross-track error. The mixed-conditions network never departs and stays
+within 0.85 ft.</sub></p>
 
 ## What was done
 
@@ -32,9 +33,7 @@ weather strength between two captured images: a continuum no test campaign could
 
 It found what the test cases could not. Under fog and under low sun, a network whose
 steering error at the captured condition sits well inside safe limits leaves its lane on
-every lap, and its worst case lies in between. Driving alone shows the same shape with no
-verifier involved: a network holds its lane in clear weather, holds it again in heavy fog,
-and leaves it at fog densities between the two on four of six road sections.
+every lap, and its worst case lies in between.
 
 The disturbance families are physically parameterized (fog density, sun altitude) and never
 balls in pixel space, which would contain physically impossible images and make the safety

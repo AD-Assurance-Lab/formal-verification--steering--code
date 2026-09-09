@@ -153,11 +153,3 @@ committed passes each contain one lap over budget while the rest sit near half t
 which makes those samples disagree. Four later campaigns of 84 laps resolve it: the shipped
 policy drives fog 30 times with no lap over budget and a worst of 1.95 ft against a 2.19 ft
 budget. `scripts/drive/summarize_rechecks.py` rebuilds the file.
-
-**The highway traces and the highway cell files came from different versions of the driver,
-and every run differs between them.** The cell files are the reported numbers. The traces
-were driven later, after the driver gained a check that reads the rendered weather back
-from a frame, which settles the vehicle six ticks differently and sends the closed loop
-into another basin. No verdict changed. But a trace's peak error is not the number in the
-cell file beside it, and the two should not be quoted against each other. On the arterial
-they agree exactly, because one driver produced both.
