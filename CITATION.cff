@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 title: >-
-  Formal verification of end-to-end steering under physically
-  parameterized weather
+  Testing Between the Test Cases: Proving End-to-End Steering in
+  Conditions You Never Drove
 message: >-
   If you use this software or its results, please cite both the
   software and the accompanying paper.
