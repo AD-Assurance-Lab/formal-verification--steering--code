@@ -41,7 +41,6 @@ from steering import REPO_ROOT
 
 REPO = Path(REPO_ROOT)
 
-from steering.verify.protocol_lock import require_locked
 
 from steering import config as C
 from steering.verify import certify as cc
@@ -213,7 +212,6 @@ def main():
                     help="artifact path (default: the scope's own file)")
     args = ap.parse_args()
 
-    require_locked()
 
     # COMPETENCE PRECONDITION. The bound is on Delta_p(s) = delta_p(s) - delta_p(0),
     # the change the disturbance induces relative to the model's OWN clear-weather

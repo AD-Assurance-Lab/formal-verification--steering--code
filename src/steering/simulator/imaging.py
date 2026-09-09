@@ -1,6 +1,6 @@
 """
 Pure image helpers (cv2/numpy only, no CARLA/torch import) so both the live
-CARLA loop and the offline training dataset share ONE preprocessing path — any
+CARLA loop and the offline training dataset share ONE preprocessing path, any
 divergence between train-time and inference-time preprocessing silently wrecks a
 BC policy, so it must be defined in exactly one place.
 """

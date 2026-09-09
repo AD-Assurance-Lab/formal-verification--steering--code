@@ -2,7 +2,7 @@
 """
 Closed-loop evaluation: drive the full Town04 loop (both directions) with the
 NETWORK in control (camera -> steering), recording CTE. This is the real metric
-for a BC/DAgger policy — covariate shift (compounding error) only shows up here,
+for a BC/DAgger policy, covariate shift (compounding error) only shows up here,
 not in offline val MSE.
 
 Warmup uses pure-pursuit to reach cruising speed on-center (same starting

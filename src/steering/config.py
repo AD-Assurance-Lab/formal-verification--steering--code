@@ -676,13 +676,13 @@ def final_student(base):
 M_TO_FT = 3.28084
 
 # ═══════════════════════════════════════════════════════════════════════════
-# DERIVED SAFETY CRITERIA  (do not hardcode — computed from primitives above)
+# DERIVED SAFETY CRITERIA  (do not hardcode, computed from primitives above)
 # ═══════════════════════════════════════════════════════════════════════════
 
 # Success criterion: no part of the vehicle body leaves its lane. Expressed as a
 # limit on the vehicle-center-to-lane-center CTE. Using the CARLA bounding box
 # (2.164 m, includes mirrors) is the defensible in-simulator choice.
-#   (spec body 1.849 m would give 2.71 ft — kept for paper discussion only.)
+#   (spec body 1.849 m would give 2.71 ft, kept for paper discussion only.)
 CTE_BUDGET_M = (LANE_WIDTH_M - VEHICLE_WIDTH_M) / 2.0     # 0.668 m
 CTE_BUDGET_FT = CTE_BUDGET_M * M_TO_FT                    # 2.19 ft
 

@@ -45,7 +45,6 @@ carla_start() {
     say "FATAL: CARLA did not become ready, or violates the determinism rules"; return 1; }
 
 # ---------------------------------------------------------------- preconditions
-python3 -m steering.verify.protocol_lock >/dev/null || { say "FATAL: protocol lock mismatch"; exit 1; }
 python3 -m carla_determinism --lock-only >/dev/null || {
     say "FATAL: carla-determinism rules lock mismatch"; exit 1; }
 

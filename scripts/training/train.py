@@ -5,7 +5,7 @@ Behavior-cloning / DAgger training for the steering teacher (CarlaSteeringNet).
 train_model() takes a LIST of manifests so DAgger can retrain from scratch on the
 aggregated dataset (base BC + all rounds). Baseline CLI defaults: no balancing,
 no augmentation, plain MSE. val MSE is an optimistic convergence check (correlated
-expert frames) — closed-loop CTE is the real metric.
+expert frames), closed-loop CTE is the real metric.
 
     python train.py --dataset clear --epochs 120 --out steering_bc_baseline
 """

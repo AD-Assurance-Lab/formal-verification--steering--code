@@ -1,7 +1,7 @@
 """
 Pure-pursuit expert (the DAgger label oracle). Uses CARLA HD-map waypoints to
 compute the geometrically-correct steering command from the vehicle pose. This
-is privileged (map-based) — the neural policy must later reproduce it from
+is privileged (map-based), the neural policy must later reproduce it from
 camera pixels alone.
 """
 

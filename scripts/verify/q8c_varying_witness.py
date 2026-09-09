@@ -49,6 +49,21 @@ from steering.verify import captures as ct
 from steering.study import town06_design as D
 
 
+def short_name(student, highway):
+    """The name witness_full.json files a policy under.
+
+    That file uses the study's short name for a policy; this script is given the
+    checkpoint that was loaded, and on one road they are not the same string because the
+    shipped policy is a later DAgger round. Resolving through the same table both roads
+    are declared in keeps the two files joinable instead of nearly joinable.
+    """
+    table = C.STUDENTS if highway else C.TOWN06_STUDENTS
+    for nm, ck_base, *_ in table:
+        if student in (ck_base, C.final_student(ck_base)):
+            return nm
+    return student
+
+
 def per_pose(net, clr, dis, dev, grid, stride, s_hi, s_lo, dev_hi, dev_lo):
     """Accumulate the per-pose extremes for one capture pair into the four lists.
 
@@ -134,11 +149,12 @@ def main():
     # highway certifies each direction separately, so a cell is direction/student/
     # condition and pooling the two would average over a boundary the certificate never
     # crosses. The keys below are the ones witness_full.json already uses on each road.
+    nm = short_name(a.student, highway)
     if highway:
-        units = [(f"{d}/{a.student.split('_84x28')[0]}/{c}", [(d, c)])
+        units = [(f"{d}/{nm}/{c}", [(d, c)])
                  for c in a.conditions.split(",") for d in ("westbound", "eastbound")]
     else:
-        units = [(f"{a.student}/{c}", [(sec, c) for sec in D.SECTIONS])
+        units = [(f"{nm}/{c}", [(sec, c) for sec in D.SECTIONS])
                  for c in a.conditions.split(",")]
 
     for key, pairs in units:

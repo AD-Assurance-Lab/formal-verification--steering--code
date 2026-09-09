@@ -24,8 +24,8 @@ mixed-conditions network never departs and stays within 1.40 ft.</sub></p>
 
 ## What was done
 
-Two small steering networks were trained on each of two roads — a highway and an urban
-arterial, both in CARLA — one on clear weather alone and one on clear, fog, night and low
+Two small steering networks were trained on each of two roads, a highway and an urban
+arterial, both in CARLA: one on clear weather alone and one on clear, fog, night and low
 sun. Each was distilled small enough to verify. Then, with no simulator running, bound
 propagation reads the weights and computes how far the steering can drift at **every**
 weather strength between two captured images: a continuum no test campaign could drive.
@@ -33,10 +33,10 @@ weather strength between two captured images: a continuum no test campaign could
 It found what the test cases could not. Under fog and under low sun, a network whose
 steering error at the captured condition sits well inside safe limits leaves its lane on
 every lap, and its worst case lies in between. Driving alone shows the same shape with no
-verifier involved — a network holds its lane in clear weather, holds it again in heavy
-fog, and leaves it at fog densities between the two on four of six road sections.
+verifier involved: a network holds its lane in clear weather, holds it again in heavy fog,
+and leaves it at fog densities between the two on four of six road sections.
 
-The disturbance families are physically parameterized — fog density, sun altitude — never
+The disturbance families are physically parameterized (fog density, sun altitude) and never
 balls in pixel space, which would contain physically impossible images and make the safety
 claim vacuous.
 
@@ -54,8 +54,7 @@ STUDY_MAP=Town06 python3 scripts/verify/certify_town06.py --out /tmp/cert.json
 ```
 
 `--depth 1` gets the 16 MB you need. A full clone also pulls the study's history, which
-is 128 MB and is where the research record lives — worth having if you want to read how
-the work happened, and not otherwise.
+is 128 MB. You do not need it to reproduce anything.
 
 Re-driving the closed loop needs CARLA 0.9.16 and a GPU; rebuilding the networks takes
 days. All three levels, and exactly what reproduces to what precision, are in
@@ -66,33 +65,22 @@ days. All three levels, and exactly what reproduces to what precision, are in
 | | |
 |---|---|
 | `src/steering/config.py` | every number the study runs on, with the ones you want listed at the top |
-| `src/steering/verify/` | certification: bounds, captures, scope, the protocol locks |
+| `src/steering/verify/` | certification: bounds, captures, scope |
 | `src/steering/drive/` | routes, the expert driver, cross-track error, the ledger |
 | `src/steering/simulator/` | the CARLA interface, the port lock, condition checks |
 | `src/steering/networks/` | the teacher and student networks, and the dataset |
 | `src/steering/disturbance/` | the physically parameterized weather families |
-| `scripts/verify/` | recompute the certificates — no simulator needed |
+| `scripts/verify/` | recompute the certificates, no simulator needed |
 | `scripts/capture/` | render the frames the certifier reads |
 | `scripts/drive/` | the closed-loop ledger: drive the cells, aggregate, report |
 | `scripts/simulator/` | launch, restart and health-check CARLA |
 | `scripts/training/` | build the networks: collect, train, DAgger, distil, gate |
 | `checkpoints/` | the four shipped policies, 4.8 MB, so nothing has to be retrained |
 | `results/highway`, `results/arterial` | every artifact behind a reported number, including each individual lap |
-| `routes/` | the two pre-registered routes, one per road |
-| `PROTOCOL.md` | the frozen study protocol, hash-locked against `PROTOCOL.lock` |
+| `routes/` | the two routes, one per road |
 
 The highway is CARLA's Town04 and the arterial is Town06. The code takes the map name in
 `STUDY_MAP`; the results are filed under the road.
-
-The certificate for each cell was committed to git **before** the corresponding lap was
-driven, which is what makes a verdict a prediction rather than a description. That
-ordering is checkable against commit timestamps with `scripts/verify/check_blind_order.py`.
-
-## The research record
-
-This is the published artifact: the pipeline, the instruments, and the reported results.
-The full record — pre-registrations, findings, dispositions, retired instruments and the
-experiments that did not work — is in this repository's git history, before this release.
 
 ## Citing
 

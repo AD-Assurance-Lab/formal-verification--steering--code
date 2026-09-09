@@ -2,7 +2,7 @@
 """
 Milestone-1, step 2: prove the PURE-PURSUIT ORACLE can drive both directions of
 the Town04 figure-8 within the CTE budget. If the map-based oracle can't, no
-learned policy can — and this isolates plumbing bugs (spawn/warmup/speed) from
+learned policy can, and this isolates plumbing bugs (spawn/warmup/speed) from
 model quality. No neural network involved.
 
 Usage:

@@ -3,8 +3,8 @@ Verifiable STUDENT network + its preprocessing.
 
 The student takes RGB (weather-perturbable, unlike CARLA's ground-truth seg camera
 which would make weather verification vacuous). It uses a tighter ROI than the
-teacher — sky, hood, and peripheral scenery cropped away (from the dataset ROI
-analysis) — so lane lines survive aggressive downsampling. Input resolution is a
+teacher, with sky, hood and peripheral scenery cropped away (from the dataset ROI
+analysis), so lane lines survive aggressive downsampling. Input resolution is a
 free parameter we sweep: smaller = far cheaper to verify, but eventually the lanes
 wash out and it can't drive. ReLU-only, no BatchNorm/Dropout (SDP-CROWN friendly).
 """

@@ -83,33 +83,3 @@ def test_the_highway_sensitivity_is_still_disclosed():
         "REPRODUCING no longer warns that the highway certificate reproduces with "
         "little margin")
 
-
-def test_the_protocol_quotes_the_capture_gates_correctly():
-    """Both figures in Amendment 3 previously belonged to a superseded generation of
-    the study and no longer matched the files they cited by name."""
-    with open(os.path.join(REPO_ROOT, "PROTOCOL.md")) as f:
-        doc = f.read()
-    for rel, label in [("results/arterial/captures/capture_gate.json", "arterial"),
-                       ("results/highway/calibration/capture_gate.json", "highway")]:
-        g = _json(rel)
-        assert f"{g['worst']:.4f}" in doc, (
-            f"the {label} capture gate's worst is {g['worst']:.4f}; PROTOCOL.md does "
-            f"not quote it")
-        assert f"{len(g['cells'])}/{g['cells_expected']} cells" in doc, (
-            f"the {label} gate covers {len(g['cells'])}/{g['cells_expected']} cells; "
-            f"PROTOCOL.md does not say so")
-
-
-def test_the_protocol_does_not_claim_a_margin_the_ledger_contradicts():
-    """Amendment 4 named a cell as having "come within 1.0% of the budget". It passes
-    with about 40% in hand. A protocol that cites a number the artifacts refute is
-    worse than one that cites none."""
-    with open(os.path.join(REPO_ROOT, "PROTOCOL.md")) as f:
-        doc = f.read()
-    for rel in ("results/arterial/ledger/clear__S_clear_t06lap_168x56_w2_s0__closed_loop.json",
-                "results/arterial/ledger_pass2/clear__S_clear_t06lap_168x56_w2_s0__closed_loop.json"):
-        margin = _json(rel)["margin_frac"]
-        assert margin > 0.05, f"{rel} margin is {margin:.3f}"
-        assert f"{round(margin * 100)}%" in doc, (
-            f"{rel} passes with {margin*100:.0f}% of budget in hand; PROTOCOL.md does "
-            f"not state it")

@@ -369,7 +369,7 @@ def main():
                 camera, img_queue = env.spawn_camera(world, vehicle)
                 print(f"  [restart before every measurement run] CARLA restarted before round {r}", flush=True)
             round_dir = os.path.join(dagger_student_dir, f"round{r:02d}")
-            print(f"\n{'#'*64}\n# student DAgger round {r} — policy '{current}'\n{'#'*64}", flush=True)
+            print(f"\n{'#'*64}\n# student DAgger round {r}, policy '{current}'\n{'#'*64}", flush=True)
             rows, passed = [], True
             beta = max(0.0, args.beta0 * (args.beta_decay ** r))
             for weather in weathers:

@@ -5,7 +5,7 @@ loop (both directions) with the pure-pursuit EXPERT and recording, per frame,
 the raw camera image paired with the expert steering label.
 
 Image[t] is paired with pose[t]/label[t] by ticking FIRST, then reading pose and
-computing the label from the same frame — exact image/label alignment.
+computing the label from the same frame, exact image/label alignment.
 
 Saves raw 640x480 RGB PNGs (preprocessing deferred to train time) plus a single
 manifest CSV. Usage:

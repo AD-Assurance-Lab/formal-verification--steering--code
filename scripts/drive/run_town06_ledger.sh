@@ -33,7 +33,6 @@ LOG_DIR=$REPO/results/arterial_logs
 mkdir -p "$LOG_DIR"
 say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/ledger.log"; }
 
-python3 -m steering.verify.protocol_lock >/dev/null || { say "FATAL: protocol lock mismatch"; exit 1; }
 python3 -m steering.verify.blind_order  >/dev/null || {
     say "FATAL: the protocol's ordering rule -- certificate is missing, uncommitted or dirty."
     say "Certify and COMMIT before driving. Refusing to run."; exit 1; }
