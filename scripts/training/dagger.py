@@ -6,7 +6,7 @@ Each round: the CURRENT policy drives the full loop both directions; EVERY frame
 it visits is labeled with the route pure-pursuit recovery action (steer back to
 the intended centerline) and saved. That aggregated data is added to the training
 set and the model is retrained from scratch. The off-center states the policy
-wanders into ARE the recovery data — no autopilot hand-over, no PID oscillations.
+wanders into ARE the recovery data, no autopilot hand-over, no PID oscillations.
 
 The same drive both (a) evaluates the current policy (route-based CTE) and
 (b) collects the next round's data. Stops when the driven policy meets budget.
@@ -429,7 +429,7 @@ def main():
                      None, None, None, None)
                 print(f"  [restart before every measurement run] CARLA restarted before round {r}", flush=True)
             round_dir = os.path.join(dagger_dir, f"round{r:02d}")
-            print(f"\n{'#'*64}\n# DAgger round {r} — evaluating policy '{current}'\n{'#'*64}")
+            print(f"\n{'#'*64}\n# DAgger round {r}, evaluating policy '{current}'\n{'#'*64}")
             # beta decays over rounds: heavy expert assistance early (when the policy
             # cannot hold the road and would otherwise yield a few dozen frames), none
             # by the end, so late rounds train on the policy's own state distribution.

@@ -1,7 +1,7 @@
 """
 Driving networks.
 
-CarlaSteeringNet: PilotNet (Bojarski et al., 2016) — the canonical end-to-end
+CarlaSteeringNet: PilotNet (Bojarski et al., 2016), the canonical end-to-end
 camera->steering CNN. ReLU-only, no BatchNorm/Dropout: this keeps it a clean
 piecewise-linear function (friendly to knowledge distillation and, in principle,
 to formal verification), and this task doesn't need the regularization.
@@ -43,7 +43,7 @@ class CarlaSteeringNet(nn.Module):
         return self.fc(self.conv(x).flatten(1))
 
     def num_relu_neurons(self):
-        """Count of post-ReLU activations — a proxy for verification difficulty."""
+        """Count of post-ReLU activations, a proxy for verification difficulty."""
         import numpy as np
         n = 0
         device = next(self.parameters()).device

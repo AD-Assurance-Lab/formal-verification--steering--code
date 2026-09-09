@@ -42,7 +42,7 @@ STUDY_MAP=Town06 python3 scripts/verify/certify_town06.py --out /tmp/cert.json
 ```
 
 **Check the digests.** A capture is the certifier's entire input, so a bound computed from
-the wrong frames is a statement about a different experiment — and it still prints a
+the wrong frames is a statement about a different experiment, and it still prints a
 verdict and a margin and looks finished. `SHA256SUMS` lists all fifteen.
 
 ## What reproduces
@@ -50,7 +50,7 @@ verdict and a margin and looks finished. `SHA256SUMS` lists all fifteen.
 Every verdict. The bounds reproduce to about 4 parts in 1,000, not exactly: branch-and-
 bound makes different splitting choices when tiny floating-point differences reorder them,
 and that grows with network size. Every verdict has at least 309× more headroom than that,
-so the drift cannot change a conclusion — but a changed *verdict* means something real is
+so the drift cannot change a conclusion, but a changed *verdict* means something real is
 different.
 
 ## Citation

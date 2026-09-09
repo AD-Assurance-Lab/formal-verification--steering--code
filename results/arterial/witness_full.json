@@ -41,7 +41,10 @@
     "witness": false,
     "certificate": "NOT_CERTIFIED",
     "poses": 133,
-    "scope": "full"
+    "scope": "full",
+    "pp_worst": 0.014158861004376322,
+    "pp_worst_x_tol": 1.1787947006108177,
+    "pp_witness": true
   },
   "S_mixed_t06/night": {
     "s_star": 0.6780400000000001,
@@ -52,7 +55,10 @@
     "witness": false,
     "certificate": "NOT_CERTIFIED",
     "poses": 133,
-    "scope": "full"
+    "scope": "full",
+    "pp_worst": -0.014532445698864478,
+    "pp_worst_x_tol": -1.2098974607802857,
+    "pp_witness": true
   },
   "S_mixed_t06/low_sun": {
     "s_star": 0.9999,
@@ -63,6 +69,9 @@
     "witness": false,
     "certificate": "CERTIFIED",
     "poses": 133,
-    "scope": "full"
+    "scope": "full",
+    "pp_worst": 0.003476109320675968,
+    "pp_worst_x_tol": 0.2894031691313432,
+    "pp_witness": false
   }
 }

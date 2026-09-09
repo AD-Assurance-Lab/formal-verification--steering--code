@@ -164,7 +164,7 @@ def _step_idx(route, i, k):
 
 def nearest_index(route, x, y, hint=None, window=80):
     """Index of the nearest route vertex. With a hint (previous index), search
-    only a local window (handles wraparound) — faster and robust to nearby lanes."""
+    only a local window (handles wraparound), faster and robust to nearby lanes."""
     n = len(route)
     if hint is None:
         d2 = (route[:, 0] - x) ** 2 + (route[:, 1] - y) ** 2

@@ -20,7 +20,7 @@ from steering.simulator.imaging import preprocess_for_model
 def load_manifests(manifest_paths):
     """Combine multiple manifests (base BC + DAgger rounds) into one row list with
     ABSOLUTE image paths, so DAgger can aggregate datasets living in different dirs.
-    Returns (base="", rows) — base is empty because paths are already absolute."""
+    Returns (base="", rows), base is empty because paths are already absolute."""
     rows = []
     for mp in manifest_paths:
         mbase = os.path.dirname(mp)

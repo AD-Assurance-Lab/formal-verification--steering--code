@@ -3,7 +3,7 @@
   "grid": 401,
   "tolerance": 0.012011303577323182,
   "cells": {
-    "S_mixed_t06lap_168x56_w4_s3/fog": {
+    "S_mixed_t06/fog": {
       "poses": 133,
       "hi": 0.014158861004376322,
       "hi_x_tol": 1.1787947006108177,
@@ -285,7 +285,7 @@
       "distinct_s_hi": 90,
       "distinct_s_lo": 48
     },
-    "S_mixed_t06lap_168x56_w4_s3/night": {
+    "S_mixed_t06/night": {
       "poses": 133,
       "hi": 0.010333461679966379,
       "hi_x_tol": 0.8603114236056363,
@@ -567,7 +567,7 @@
       "distinct_s_hi": 63,
       "distinct_s_lo": 84
     },
-    "S_mixed_t06lap_168x56_w4_s3/low_sun": {
+    "S_mixed_t06/low_sun": {
       "poses": 133,
       "hi": 0.003476109320675968,
       "hi_x_tol": 0.2894031691313432,

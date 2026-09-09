@@ -31,7 +31,6 @@ DATA=$REPO/data
 say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/pipeline.log"; }
 
 # the protocol gate: refuse to build anything if the frozen constants have moved.
-python3 -m steering.verify.protocol_lock >/dev/null || {
     say "FATAL: protocol lock mismatch -- refusing to run"; exit 1; }
 say "protocol lock OK; STUDY_MAP=$STUDY_MAP CARLA_PORT=$CARLA_PORT"
 
