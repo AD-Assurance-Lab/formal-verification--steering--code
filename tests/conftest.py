@@ -28,12 +28,34 @@ for _d in ("", "verify", "drive", "capture", "simulator", "training"):
 UNRESOLVABLE = ("carla", "auto_LiRPA")
 
 
+# A machine with no usable GPU is a normal place to run these tests: continuous
+# integration installs the CPU build of torch on purpose, so the modules still have to
+# import. But one entry point is a GPU DIAGNOSTIC whose whole job is to fail loudly when
+# CUDA cannot initialise, so importing it there fails by design and says nothing about
+# the thing under test.
+NO_GPU = ("Torch not compiled with CUDA enabled",
+          "CUDA cannot initialise",
+          "No CUDA GPUs are available",
+          "Found no NVIDIA driver")
+
+
 def skip_if_missing_dependency(what, stderr):
     """Skip if `stderr` blames one of the two, and it really is not installed."""
     for dep in UNRESOLVABLE:
         if (f"No module named '{dep}'" in stderr
                 and importlib.util.find_spec(dep) is None):
             pytest.skip(f"{what} needs {dep}, which is not installed here")
+    if any(m in stderr for m in NO_GPU) and not _cuda_available():
+        pytest.skip(f"{what} needs a working GPU, which this machine does not have")
+
+
+def _cuda_available():
+    """True only if torch can actually use a device, not merely that one is present."""
+    try:
+        import torch
+        return bool(torch.cuda.is_available())
+    except Exception:
+        return False
 
 
 def requires(dep):
