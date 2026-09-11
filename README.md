@@ -3,6 +3,7 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12+-3776AB.svg?logo=python&logoColor=white)](pyproject.toml)
 [![CARLA 0.9.16](https://img.shields.io/badge/CARLA-0.9.16-orange.svg)](https://carla.org)
+[![arXiv](https://img.shields.io/badge/arXiv-2609.10951-b31b1b.svg)](https://arxiv.org/abs/2609.10951)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22101297.svg)](https://doi.org/10.5281/zenodo.22101297)
 [![Captures on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20captures-641%20MB-yellow.svg)](https://huggingface.co/datasets/AD-Assurance-Lab/steering-verification-captures)
 

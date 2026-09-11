@@ -30,6 +30,11 @@
   ],
   "related_identifiers": [
     {
+      "identifier": "10.48550/arXiv.2609.10951",
+      "relation": "isSupplementTo",
+      "resource_type": "publication-preprint"
+    },
+    {
       "identifier": "https://huggingface.co/datasets/AD-Assurance-Lab/steering-verification-captures",
       "relation": "isSupplementedBy",
       "resource_type": "dataset"
