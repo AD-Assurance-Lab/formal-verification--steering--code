@@ -48,8 +48,8 @@ CARLA_ROOT = os.environ.get("CARLA_ROOT", os.path.expanduser("~/carla"))
 # lets the same code produce both.
 #
 # Town06 values are LOADED FROM THE COMMITTED ROUTE ARTIFACT, never hardcoded here:
-# the route was fixed on geometry alone before any Town06 model existed (PROTOCOL.md
-# section 6), and reading it back from that file is what keeps the two in step.
+# the route was fixed on geometry alone before any Town06 model existed, and reading
+# it back from that file is what keeps the two in step.
 STUDY_MAP = os.environ.get("STUDY_MAP", "Town04")
 MAP_NAME = STUDY_MAP
 
@@ -217,7 +217,7 @@ LOOKAHEAD_M = 5.0
 # [MEASURED] constant on the Town04 highway, both dirs. Town06's chosen window
 # measures the SAME 3.500 m (std 0.0000), so the derived CTE budget and tolerance are
 # numerically unchanged between the two maps. That is a fact about the maps, not a
-# choice, and PROTOCOL.md section 3 requires it be recomputed rather than assumed.
+# choice, and it is recomputed here rather than assumed.
 LANE_WIDTH_M = 3.500
 
 # Where the measured route ends. NOT a round number for tidiness: the western traffic-light

@@ -12,7 +12,7 @@
 #
 # NOT under the protocol's ordering rule, and deliberately so. Town04 is the discovery test:
 # T_CLOSED_LOOP_S was back-solved from its own stability cliff, so its agreement measures
-# SENSITIVITY, not prediction, and PROTOCOL.md section 1 says so. Imposing a
+# SENSITIVITY, not prediction. Imposing a
 # certificate-before-drive ordering here would dress a discovery test up as a prediction
 # claim, which that section calls worth less than no test at all. closed_loop_ledger.py
 # already skips the R1 guard for Town04 for this reason.

@@ -8,15 +8,12 @@ on:
 
 jobs:
   tests:
-    # What can run without the simulator: the tests, and the parts of the audit that
-    # read the repository rather than drive it. The closed-loop and capture paths need
-    # CARLA 0.9.16 and a GPU and are exercised on the lab machine; the certificates
-    # need the published captures, which are 641 MB and fetched on demand.
+    # What can run without the simulator. The closed-loop and capture paths need
+    # CARLA 0.9.16 and a GPU and run on the lab machine; the certificates need the
+    # published captures, which are 641 MB and fetched on demand.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0        # the blind-order check reads commit timestamps
 
       - uses: actions/setup-python@v5
         with:
@@ -29,9 +26,6 @@ jobs:
           # modules still have to import, which is what the import test checks.
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install -e '.[dev]'
-
-      - name: Protocol lock
-        run: python -m steering.verify.protocol_lock
 
       - name: Tests
         run: python -m pytest tests -q

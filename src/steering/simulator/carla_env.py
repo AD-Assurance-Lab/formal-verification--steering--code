@@ -215,10 +215,9 @@ CONDITION_DELTAS = {
 
 # THE CONDITION IS CALLED low_sun. "shadows" was always a bug.
 #
-# PROTOCOL.md's FROZEN section -- the part that wins over every other file in this repo --
-# has said "clear, fog, night, low sun" the whole time. The code key disagreed with it,
-# and by the protocol's own first rule that makes the code wrong, not the protocol. So
-# this is a bug fix and PROTOCOL.lock is untouched.
+# The study has said "clear, fog, night, low sun" the whole time, and the code key
+# disagreed with it. That makes the code wrong, not the study, so this is a bug fix
+# and no frozen constant moves.
 #
 # The name also described something that does not happen. "shadows" implies the road is
 # partly occluded; the Town04 rationale was that terrain shadows the road at 15 degrees.

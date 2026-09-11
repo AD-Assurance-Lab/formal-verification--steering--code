@@ -4,7 +4,7 @@ Written before any Town06 certificate or closed-loop result exists, for the same
 reason study/design.py is: an expectation recorded after the fact is not a
 prediction, and an aggregation rule chosen after seeing the numbers is a curve fit.
 
-PROTOCOL.md wins over this file. This module is its executable form.
+The study's frozen constants in executable form.
 
 The difference from study/design.py in one line: that study CHOSE the criterion with
 the outcomes known; this one INHERITS it and is forbidden from touching it.
@@ -13,8 +13,8 @@ import os
 
 # ── What is inherited, and must not be re-derived here ──────────────────────
 # These are imported from config so there is exactly one definition. If a future
-# reader is tempted to write a Town06-specific value for any of them, PROTOCOL.md
-# section 3 is the answer: they are frozen, and re-fitting one destroys the test.
+# reader is tempted to write a Town06-specific value for any of them: they are frozen,
+# and re-fitting one destroys the test.
 FROZEN_FROM_TOWN04 = (
     "T_CLOSED_LOOP_S",          # 1.85 s -- the single calibrated constant
     "T_HORIZON_S",              # 1.0 s

@@ -11,7 +11,7 @@ import path, the file is in the wrong place.
 
 ## Run two checks before and after any change
 
-1. `pytest tests -p no:anyio`. The plain command crashes on a system plugin.
+1. `pytest tests`.
 2. The checker in the paper repository. It reads about 200 files here. It fails
    if a reported number moves.
 
@@ -54,8 +54,8 @@ defect. Do not drive more laps.
 The certificates reproduce without the simulator. Most readers check the work
 that way. `scripts/fetch_captures.py` gets the captured images.
 
-A full 12-cell run of `scripts/certify_sustained_bound.py` takes about 1 hour on
-the RTX 4070. Each cell takes 5 to 6 minutes.
+A full 12-cell run of `scripts/verify/certify_sustained_bound.py` takes about an hour
+on this machine's RTX 5090. Each cell takes 5 to 6 minutes.
 
 The shell working directory resets between commands. Change directory inside each
 command.

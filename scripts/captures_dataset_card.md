@@ -6,6 +6,7 @@ tags:
   - autonomous-driving
   - formal-verification
   - carla
+  - arxiv:2609.10951
 size_categories:
   - 1K<n<10K
 ---
@@ -17,6 +18,9 @@ are the input to the formal certificates in
 [formal-verification--steering--code](https://github.com/AD-Assurance-Lab/formal-verification--steering--code),
 and they are published because they are what makes those certificates checkable **without
 a simulator**.
+
+The paper is [*Testing Between the Test Cases: Proving End-to-End Steering in Conditions
+You Never Drove*](https://huggingface.co/papers/2609.10951) (arXiv:2609.10951).
 
 | | route | conditions | poses | frames |
 |---|---|---|---|---|

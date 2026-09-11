@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Town06 deployment test -- the whole model-building pipeline, unattended.
 #
-# Order matters and is fixed by PROTOCOL.md:
+# Order matters:
 #   expert -> BC data -> teacher -> DAgger teacher -> distil student -> DAgger student
 # for BOTH the clear-only and mixed policies. Certification happens AFTER this, and
 # the certificate is committed BEFORE any scored closed-loop run.

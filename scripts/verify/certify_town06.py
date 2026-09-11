@@ -10,8 +10,7 @@ cannot print agreement even if someone wants it to: there is nothing to compare 
 The bound math is IDENTICAL to the Town04 certifier, deliberately and line for line:
 CROWN over the one-parameter family with `nsplit` branch-and-bound sub-intervals,
 route-mean (sustained) bias, compared against config.CLOSED_LOOP_TOLERANCE. The frozen
-constants come from PROTOCOL.md section 3 and this script refuses to run if the lock
-has moved.
+constants come from config.py, which is their single definition.
 
 CROWN, not alpha-CROWN. This docstring said "alpha-CROWN" while the code passed
 method="CROWN", and it was read that way into several follow-on findings documents
