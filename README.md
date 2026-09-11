@@ -1,4 +1,4 @@
-# Proving end-to-end steering in poor visibility
+# Testing between the test cases
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12+-3776AB.svg?logo=python&logoColor=white)](pyproject.toml)
@@ -11,7 +11,9 @@
 intermediate condition.** Test campaigns pick conditions, budgets decide how many get
 driven, and the gaps between them are where the risk lives.
 
-Companion code for *Proving End-to-End Steering in Poor Visibility*.
+Companion code for [*Testing Between the Test Cases: Proving End-to-End Steering
+in Conditions You Never Drove*](https://arxiv.org/abs/2609.10951)
+(arXiv:2609.10951).
 **AD Assurance Lab, Western Michigan University.**
 
 <p align="center">
@@ -85,6 +87,16 @@ The highway is CARLA's Town04 and the arterial is Town06. The code takes the map
 ## Citing
 
 ```bibtex
+@article{ghalan2026testing,
+  author  = {Ghalan, Menuka and Rodgers, Charles and Asher, Zachary D.},
+  title   = {Testing Between the Test Cases: Proving End-to-End Steering
+             in Conditions You Never Drove},
+  journal = {arXiv preprint arXiv:2609.10951},
+  year    = {2026},
+  doi     = {10.48550/arXiv.2609.10951},
+  url     = {https://arxiv.org/abs/2609.10951}
+}
+
 @software{ad_assurance_lab_steering_verification,
   author  = {Ghalan, Menuka and Rodgers, Charles and Asher, Zachary D.},
   title   = {Formal verification of end-to-end steering under
