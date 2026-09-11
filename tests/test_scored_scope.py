@@ -1,7 +1,7 @@
 """The two scored scopes must partition the same road, and neither may be silently fitted.
 
 `scored_scope.py` exists because the lap route dropped a constraint the SECTION route
-enforced: `SMAX_CAP = 0.060`, declared in build_study_route.py as "steering demand regime
+enforced: `SMAX_CAP = 0.060`, declared by the route-selection criterion as "steering demand regime
 that actually trained on Town04". The lap's smax is 0.0670.
 
 Excluding that road makes the Town06 mixed student look better, so these tests pin the
@@ -15,33 +15,34 @@ properties that stop the scope from becoming a knob:
 
 No CARLA and no models: this is route geometry only.
 """
+import importlib
 import os
 import sys
 
-import numpy as np
 import pytest
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(REPO, "pipeline"))
-sys.path.insert(0, os.path.join(REPO, "scripts"))
 
 
 @pytest.fixture(scope="module")
 def mod():
     os.environ["STUDY_MAP"] = "Town06"
-    for m in ("config", "route", "scored_scope"):
+    for m in ("steering.config", "steering.drive.route", "steering.verify.scored_scope"):
         sys.modules.pop(m, None)
-    import config as C
-    import scored_scope as S
+    C = importlib.import_module("steering.config")
+    S = importlib.import_module("steering.verify.scored_scope")
     return C, S
 
 
 def test_thresholds_are_the_declared_constants(mod):
-    """SMAX_CAP and Town04's smax come from build_study_route, not from this study."""
+    """These two were declared by the route-selection criterion before any model on this
+    road existed, which is what makes the capped scope a pre-registered quantity rather
+    than one chosen after seeing the result. The route builder itself is not shipped --
+    the routes are committed, so nothing here rebuilds them -- so the values are pinned
+    against the literals it declared. Changing either changes what was scored."""
     _, S = mod
-    import build_study_route as B
-    assert S.SMAX_CAP == B.SMAX_CAP
-    assert S.REF_SMAX == B.REF["smax"]
+    assert S.SMAX_CAP == 0.060, "the enforced steering-demand cap moved"
+    assert S.REF_SMAX == 0.0467, "the highway's own maximum demand moved"
 
 
 def test_full_scope_reproduces_the_committed_scored_length(mod):
@@ -66,7 +67,7 @@ def test_capped_is_a_strict_subset_of_full(mod):
 def test_the_route_really_does_exceed_the_cap(mod):
     """If this ever fails, the premise of the whole scope exercise is gone."""
     _, S = mod
-    from route import load_route
+    from steering.drive.route import load_route
     _, d = S.demand_profile(load_route("lap"))
     assert d.max() > S.SMAX_CAP
 
@@ -78,7 +79,7 @@ def test_spans_are_undilated(mod):
     is how a study selects the road that flatters it.
     """
     _, S = mod
-    from route import load_route
+    from steering.drive.route import load_route
     arc, d = S.demand_profile(load_route("lap"))
     for a, b in S.excluded_spans("lap", S.SMAX_CAP):
         m = (arc >= a) & (arc <= b)

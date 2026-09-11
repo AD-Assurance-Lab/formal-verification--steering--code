@@ -1,0 +1,140 @@
+{
+  "westbound/S_clear/fog": {
+    "s_star": 0.94088,
+    "worst": 0.005005014128983021,
+    "worst_x_tol": 0.4166920015602861,
+    "s1": 0.004913450684398413,
+    "s1_x_tol": 0.4090688952092422,
+    "witness": false,
+    "certificate": "CERTIFIED",
+    "poses": 179,
+    "scope": "full"
+  },
+  "westbound/S_clear/night": {
+    "s_star": 0.9657,
+    "worst": -0.03618961200118065,
+    "worst_x_tol": -3.0129628951769285,
+    "s1": -0.03597956895828247,
+    "s1_x_tol": -2.9954757805148087,
+    "witness": true,
+    "certificate": "FALSIFIED",
+    "poses": 179,
+    "scope": "full"
+  },
+  "westbound/S_clear/shadows": {
+    "s_star": 1.0,
+    "worst": 0.011575703509151936,
+    "worst_x_tol": 0.9637341554672184,
+    "s1": 0.011575703509151936,
+    "s1_x_tol": 0.9637341554672184,
+    "witness": false,
+    "certificate": "FALSIFIED",
+    "poses": 179,
+    "scope": "full",
+    "pp_worst": 0.01816135158179609,
+    "pp_worst_x_tol": 1.5120216939719957,
+    "pp_witness": true
+  },
+  "westbound/S_mixed/fog": {
+    "s_star": 0.9998,
+    "worst": 0.0003756591468118131,
+    "worst_x_tol": 0.031275468511264774,
+    "s1": 0.00037441731547005475,
+    "s1_x_tol": 0.031172079954497056,
+    "witness": false,
+    "certificate": "CERTIFIED",
+    "poses": 179,
+    "scope": "full"
+  },
+  "westbound/S_mixed/night": {
+    "s_star": 0.7308,
+    "worst": 0.0008045801660045981,
+    "worst_x_tol": 0.06698524942152079,
+    "s1": 0.0005933563224971294,
+    "s1_x_tol": 0.04939982731078085,
+    "witness": false,
+    "certificate": "CERTIFIED",
+    "poses": 179,
+    "scope": "full"
+  },
+  "westbound/S_mixed/shadows": {
+    "s_star": 0.999595,
+    "worst": -0.0011614825343713164,
+    "worst_x_tol": -0.0966991240288144,
+    "s1": -0.001160221640020609,
+    "s1_x_tol": -0.09659414838294961,
+    "witness": false,
+    "certificate": "CERTIFIED",
+    "poses": 179,
+    "scope": "full"
+  },
+  "eastbound/S_clear/fog": {
+    "s_star": 0.87078,
+    "worst": 0.002301126718521118,
+    "worst_x_tol": 0.19158009817232038,
+    "s1": 0.002222789218649268,
+    "s1_x_tol": 0.18505811665986008,
+    "witness": false,
+    "certificate": "CERTIFIED",
+    "poses": 178,
+    "scope": "full"
+  },
+  "eastbound/S_clear/night": {
+    "s_star": 0.96742,
+    "worst": -0.037297893315553665,
+    "worst_x_tol": -3.1052327564154205,
+    "s1": -0.03688308596611023,
+    "s1_x_tol": -3.070698007811899,
+    "witness": true,
+    "certificate": "FALSIFIED",
+    "poses": 178,
+    "scope": "full"
+  },
+  "eastbound/S_clear/shadows": {
+    "s_star": 1.0,
+    "worst": 0.01193219143897295,
+    "worst_x_tol": 0.9934135260306307,
+    "s1": 0.01193219143897295,
+    "s1_x_tol": 0.9934135260306307,
+    "witness": false,
+    "certificate": "FALSIFIED",
+    "poses": 178,
+    "scope": "full",
+    "pp_worst": 0.018473248078561065,
+    "pp_worst_x_tol": 1.5379886087832926,
+    "pp_witness": true
+  },
+  "eastbound/S_mixed/fog": {
+    "s_star": 0.99971,
+    "worst": 0.0010355892591178417,
+    "worst_x_tol": 0.08621789071029635,
+    "s1": 0.0010345445480197668,
+    "s1_x_tol": 0.08613091338170337,
+    "witness": false,
+    "certificate": "CERTIFIED",
+    "poses": 178,
+    "scope": "full"
+  },
+  "eastbound/S_mixed/night": {
+    "s_star": 0.9997,
+    "worst": 0.002079855417832732,
+    "worst_x_tol": 0.17315817591684293,
+    "s1": 0.0020783429499715567,
+    "s1_x_tol": 0.1730322555409704,
+    "witness": false,
+    "certificate": "CERTIFIED",
+    "poses": 178,
+    "scope": "full"
+  },
+  "eastbound/S_mixed/shadows": {
+    "s_star": 0.55428,
+    "worst": -0.0007047372637316585,
+    "worst_x_tol": -0.05867283756462302,
+    "s1": -0.0003856342227663845,
+    "s1_x_tol": -0.032105942563507024,
+    "witness": false,
+    "certificate": "CERTIFIED",
+    "poses": 178,
+    "scope": "full"
+  }
+}

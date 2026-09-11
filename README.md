@@ -1,92 +1,135 @@
-# formal-verification--steering--code
+# Testing between the test cases
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/Python-3.10+-3776AB.svg?logo=python&logoColor=white)](requirements.txt)
+[![Python 3.12+](https://img.shields.io/badge/Python-3.12+-3776AB.svg?logo=python&logoColor=white)](pyproject.toml)
 [![CARLA 0.9.16](https://img.shields.io/badge/CARLA-0.9.16-orange.svg)](https://carla.org)
-[![Verifier: α-CROWN](https://img.shields.io/badge/Verifier-%CE%B1--CROWN%20%2B%20BaB-8A2BE2.svg)](https://github.com/Verified-Intelligence/auto_LiRPA)
+[![arXiv](https://img.shields.io/badge/arXiv-2609.10951-b31b1b.svg)](https://arxiv.org/abs/2609.10951)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22101297.svg)](https://doi.org/10.5281/zenodo.22101297)
+[![Captures on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20captures-641%20MB-yellow.svg)](https://huggingface.co/datasets/AD-Assurance-Lab/steering-verification-captures)
 
-Formal verification of end-to-end steering under physically-parameterized weather,
-characterized in CARLA. **AD Assurance Lab, Western Michigan University.** Companion
-code for the paper *Proving End-to-End Steering in Poor Visibility* (preprint in
-preparation).
+**A camera-only steering network can pass every test case and still fail in an
+intermediate condition.** Test campaigns pick conditions, budgets decide how many get
+driven, and the gaps between them are where the risk lives.
 
-Two driving experts are trained, one on clear weather and one on clear + fog + night
-+ low sun, and each is distilled into a steering network small enough to verify. The
-students are certified with α-CROWN over the disturbance family between the rendered
-endpoints, without driving, and the certificate agrees with closed-loop testing in all
-twelve cells.
-
-**The setup.** A full Town04 highway lap, driven in both directions, with a Tesla
-Model 3 ego vehicle.
+Companion code for [*Testing Between the Test Cases: Proving End-to-End Steering
+in Conditions You Never Drove*](https://arxiv.org/abs/2609.10951)
+(arXiv:2609.10951).
+**AD Assurance Lab, Western Michigan University.**
 
 <p align="center">
-  <img src="figures/route_map.png" width="330" alt="Town04 highway loop, both driven directions">
-  <img src="figures/vehicle.png" width="440" alt="The ego vehicle on the route">
+  <img src="night_comparison.gif" width="760"
+       alt="Night on the highway: the clear-only network leaves the lane, the mixed-conditions network holds it">
 </p>
 
-**What the certificate says.** Certified bounds for all twelve cells, computed from
-the network weights alone with no simulator in the loop. A cell is certified when the
-whole bias interval stays inside the tolerance corridor: the clear-only student clears
-clear weather and fog and is not certified under night or low sun, while the mixed
-student clears all four.
+<p align="center"><sub>Night on the highway. The clear-only network leaves its lane on
+every one of six runs, first crossing the budget 40 to 42 m into the route and reaching
+28 to 37 ft of cross-track error. The mixed-conditions network never departs and stays
+within 0.85 ft.</sub></p>
 
-<p align="center">
-  <img src="figures/cert_bounds.png" width="540" alt="Certified bounds vs closed-loop outcome, all twelve cells">
-</p>
+## What was done
 
-**What the vehicle does.** Driving the same cells in CARLA reproduces every verdict.
-Under night the clear-only student leaves the lane within 35 m and departs on all ten
-runs, while the mixed student holds the lane for the full lap.
+Two small steering networks were trained on each of two roads, a highway and an urban
+arterial, both in CARLA: one on clear weather alone and one on clear, fog, night and low
+sun. Each was distilled small enough to verify. Then, with no simulator running, bound
+propagation reads the weights and computes how far the steering can drift at **every**
+weather strength between two captured images: a continuum no test campaign could drive.
 
-<p align="center">
-  <img src="figures/night_comparison.gif" width="780" alt="Night: the clear-only student departs within 35 m; the mixed student holds the lane">
-</p>
+It found what the test cases could not. Under fog and under low sun, a network whose
+steering error at the captured condition sits well inside safe limits leaves its lane on
+every lap, and its worst case lies in between.
 
-**Why the statistic matters.** Cross-track error over the lap, the quantity the
-tolerance is defined against. The certificate detects failures that persist along the
-route; the peak statistic provably cannot, because it misorders the two networks.
+The disturbance families are physically parameterized (fog density, sun altitude) and never
+balls in pixel space, which would contain physically impossible images and make the safety
+claim vacuous.
 
-<p align="center">
-  <img src="figures/cte_lap.png" width="540" alt="Cross-track error over the lap">
-</p>
+## Reproducing it
 
-The twelve-cell agreement is in-sample: the tolerance horizon is fitted to the driven
-outcomes, so it shows the sustained statistic is sensitive to what matters rather than
-that it predicts. Scope, caveats, and the fitted horizon are in the paper.
+**The certificates need no simulator.** That is the level most readers want, and it runs
+on a laptop:
+
+```bash
+git clone --depth 1 https://github.com/AD-Assurance-Lab/formal-verification--steering--code
+cd formal-verification--steering--code
+pip install -e .
+python3 scripts/fetch_captures.py            # 641 MB, every file digest-checked
+STUDY_MAP=Town06 python3 scripts/verify/certify_town06.py --out /tmp/cert.json
+```
+
+`--depth 1` gets the 16 MB you need. A full clone also pulls the study's history, which
+is 128 MB. You do not need it to reproduce anything.
+
+Re-driving the closed loop needs CARLA 0.9.16 and a GPU; rebuilding the networks takes
+days. All three levels, and exactly what reproduces to what precision, are in
+**[REPRODUCING.md](REPRODUCING.md)**.
 
 ## Layout
 
 | | |
 |---|---|
-| `pipeline/` | CARLA interface, training (BC → DAgger → distillation), evaluation; the two student checkpoints (403 KB) |
-| `scripts/certify_sustained_bound.py` | the certificate |
-| `scripts/closed_loop_ledger.py` | closed-loop failure rates (≥10 reps, Wilson intervals) |
-| `scripts/capture_offset_yaw.py` | full-lap capture rig |
-| `results/` | the twelve certified bounds and the eight driven cells the paper reports |
+| `src/steering/config.py` | every number the study runs on, with the ones you want listed at the top |
+| `src/steering/verify/` | certification: bounds, captures, scope |
+| `src/steering/drive/` | routes, the expert driver, cross-track error, the ledger |
+| `src/steering/simulator/` | the CARLA interface, the port lock, condition checks |
+| `src/steering/networks/` | the teacher and student networks, and the dataset |
+| `src/steering/disturbance/` | the physically parameterized weather families |
+| `scripts/verify/` | recompute the certificates, no simulator needed |
+| `scripts/capture/` | render the frames the certifier reads |
+| `scripts/drive/` | the closed-loop ledger: drive the cells, aggregate, report |
+| `scripts/simulator/` | launch, restart and health-check CARLA |
+| `scripts/training/` | build the networks: collect, train, DAgger, distil, gate |
+| `checkpoints/` | the four shipped policies, 4.8 MB, so nothing has to be retrained |
+| `results/highway`, `results/arterial` | every artifact behind a reported number, including each individual lap |
+| `routes/` | the two routes, one per road |
 
-## Reproduce
+The highway is CARLA's Town04 and the arterial is Town06. The code takes the map name in
+`STUDY_MAP`; the results are filed under the road.
 
-```bash
-pip install -r requirements.txt   # plus torch, auto_LiRPA, and CARLA 0.9.16 (see file)
+## Citing
 
-# 1. closed-loop driving (CARLA server required); the shipped checkpoints are the
-#    published students — retraining from scratch is pipeline/train.py -> dagger.py
-#    -> distill.py -> dagger_student.py
-python scripts/closed_loop_ledger.py --student S_clear_84x28 --condition night
+```bibtex
+@article{ghalan2026testing,
+  author  = {Ghalan, Menuka and Rodgers, Charles and Asher, Zachary D.},
+  title   = {Testing Between the Test Cases: Proving End-to-End Steering
+             in Conditions You Never Drove},
+  journal = {arXiv preprint arXiv:2609.10951},
+  year    = {2026},
+  doi     = {10.48550/arXiv.2609.10951},
+  url     = {https://arxiv.org/abs/2609.10951}
+}
 
-# 2. full-lap captures for verification (only the centreline slice is needed:
-#    OY_OFFSETS=0.0 OY_YAWS=0.0, ~38 MB per condition)
-python scripts/capture_offset_yaw.py
-
-# 3. formal verification: alpha-CROWN + input-space branch-and-bound over the
-#    disturbance family, no simulator -> the twelve certified bounds
-python scripts/certify_sustained_bound.py
+@software{ad_assurance_lab_steering_verification,
+  author  = {Ghalan, Menuka and Rodgers, Charles and Asher, Zachary D.},
+  title   = {Formal verification of end-to-end steering under
+             physically parameterized weather},
+  year    = {2026},
+  doi     = {10.5281/zenodo.22101297},
+  url     = {https://github.com/AD-Assurance-Lab/formal-verification--steering--code}
+}
 ```
 
-Every number in the paper traces to an artifact in `results/`; the paper repository
-carries the checker. The research record behind this artifact — design, findings,
-dispositions, retired instruments — lives in this repository's git history.
+## Built on
+
+The bounds come from [auto_LiRPA](https://github.com/Verified-Intelligence/auto_LiRPA),
+which implements CROWN and its variants. The certificates here are plain CROWN over an
+input-space branch-and-bound; the verifier does the bound propagation and this repository
+supplies the disturbance family, the scope and the criterion. `scripts/bootstrap_env.sh`
+pins the exact upstream commit, because the package is installed from git rather than a
+release.
+
+```bibtex
+@inproceedings{xu2020automatic,
+  title     = {Automatic perturbation analysis for scalable certified robustness
+               and beyond},
+  author    = {Xu, Kaidi and Shi, Zhouxing and Zhang, Huan and Wang, Yihan and
+               Chang, Kai-Wei and Huang, Minlie and Kailkhura, Bhavya and
+               Lin, Xue and Hsieh, Cho-Jui},
+  booktitle = {Advances in Neural Information Processing Systems},
+  year      = {2020}
+}
+```
+
+The simulator is [CARLA](https://carla.org) 0.9.16. The captured frames are renderings of
+CARLA's own assets and are redistributed under the terms CARLA publishes for them.
 
 ## License
 

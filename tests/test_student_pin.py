@@ -6,20 +6,20 @@ an abandoned run and destroyed a policy that had just passed all four conditions
 "newest <base>_dagger_rNN" was an inference from mtimes rather than a record of what a
 gate accepted.
 """
+import importlib
 import os
 import sys
 
 import pytest
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(REPO, "pipeline"))
 
 
 @pytest.fixture
 def cfg(tmp_path, monkeypatch):
     os.environ["STUDY_MAP"] = "Town06"
-    sys.modules.pop("config", None)
-    import config as C
+    sys.modules.pop("steering.config", None)
+    C = importlib.import_module("steering.config")
     monkeypatch.setattr(C, "CHECKPOINT_DIR", str(tmp_path))
     monkeypatch.setattr(C, "STUDENT_DAGGER", True)
     return C

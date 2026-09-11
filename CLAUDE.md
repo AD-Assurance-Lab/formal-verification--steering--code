@@ -1,79 +1,61 @@
-# CLAUDE.md
+# formal-verification--steering--code
 
+This repository is finished. It is the published record behind one paper. The
+numbers in it are results. Do not recompute them and do not tidy them.
 
-> **The harness defects are FIXED and both studies are rebuilt on the corrected one.**
-> Every CARLA measurement here goes through the `carla-determinism` package: bind the
-> client, call `require_deterministic()` before measuring, issue commands with
-> `cd.apply_control()`, and launch via `scripts/carla_launch.sh`.
->
-> **Environment: `.venv`, built by `bash scripts/bootstrap_env.sh`.** Never trust
-> `torch.cuda.is_available()` — on this desktop it returned True on a card the installed
-> torch had no kernels for, and every entry point here calls `require_cuda()` instead,
-> which proves the device by operating on a tensor. The display is `:1`, not `:0`.
->
-> Bit-exact closed-loop replay is still unreachable (rule D-7), so every closed-loop
-> number remains a rate over >= 10 repetitions. Run `python3 scripts/audit_repo.py`
-> before any release.
+## Layout
 
-Public artifact repo for the end-to-end steering verification paper.
+Importable code goes in `src/steering`. Runnable code goes in `scripts`. Install
+with `pip install -e .` and import normally. If you must add a directory to the
+import path, the file is in the wrong place.
 
-Rules that still bite:
+## Run two checks before and after any change
 
-- **CARLA applies writes on the NEXT tick.** `set_weather()`, `set_transform()` and
-  sensor delivery all land one tick later, silently. Construct state, never read it
-  back; match frames on the id `world.tick()` returns (`env.grab_frame`), and never
-  swallow a missing frame.
-- Sync mode only via `env.enable_sync_mode` — it provisions bounded substepping;
-  hand-rolled settings run partial physics per tick.
-- Every closed-loop number is a failure RATE over ≥ 10 repetitions with a Wilson
-  interval; single runs near the stability cliff are wrong ~1 in 8 times.
-- One CARLA client per port: every entry point takes `pipeline/carla_lock`. Relaunch
-  the server before measurement runs (it leaks ~10.5 GiB / 11 h); kill by the PID
-  listening on the port, not the launcher wrapper.
-- No pixel-space norm balls as disturbance sets; families are physically
-  parameterized. No SDP-CROWN (needs an L2 ball; vacuous here).
-- `closed_loop_ledger.py` refuses canonical cell names while `FOG_DENSITY_OVERRIDE`/
-  `SUN_ALTITUDE_OVERRIDE`/`ROUTE_ROLL` are set, and records full run provenance.
+1. `pytest tests -p no:anyio`. The plain command crashes on a system plugin.
+2. The checker in the paper repository. It reads about 200 files here. It fails
+   if a reported number moves.
 
-## SIMULATOR HYGIENE — non-negotiable, and re-derived the hard way
+Compare the counts from before and after.
 
-A CARLA server degrades SILENTLY. It keeps answering, keeps reporting plausible vehicle
-velocities, and stops advancing physics correctly. Measured on a degraded server:
+## Never edit the paper repository
 
-    sections drove 14-62% of their length at 1.3-5.6 m/s while speed_mph reported 20.0
-    throughout; one run flung the car 190 m in 18 steps; a random section per pass hit
-    6-10 ft while the others sat at 0.5 ft
+Do not edit `formal-verification--steering--arxiv` and do not commit to it. Read
+it when you must. Zach writes those papers and he reviews them himself.
 
-Restarted, the same code and the same checkpoint drove every section end to end and
-scored 0/6 with max |CTE| 1.02 ft. NOTHING in a result reveals which server you were on.
-An entire night was spent theorising about marginal stability, covariate shift and
-per-section difficulty on top of corrupted runs.
+If a change here breaks the paper, do this:
 
-**R-SIM-1. Restart CARLA before every measurement run.** Not when it looks wrong --
-before. `bash scripts/carla_restart.sh`. It costs about 30 s. Parsing bad data costs a
-night, and you cannot tell from the data that you are doing it.
+1. Copy the paper repository to the scratchpad.
+2. Patch the copy and verify it.
+3. Tell Zach the exact change to make, and what breaks if he does not make it.
 
-**R-SIM-2. Never `kill -9` a CARLA client.** SIGKILL skips `env.cleanup`, which leaves
-the world in synchronous mode with nothing ticking -- that is how the server gets wedged.
-SIGTERM, wait, and only then SIGKILL. `carla_restart.sh` does this in the right order.
+## The simulator lies when it is unwell
 
-**R-SIM-3. One client at a time.** In synchronous mode ANY connected client's `tick()`
-advances the world, so two processes ticking the same server corrupt each other's runs
-while both appear to work. Never run a sweep in the background and drive manually against
-the same port.
+CARLA keeps answering, and it keeps reporting sensible speeds, after it stops
+advancing the physics. The data does not show which server made it. So:
 
-**R-SIM-4. Verify the rendered condition from a FRAME, every run.** `set_condition`
-checks the weather struct, but the struct is what was asked for, not what the camera
-sees. `scripts/condition_signature.py` identifies the condition from one frame and
-`evaluate.py` asserts it. This is the Town04 fog-into-night failure, where fog leaked
-into the night cells and no result could reveal it. Validated 24/24 on held-out captures.
+- Restart the server before every measurement run.
+- Never stop a client with `kill -9`.
+- Never let two clients use one port.
+- Treat a run that ends after a few steps as a bug, not as a pass.
 
-**R-SIM-5. Do not drive the oracle as a routine health check.** It costs a full section
-and keeps the server up longer, which is the exposure being avoided. Restart instead.
-`scripts/carla_health_check.py` exists as a DIAGNOSTIC for when something is already
-suspected, not as routine hygiene.
+## The simulator applies a change on the next tick
 
-**R-SIM-6. A run that ends in a handful of steps is a BUG, not a pass.** Three separate
-attempts at the section-end distance cap each terminated runs after 3-5 steps and
-reported a tiny |CTE| as a PASS. Any cell whose step count is far below `steps_for` is
-void. Check step counts before reading verdicts.
+Weather, camera moves and sensor images all land one step late. Nothing raises an
+error if you read them too early. Set the state you want. Do not read it back.
+
+## Closed-loop numbers
+
+The same policy driven twice gives a different path. Every closed-loop number
+here is a rate over repeated laps. If two laps of one cell disagree, find the
+defect. Do not drive more laps.
+
+## Certificates
+
+The certificates reproduce without the simulator. Most readers check the work
+that way. `scripts/fetch_captures.py` gets the captured images.
+
+A full 12-cell run of `scripts/certify_sustained_bound.py` takes about 1 hour on
+the RTX 4070. Each cell takes 5 to 6 minutes.
+
+The shell working directory resets between commands. Change directory inside each
+command.

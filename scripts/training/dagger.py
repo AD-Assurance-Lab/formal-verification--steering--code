@@ -1,0 +1,538 @@
+#!/usr/bin/env python3
+"""
+DAgger (Ross et al., 2011) for the steering policy.
+
+Each round: the CURRENT policy drives the full loop both directions; EVERY frame
+it visits is labeled with the route pure-pursuit recovery action (steer back to
+the intended centerline) and saved. That aggregated data is added to the training
+set and the model is retrained from scratch. The off-center states the policy
+wanders into ARE the recovery data, no autopilot hand-over, no PID oscillations.
+
+The same drive both (a) evaluates the current policy (route-based CTE) and
+(b) collects the next round's data. Stops when the driven policy meets budget.
+
+    python dagger.py --init steering_bc_baseline --rounds 6
+"""
+import os
+import sys
+import glob
+import csv
+import gc
+import subprocess
+import time
+import argparse
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+import cv2
+import torch
+
+from steering.gpu import require_cuda
+import carla
+
+from steering import config as C
+from steering.simulator import carla_env as env
+from steering.simulator.imaging import preprocess_for_model
+from steering.drive.route import load_route, signed_cte_route, pure_pursuit_route
+from steering.drive.route import lap_finished
+from steering.drive.metrics import summarize_cte
+from steering.networks.model import CarlaSteeringNet
+from train import train_model
+
+# Sections, not a hardcoded pair (Town06 has six; Town04 has its two directions).
+SPAWNS = C.SPAWNS
+FIELDS = ["image", "weather", "direction", "step", "steer", "steer_rad", "nn_steer",
+          "bridged",
+          "cte_m", "speed_mph", "x", "y", "yaw"]
+
+
+def load_model(name, device):
+    m = CarlaSteeringNet().to(device)
+    m.load_state_dict(torch.load(os.path.join(C.CHECKPOINT_DIR, f"{name}.pth"),
+                                 map_location=device))
+    m.eval()
+    return m
+
+
+def drive_collect(world, vehicle, img_queue, model, device, weather, direction,
+                  round_dir, max_steps, beta=0.0, collect=True, abort_on_departure=True):
+    """Drive one lap, optionally recording expert-labelled frames.
+
+    Two jobs that must NOT share a pass:
+
+    * EVALUATION needs pure policy control (beta=0) and must abort on departure, so the
+      pass/fail verdict is honest.
+    * COLLECTION needs the vehicle to stay in a useful state distribution. With pure
+      policy control an early-round policy leaves the road within seconds and yields a
+      few dozen frames, which is far too little to learn recovery from.
+
+    DAgger (Ross et al. 2011) handles this with a mixing schedule,
+    pi_i = beta*pi_expert + (1-beta)*pi_policy, with beta decaying over rounds. The
+    LABEL is always the pure-pursuit recovery action regardless of beta, so the data
+    still teaches recovery; beta only controls how far the vehicle is allowed to stray
+    while generating it.
+    """
+    route = load_route(direction)
+    hint = None
+    speed_ctrl = env.SpeedController()
+    env.teleport(vehicle, SPAWNS[direction])
+    # warm up on-center with the expert, then hand control to the policy
+    env.warmup_to_speed(
+        world, vehicle, img_queue, speed_ctrl,
+        steer_fn=lambda veh: pure_pursuit_route(route, veh.get_transform())[0],
+    )
+    seg = os.path.join(weather, direction)
+    frames_dir = os.path.join(round_dir, seg, "frames")
+    os.makedirs(frames_dir, exist_ok=True)
+    start = carla.Location(x=SPAWNS[direction]["x"], y=SPAWNS[direction]["y"],
+                           z=SPAWNS[direction]["z"])
+
+    rows, left, stalled, offroad, n_recover = [], False, 0, 0, 0
+    for step in range(max_steps):
+        env.update_spectator(world, vehicle)
+        frame = world.tick()
+        image = env.grab_frame(img_queue, frame)
+        tf = vehicle.get_transform()
+        loc = tf.location
+
+        bgr = env.raw_to_bgr(image)
+        xin = torch.from_numpy(preprocess_for_model(bgr)).unsqueeze(0).to(device)
+        with torch.no_grad():
+            nn_steer = max(-1.0, min(1.0, float(model(xin).item())))
+
+        cte, hint = signed_cte_route(route, loc.x, loc.y, hint)
+        exp_steer, exp_rad, _ = pure_pursuit_route(route, tf, hint)   # LABEL
+
+        # ODD BOUNDARY: pure pursuit bridges the intersections.
+        #
+        # Without this the teacher is asked to drive an intersection with no lane
+        # markings, which a lane-follower cannot do at any beta -- it failed at step ~378
+        # of 1,280 on every attempt, which is 677 m, inside the 619-707 m bridge, at
+        # 62 ft of cross-track error. The policy was not bad; it was being scored on road
+        # that is outside its domain.
+        #
+        # evaluate.py and closed_loop_ledger.py already bridge. dagger.py did not, and
+        # DAgger is where the teacher is BUILT -- so the omission did not merely mismeasure
+        # a policy, it would have trained one on states no policy can recover from.
+        in_bridge = False
+        if getattr(C, "LAP_BASED", False) and hint is not None:
+            here_m = hint * float(C.LAP_META.get("step_m", 2.0))
+            in_bridge = any(a <= here_m <= b for a, b in C.BRIDGE_SPANS)
+
+        # STOP AT THE END OF AN OPEN ROUTE, BEFORE RECORDING (see route.lap_finished).
+        # The loop-closure test below cannot fire on the Town06 lap, so this drove past
+        # the last vertex and recorded a degenerate expert LABEL there -- every round.
+        if lap_finished(route, hint):
+            break
+
+        rel = os.path.join(seg, "frames", f"{step:05d}.png")
+        if collect:
+            cv2.imwrite(os.path.join(round_dir, rel), bgr)
+        rows.append(dict(
+            image=rel, weather=weather, direction=direction, step=step,
+            steer=exp_steer, steer_rad=exp_rad, nn_steer=nn_steer, bridged=in_bridge,
+            cte_m=cte, speed_mph=env.speed_mph(vehicle), x=loc.x, y=loc.y, yaw=tf.rotation.yaw,
+        ))
+
+        # DAgger mixing: expert assists with weight beta so the vehicle keeps generating
+        # useful states; the recorded LABEL is always the pure expert action.
+        applied = exp_steer if in_bridge else (1.0 - beta) * nn_steer + beta * exp_steer
+        thr, brk = speed_ctrl.control(vehicle)
+        env.apply_control(vehicle, carla.VehicleControl(throttle=thr, brake=brk,
+                                                   steer=float(applied)))
+
+        d0 = loc.distance(start)
+        if d0 > 50.0:
+            left = True
+        if left and d0 < 12.0:
+            break
+        stalled = stalled + 1 if env.speed_mph(vehicle) < 1.0 else 0
+        offroad = offroad + 1 if abs(cte) > 6.0 else 0
+        if stalled >= 20 or offroad >= 15:
+            if abort_on_departure:
+                print(f"    {direction}: aborted at step {step} (stall/offroad)")
+                break
+            # collection pass: recover onto the route and keep gathering rather than
+            # sitting off-road accumulating nothing
+            n_recover += 1
+            wp = world.get_map().get_waypoint(loc, project_to_road=True,
+                                              lane_type=carla.LaneType.Driving)
+            tfw = wp.transform
+            tfw.location.z += 0.3
+            vehicle.set_target_velocity(carla.Vector3D(0, 0, 0))
+            vehicle.set_transform(tfw)
+            for _ in range(6):
+                env.update_spectator(world, vehicle)   # keep the view on the car
+                world.tick()
+            speed_ctrl = env.SpeedController()
+            env.warmup_to_speed(world, vehicle, img_queue, speed_ctrl,
+                                steer_fn=lambda veh: pure_pursuit_route(route,
+                                                                        veh.get_transform())[0])
+            stalled = offroad = 0
+            hint = None
+    if n_recover:
+        print(f"    {direction}: {n_recover} recovery reset(s) during collection")
+    # Score only the policy's road: bridged steps are pure pursuit's, and judging the
+    # teacher on them would fail it for an intersection it is not asked to drive. The
+    # rows still CONTAIN the bridged steps, because their expert labels are exactly what
+    # DAgger should learn from -- they are excluded from the SCORE, not from the data.
+    scored = [r for r in rows if not r.get("bridged")]
+    return rows, summarize_cte([r["cte_m"] for r in scored])
+
+
+def write_manifest(round_dir, rows):
+    """Write (or rewrite) a round's manifest.
+
+    Called after EVERY lap, not only at the end of a round. A round drives eight laps
+    over roughly twenty minutes, and writing the manifest only at the end means any
+    interruption discards every frame collected, since the resume logic keys on the
+    manifest's existence. Rewriting incrementally makes a partial round salvageable and
+    costs nothing measurable next to the driving.
+    """
+    os.makedirs(round_dir, exist_ok=True)
+    path = os.path.join(round_dir, "manifest.csv")
+    with open(path, "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=FIELDS)
+        w.writeheader(); w.writerows(rows)
+    return path
+
+
+
+def restart_carla_and_reconnect(camera, vehicle, world, original):
+    """Stop the SERVER, relaunch it, reconnect. Returns (client, world, original,
+    vehicle, camera, img_queue).
+
+    NOT carla_restart.sh -- it pkills client processes by name and dagger.py is on that
+    list, so calling it from in here terminates this script. Stop the server by its
+    rpc-port and bring it back through the single canonical launcher.
+
+    Release the client BEFORE killing the server: a live carla.Client whose server
+    disappears throws from a background thread, which surfaces as SIGABRT that no Python
+    `except` can catch.
+    """
+    # The caller has already cleaned up and dropped its references; see the call site.
+    # Accepting them here at all is vestigial, and cleaning up twice is harmless.
+    if camera is not None or vehicle is not None:
+        env.cleanup([camera, vehicle], world, original)
+    del camera, vehicle, world, original
+    env._CLIENT = None
+    gc.collect()
+    port = os.environ.get("CARLA_PORT", str(C.PORT))
+    # KILL, THEN WAIT FOR THE PORT. `sleep 10` is a guess, and when it is wrong the old
+    # server still holds the port, the relaunch cannot bind, and every reconnect times out
+    # -- which is exactly how this died after every round ("could not reach CARLA after
+    # the round restart"), with two CARLA processes alive and one wedged on the socket.
+    import socket as _socket
+    subprocess.run(["pkill", "-f", f"[C]arlaUE4-Linux-Shipping.*rpc-port={port}"],
+                   stdin=subprocess.DEVNULL)
+    subprocess.run(["pkill", "-f", f"[C]arlaUE4.sh.*rpc-port={port}"],
+                   stdin=subprocess.DEVNULL)
+
+    def _port_held():
+        with _socket.socket() as sk:
+            sk.settimeout(1.0)
+            return sk.connect_ex(("127.0.0.1", int(port))) == 0
+
+    for _i in range(25):
+        if not _port_held():
+            break
+        if _i == 12:          # SIGTERM had its chance; escalate rather than hang
+            subprocess.run(["pkill", "-KILL", "-f", f"[C]arlaUE4.*rpc-port={port}"],
+                           stdin=subprocess.DEVNULL)
+        time.sleep(1.0)
+    else:
+        raise RuntimeError(f"port {port} is still held after SIGTERM and SIGKILL; "
+                           f"refusing to launch a second server onto it")
+    time.sleep(3)
+    log = os.path.join(C.REPO_ROOT, "results", "carla_restart_dagger.log")
+    with open(log, "a") as fh:
+        subprocess.run(["bash", os.path.join(C.REPO_ROOT, "scripts", "simulator", "carla_launch.sh")],
+                       stdout=fh, stderr=subprocess.STDOUT,
+                       stdin=subprocess.DEVNULL, timeout=600)
+    last = None
+    for i in range(4):
+        try:
+            client = env.connect()
+            world = env.load_town04(client)
+            original = env.enable_sync_mode(world)
+            vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
+            camera, img_queue = env.spawn_camera(world, vehicle)
+            return client, world, original, vehicle, camera, img_queue
+        except Exception as exc:
+            last = exc
+            print(f"  reconnect attempt {i + 1}/4 failed: {type(exc).__name__}", flush=True)
+            time.sleep(20)
+    raise RuntimeError(f"could not reach CARLA after the round restart: {last}")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--base", default="clear",
+                    help="base BC dataset name(s), COMMA-SEPARATED. A mixed-condition "
+                         "run needs every base set it was collected into, e.g. "
+                         "--base clear,mixed")
+    ap.add_argument("--init", default="steering_bc_baseline", help="initial policy checkpoint")
+    ap.add_argument("--rounds", type=int, default=6, help="max DAgger retrains")
+    # WHEN AN EXTERNAL GATE DECIDES, THIS ONE MUST NOT STOP THE RUN.
+    # dagger.py evaluates before it trains and exits early if its own gate passes.
+    # That gate is ONE rep; run_dagger_rounds.sh decides on three laps per condition
+    # with a clean server before each. Measured: the internal gate passed
+    # teacher_mixed_t06lap_dagger_r05 (0.27/0.92/1.95/0.25 ft) and stopped, on a
+    # checkpoint the strict gate had already scored 2 of 12 laps. The round trained
+    # nothing and the stage halted on a policy the decision-maker had rejected.
+    ap.add_argument("--external-gate", action="store_true",
+                    help="never stop on the internal gate; the caller decides")
+    ap.add_argument("--gate-reps", type=int, default=1,
+                    help="evaluation passes per cell per round. 1 reproduces the old "
+                         "single-run gate. >1 makes the gate a RATE, which standing rule 3 "
+                         "requires of every other closed-loop number here and which "
+                         "this gate needs: at ~80%% per-cell competence a "
+                         "conjunction of single runs selects a lucky round, not a better "
+                         "teacher. The worst repetition decides the cell.")
+    ap.add_argument("--min-rounds", type=int, default=0,
+                    help="keep collecting through this round even once the teacher "
+                         "passes; the DAgger set is an input to distillation, not just "
+                         "a means of fixing the teacher")
+    ap.add_argument("--epochs", type=int, default=120)
+    ap.add_argument("--lr", type=float, default=5e-4,
+                    help="LR for warm-start retrains (gentle fine-tune from prior round)")
+    ap.add_argument("--max-steps", type=int, default=2500)
+    ap.add_argument("--out-prefix", default="steering_dagger")
+    ap.add_argument("--weathers", default="clear",
+                    help="comma-separated weather presets to drive/collect each round")
+    ap.add_argument("--margin-frac", type=float, default=1.0,
+                    help="a direction counts as passing only if max|CTE| stays below "
+                         "margin-frac * CTE budget. Default 1.0 = the plain budget. Use "
+                         "<1 to demand real margin: closed-loop CTE varies run to run on "
+                         "marginal policies (teacher westbound spans 1.38-2.37 ft against "
+                         "a 2.19 ft budget), so a single-run gate can stop on a lucky pass.")
+    ap.add_argument("--beta0", type=float, default=0.0,
+                    help="DAgger expert-mixing weight at round 0 (Ross et al. 2011). Default 0 "
+                         "reproduces v1, which converged with these presets. Raise it if a "
+                         "policy departs so early that a round collects too few frames.")
+    ap.add_argument("--beta-decay", type=float, default=0.5,
+                    help="per-round multiplicative decay of the mixing weight")
+    ap.add_argument("--dagger-dir", default="dagger",
+                    help="subdir under data/ for this run's rounds (use a distinct name "
+                         "per model, e.g. dagger_mixed, so rounds don't collide)")
+    args = ap.parse_args()
+
+    device = require_cuda()
+    weathers = args.weathers.split(",")
+    dagger_dir = os.path.join(C.DATASET_DIR, args.dagger_dir)
+    # DAgger aggregates: every prior round's data must stay in the training set. Rounds
+    # from EARLIER INVOCATIONS are discovered here, so a long run can be executed in
+    # batches without silently discarding what it already collected (which would quietly
+    # turn DAgger back into repeated behaviour cloning).
+    # `--base` takes a COMMA-SEPARATED list. It was a single name, which silently
+    # dropped every base dataset but one: a mixed-condition run started from
+    # `--base clear` would retrain on the clear base plus DAgger rounds and discard the
+    # 20,348 fog/night/shadows frames, producing something called a mixed teacher that
+    # had barely seen the conditions. Same shape as trap 18.
+    base_names = [b.strip() for b in args.base.split(",") if b.strip()]
+    manifests = [os.path.join(C.DATASET_DIR, b, "manifest.csv") for b in base_names]
+    missing = [m for m in manifests if not os.path.exists(m)]
+    if missing:
+        raise SystemExit("missing base manifest(s): " + ", ".join(missing))
+    print(f"base datasets: {base_names}")
+    prior_rounds = sorted(glob.glob(os.path.join(dagger_dir, "round*", "manifest.csv")))
+    manifests += prior_rounds
+    round_offset = 0
+    if prior_rounds:
+        round_offset = 1 + max(int(os.path.basename(os.path.dirname(m))[5:])
+                               for m in prior_rounds)
+        print(f"resuming: found {len(prior_rounds)} prior DAgger round(s) in "
+              f"{args.dagger_dir}, continuing at round {round_offset}")
+    # RESUME MUST ADVANCE THE POLICY, NOT JUST THE ROUND COUNTER.
+    #
+    # This loaded `args.init` unconditionally, so resuming a run re-evaluated the ORIGINAL
+    # policy at the resumed round number while aggregating all the prior rounds' data.
+    # Measured: a resume at round 4 evaluated teacher_mixed_bc and scored 42.19 ft, having
+    # already reached 3.15 ft at round 3 -- four rounds of policy improvement silently
+    # discarded, and a full 8-lap round spent re-measuring a policy already known to fail.
+    # It also drops the warm start that multi-condition DAgger needs (trap 14).
+    # Derive the policy from THIS run's completed rounds, never from "whatever checkpoint
+    # sorts last". Checkpoints from an earlier, superseded run can still be on disk --
+    # r04 and r05 from a pre-recollection run were sitting there while this run had only
+    # reached r03 -- and picking the highest-numbered file would silently resume from a
+    # policy trained on retired data. That is trap 18 wearing a different hat.
+    start_from = args.init
+    if prior_rounds:
+        # Walk DOWN from the most recent round to the highest checkpoint that actually
+        # exists. A round can leave data on disk without a trained checkpoint -- an
+        # interrupted round writes its per-lap manifest but never reaches the retrain --
+        # so requiring an exact match drops all the way back to the initial policy and
+        # silently discards every round of improvement.
+        for r in range(round_offset - 1, -1, -1):
+            cand = f"{args.out_prefix}_r{r:02d}"
+            if os.path.isfile(os.path.join(C.CHECKPOINT_DIR, f"{cand}.pth")):
+                start_from = cand
+                print(f"resuming from '{start_from}', the newest policy this run "
+                      f"actually trained (round {r}); not '{args.init}'")
+                break
+        else:
+            print(f"WARNING: no {args.out_prefix}_r*.pth from this run; falling back to "
+                  f"'{args.init}', discarding {round_offset} rounds of improvement")
+    model = load_model(start_from, device)
+    current = start_from
+
+    client = env.connect()
+    world = env.load_town04(client)
+    original = env.enable_sync_mode(world)
+    # Spawn INSIDE the try: a failure here would otherwise skip the finally and leave
+    # the server hung in synchronous mode with no ticking client (trap 3b).
+    vehicle = camera = img_queue = None
+    history = []
+    try:
+        vehicle = env.spawn_vehicle(world, C.SPAWN_EASTBOUND)
+        camera, img_queue = env.spawn_camera(world, vehicle)
+        # --rounds is THIS PROCESS's budget, and r is an ABSOLUTE round number. They were
+        # compared against each other, which is a category error with two consequences:
+        #
+        #   resuming at round 1 with --rounds 1: `r == args.rounds` was true immediately,
+        #   so the round collected its frames and broke BEFORE training. It printed
+        #   "Exhausted 1 rounds without passing", produced no checkpoint, and the driver
+        #   then gated the PREVIOUS one -- teacher_mixed_t06lap_dagger_r00, from before
+        #   the stage began -- and logged "3/12 laps passed" against it.
+        #
+        #   resuming at round 9 with --rounds 1: the comparison is never true, so nothing
+        #   stopped the process training TWO rounds. One-round-per-process was holding
+        #   only because the teardown TimeoutException killed the process first. Relying
+        #   on a crash to enforce a design invariant is not enforcing it.
+        #
+        # The loop bound is now the budget itself, so `range(args.rounds)` runs exactly
+        # that many rounds wherever it resumes from. Town04's --rounds 16 from a cold
+        # start trains r00..r15 exactly as before.
+        for r_local in range(args.rounds):
+            r = r_local + round_offset
+            # restart before every measurement run in the TEACHER loop too. This drives len(weathers) x len(sections)
+            # times per round with retraining in between, holding one server for the whole
+            # run -- the exposure that silently voided a six-round student-DAgger run (the
+            # same checkpoint read 3.8% over budget on a fresh server and 96.9% inside the
+            # loop). The teacher results in this study survive only because they were
+            # independently re-measured on fresh servers; that was luck, not design.
+            if r_local > 0:
+                # RELEASE EVERYTHING IN THIS SCOPE BEFORE THE SERVER DIES.
+                #
+                # `del` inside the helper drops only the HELPER's names; the caller still
+                # holds client, world, vehicle, camera and the image queue, so the old
+                # client outlives the server it was talking to. Its background thread then
+                # throws carla::client::TimeoutException with no handler and the process
+                # dies on "terminate called" -- uncatchable, mid-training, after the round
+                # was already trained. Exactly the failure the ledger had, fixed there and
+                # not carried across.
+                env.cleanup([camera, vehicle], world, original)
+                client = world = original = vehicle = camera = img_queue = None
+                gc.collect()
+                (client, world, original, vehicle,
+                 camera, img_queue) = restart_carla_and_reconnect(
+                     None, None, None, None)
+                print(f"  [restart before every measurement run] CARLA restarted before round {r}", flush=True)
+            round_dir = os.path.join(dagger_dir, f"round{r:02d}")
+            print(f"\n{'#'*64}\n# DAgger round {r}, evaluating policy '{current}'\n{'#'*64}")
+            # beta decays over rounds: heavy expert assistance early (when the policy
+            # cannot hold the road and would otherwise yield a few dozen frames), none
+            # by the end, so late rounds train on the policy's own state distribution.
+            beta = max(0.0, args.beta0 * (args.beta_decay ** r))
+            rows, passed = [], True
+            for weather in weathers:
+                camera, img_queue = env.set_condition(world, vehicle, weather, camera)
+                for d in C.SECTIONS:
+                    if beta <= 0.0:
+                        # v1 behaviour, which demonstrably converged with these presets:
+                        # ONE pass that both evaluates (pure policy, honest abort) and
+                        # collects. Adequate here because the policy drives ~420 steps
+                        # before departing, so a round still gathers thousands of frames.
+                        drows, st = drive_collect(world, vehicle, img_queue, model, device,
+                                                  weather, d, round_dir, min(args.max_steps, C.steps_for(d)),
+                                                  beta=0.0, collect=True,
+                                                  abort_on_departure=True)
+                        rows += drows
+                        # THE GATE AS A RATE (--gate-reps > 1). Standing rule 3 applies to
+                        # every closed-loop number in this study except, until now, this
+                        # one: the teacher gate was a conjunction of SINGLE runs. Measurement
+                        # measured what that does -- both teachers sat at ~77-82% per-cell
+                        # competence and the gate simply waited for a round where every
+                        # cell won its coin flip at once, so the round count is a waiting
+                        # time and the selected teacher is a lucky draw rather than a
+                        # better policy. Extra passes EVALUATE only; the collected frames
+                        # come from the first pass, so the DAgger set is unchanged.
+                        for _ in range(max(0, args.gate_reps - 1)):
+                            _, st_r = drive_collect(world, vehicle, img_queue, model, device,
+                                                    weather, d, round_dir,
+                                                    min(args.max_steps, C.steps_for(d)),
+                                                    beta=0.0, collect=False,
+                                                    abort_on_departure=True)
+                            # worst of the repetitions decides the cell
+                            if (st_r.get("max_abs_cte_m", 0) or 0) > (st.get("max_abs_cte_m", 0) or 0):
+                                st = st_r
+                    else:
+                        # beta > 0: evaluation and collection cannot share a pass, since
+                        # one needs pure policy control and the other needs the vehicle
+                        # kept in a useful state distribution.
+                        _, st = drive_collect(world, vehicle, img_queue, model, device,
+                                              weather, d, round_dir, min(args.max_steps, C.steps_for(d)),
+                                              beta=0.0, collect=False,
+                                              abort_on_departure=True)
+                        drows, _ = drive_collect(world, vehicle, img_queue, model, device,
+                                                 weather, d, round_dir, min(args.max_steps, C.steps_for(d)),
+                                                 beta=beta, collect=True,
+                                                 abort_on_departure=False)
+                        rows += drows
+                    ob = st.get("frac_over_budget", 1) * 100
+                    mx = st.get("max_abs_cte_m", 0) * C.M_TO_FT
+                    budget_ft = C.CTE_BUDGET_M * C.M_TO_FT
+                    ok = bool(st.get("passed")) and mx <= args.margin_frac * budget_ft
+                    print(f"  [{weather}/{d}] over-budget={ob:5.1f}%  max|CTE|={mx:5.2f}ft  "
+                          f"(gate {args.margin_frac*budget_ft:.2f}ft) -> {'PASS' if ok else 'FAIL'}")
+                    if not ok:
+                        passed = False
+                    write_manifest(round_dir, rows)   # checkpoint after every lap
+            print(f"  collected {len(rows)} frames at beta={beta:.2f}")
+            mpath = write_manifest(round_dir, rows)
+            history.append((r, current, passed))
+
+            if passed and r >= args.min_rounds and not args.external_gate:
+                print(f"\n*** PASSED at round {r} with policy '{current}' ***")
+                break
+            if passed:
+                # Keep going purely to COLLECT. A teacher that passes early leaves a thin
+                # DAgger set behind, and the student distilled from it inherits that gap:
+                # the clear teacher passed at round 5 with 13,271 frames while the mixed
+                # teacher took 12 rounds and left 117,469, and the clear student is the
+                # one that cannot hold the 620 m straight. These frames are OFF-NOMINAL
+                # recovery states, which is what teaches fine lateral correction --
+                # exactly the s03 failure mode. Labels come from the expert, not from the
+                # policy, so they stay correct however the policy drifts.
+                print(f"\n*** passed at round {r}, but --min-rounds {args.min_rounds} "
+                      f"means collection continues ***")
+            if r_local == args.rounds - 1 and not passed:
+                print(f"\nRound budget of {args.rounds} spent without passing "
+                      f"(last policy '{current}'); training this round, then exiting.")
+
+            manifests.append(mpath)
+            new = f"{args.out_prefix}_r{r:02d}"
+            print(f"  aggregating {len(manifests)} manifests, warm-start from '{current}' -> {new}")
+            train_model(manifests, new, epochs=args.epochs, balance=True, quiet=True,
+                        weathers=weathers, init_from=current, lr=args.lr)
+            model = load_model(new, device)
+            current = new
+    finally:
+        env.cleanup([camera, vehicle], world, original)
+
+    print("\n===== DAgger summary =====")
+    for r, name, passed in history:
+        print(f"  round {r}: {name:24s} {'PASS' if passed else 'FAIL'}")
+
+
+if __name__ == "__main__":
+    # One CARLA client per port. Two synchronous clients on one world interleave ticks
+    # and silently corrupt each other -- see steering/simulator/carla_lock.py for the run this
+    # cost. Every entry point that ticks the world takes the lock, in both directions:
+    # it refuses to start over someone else's run, and its own run is visible to them.
+    from steering.simulator.carla_lock import carla_lock, CarlaBusy
+    try:
+        with carla_lock(owner=" ".join(sys.argv[:3])):
+            main()
+    except CarlaBusy as exc:
+        raise SystemExit(str(exc))

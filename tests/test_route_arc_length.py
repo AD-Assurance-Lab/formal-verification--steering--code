@@ -11,6 +11,7 @@ instance had already produced a verdict: evaluate.py's scored-distance cap tripp
 1,006 m of a 2,289 m lap, every run ended with the vehicle on the road at 20 mph, and the
 clear student was declared COMPETENT on the truncated drive.
 """
+import importlib
 import os
 import re
 import sys
@@ -19,9 +20,8 @@ import numpy as np
 import pytest
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(REPO, "pipeline"))
 
-from route import arc_lengths, route_length_m  # noqa: E402
+from steering.drive.route import arc_lengths, route_length_m
 
 
 def test_a_third_column_cannot_change_the_length():
@@ -41,16 +41,16 @@ def test_arc_is_monotonic_and_starts_at_zero():
 
 def test_the_lap_measures_its_declared_length():
     os.environ["STUDY_MAP"] = "Town06"
-    for m in ("config", "route"):
+    for m in ("steering.config", "steering.drive.route"):
         sys.modules.pop(m, None)
-    import config as C
-    from route import load_route, route_length_m as rlm
+    C = importlib.import_module("steering.config")
+    from steering.drive.route import load_route, route_length_m as rlm
     assert rlm(load_route(C.SECTIONS[0])) == pytest.approx(C.LAP_TOTAL_M, abs=1.0)
-    for m in ("config", "route"):
+    for m in ("steering.config", "steering.drive.route"):
         sys.modules.pop(m, None)
 
 
-@pytest.mark.parametrize("path", ["pipeline/evaluate.py", "scripts/capture_offset_yaw.py"])
+@pytest.mark.parametrize("path", ["scripts/training/evaluate.py", "scripts/capture/capture_offset_yaw.py"])
 def test_no_driver_measures_distance_over_a_whole_route_array(path):
     """The specific expression that caused it, in the files that drive and capture."""
     src = open(os.path.join(REPO, path)).read()

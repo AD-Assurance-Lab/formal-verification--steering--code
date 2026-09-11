@@ -1,0 +1,74 @@
+cff-version: 1.2.0
+title: >-
+  Testing Between the Test Cases: Proving End-to-End Steering in
+  Conditions You Never Drove
+message: >-
+  If you use this software or its results, please cite both the
+  software and the accompanying paper.
+type: software
+authors:
+  - given-names: Menuka
+    family-names: Ghalan
+    affiliation: >-
+      Department of Computer Science, Western Michigan University,
+      Kalamazoo, MI, USA
+  - given-names: Charles
+    family-names: Rodgers
+    affiliation: >-
+      Department of Computer Science, Western Michigan University,
+      Kalamazoo, MI, USA
+  - given-names: Zachary D.
+    family-names: Asher
+    affiliation: >-
+      Department of Mechanical and Aerospace Engineering, Western
+      Michigan University, Kalamazoo, MI, USA
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.22101297
+    description: Archived release of this repository
+repository-code: >-
+  https://github.com/AD-Assurance-Lab/formal-verification--steering--code
+url: >-
+  https://huggingface.co/datasets/AD-Assurance-Lab/steering-verification-captures
+abstract: >-
+  Two small end-to-end steering networks are trained per road in the
+  CARLA simulator, one on clear weather alone and one on four
+  conditions, and each is distilled to a size that can be verified.
+  Bound propagation then reads the weights and biases to compute how
+  far the steering can drift at every weather strength between two
+  captured images, without driving. Under fog and under low sun a
+  network whose steering error at the captured condition sits well
+  inside safe limits leaves its lane on every lap, and its worst case
+  lies in between the conditions a test campaign would drive.
+keywords:
+  - formal verification
+  - autonomous driving
+  - neural network verification
+  - CARLA
+  - robustness
+  - operational design domain
+license: Apache-2.0
+version: 1.3.0
+date-released: '2026-09-07'
+preferred-citation:
+  type: article
+  title: >-
+    Testing Between the Test Cases: Proving End-to-End Steering in
+    Conditions You Never Drove
+  authors:
+    - given-names: Menuka
+      family-names: Ghalan
+    - given-names: Charles
+      family-names: Rodgers
+    - given-names: Zachary D.
+      family-names: Asher
+  year: 2026
+  journal: arXiv
+  identifiers:
+    - type: other
+      value: 'arXiv:2609.10951'
+      description: arXiv preprint
+    - type: doi
+      value: 10.48550/arXiv.2609.10951
+      description: arXiv DOI
+  url: 'https://arxiv.org/abs/2609.10951'

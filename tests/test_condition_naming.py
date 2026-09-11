@@ -5,18 +5,16 @@ driver that asks for "low_sun" against a classifier that answers "shadows" would
 every low-sun lap of an unattended rebuild -- on a condition that rendered correctly.
 """
 import os
-import sys
 
 import numpy as np
 import pytest
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(REPO, "scripts"))
 
-from condition_signature import assert_condition, identify  # noqa: E402
+from steering.simulator.condition_signature import assert_condition, identify
 
 
-# The four conditions as they MEASURE on the Town06 lap (T06-F42), on the student's
+# The four conditions as they MEASURE on the Town06 lap, on the student's
 # view. identify() reads mean, sigma and p01, so a synthetic frame has to reproduce all
 # three -- a plain Gaussian at clear's mean and sigma has p01 = 0.17 and classifies as
 # FOG, which is a fact about the generator and not about clear.

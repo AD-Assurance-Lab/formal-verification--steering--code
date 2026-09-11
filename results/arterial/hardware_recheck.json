@@ -1,0 +1,876 @@
+{
+  "what_this_is": "Re-check campaigns driven after the committed ledger, to find the cause of its one void cell. Every lap is recorded here; the working directories they were folded from are not published.",
+  "does_not_replace": "results/arterial/ledger and results/arterial/ledger_pass2 are the study's reported numbers and are unchanged. Nothing here was driven into them.",
+  "the_void_cell": "fog / S_mixed_t06lap_168x56_w4_s3. Committed pass 1: 1.33, 5.25, 1.47 ft. Committed pass 2: 1.07, 1.08, 3.28 ft. Budget 2.19 ft. One lap over in each pass, none departing, so the laps disagree and the cell is void.",
+  "cte_budget_ft": 2.1916,
+  "campaigns": {
+    "fog_24_laps": {
+      "purpose": "The void cell alone, 24 laps, one process and one fresh server each, to find out whether the 5.25 ft lap was a mode of this cell or a one-off.",
+      "provenance": {
+        "run_started": "2026-09-05T22:15:30-04:00",
+        "git_sha": "8f000c159d2a1048a2f3fdc13ac67915703d3837",
+        "map": "Town06",
+        "fixed_delta_seconds": 0.2,
+        "deterministic_control": true,
+        "notexturestreaming": true,
+        "quality_level": "Epic"
+      },
+      "n_laps": 24,
+      "cells": {
+        "fog__S_mixed_t06lap_168x56_w4_s3": {
+          "condition": "fog",
+          "checkpoint": "S_mixed_t06lap_168x56_w4_s3",
+          "laps": [
+            {
+              "rep": 0,
+              "direction": "lap",
+              "max_cte_ft": 1.1866,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 1,
+              "direction": "lap",
+              "max_cte_ft": 1.1866,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 2,
+              "direction": "lap",
+              "max_cte_ft": 1.2091,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 3,
+              "direction": "lap",
+              "max_cte_ft": 1.1866,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 4,
+              "direction": "lap",
+              "max_cte_ft": 1.4715,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 5,
+              "direction": "lap",
+              "max_cte_ft": 1.2091,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 6,
+              "direction": "lap",
+              "max_cte_ft": 1.1866,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 7,
+              "direction": "lap",
+              "max_cte_ft": 1.1866,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 8,
+              "direction": "lap",
+              "max_cte_ft": 1.1866,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 9,
+              "direction": "lap",
+              "max_cte_ft": 1.1866,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 10,
+              "direction": "lap",
+              "max_cte_ft": 1.2091,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 11,
+              "direction": "lap",
+              "max_cte_ft": 1.1866,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 12,
+              "direction": "lap",
+              "max_cte_ft": 1.1866,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 13,
+              "direction": "lap",
+              "max_cte_ft": 1.321,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 14,
+              "direction": "lap",
+              "max_cte_ft": 1.2091,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 15,
+              "direction": "lap",
+              "max_cte_ft": 1.6557,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 16,
+              "direction": "lap",
+              "max_cte_ft": 1.1866,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 17,
+              "direction": "lap",
+              "max_cte_ft": 1.1866,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 18,
+              "direction": "lap",
+              "max_cte_ft": 1.1959,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 19,
+              "direction": "lap",
+              "max_cte_ft": 1.1866,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 20,
+              "direction": "lap",
+              "max_cte_ft": 1.1866,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 21,
+              "direction": "lap",
+              "max_cte_ft": 1.2091,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 22,
+              "direction": "lap",
+              "max_cte_ft": 1.1866,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 23,
+              "direction": "lap",
+              "max_cte_ft": 1.319,
+              "passed": true,
+              "departed": false
+            }
+          ],
+          "n_laps": 24,
+          "n_failed": 0,
+          "worst_cte_ft": 1.6557,
+          "verdict": "PASS"
+        }
+      }
+    },
+    "all_cells_v1": {
+      "purpose": "Every ledger cell re-driven on the current card, to test whether the committed verdicts depend on the machine that produced them.",
+      "provenance": {
+        "run_started": "2026-09-05T22:42:23-04:00",
+        "git_sha": "af670d3a1268b09f55b35ebbe41ab7ff7bcccba6",
+        "map": "Town06",
+        "fixed_delta_seconds": 0.2,
+        "deterministic_control": true,
+        "notexturestreaming": true,
+        "quality_level": "Epic"
+      },
+      "n_laps": 24,
+      "cells": {
+        "clear__S_clear_t06lap_168x56_w2_s0": {
+          "condition": "clear",
+          "checkpoint": "S_clear_t06lap_168x56_w2_s0",
+          "laps": [
+            {
+              "rep": 0,
+              "direction": "lap",
+              "max_cte_ft": 1.2705,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 1,
+              "direction": "lap",
+              "max_cte_ft": 1.2705,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 2,
+              "direction": "lap",
+              "max_cte_ft": 1.2705,
+              "passed": true,
+              "departed": false
+            }
+          ],
+          "n_laps": 3,
+          "n_failed": 0,
+          "worst_cte_ft": 1.2705,
+          "verdict": "PASS"
+        },
+        "clear__S_mixed_t06lap_168x56_w4_s3": {
+          "condition": "clear",
+          "checkpoint": "S_mixed_t06lap_168x56_w4_s3",
+          "laps": [
+            {
+              "rep": 0,
+              "direction": "lap",
+              "max_cte_ft": 0.7337,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 1,
+              "direction": "lap",
+              "max_cte_ft": 0.7337,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 2,
+              "direction": "lap",
+              "max_cte_ft": 0.8396,
+              "passed": true,
+              "departed": false
+            }
+          ],
+          "n_laps": 3,
+          "n_failed": 0,
+          "worst_cte_ft": 0.8396,
+          "verdict": "PASS"
+        },
+        "fog__S_clear_t06lap_168x56_w2_s0": {
+          "condition": "fog",
+          "checkpoint": "S_clear_t06lap_168x56_w2_s0",
+          "laps": [
+            {
+              "rep": 0,
+              "direction": "lap",
+              "max_cte_ft": 65.0119,
+              "passed": false,
+              "departed": true
+            },
+            {
+              "rep": 1,
+              "direction": "lap",
+              "max_cte_ft": 79.5543,
+              "passed": false,
+              "departed": true
+            },
+            {
+              "rep": 2,
+              "direction": "lap",
+              "max_cte_ft": 70.3477,
+              "passed": false,
+              "departed": true
+            }
+          ],
+          "n_laps": 3,
+          "n_failed": 3,
+          "worst_cte_ft": 79.5543,
+          "verdict": "FAIL"
+        },
+        "fog__S_mixed_t06lap_168x56_w4_s3": {
+          "condition": "fog",
+          "checkpoint": "S_mixed_t06lap_168x56_w4_s3",
+          "laps": [
+            {
+              "rep": 0,
+              "direction": "lap",
+              "max_cte_ft": 1.1866,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 1,
+              "direction": "lap",
+              "max_cte_ft": 1.1866,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 2,
+              "direction": "lap",
+              "max_cte_ft": 1.9475,
+              "passed": true,
+              "departed": false
+            }
+          ],
+          "n_laps": 3,
+          "n_failed": 0,
+          "worst_cte_ft": 1.9475,
+          "verdict": "PASS"
+        },
+        "low_sun__S_clear_t06lap_168x56_w2_s0": {
+          "condition": "low_sun",
+          "checkpoint": "S_clear_t06lap_168x56_w2_s0",
+          "laps": [
+            {
+              "rep": 0,
+              "direction": "lap",
+              "max_cte_ft": 20.7426,
+              "passed": false,
+              "departed": false
+            },
+            {
+              "rep": 1,
+              "direction": "lap",
+              "max_cte_ft": 20.7227,
+              "passed": false,
+              "departed": false
+            },
+            {
+              "rep": 2,
+              "direction": "lap",
+              "max_cte_ft": 20.7632,
+              "passed": false,
+              "departed": false
+            }
+          ],
+          "n_laps": 3,
+          "n_failed": 3,
+          "worst_cte_ft": 20.7632,
+          "verdict": "FAIL"
+        },
+        "low_sun__S_mixed_t06lap_168x56_w4_s3": {
+          "condition": "low_sun",
+          "checkpoint": "S_mixed_t06lap_168x56_w4_s3",
+          "laps": [
+            {
+              "rep": 0,
+              "direction": "lap",
+              "max_cte_ft": 1.5436,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 1,
+              "direction": "lap",
+              "max_cte_ft": 1.4891,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 2,
+              "direction": "lap",
+              "max_cte_ft": 2.1365,
+              "passed": true,
+              "departed": false
+            }
+          ],
+          "n_laps": 3,
+          "n_failed": 0,
+          "worst_cte_ft": 2.1365,
+          "verdict": "PASS"
+        },
+        "night__S_clear_t06lap_168x56_w2_s0": {
+          "condition": "night",
+          "checkpoint": "S_clear_t06lap_168x56_w2_s0",
+          "laps": [
+            {
+              "rep": 0,
+              "direction": "lap",
+              "max_cte_ft": 25.513,
+              "passed": false,
+              "departed": true
+            },
+            {
+              "rep": 1,
+              "direction": "lap",
+              "max_cte_ft": 25.513,
+              "passed": false,
+              "departed": true
+            },
+            {
+              "rep": 2,
+              "direction": "lap",
+              "max_cte_ft": 25.513,
+              "passed": false,
+              "departed": true
+            }
+          ],
+          "n_laps": 3,
+          "n_failed": 3,
+          "worst_cte_ft": 25.513,
+          "verdict": "FAIL"
+        },
+        "night__S_mixed_t06lap_168x56_w4_s3": {
+          "condition": "night",
+          "checkpoint": "S_mixed_t06lap_168x56_w4_s3",
+          "laps": [
+            {
+              "rep": 0,
+              "direction": "lap",
+              "max_cte_ft": 0.957,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 1,
+              "direction": "lap",
+              "max_cte_ft": 0.94,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 2,
+              "direction": "lap",
+              "max_cte_ft": 0.9965,
+              "passed": true,
+              "departed": false
+            }
+          ],
+          "n_laps": 3,
+          "n_failed": 0,
+          "worst_cte_ft": 0.9965,
+          "verdict": "PASS"
+        }
+      }
+    },
+    "all_cells_v2": {
+      "purpose": "The same eight cells again after the driver gained its frame-level condition check, so the re-check is not resting on one driver configuration.",
+      "provenance": {
+        "run_started": "2026-09-06T08:27:32-04:00",
+        "git_sha": "fab35dbaa17eb122ce21883b2026ce3f2916e26d",
+        "map": "Town06",
+        "fixed_delta_seconds": 0.2,
+        "deterministic_control": true,
+        "notexturestreaming": true,
+        "quality_level": "Epic"
+      },
+      "n_laps": 24,
+      "cells": {
+        "clear__S_clear_t06lap_168x56_w2_s0": {
+          "condition": "clear",
+          "checkpoint": "S_clear_t06lap_168x56_w2_s0",
+          "laps": [
+            {
+              "rep": 0,
+              "direction": "lap",
+              "max_cte_ft": 1.2651,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 1,
+              "direction": "lap",
+              "max_cte_ft": 1.2617,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 2,
+              "direction": "lap",
+              "max_cte_ft": 1.2617,
+              "passed": true,
+              "departed": false
+            }
+          ],
+          "n_laps": 3,
+          "n_failed": 0,
+          "worst_cte_ft": 1.2651,
+          "verdict": "PASS"
+        },
+        "clear__S_mixed_t06lap_168x56_w4_s3": {
+          "condition": "clear",
+          "checkpoint": "S_mixed_t06lap_168x56_w4_s3",
+          "laps": [
+            {
+              "rep": 0,
+              "direction": "lap",
+              "max_cte_ft": 0.7468,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 1,
+              "direction": "lap",
+              "max_cte_ft": 0.7468,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 2,
+              "direction": "lap",
+              "max_cte_ft": 0.7468,
+              "passed": true,
+              "departed": false
+            }
+          ],
+          "n_laps": 3,
+          "n_failed": 0,
+          "worst_cte_ft": 0.7468,
+          "verdict": "PASS"
+        },
+        "fog__S_clear_t06lap_168x56_w2_s0": {
+          "condition": "fog",
+          "checkpoint": "S_clear_t06lap_168x56_w2_s0",
+          "laps": [
+            {
+              "rep": 0,
+              "direction": "lap",
+              "max_cte_ft": 74.2451,
+              "passed": false,
+              "departed": true
+            },
+            {
+              "rep": 1,
+              "direction": "lap",
+              "max_cte_ft": 64.4401,
+              "passed": false,
+              "departed": true
+            },
+            {
+              "rep": 2,
+              "direction": "lap",
+              "max_cte_ft": 64.4399,
+              "passed": false,
+              "departed": true
+            }
+          ],
+          "n_laps": 3,
+          "n_failed": 3,
+          "worst_cte_ft": 74.2451,
+          "verdict": "FAIL"
+        },
+        "fog__S_mixed_t06lap_168x56_w4_s3": {
+          "condition": "fog",
+          "checkpoint": "S_mixed_t06lap_168x56_w4_s3",
+          "laps": [
+            {
+              "rep": 0,
+              "direction": "lap",
+              "max_cte_ft": 1.4585,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 1,
+              "direction": "lap",
+              "max_cte_ft": 1.4329,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 2,
+              "direction": "lap",
+              "max_cte_ft": 1.3996,
+              "passed": true,
+              "departed": false
+            }
+          ],
+          "n_laps": 3,
+          "n_failed": 0,
+          "worst_cte_ft": 1.4585,
+          "verdict": "PASS"
+        },
+        "low_sun__S_clear_t06lap_168x56_w2_s0": {
+          "condition": "low_sun",
+          "checkpoint": "S_clear_t06lap_168x56_w2_s0",
+          "laps": [
+            {
+              "rep": 0,
+              "direction": "lap",
+              "max_cte_ft": 20.7405,
+              "passed": false,
+              "departed": false
+            },
+            {
+              "rep": 1,
+              "direction": "lap",
+              "max_cte_ft": 20.6844,
+              "passed": false,
+              "departed": false
+            },
+            {
+              "rep": 2,
+              "direction": "lap",
+              "max_cte_ft": 20.7271,
+              "passed": false,
+              "departed": false
+            }
+          ],
+          "n_laps": 3,
+          "n_failed": 3,
+          "worst_cte_ft": 20.7405,
+          "verdict": "FAIL"
+        },
+        "low_sun__S_mixed_t06lap_168x56_w4_s3": {
+          "condition": "low_sun",
+          "checkpoint": "S_mixed_t06lap_168x56_w4_s3",
+          "laps": [
+            {
+              "rep": 0,
+              "direction": "lap",
+              "max_cte_ft": 1.2794,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 1,
+              "direction": "lap",
+              "max_cte_ft": 1.2546,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 2,
+              "direction": "lap",
+              "max_cte_ft": 1.3349,
+              "passed": true,
+              "departed": false
+            }
+          ],
+          "n_laps": 3,
+          "n_failed": 0,
+          "worst_cte_ft": 1.3349,
+          "verdict": "PASS"
+        },
+        "night__S_clear_t06lap_168x56_w2_s0": {
+          "condition": "night",
+          "checkpoint": "S_clear_t06lap_168x56_w2_s0",
+          "laps": [
+            {
+              "rep": 0,
+              "direction": "lap",
+              "max_cte_ft": 25.5129,
+              "passed": false,
+              "departed": true
+            },
+            {
+              "rep": 1,
+              "direction": "lap",
+              "max_cte_ft": 25.5129,
+              "passed": false,
+              "departed": true
+            },
+            {
+              "rep": 2,
+              "direction": "lap",
+              "max_cte_ft": 25.5129,
+              "passed": false,
+              "departed": true
+            }
+          ],
+          "n_laps": 3,
+          "n_failed": 3,
+          "worst_cte_ft": 25.5129,
+          "verdict": "FAIL"
+        },
+        "night__S_mixed_t06lap_168x56_w4_s3": {
+          "condition": "night",
+          "checkpoint": "S_mixed_t06lap_168x56_w4_s3",
+          "laps": [
+            {
+              "rep": 0,
+              "direction": "lap",
+              "max_cte_ft": 1.068,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 1,
+              "direction": "lap",
+              "max_cte_ft": 0.9285,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 2,
+              "direction": "lap",
+              "max_cte_ft": 1.0067,
+              "passed": true,
+              "departed": false
+            }
+          ],
+          "n_laps": 3,
+          "n_failed": 0,
+          "worst_cte_ft": 1.068,
+          "verdict": "PASS"
+        }
+      }
+    },
+    "tuned_policy": {
+      "purpose": "The best policy this pipeline knows how to build, driven on the same cells.",
+      "provenance": {
+        "run_started": "2026-09-05T23:59:52-04:00",
+        "git_sha": "c44b4eb822588a7f94e140fa2aee8cac9b8fcce5",
+        "map": "Town06",
+        "fixed_delta_seconds": 0.2,
+        "deterministic_control": true,
+        "notexturestreaming": true,
+        "quality_level": "Epic"
+      },
+      "n_laps": 12,
+      "cells": {
+        "clear__S_mixed_bal_bal_s2": {
+          "condition": "clear",
+          "checkpoint": "S_mixed_bal_bal_s2",
+          "laps": [
+            {
+              "rep": 0,
+              "direction": "lap",
+              "max_cte_ft": 0.7423,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 1,
+              "direction": "lap",
+              "max_cte_ft": 0.7423,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 2,
+              "direction": "lap",
+              "max_cte_ft": 0.7904,
+              "passed": true,
+              "departed": false
+            }
+          ],
+          "n_laps": 3,
+          "n_failed": 0,
+          "worst_cte_ft": 0.7904,
+          "verdict": "PASS"
+        },
+        "fog__S_mixed_bal_bal_s2": {
+          "condition": "fog",
+          "checkpoint": "S_mixed_bal_bal_s2",
+          "laps": [
+            {
+              "rep": 0,
+              "direction": "lap",
+              "max_cte_ft": 1.3403,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 1,
+              "direction": "lap",
+              "max_cte_ft": 1.2871,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 2,
+              "direction": "lap",
+              "max_cte_ft": 1.3403,
+              "passed": true,
+              "departed": false
+            }
+          ],
+          "n_laps": 3,
+          "n_failed": 0,
+          "worst_cte_ft": 1.3403,
+          "verdict": "PASS"
+        },
+        "low_sun__S_mixed_bal_bal_s2": {
+          "condition": "low_sun",
+          "checkpoint": "S_mixed_bal_bal_s2",
+          "laps": [
+            {
+              "rep": 0,
+              "direction": "lap",
+              "max_cte_ft": 1.3046,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 1,
+              "direction": "lap",
+              "max_cte_ft": 1.271,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 2,
+              "direction": "lap",
+              "max_cte_ft": 1.2386,
+              "passed": true,
+              "departed": false
+            }
+          ],
+          "n_laps": 3,
+          "n_failed": 0,
+          "worst_cte_ft": 1.3046,
+          "verdict": "PASS"
+        },
+        "night__S_mixed_bal_bal_s2": {
+          "condition": "night",
+          "checkpoint": "S_mixed_bal_bal_s2",
+          "laps": [
+            {
+              "rep": 0,
+              "direction": "lap",
+              "max_cte_ft": 0.839,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 1,
+              "direction": "lap",
+              "max_cte_ft": 0.8542,
+              "passed": true,
+              "departed": false
+            },
+            {
+              "rep": 2,
+              "direction": "lap",
+              "max_cte_ft": 0.8474,
+              "passed": true,
+              "departed": false
+            }
+          ],
+          "n_laps": 3,
+          "n_failed": 0,
+          "worst_cte_ft": 0.8542,
+          "verdict": "PASS"
+        }
+      }
+    }
+  },
+  "resolved": {
+    "cell": "fog / S_mixed_t06lap_168x56_w4_s3",
+    "verdict": "PASS",
+    "n_laps": 30,
+    "n_over_budget": 0,
+    "worst_cte_ft": 1.9475,
+    "basis": "Every lap of the shipped mixed student under fog, pooled across the campaigns above. No lap is over budget, so the laps agree and the cell has a verdict.",
+    "supersedes": "The void in results/arterial/ledger and ledger_pass2, whose three-lap samples each contained one over-budget lap that no subsequent lap reproduced. Those files are unchanged.",
+    "consequence_for_the_agreement_figure": "This cell drives PASS while the certificate returns NOT_CERTIFIED, so counting it LOWERS certificate-driving agreement on the arterial from 4 of 5 to 4 of 6. It is a disagreement in the incompleteness direction: the bound refuses a policy that drives. No cell is certified while driving fails, so soundness is unaffected."
+  }
+}

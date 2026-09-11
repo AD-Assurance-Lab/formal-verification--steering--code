@@ -1,12 +1,13 @@
 """TOWN06_LEDGER_TAG must give an exploratory blind run its own scope, and must never
 be able to reach the protected ones.
 
-WHY THIS EXISTS. Q3 wants the blind protocol -- certify, commit, then drive, checkable
+WHY THIS EXISTS. An exploratory run wants the blind protocol -- certify, commit, then
+drive, checkable
 against git -- on a student that is NOT the shipped one. Before the tag there was
 nowhere to put it. `TOWN06_PASS` accepts only 1 and 2, and both name directories
-PROTOCOL R4 requires to stand, so an exploratory blind run had two options:
+the protocol requires to stand, so an exploratory blind run had two options:
 
-  * write its scored cells into results/town06/ledger (pass 1's blind record), or
+  * write its scored cells into results/arterial/ledger (pass 1's blind record), or
   * skip the order check, which is the entire reason to run the experiment.
 
 The first corrupts the record the study rests on; the second makes the experiment
@@ -30,10 +31,9 @@ import sys
 import pytest
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO))
 
-PROTECTED_LEDGERS = ("results/town06/ledger", "results/town06/ledger_pass2")
-CANONICAL_CERT = "results/town06/certificate_town06.json"
+PROTECTED_LEDGERS = ("results/arterial/ledger", "results/arterial/ledger_pass2")
+CANONICAL_CERT = "results/arterial/certificate_town06.json"
 
 
 def design(**env):
@@ -44,7 +44,7 @@ def design(**env):
         for k in saved:
             os.environ.pop(k, None)
         os.environ.update({k: v for k, v in env.items() if v is not None})
-        from study import town06_design as D
+        from steering.study import town06_design as D
         return importlib.reload(D)
     finally:
         for k, v in saved.items():
@@ -55,8 +55,8 @@ def design(**env):
 
 def test_no_tag_leaves_every_path_unchanged():
     D = design()
-    assert D.LEDGER_SUBDIR == os.path.join("results", "town06", "ledger")
-    assert D.CERT_ARTIFACT == os.path.join("results", "town06",
+    assert D.LEDGER_SUBDIR == os.path.join("results", "arterial", "ledger")
+    assert D.CERT_ARTIFACT == os.path.join("results", "arterial",
                                            "certificate_town06.json")
     assert D.CERT_ARTIFACTS == [D.CERT_ARTIFACT]
     assert D.CANONICAL_CERT_ARTIFACT == D.CERT_ARTIFACT
@@ -64,15 +64,15 @@ def test_no_tag_leaves_every_path_unchanged():
 
 def test_pass_2_still_scopes_its_own_ledger():
     D = design(TOWN06_PASS="2")
-    assert D.LEDGER_SUBDIR == os.path.join("results", "town06", "ledger_pass2")
+    assert D.LEDGER_SUBDIR == os.path.join("results", "arterial", "ledger_pass2")
     # pass 2 scores both scopes and must predict with both certificates
     assert len(D.CERT_ARTIFACTS) == 2
 
 
 def test_a_tag_moves_the_ledger_and_certificate_together():
     D = design(TOWN06_LEDGER_TAG="q3_tuned")
-    assert D.LEDGER_SUBDIR == os.path.join("results", "town06", "q3_tuned", "ledger")
-    assert D.CERT_ARTIFACT == os.path.join("results", "town06", "q3_tuned",
+    assert D.LEDGER_SUBDIR == os.path.join("results", "arterial", "q3_tuned", "ledger")
+    assert D.CERT_ARTIFACT == os.path.join("results", "arterial", "q3_tuned",
                                            "certificate.json")
     assert D.CERT_ARTIFACTS == [D.CERT_ARTIFACT]
 
@@ -119,7 +119,7 @@ def teardown_module(_):
 def test_an_unknown_student_gets_no_defaulted_expectation():
     """study.expected() is keyed on the student for every branch but the vacuous one, so
     a name it has never heard of used to fall through to the LAST line -- the clear-only
-    student's row -- and be scored against it. Q3 drove an exploratory tuned student and
+    student's row -- and be scored against it. An exploratory run drove a tuned student and
     got three CONTRADICTS that meant only "this table has no row for me".
 
     Standing rule 2 makes that expensive: a contradiction is a BUG until a written
@@ -131,7 +131,7 @@ def test_an_unknown_student_gets_no_defaulted_expectation():
     # the shipped students still resolve exactly as before
     assert D.expected("S_clear_t06", "night") == ("FAIL", "NOT_CERTIFIED")
     assert D.expected("S_mixed_t06", "fog") == ("PASS", "CERTIFIED")
-    assert D.expected("S_clear_t06", "fog") == ("PASS", "CERTIFIED")      # D-14
+    assert D.expected("S_clear_t06", "fog") == ("PASS", "CERTIFIED")
 
 
 def test_an_exploratory_student_reports_no_expectation_rather_than_inventing_one():

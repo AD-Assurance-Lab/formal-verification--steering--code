@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+# Scored closed-loop ledger for the Town04 redo (the DISCOVERY test).
+#
+# This did not exist. The Town04 redo's ledger was driven by hand, which is standing
+# rule 8 -- if a number goes in a paper the invocation is a script in the repo -- and
+# it is the same gap that let a 160 m capture default into a certificate: the two maps
+# differed only in that Town06 had committed drivers and Town04 did not.
+#
+# Its restart discipline was therefore unprovable after the fact: results/highway/logs/
+# ledger/ holds one restart.log, overwritten, so nothing records whether the server was
+# restarted between cells. restart before every measurement run is enforced here, per cell, and logged per cell.
+#
+# NOT under the protocol's ordering rule, and deliberately so. Town04 is the discovery test:
+# T_CLOSED_LOOP_S was back-solved from its own stability cliff, so its agreement measures
+# SENSITIVITY, not prediction, and PROTOCOL.md section 1 says so. Imposing a
+# certificate-before-drive ordering here would dress a discovery test up as a prediction
+# claim, which that section calls worth less than no test at all. closed_loop_ledger.py
+# already skips the R1 guard for Town04 for this reason.
+#
+#   bash scripts/drive/run_town04_ledger.sh
+set -uo pipefail
+cd "$(dirname "$0")/../.."
+REPO=$PWD
+export STUDY_MAP=Town04
+export CARLA_PORT=${CARLA_PORT:-3000}
+export PYTHONUNBUFFERED=1
+
+# THREE LAPS. A lap is eastbound + westbound; three laps is a
+# REPRODUCIBILITY CHECK, not a sample for estimating a rate -- rep-to-rep verdict
+# disagreement measured 0 of 48 section-pairs on the corrected harness. If the three
+# disagree, that is a bug to find, never a reason to run more.
+LAPS=${LAPS:-3}
+
+LOG_DIR=$REPO/results/highway/logs/ledger
+mkdir -p "$LOG_DIR"
+say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/ledger.log"; }
+
+# An override left exported silently changes what a canonical cell measures, and the
+# cell name would not say so.
+for v in FOG_DENSITY_OVERRIDE SUN_ALTITUDE_OVERRIDE ROUTE_ROLL OY_OFFSETS OY_YAWS OY_CONDS; do
+    if [ -n "${!v:-}" ]; then say "FATAL: $v is set ($(printf '%s' "${!v}")) -- unset it"; exit 1; fi
+done
+
+carla_up() { for i in $(seq 1 "${1:-60}"); do
+    ss -ltn 2>/dev/null | grep -q ":$CARLA_PORT" && return 0; sleep 5; done; return 1; }
+carla_restart() {   # $1 = cell tag, so the restart is auditable per cell
+    say "restarting CARLA on port $CARLA_PORT (before $1)"
+    pkill -f "[C]arlaUE4-Linux-Shipping.*rpc-port=$CARLA_PORT" 2>/dev/null; sleep 8
+    # HONOUR THE LAUNCHER'S EXIT CODE, and prove the server can SERVE.
+    #
+    # This ignored it, so when carla_launch.sh printed "FATAL: CARLA did not come up" the
+    # next line still saw a bound port and announced "CARLA back up". A bound port is not
+    # a ready simulator -- the launcher's own comment says so -- and the drive then died
+    # on get_world() after 120 s. Three Town04 attempts were lost to that.
+    if ! bash "$REPO/scripts/simulator/carla_launch.sh" > "$LOG_DIR/restart_$1.log" 2>&1; then
+        say "launcher exit code nonzero for $1"; return 1
+    fi
+    carla_up 60 || { say "port never bound for $1"; return 1; }
+    CARLA_PORT=$CARLA_PORT python3 "$REPO/scripts/simulator/wait_carla_ready.py" --timeout 120 \
+        >/dev/null 2>&1 || { say "port bound but simulator will not serve for $1"; return 1; }
+    say "CARLA back up"; sleep 5; return 0
+    say "FATAL: CARLA did not return"; return 1; }
+carla_up 12 || carla_restart boot || exit 1
+
+# Where the cells land. HIGHWAY_LEDGER_SUBDIR scopes a re-drive away from the committed
+# ledger so the two can be compared before either is believed.
+LEDGER_DIR=$(STUDY_MAP=Town04 python3 -c "import steering.config as C;print(C.LEDGER_DIR)")
+say "ledger directory: ${LEDGER_DIR#$REPO/}"
+mkdir -p "$LEDGER_DIR/runs"
+
+mapfile -t STUDENT_ROWS < <(STUDY_MAP=Town04 python3 -c "
+import steering.config as C
+for nm, ck, ch, fc in C.STUDENTS:
+    print(ck, ','.join(str(c) for c in ch), fc)")
+
+for ROW in "${STUDENT_ROWS[@]}"; do
+  read -r BASE CH FC <<<"$ROW"
+  # Drive the FINAL student -- Town04's procedure includes student DAgger, so the
+  # checkpoint that IS the student is the newest round, not the distilled intermediate.
+  STU=$(STUDY_MAP=Town04 python3 -c "import steering.config as C;print(C.final_student('$BASE'))")
+  say "student $BASE -> $STU"
+  for COND in clear fog night shadows; do
+    CELL="$LEDGER_DIR/${COND}__${BASE}__closed_loop.json"
+    if [ -f "$CELL" ]; then say "SKIP  $COND/$BASE (cell exists)"; continue; fi
+    say "START $COND/$BASE"
+    # ONE PROCESS AND ONE SERVER PER RUN -- see run_town06_ledger.sh for why. Two
+    # directions x 6 reps = 12 runs per cell, over the >= 10 floor (standing rule 3),
+    # and now twelve INDEPENDENT trials rather than two chains of six.
+    RUN_OK=1
+    for REP in $(seq 0 $((LAPS-1))); do
+      for SEC in eastbound westbound; do
+        RUNF="$LEDGER_DIR/runs/${COND}__${BASE}__${SEC}__rep0${REP}.json"
+        [ -f "$RUNF" ] && { say "SKIP  $COND/$BASE $SEC rep$REP (run exists)"; continue; }
+        carla_restart "${COND}_${BASE}_${SEC}_${REP}" || { RUN_OK=0; break; }
+        # The lock is NOT deleted here. It reclaims itself when its holder is dead
+        # (steering/simulator/carla_lock.py), so removing it buys nothing except the
+        # ability to start a second client over a LIVE one -- which is the collision the
+        # lock exists to prevent, and which once turned a clean cell into a 20.69 ft
+        # departure that read as a model failure.
+        if ! python3 scripts/drive/closed_loop_ledger.py --student "$BASE" --condition "$COND" \
+             --channels "$CH" --fc "$FC" --w 84 --h 28 \
+             --only-section "$SEC" --only-rep "$REP" \
+             >>"$LOG_DIR/${COND}_${BASE}.log" 2>&1; then
+            say "FAIL  $COND/$BASE $SEC rep$REP"; RUN_OK=0; break
+        fi
+      done
+      [ $RUN_OK -eq 1 ] || break
+    done
+    if [ $RUN_OK -eq 1 ] && python3 scripts/drive/aggregate_ledger_runs.py \
+         --condition "$COND" --cell "$BASE" --expect $((LAPS*2)) \
+         >>"$LOG_DIR/${COND}_${BASE}.log" 2>&1; then
+        say "OK    $COND/$BASE"
+    else
+        say "FAIL  $COND/$BASE (see $LOG_DIR/${COND}_${BASE}.log)"; exit 1
+    fi
+  done
+done
+
+say "LEDGER COMPLETE."
