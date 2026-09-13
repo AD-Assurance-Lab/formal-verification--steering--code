@@ -36,7 +36,7 @@ dependencies = [
     "opencv-python==4.13.0.92",
     "scipy==1.15.3",
     "matplotlib>=3.7",
-    "carla-determinism @ git+https://github.com/AD-Assurance-Lab/carla-determinism--simulation--package@v1.0.0",
+    "carla-determinism @ git+https://github.com/AD-Assurance-Lab/carla-determinism--simulation--package@v1.3.2",
 ]
 
 [project.optional-dependencies]

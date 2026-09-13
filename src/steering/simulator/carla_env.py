@@ -139,11 +139,18 @@ def enable_sync_mode(world):
     # That is the same drift that put restart before every measurement run in some drivers and not others: a rule each
     # caller must remember is a rule the next new file will miss. Sync mode is the one
     # thing every measurement does, so the assertion belongs here.
+    #
+    # No skip variable. There was one, and an escape hatch in the environment is
+    # invisible in a diff and in a result. A caller that must not preflight has no
+    # business enabling synchronous mode.
     from steering import config as _C
-    if not os.environ.get("CARLA_SKIP_PREFLIGHT"):
-        import carla_determinism as _cd
-        _cd.require_deterministic(_C.PORT, world, fixed_dt=FIXED_DT,
-                                  deterministic_control=_C.DETERMINISTIC_CONTROL)
+    import carla_determinism as _cd
+    _cd.require_deterministic(_C.PORT, world, fixed_dt=FIXED_DT,
+                              deterministic_control=_C.DETERMINISTIC_CONTROL)
+    # Session hygiene, at the same choke point (RULES.md section 5): a fresh server, an
+    # empty world, and SIGTERM that unwinds so `finally` blocks destroy the actors.
+    # Every driver here spawns AFTER this call, so an actor already alive is a leak.
+    _cd.require_measurable(_C.PORT, world)
     return original
 
 

@@ -1,0 +1,3 @@
+# Allowances for `python3 -m carla_determinism audit .` (the pre-commit hook).
+allow-receiver env                              # carla_env.apply_control routes to the package
+launcher scripts/simulator/carla_launch.sh      # the one file that starts the server
