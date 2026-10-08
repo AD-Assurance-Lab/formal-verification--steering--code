@@ -81,7 +81,25 @@ PYEOF
 )
 $PIP install -q "numpy==$NUMPY_VER"
 $PIP install -q --no-deps "$OPENCV_PIN"
-$PIP install -q -e ".[dev]"
+# The editable install resolves matplotlib>=3.7 to the newest release, and from
+# matplotlib 3.11 its contourpy requires numpy>=2, which the resolver then installs over
+# the pin above (seen 2026-10-07: numpy 2.4.6). So the package itself goes in with
+# --no-deps, and its dependencies are read from pyproject.toml (still written down once)
+# and installed under a constraint that holds numpy at the recorded version; opencv is
+# skipped because it is already in, above, and its declared numpy>=2 would make the
+# resolver refuse. A dependency that truly needs numpy 2 then fails loudly here instead
+# of silently moving numpy.
+$PIP install -q --no-deps -e .
+DEPS=$("$PY" - <<'PYEOF'
+import pathlib, tomllib
+t = tomllib.loads(pathlib.Path("pyproject.toml").read_text())
+deps = t["project"]["dependencies"] + t["project"]["optional-dependencies"]["dev"]
+print("\n".join(d for d in deps if not d.startswith(("opencv-python", "numpy"))))
+PYEOF
+)
+CONSTRAINTS="$(mktemp)"; echo "numpy==$NUMPY_VER" > "$CONSTRAINTS"
+echo "$DEPS" | PIP_CONSTRAINT="$CONSTRAINTS" xargs -d '\n' $PIP install -q
+rm -f "$CONSTRAINTS"
 
 # The editable install resolves numpy>=1.26.4 and must have left 1.26.4 alone. If it
 # did not, every bound below is computed under a numpy the artifacts do not record.
